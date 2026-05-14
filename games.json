@@ -24,14 +24,21 @@
     "id": 4,
     "title": "Bitlife",
     "thumbnail": "./games/bitlife/logo.png",
-    "category": "Casual",
+    "category": "Simulator",
     "url": "./games/bitlife/index.html"
   },
  {
     "id": 5,
     "title": "Escape Road City 2",
     "thumbnail": "./games/escape-road-city-2/25030706/loading.png",
-    "category": "Casual",
+    "category": "Action",
     "url": "./games/escape-road-city-2/index.html"
+  },
+ {
+    "id": 6,
+    "title": "Felix Bot",
+    "thumbnail": "./assets/images/cover.webp",
+    "category": "Platformer",
+    "url": "./games/60sbr/index.html"
   }
 ]
