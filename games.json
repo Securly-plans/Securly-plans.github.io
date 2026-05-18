@@ -79,8 +79,8 @@
 {
     "id": 12,
     "title": "FNF [test]",
-    "thumbnail": "",
+    "thumbnail": "assets/images/download.png",
     "category": "Rhythm",
-    "url": "./games/gladdihoppers/index.html"
+    "url": ""
   }
 ]
