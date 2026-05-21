@@ -10,11 +10,21 @@ import { db } from "./firebase.js";
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
-  const msgUint8 = new TextEncoder().encode(password);A
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  try {
+    const msgUint8 = new TextEncoder().encode(password);
 
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+    return hashArray
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+
+  } catch (err) {
+    console.error("Hashing failed:", err);
+    throw err;
+  }
 }
 
 /* ---------------- SIGNUP ---------------- */
@@ -90,7 +100,6 @@ function initAuthUI() {
   const loginBtn = document.getElementById("loginBtn");
   const signupBtn = document.getElementById("signupBtn");
 
-  // Only run if UI exists
   if (!loginBtn || !signupBtn) return;
 
   loginBtn.addEventListener("click", () => {
@@ -108,5 +117,5 @@ function initAuthUI() {
   });
 }
 
-/* ---------------- START ONLY WHEN READY ---------------- */
+/* ---------------- START ---------------- */
 window.addEventListener("DOMContentLoaded", initAuthUI);
