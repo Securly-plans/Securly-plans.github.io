@@ -6,26 +6,88 @@
     <title>Emerald</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <script type="module" src="js/firebase.js"></script>
 <script type="module" src="js/auth.js"></script>
+
 <body>
+
     <header>
         <h1 style="color:powderblue;font-family:verdana;">Home</h1>
         <input type="text" id="searchBar" placeholder="Search games...">
     </header>
- <h2 style="color:green;font-family:verdana;">Games</h2>
-    <main id="gameGrid" class="game-grid">
-        </main>
 
-<main id="videoGrid" class="video-grid">
-        </main>
-    
-        <h1 style="color:purple;font-family:verdana;text-align:center;">NEW LINKS IN PROGRESS</h1>
-<p style="color:green;font-family:verdana;text-align:center;">I am making new links if this gets blocked, just for you guys!</p>
-        <p style="color:purple;font-family:verdana;text-align:center;">Links: <a href="https://securly-plans.github.io/">Securly-plans.github.io</a> <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/">wyattmonroe2013-hash.github.io<br>
-        </a><a href="https://xXm1styXx.github.io/Securly-plans.github.io/">xXm1styXx.github.io</a></p>
-        <p style="color:yellow;font-family:verdana;text-align:center;">Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell</p>
-        <p style="color:green;font-family:verdana;text-align:center;">Emerald Games - Alpha 1.5</p>
+    <h2 style="color:green;font-family:verdana;">Games</h2>
+
+    <main id="gameGrid" class="game-grid">
+    </main>
+
+    <main id="videoGrid" class="video-grid">
+    </main>
+
+    <h1 style="color:purple;font-family:verdana;text-align:center;">
+        NEW LINKS IN PROGRESS
+    </h1>
+
+    <p style="color:green;font-family:verdana;text-align:center;">
+        I am making new links if this gets blocked, just for you guys!
+    </p>
+
+    <p style="color:purple;font-family:verdana;text-align:center;">
+        Links:
+        <a href="https://securly-plans.github.io/">
+            Securly-plans.github.io
+        </a>
+
+        <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/">
+            wyattmonroe2013-hash.github.io
+        </a>
+
+        <br>
+
+        <a href="https://xXm1styXx.github.io/Securly-plans.github.io/">
+            xXm1styXx.github.io
+        </a>
+    </p>
+
+    <p style="color:yellow;font-family:verdana;text-align:center;">
+        Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+    </p>
+
+    <p style="color:green;font-family:verdana;text-align:center;">
+        Emerald Games - Alpha 1.5
+    </p>
+
+    <!-- Logout Button -->
+    <div style="text-align:center; margin:30px 0;">
+        <button id="logoutBtn" style="
+            background:#f44336;
+            color:white;
+            border:none;
+            padding:12px 24px;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        ">
+            Logout
+        </button>
+    </div>
+
+    <script>
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+
+        // Clear saved login session
+        localStorage.removeItem("loggedIn");
+        localStorage.removeItem("username");
+        localStorage.removeItem("user");
+
+        // Redirect to login page
+        window.location.href = "index.html";
+
+    });
+    </script>
+
     <script src="script.js"></script>
+
 </body>
 </html>
