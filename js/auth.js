@@ -7,6 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
+import { loadCloudData } from "./cloudsave.js";
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
@@ -33,13 +34,16 @@ async function signup(username, password) {
       username,
       passwordHash,
       role: "user",
-      locked: false, // 🔒 NEW FIELD
+      locked: false,
       created: Date.now()
     });
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
     localStorage.setItem("role", "user");
+
+    // Load any existing cloud save
+    await loadCloudData();
 
     window.location.href = "home.html";
 
@@ -80,7 +84,7 @@ async function login(username, password) {
 
     console.log("USER DATA:", userData);
 
-    // 🔒 ACCOUNT LOCK CHECK (NEW)
+    // Account lock check
     if (userData.locked === true) {
       alert("This account is locked. Contact an admin.");
       return;
@@ -91,6 +95,14 @@ async function login(username, password) {
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
     localStorage.setItem("role", role);
+
+    // Restore cloud save before entering site
+    try {
+      await loadCloudData();
+      console.log("Cloud save restored");
+    } catch (cloudErr) {
+      console.error("Cloud save load failed:", cloudErr);
+    }
 
     window.location.href = "home.html";
 
@@ -105,6 +117,7 @@ function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("role");
+
   window.location.href = "index.html";
 }
 
