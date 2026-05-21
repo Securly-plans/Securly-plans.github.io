@@ -1,82 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Securly Plans</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #f4f4f4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.box {
-  width: 320px;
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  cursor: pointer;
-}
-
-.login {
-  background: #4caf50;
-  color: white;
-  border: none;
-}
-
-.signup {
-  background: #2196f3;
-  color: white;
-  border: none;
-}
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-  <h2>Securly Plans</h2>
-
-  <input id="user" placeholder="Username">
-  <input id="pass" type="password" placeholder="Password">
-
-  <button class="login" id="loginBtn">Login</button>
-
-  <button class="signup" id="signupBtn" disabled>
-    Please Ask Wyatt Monroe for an Account
-  </button>
-
-</div>
-
-<!-- YOUR MODULES (KEEP THESE) -->
-<script type="module" src="js/firebase.js"></script>
-<script type="module" src="js/auth.js"></script>
-
-<!-- ================= FIREBASE AUTO REDIRECT ================= -->
 <script type="module">
 import {
   getFirestore,
@@ -84,14 +5,13 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js"; // IMPORTANT: ONLY USE EXISTING FIREBASE INSTANCE
+import { db } from "./js/firebase.js";
 
 const settingsRef = doc(db, "settings", "appConfig");
 const HOME_PAGE = "home.html";
 
 let redirected = false;
 
-/* LIVE FIRESTORE LISTENER */
 onSnapshot(settingsRef, (snap) => {
 
   const autoRedirect = snap.exists()
@@ -100,33 +20,27 @@ onSnapshot(settingsRef, (snap) => {
 
   const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-  console.log("autoRedirect:", autoRedirect);
-
   if (redirected) return;
 
-  /* CASE 1: admin forces redirect */
+  // ADMIN FORCE REDIRECT
   if (autoRedirect) {
     redirected = true;
     window.location.href = HOME_PAGE;
     return;
   }
 
-  /* CASE 2: normal login redirect */
+  // NORMAL LOGIN REDIRECT
   if (isLoggedIn) {
     redirected = true;
     window.location.href = HOME_PAGE;
   }
 
 }, (error) => {
-  console.error("Firestore listener error:", error);
+  console.error(error);
 
-  /* SAFE FALLBACK */
   if (localStorage.getItem("loggedIn") === "true" && !redirected) {
     redirected = true;
     window.location.href = HOME_PAGE;
   }
 });
 </script>
-
-</body>
-</html>
