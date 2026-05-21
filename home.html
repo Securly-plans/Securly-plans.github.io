@@ -4,90 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emerald</title>
-    <link rel="stylesheet" href="style.css">
-</head>
 
-<script type="module" src="js/firebase.js"></script>
-<script type="module" src="js/auth.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- 🚨 SECURITY GATE (RUNS FIRST) -->
+    <script>
+    (function () {
+
+        const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
+        // Optional: role-based protection
+        const role = localStorage.getItem("role");
+
+        // 🔒 BLOCK ACCESS IF NOT LOGGED IN
+        if (!isLoggedIn) {
+            window.location.replace("index.html");
+            return;
+        }
+
+        // OPTIONAL: if you ever want admin-only home page
+        // if (role !== "admin") {
+        //     window.location.replace("index.html");
+        //     return;
+        // }
+
+    })();
+    </script>
+
+</head>
 
 <body>
 
-    <header>
-        <h1 style="color:powderblue;font-family:verdana;">Home</h1>
-        <input type="text" id="searchBar" placeholder="Search games...">
-    </header>
+<header>
+    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
+    <input type="text" id="searchBar" placeholder="Search games...">
+</header>
 
-    <h2 style="color:green;font-family:verdana;">Games</h2>
+<h2 style="color:green;font-family:verdana;">Games</h2>
 
-    <main id="gameGrid" class="game-grid">
-    </main>
+<main id="gameGrid" class="game-grid"></main>
+<main id="videoGrid" class="video-grid"></main>
 
-    <main id="videoGrid" class="video-grid">
-    </main>
+<h1 style="color:purple;font-family:verdana;text-align:center;">
+    NEW LINKS IN PROGRESS
+</h1>
 
-    <h1 style="color:purple;font-family:verdana;text-align:center;">
-        NEW LINKS IN PROGRESS
-    </h1>
+<p style="color:green;font-family:verdana;text-align:center;">
+    I am making new links if this gets blocked, just for you guys!
+</p>
 
-    <p style="color:green;font-family:verdana;text-align:center;">
-        I am making new links if this gets blocked, just for you guys!
-    </p>
+<p style="color:purple;font-family:verdana;text-align:center;">
+    Links:
+    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
 
-    <p style="color:purple;font-family:verdana;text-align:center;">
-        Links:
-        <a href="https://securly-plans.github.io/">
-            Securly-plans.github.io
-        </a>
+    <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/index.html">
+        wyattmonroe2013-hash.github.io
+    </a>
 
-        <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/index.html">
-            wyattmonroe2013-hash.github.io
-        </a>
+    <br>
 
-        <br>
+    <a href="https://xXm1styXx.github.io/Securly-plans.github.io/index.html">
+        xXm1styXx.github.io
+    </a>
+</p>
 
-        <a href="https://xXm1styXx.github.io/Securly-plans.github.io/index.html">
-            xXm1styXx.github.io
-        </a>
-    </p>
+<p style="color:yellow;font-family:verdana;text-align:center;">
+    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+</p>
 
-    <p style="color:yellow;font-family:verdana;text-align:center;">
-        Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-    </p>
+<p style="color:green;font-family:verdana;text-align:center;">
+    Emerald Games - Alpha 1.5
+</p>
 
-    <p style="color:green;font-family:verdana;text-align:center;">
-        Emerald Games - Alpha 1.5
-    </p>
+<!-- Logout Button -->
+<div style="text-align:center; margin:30px 0;">
+    <button id="logoutBtn" style="
+        background:#f44336;
+        color:white;
+        border:none;
+        padding:12px 24px;
+        border-radius:8px;
+        font-size:16px;
+        cursor:pointer;
+    ">
+        Logout
+    </button>
+</div>
 
-    <!-- Logout Button -->
-    <div style="text-align:center; margin:30px 0;">
-        <button id="logoutBtn" style="
-            background:#f44336;
-            color:white;
-            border:none;
-            padding:12px 24px;
-            border-radius:8px;
-            font-size:16px;
-            cursor:pointer;
-        ">
-            Logout
-        </button>
-    </div>
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
 
-    <script>
-    document.getElementById("logoutBtn").addEventListener("click", () => {
+    // Clear session completely
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
 
-        // Clear saved login session
-        localStorage.removeItem("loggedIn");
-        localStorage.removeItem("username");
-        localStorage.removeItem("user");
+    // Force redirect
+    window.location.replace("index.html");
 
-        // Redirect to login page
-        window.location.href = "index.html";
+});
+</script>
 
-    });
-    </script>
-
-    <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
