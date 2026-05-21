@@ -96,49 +96,44 @@ import {
 
 import { db } from "./js/firebase.js";
 
-/* ---------------- ADMIN KEY ---------------- */
-const ADMIN_KEY = "MES-KEY/ADMIN-73-Ahf4";
+/* =================================================
+   🔐 ROLE PROTECTION (IMPORTANT)
+================================================= */
 
-const key = prompt("Enter admin key:");
+const role = localStorage.getItem("role");
 
-if (key !== ADMIN_KEY) {
-  alert("Access denied");
+if (role !== "admin") {
+  alert("Access denied: Admins only");
   window.location.href = "index.html";
 }
 
-/* ---------------- PASSWORD HASH ---------------- */
+/* =================================================
+   🔑 PASSWORD HASH
+================================================= */
+
 async function hashPassword(password) {
-
   const msgUint8 = new TextEncoder().encode(password);
-
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-
   const hashArray = Array.from(new Uint8Array(hashBuffer));
 
-  return hashArray
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /* =================================================
-   🔥 AUTO REDIRECT SETTINGS (NEW FEATURE)
+   🔥 SETTINGS (AUTO REDIRECT)
 ================================================= */
 
 const settingsRef = doc(db, "settings", "appConfig");
-
 const toggleBtn = document.getElementById("redirectToggleBtn");
 
 async function loadSettings() {
   const snap = await getDoc(settingsRef);
-
-  const enabled = snap.exists()
-    ? snap.data().autoRedirect
-    : false;
-
+  const enabled = snap.exists() ? snap.data().autoRedirect : false;
   updateToggleUI(enabled);
 }
 
 function updateToggleUI(enabled) {
+
   toggleBtn.textContent = enabled
     ? "Disable Auto Redirect"
     : "Enable Auto Redirect";
@@ -148,8 +143,12 @@ function updateToggleUI(enabled) {
     : "toggle-off";
 
   toggleBtn.onclick = async () => {
+
+    const snap = await getDoc(settingsRef);
+    const current = snap.exists() ? snap.data().autoRedirect : false;
+
     await setDoc(settingsRef, {
-      autoRedirect: !enabled
+      autoRedirect: !current
     }, { merge: true });
 
     loadSettings();
@@ -157,7 +156,7 @@ function updateToggleUI(enabled) {
 }
 
 /* =================================================
-   👤 USER SYSTEM (UNCHANGED LOGIC)
+   👤 USER SYSTEM
 ================================================= */
 
 async function loadUsers() {
@@ -182,18 +181,21 @@ async function loadUsers() {
 
       <br>
 
-      <b>Password (raw):</b>
+      <b>Role:</b>
+      <select id="r-${docSnap.id}">
+        <option value="user" ${data.role === "user" ? "selected" : ""}>User</option>
+        <option value="admin" ${data.role === "admin" ? "selected" : ""}>Admin</option>
+      </select>
+
+      <br>
+
+      <b>Password (new):</b>
       <input type="text" placeholder="Set New Password" id="p-${docSnap.id}">
 
       <br>
 
-      <button onclick="saveUser('${docSnap.id}')">
-        Save
-      </button>
-
-      <button onclick="deleteUser('${docSnap.id}')">
-        Delete
-      </button>
+      <button onclick="saveUser('${docSnap.id}')">Save</button>
+      <button onclick="deleteUser('${docSnap.id}')">Delete</button>
     `;
 
     container.appendChild(div);
@@ -216,6 +218,7 @@ window.createUser = async function() {
   await addDoc(collection(db, "users"), {
     username,
     passwordHash,
+    role: "user",
     created: Date.now()
   });
 
@@ -231,9 +234,13 @@ window.createUser = async function() {
 window.saveUser = async function(id) {
 
   const username = document.getElementById("u-" + id).value;
+  const role = document.getElementById("r-" + id).value;
   const newPass = document.getElementById("p-" + id).value;
 
-  const updateData = { username };
+  const updateData = {
+    username,
+    role
+  };
 
   if (newPass && newPass.trim() !== "") {
     updateData.passwordHash = await hashPassword(newPass);
@@ -258,7 +265,10 @@ window.deleteUser = async function(id) {
   loadUsers();
 }
 
-/* ---------------- START ---------------- */
+/* =================================================
+   🚀 START
+================================================= */
+
 loadUsers();
 loadSettings();
 
