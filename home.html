@@ -7,7 +7,7 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- 🚨 SECURITY GATE -->
+<!-- SECURITY GATE -->
 <script>
 (function () {
 
@@ -22,7 +22,9 @@
 </script>
 
 <style>
+
 /* ================= NAVBAR ================= */
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -33,13 +35,15 @@
     font-family: Arial;
 }
 
-.nav-left, .nav-right {
+.nav-left,
+.nav-right {
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-.navbar a, .nav-btn {
+.navbar a,
+.nav-btn {
     color: white;
     text-decoration: none;
     padding: 8px 12px;
@@ -50,7 +54,8 @@
     font-size: 14px;
 }
 
-.navbar a:hover, .nav-btn:hover {
+.navbar a:hover,
+.nav-btn:hover {
     background: #444;
 }
 
@@ -68,6 +73,23 @@
     background: #444;
     font-size: 14px;
 }
+
+/* ================= SAVE BUTTON ================= */
+
+.save-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.save-btn:hover {
+    opacity: 0.9;
+}
+
 </style>
 
 </head>
@@ -75,6 +97,7 @@
 <body>
 
 <!-- ================= NAVBAR ================= -->
+
 <div class="navbar">
 
     <div class="nav-left">
@@ -83,33 +106,52 @@
 
     <div class="nav-right">
 
-        <!-- USERNAME -->
         <span id="usernameDisplay" class="username-badge"></span>
 
-        <!-- PROFILE -->
-        <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
+        <a href="profile.html"
+           id="profileLink"
+           style="display:none;">
+            Profile
+        </a>
 
-        <!-- ADMIN -->
-        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+        <a href="admin.html"
+           id="adminLink"
+           class="admin-link"
+           style="display:none;">
             Admin
         </a>
 
-        <button id="logoutBtn" class="logout-btn">Logout</button>
+        <button id="logoutBtn"
+                class="logout-btn">
+            Logout
+        </button>
 
     </div>
 
 </div>
 
-<!-- ================= PAGE CONTENT ================= -->
+<!-- ================= CONTENT ================= -->
 
 <header>
-    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
+
+    <h1 style="color:powderblue;font-family:verdana;">
+        Home
+    </h1>
+
+    <input
+        type="text"
+        id="searchBar"
+        placeholder="Search games..."
+    >
+
 </header>
 
-<h2 style="color:green;font-family:verdana;">Games</h2>
+<h2 style="color:green;font-family:verdana;">
+    Games
+</h2>
 
 <main id="gameGrid" class="game-grid"></main>
+
 <main id="videoGrid" class="video-grid"></main>
 
 <h1 style="color:purple;font-family:verdana;text-align:center;">
@@ -117,32 +159,60 @@
 </h1>
 
 <p style="color:green;font-family:verdana;text-align:center;">
-    I am making new links if this gets blocked, just for you guys!
+    I am making new links if this gets blocked,
+    just for you guys!
 </p>
 
 <p style="color:purple;font-family:verdana;text-align:center;">
+
     Links:
-    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
+
+    <a href="https://securly-plans.github.io/">
+        Securly-plans.github.io
+    </a>
+
     <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/index.html">
         wyattmonroe2013-hash.github.io
     </a>
+
     <br>
+
     <a href="https://xXm1styXx.github.io/Securly-plans.github.io/index.html">
         xXm1styXx.github.io
     </a>
+
 </p>
 
+<!-- ================= SAVE BUTTON ================= -->
+
+<div style="text-align:center; margin:25px 0;">
+
+    <button id="saveBtn" class="save-btn">
+        Save Progress
+    </button>
+
+</div>
+
 <p style="color:yellow;font-family:verdana;text-align:center;">
-    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+    Copyright 2026,
+    Seth Flueter,
+    Wyatt Monroe,
+    Bohdi Domonell
 </p>
 
 <p style="color:green;font-family:verdana;text-align:center;">
     Emerald Games - Alpha 1.5
 </p>
 
+<!-- ================= NORMAL PAGE LOGIC ================= -->
+
 <script>
-/* ================= LOGOUT ================= */
-document.getElementById("logoutBtn").addEventListener("click", () => {
+
+/* LOGOUT */
+
+document
+.getElementById("logoutBtn")
+.addEventListener("click", () => {
 
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("username");
@@ -152,27 +222,111 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 
 });
 
-/* ================= NAVBAR LOGIC ================= */
+/* NAVBAR */
 
-const role = localStorage.getItem("role");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-const username = localStorage.getItem("username");
+const role =
+    localStorage.getItem("role");
 
-/* SHOW USERNAME */
-const usernameDisplay = document.getElementById("usernameDisplay");
+const isLoggedIn =
+    localStorage.getItem("loggedIn") === "true";
+
+const username =
+    localStorage.getItem("username");
+
+/* USERNAME */
+
+const usernameDisplay =
+    document.getElementById("usernameDisplay");
+
 if (username && isLoggedIn) {
-    usernameDisplay.textContent = "👤 " + username;
+
+    usernameDisplay.textContent =
+        "👤 " + username;
+
 }
 
 /* PROFILE */
+
 if (isLoggedIn) {
-    document.getElementById("profileLink").style.display = "inline-block";
+
+    document
+    .getElementById("profileLink")
+    .style.display = "inline-block";
+
 }
 
 /* ADMIN */
+
 if (role === "admin") {
-    document.getElementById("adminLink").style.display = "inline-block";
+
+    document
+    .getElementById("adminLink")
+    .style.display = "inline-block";
+
 }
+
+</script>
+
+<!-- ================= CLOUD SAVE ================= -->
+
+<script type="module">
+
+import { saveCloudData }
+from "./js/cloudsave.js";
+
+/* MANUAL SAVE */
+
+const saveBtn =
+    document.getElementById("saveBtn");
+
+if (saveBtn) {
+
+    saveBtn.addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                await saveCloudData();
+
+                alert("Progress saved");
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                alert("Save failed");
+
+            }
+
+        }
+    );
+
+}
+
+/* AUTO SAVE EVERY 60 SECONDS */
+
+setInterval(async () => {
+
+    try {
+
+        await saveCloudData();
+
+        console.log("Autosave complete");
+
+    }
+    catch (err) {
+
+        console.error(
+            "Autosave failed:",
+            err
+        );
+
+    }
+
+}, 60000);
+
 </script>
 
 <script src="script.js"></script>
