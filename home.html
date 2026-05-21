@@ -66,7 +66,7 @@
     Emerald Games - Alpha 1.5
 </p>
 
-<!-- Logout Button -->
+<!-- LOGOUT BUTTON -->
 <div style="text-align:center; margin:30px 0;">
     <button id="logoutBtn" style="
         background:#f44336;
@@ -81,10 +81,26 @@
     </button>
 </div>
 
+<!-- 👤 PROFILE BUTTON (ONLY IF LOGGED IN) -->
+<div id="profileContainer" style="text-align:center; margin:10px 0; display:none;">
+    <button id="profileBtn" style="
+        background:#2196f3;
+        color:white;
+        border:none;
+        padding:12px 24px;
+        border-radius:8px;
+        font-size:16px;
+        cursor:pointer;
+    ">
+        Profile
+    </button>
+</div>
+
 <!-- 🔥 ADMIN BUTTON (ONLY SHOWS FOR ADMINS) -->
 <div id="adminContainer" style="text-align:center; margin-top:10px;"></div>
 
 <script>
+/* ---------------- LOGOUT ---------------- */
 document.getElementById("logoutBtn").addEventListener("click", () => {
 
     localStorage.removeItem("loggedIn");
@@ -95,7 +111,18 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 
 });
 
-/* ---------------- ADMIN BUTTON RENDER ---------------- */
+/* ---------------- PROFILE BUTTON ---------------- */
+const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
+if (isLoggedIn) {
+    document.getElementById("profileContainer").style.display = "block";
+
+    document.getElementById("profileBtn").addEventListener("click", () => {
+        window.location.href = "profile.html";
+    });
+}
+
+/* ---------------- ADMIN BUTTON ---------------- */
 (function () {
 
     const role = localStorage.getItem("role");
