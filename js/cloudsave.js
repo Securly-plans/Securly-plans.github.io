@@ -6,48 +6,80 @@ import {
 
 import { db } from "./firebase.js";
 
-/* SAVE */
+/* ================= SAVE ================= */
+
 export async function saveCloudData() {
 
   const username = localStorage.getItem("username");
 
   if (!username) return;
 
-  const saveData = {
-    gameProgress: localStorage.getItem("gameProgress"),
-    updatedAt: Date.now()
-  };
+  try {
 
-  await setDoc(
-    doc(db, "saves", username),
-    saveData,
-    { merge: true }
-  );
+    const saveData = {};
 
-  console.log("Cloud save complete");
+    // Save every localStorage key
+    for (let i = 0; i < localStorage.length; i++) {
+
+      const key = localStorage.key(i);
+
+      saveData[key] = localStorage.getItem(key);
+    }
+
+    await setDoc(
+      doc(db, "saves", username),
+      {
+        data: saveData,
+        updatedAt: Date.now()
+      },
+      { merge: true }
+    );
+
+    console.log("Cloud save complete");
+
+  } catch (err) {
+
+    console.error("Cloud save failed:", err);
+
+  }
 }
 
-/* LOAD */
+/* ================= LOAD ================= */
+
 export async function loadCloudData() {
 
   const username = localStorage.getItem("username");
 
   if (!username) return;
 
-  const snap = await getDoc(
-    doc(db, "saves", username)
-  );
+  try {
 
-  if (!snap.exists()) return;
-
-  const data = snap.data();
-
-  if (data.gameProgress) {
-    localStorage.setItem(
-      "gameProgress",
-      data.gameProgress
+    const snap = await getDoc(
+      doc(db, "saves", username)
     );
-  }
 
-  console.log("Cloud save restored");
+    if (!snap.exists()) {
+      console.log("No cloud save found");
+      return;
+    }
+
+    const saveData = snap.data().data || {};
+
+    // Restore everything into localStorage
+    Object.keys(saveData).forEach((key) => {
+
+      localStorage.setItem(
+        key,
+        saveData[key]
+      );
+
+    });
+
+    console.log("Cloud save restored");
+
+  } catch (err) {
+
+    console.error("Cloud load failed:", err);
+
+  }
 }
