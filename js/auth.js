@@ -33,6 +33,7 @@ async function signup(username, password) {
       username,
       passwordHash,
       role: "user",
+      locked: false, // 🔒 NEW FIELD
       created: Date.now()
     });
 
@@ -74,15 +75,18 @@ async function login(username, password) {
       return;
     }
 
-    // 🔥 SAFELY GET FIRST MATCH
     const userDoc = snapshot.docs[0];
     const userData = userDoc.data();
 
-    console.log("USER DATA FROM FIRESTORE:", userData);
+    console.log("USER DATA:", userData);
+
+    // 🔒 ACCOUNT LOCK CHECK (NEW)
+    if (userData.locked === true) {
+      alert("This account is locked. Contact an admin.");
+      return;
+    }
 
     const role = userData.role ?? "user";
-
-    console.log("RESOLVED ROLE:", role);
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
@@ -126,4 +130,5 @@ function initAuthUI() {
   });
 }
 
+/* ---------------- START ---------------- */
 window.addEventListener("DOMContentLoaded", initAuthUI);
