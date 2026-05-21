@@ -61,6 +61,13 @@
 .logout-btn {
     background: #f44336;
 }
+
+.username-badge {
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #444;
+    font-size: 14px;
+}
 </style>
 
 </head>
@@ -76,8 +83,13 @@
 
     <div class="nav-right">
 
+        <!-- USERNAME -->
+        <span id="usernameDisplay" class="username-badge"></span>
+
+        <!-- PROFILE -->
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
+        <!-- ADMIN -->
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
             Admin
         </a>
@@ -144,6 +156,13 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 
 const role = localStorage.getItem("role");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+const username = localStorage.getItem("username");
+
+/* SHOW USERNAME */
+const usernameDisplay = document.getElementById("usernameDisplay");
+if (username && isLoggedIn) {
+    usernameDisplay.textContent = "👤 " + username;
+}
 
 /* PROFILE */
 if (isLoggedIn) {
