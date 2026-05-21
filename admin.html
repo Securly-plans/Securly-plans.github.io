@@ -100,7 +100,6 @@ button {
 
 <h1>Admin Panel</h1>
 
-<!-- TOAST CONTAINER -->
 <div id="toastContainer"></div>
 
 <!-- ================= USERS ================= -->
@@ -144,7 +143,7 @@ import {
 import { db } from "./js/firebase.js";
 
 /* =================================================
-   🔔 TOAST SYSTEM
+   TOAST SYSTEM
 ================================================= */
 
 function showToast(message, type = "info") {
@@ -156,32 +155,16 @@ function showToast(message, type = "info") {
 
   container.appendChild(toast);
 
-  setTimeout(() => {
-    toast.remove();
-  }, 3500);
+  setTimeout(() => toast.remove(), 3500);
 }
 
 /* =================================================
-   🔐 ACCESS CONTROL
+   🔐 ROLE ACCESS ONLY (NO KEY SYSTEM)
 ================================================= */
 
-function isAdminAllowed() {
-  const role = localStorage.getItem("role");
+const role = localStorage.getItem("role");
 
-  let keyAccess = false;
-
-  try {
-    const key = prompt("Enter admin key or Cancel to use role:");
-
-    if (key === "Wyatt-2") {
-      keyAccess = true;
-    }
-  } catch (e) {}
-
-  return role === "admin" || keyAccess;
-}
-
-if (!isAdminAllowed()) {
+if (role !== "admin") {
   showToast("Access denied", "error");
   window.location.href = "index.html";
 }
