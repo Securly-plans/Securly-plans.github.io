@@ -7,26 +7,16 @@
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- 🚨 SECURITY GATE (RUNS FIRST) -->
+    <!-- 🚨 SECURITY GATE -->
     <script>
     (function () {
 
         const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-        // Optional: role-based protection
-        const role = localStorage.getItem("role");
-
-        // 🔒 BLOCK ACCESS IF NOT LOGGED IN
         if (!isLoggedIn) {
             window.location.replace("index.html");
             return;
         }
-
-        // OPTIONAL: if you ever want admin-only home page
-        // if (role !== "admin") {
-        //     window.location.replace("index.html");
-        //     return;
-        // }
 
     })();
     </script>
@@ -91,18 +81,44 @@
     </button>
 </div>
 
+<!-- 🔥 ADMIN BUTTON (ONLY SHOWS FOR ADMINS) -->
+<div id="adminContainer" style="text-align:center; margin-top:10px;"></div>
+
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
 
-    // Clear session completely
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("username");
     localStorage.removeItem("role");
 
-    // Force redirect
     window.location.replace("index.html");
 
 });
+
+/* ---------------- ADMIN BUTTON RENDER ---------------- */
+(function () {
+
+    const role = localStorage.getItem("role");
+
+    if (role === "admin") {
+        const container = document.getElementById("adminContainer");
+
+        container.innerHTML = `
+            <a href="admin.html" style="
+                background:#2196f3;
+                color:white;
+                padding:12px 20px;
+                border-radius:8px;
+                text-decoration:none;
+                display:inline-block;
+                font-family:Arial;
+            ">
+                Admin Panel
+            </a>
+        `;
+    }
+
+})();
 </script>
 
 <script src="script.js"></script>
