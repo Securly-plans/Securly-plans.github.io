@@ -79,25 +79,14 @@ button {
 <script type="module" src="js/auth.js"></script>
 
 <script>
-/* ---------------- OPTIONAL AUTO REDIRECT ---------------- */
+/* ---------------- SAFE AUTO REDIRECT ---------------- */
 (function () {
-
-  // true = everyone is automatically redirected
-  // false = users must sign in normally
-  const AUTO_REDIRECT_ENABLED = false;
 
   const HOME_PAGE = "home.html";
 
-  if (AUTO_REDIRECT_ENABLED) {
+  if (localStorage.getItem("loggedIn") === "true") {
 
-    // Bypass login page completely
-    setTimeout(() => {
-      window.location.href = HOME_PAGE;
-    }, 50);
-
-  } else if (localStorage.getItem("loggedIn") === "true") {
-
-    // Normal login behavior
+    // small delay ensures modules are loaded before redirect
     setTimeout(() => {
       window.location.href = HOME_PAGE;
     }, 50);
