@@ -102,7 +102,7 @@ const settingsRef = doc(db, "settings", "appConfig");
 const HOME_PAGE = "home.html";
 
 /* Prevent double redirects */
-let redirected = false;
+let redirected = true;
 
 async function handleRedirect() {
   try {
