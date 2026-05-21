@@ -97,21 +97,29 @@ import {
 import { db } from "./js/firebase.js";
 
 /* =================================================
-   🔐 ACCESS CONTROL (ROLE OR KEY)
+   🔐 SAFE ACCESS CONTROL (FIXED)
 ================================================= */
 
-const role = localStorage.getItem("role");
+function isAdminAllowed() {
+  const role = localStorage.getItem("role");
 
-// 🔑 KEY ACCESS PROMPT
-let keyAccess = false;
-const key = prompt("Enter admin key (or cancel to use role):");
+  let keyAccess = false;
 
-if (key === "Wyatt-2") {
-  keyAccess = true;
+  try {
+    const key = prompt("Enter admin key (Wyatt-2) or Cancel to use role:");
+
+    if (key === "Wyatt-2") {
+      keyAccess = true;
+    }
+  } catch (e) {
+    console.warn("Prompt blocked:", e);
+  }
+
+  return role === "admin" || keyAccess;
 }
 
-// 🚫 BLOCK ACCESS IF NEITHER VALID
-if (role !== "admin" && !keyAccess) {
+/* Run access check BEFORE loading anything */
+if (!isAdminAllowed()) {
   alert("Access denied: Admins only");
   window.location.href = "index.html";
 }
@@ -136,9 +144,14 @@ const settingsRef = doc(db, "settings", "appConfig");
 const toggleBtn = document.getElementById("redirectToggleBtn");
 
 async function loadSettings() {
-  const snap = await getDoc(settingsRef);
-  const enabled = snap.exists() ? snap.data().autoRedirect : false;
-  updateToggleUI(enabled);
+  try {
+    const snap = await getDoc(settingsRef);
+    const enabled = snap.exists() ? snap.data().autoRedirect : false;
+    updateToggleUI(enabled);
+  } catch (err) {
+    console.error("Settings load failed:", err);
+    toggleBtn.textContent = "Settings failed to load";
+  }
 }
 
 function updateToggleUI(enabled) {
@@ -170,45 +183,52 @@ function updateToggleUI(enabled) {
 
 async function loadUsers() {
 
-  const snapshot = await getDocs(collection(db, "users"));
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
 
-  const container = document.getElementById("users");
-  container.innerHTML = "";
+    const container = document.getElementById("users");
+    container.innerHTML = "";
 
-  snapshot.forEach((docSnap) => {
+    snapshot.forEach((docSnap) => {
 
-    const data = docSnap.data();
+      const data = docSnap.data();
 
-    const div = document.createElement("div");
-    div.className = "user";
+      const div = document.createElement("div");
+      div.className = "user";
 
-    div.innerHTML = `
-      <b>ID:</b> ${docSnap.id}<br>
+      div.innerHTML = `
+        <b>ID:</b> ${docSnap.id}<br>
 
-      <b>Username:</b>
-      <input value="${data.username}" id="u-${docSnap.id}">
+        <b>Username:</b>
+        <input value="${data.username}" id="u-${docSnap.id}">
 
-      <br>
+        <br>
 
-      <b>Role:</b>
-      <select id="r-${docSnap.id}">
-        <option value="user" ${data.role === "user" ? "selected" : ""}>User</option>
-        <option value="admin" ${data.role === "admin" ? "selected" : ""}>Admin</option>
-      </select>
+        <b>Role:</b>
+        <select id="r-${docSnap.id}">
+          <option value="user" ${data.role === "user" ? "selected" : ""}>User</option>
+          <option value="admin" ${data.role === "admin" ? "selected" : ""}>Admin</option>
+        </select>
 
-      <br>
+        <br>
 
-      <b>Password (new):</b>
-      <input type="text" placeholder="Set New Password" id="p-${docSnap.id}">
+        <b>Password (new):</b>
+        <input type="text" placeholder="Set New Password" id="p-${docSnap.id}">
 
-      <br>
+        <br>
 
-      <button onclick="saveUser('${docSnap.id}')">Save</button>
-      <button onclick="deleteUser('${docSnap.id}')">Delete</button>
-    `;
+        <button onclick="saveUser('${docSnap.id}')">Save</button>
+        <button onclick="deleteUser('${docSnap.id}')">Delete</button>
+      `;
 
-    container.appendChild(div);
-  });
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("User load failed:", err);
+    document.getElementById("users").innerHTML =
+      "<b style='color:red'>Failed to load users</b>";
+  }
 }
 
 /* ---------------- CREATE USER ---------------- */
@@ -231,8 +251,6 @@ window.createUser = async function() {
     created: Date.now()
   });
 
-  alert("User created");
-
   document.getElementById("newUser").value = "";
   document.getElementById("newPass").value = "";
 
@@ -246,18 +264,13 @@ window.saveUser = async function(id) {
   const role = document.getElementById("r-" + id).value;
   const newPass = document.getElementById("p-" + id).value;
 
-  const updateData = {
-    username,
-    role
-  };
+  const updateData = { username, role };
 
   if (newPass && newPass.trim() !== "") {
     updateData.passwordHash = await hashPassword(newPass);
   }
 
   await updateDoc(doc(db, "users", id), updateData);
-
-  alert("User updated");
 
   loadUsers();
 }
@@ -269,17 +282,17 @@ window.deleteUser = async function(id) {
 
   await deleteDoc(doc(db, "users", id));
 
-  alert("User deleted");
-
   loadUsers();
 }
 
 /* =================================================
-   🚀 START
+   🚀 START (SAFE BOOT ORDER)
 ================================================= */
 
-loadUsers();
-loadSettings();
+window.addEventListener("DOMContentLoaded", () => {
+  loadUsers();
+  loadSettings();
+});
 
 </script>
 
