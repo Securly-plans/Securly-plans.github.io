@@ -7,7 +7,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
-import { loadCloudData } from "./cloudsave.js";
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
@@ -34,16 +33,12 @@ async function signup(username, password) {
       username,
       passwordHash,
       role: "user",
-      locked: false,
       created: Date.now()
     });
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
     localStorage.setItem("role", "user");
-
-    // Load any existing cloud save
-    await loadCloudData();
 
     window.location.href = "home.html";
 
@@ -72,37 +67,14 @@ async function login(username, password) {
 
     const snapshot = await getDocs(q);
 
-    console.log("LOGIN SNAPSHOT SIZE:", snapshot.size);
-
     if (snapshot.empty) {
       alert("Invalid login");
       return;
     }
 
-    const userDoc = snapshot.docs[0];
-    const userData = userDoc.data();
-
-    console.log("USER DATA:", userData);
-
-    // Account lock check
-    if (userData.locked === true) {
-      alert("This account is locked. Contact an admin.");
-      return;
-    }
-
-    const role = userData.role ?? "user";
-
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
-    localStorage.setItem("role", role);
-
-    // Restore cloud save before entering site
-    try {
-      await loadCloudData();
-      console.log("Cloud save restored");
-    } catch (cloudErr) {
-      console.error("Cloud save load failed:", cloudErr);
-    }
+    localStorage.setItem("role", "user");
 
     window.location.href = "home.html";
 
@@ -117,7 +89,6 @@ function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("username");
   localStorage.removeItem("role");
-
   window.location.href = "index.html";
 }
 
@@ -143,5 +114,4 @@ function initAuthUI() {
   });
 }
 
-/* ---------------- START ---------------- */
 window.addEventListener("DOMContentLoaded", initAuthUI);
