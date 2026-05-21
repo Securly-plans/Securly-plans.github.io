@@ -74,26 +74,72 @@ button {
 
 </div>
 
-<!-- Firebase backend -->
+<!-- Your existing modules -->
 <script type="module" src="js/firebase.js"></script>
 <script type="module" src="js/auth.js"></script>
 
-<script>
-/* ---------------- SAFE AUTO REDIRECT ---------------- */
-(function () {
+<!-- AUTO REDIRECT (FIREBASE CONTROLLED) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const HOME_PAGE = "home.html";
+/* ---------------- FIREBASE CONFIG ---------------- */
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID"
+};
 
-  if (localStorage.getItem("loggedIn") === "true") {
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    // small delay ensures modules are loaded before redirect
-    setTimeout(() => {
+/* ---------------- CONFIG ---------------- */
+const settingsRef = doc(db, "settings", "appConfig");
+const HOME_PAGE = "home.html";
+
+/* Prevent double redirects */
+let redirected = false;
+
+async function handleRedirect() {
+  try {
+    const snap = await getDoc(settingsRef);
+
+    const autoRedirect = snap.exists()
+      ? snap.data().autoRedirect
+      : false;
+
+    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
+    // CASE 1: Admin forced redirect mode (bypasses login page)
+    if (autoRedirect && !redirected) {
+      redirected = true;
       window.location.href = HOME_PAGE;
-    }, 50);
+      return;
+    }
 
+    // CASE 2: Normal login redirect
+    if (isLoggedIn && !redirected) {
+      redirected = true;
+      window.location.href = HOME_PAGE;
+    }
+
+  } catch (err) {
+    console.error("Firebase redirect check failed:", err);
+
+    // SAFE FALLBACK (no admin config available)
+    if (localStorage.getItem("loggedIn") === "true" && !redirected) {
+      redirected = true;
+      window.location.href = HOME_PAGE;
+    }
   }
+}
 
-})();
+/* Run once on load */
+handleRedirect();
 </script>
 
 </body>
