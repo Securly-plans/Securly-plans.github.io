@@ -5,13 +5,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Login to Emerald Services</title>
+<title>Securly Plans</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #303234;
+  background: #f4f4f4;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -47,9 +47,43 @@ button {
 }
 
 .signup {
-  background: #228B22;
+  background: #2196f3;
   color: white;
   border: none;
+}
+
+/* ================= TOAST SYSTEM ================= */
+
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  min-width: 200px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+}
+
+.toast.success { background: #4caf50; }
+.toast.error { background: #f44336; }
+.toast.info { background: #2196f3; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
 }
 </style>
 
@@ -57,9 +91,12 @@ button {
 
 <body>
 
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
 <div class="box">
 
-  <h2>Enter User Info</h2>
+  <h2>Securly Plans</h2>
 
   <input id="user" placeholder="Username">
   <input id="pass" type="password" placeholder="Password">
@@ -86,9 +123,27 @@ const settingsRef = doc(db, "settings", "appConfig");
 
 let redirected = false;
 
+/* ================= TOAST SYSTEM ================= */
+function showToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
+
+/* ================= REDIRECT ================= */
+
 function redirectHome() {
   if (!redirected) {
     redirected = true;
+    showToast("Redirecting...", "info");
     window.location.href = HOME_PAGE;
   }
 }
@@ -109,12 +164,14 @@ try {
 
     // CASE 1: Admin force redirect
     if (autoRedirect) {
+      showToast("Admin redirect enabled", "info");
       redirectHome();
       return;
     }
 
     // CASE 2: Normal login redirect
     if (isLoggedIn()) {
+      showToast("Welcome back!", "success");
       redirectHome();
     }
 
@@ -122,7 +179,8 @@ try {
 
     console.error("Firestore listener error:", error);
 
-    // SAFE FALLBACK (never leaves user stuck)
+    showToast("Connection issue (offline mode)", "error");
+
     if (isLoggedIn()) {
       redirectHome();
     }
@@ -132,6 +190,8 @@ try {
 } catch (e) {
 
   console.error("Fatal Firebase error:", e);
+
+  showToast("Fatal error loading app", "error");
 
   if (isLoggedIn()) {
     redirectHome();
