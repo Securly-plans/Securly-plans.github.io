@@ -78,13 +78,13 @@ button {
 <script type="module" src="js/firebase.js"></script>
 <script type="module" src="js/auth.js"></script>
 
-<!-- AUTO REDIRECT (FIREBASE CONTROLLED) -->
+<!-- ================= FIREBASE AUTO REDIRECT ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   doc,
-  getDoc
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ---------------- FIREBASE CONFIG ---------------- */
@@ -97,49 +97,48 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ---------------- CONFIG ---------------- */
+/* ---------------- SETTINGS ---------------- */
 const settingsRef = doc(db, "settings", "appConfig");
 const HOME_PAGE = "home.html";
 
-/* Prevent double redirects */
-let redirected = true;
+let redirected = false;
 
-async function handleRedirect() {
-  try {
-    const snap = await getDoc(settingsRef);
+/* ---------------- LIVE FIRESTORE LISTENER ---------------- */
+onSnapshot(settingsRef, (snap) => {
 
-    const autoRedirect = snap.exists()
-      ? snap.data().autoRedirect
-      : false;
+  const autoRedirect = snap.exists()
+    ? snap.data().autoRedirect
+    : false;
 
-    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-    // CASE 1: Admin forced redirect mode (bypasses login page)
-    if (autoRedirect && !redirected) {
-      redirected = true;
-      window.location.href = HOME_PAGE;
-      return;
-    }
+  console.log("autoRedirect:", autoRedirect);
 
-    // CASE 2: Normal login redirect
-    if (isLoggedIn && !redirected) {
-      redirected = true;
-      window.location.href = HOME_PAGE;
-    }
+  if (redirected) return;
 
-  } catch (err) {
-    console.error("Firebase redirect check failed:", err);
-
-    // SAFE FALLBACK (no admin config available)
-    if (localStorage.getItem("loggedIn") === "true" && !redirected) {
-      redirected = true;
-      window.location.href = HOME_PAGE;
-    }
+  /* CASE 1: admin forces redirect */
+  if (autoRedirect) {
+    redirected = true;
+    window.location.href = HOME_PAGE;
+    return;
   }
-}
 
-/* Run once on load */
-handleRedirect();
+  /* CASE 2: normal login redirect */
+  if (isLoggedIn) {
+    redirected = true;
+    window.location.href = HOME_PAGE;
+  }
+
+}, (error) => {
+  console.error("Firestore listener error:", error);
+
+  /* SAFE FALLBACK */
+  if (localStorage.getItem("loggedIn") === "true" && !redirected) {
+    redirected = true;
+    window.location.href = HOME_PAGE;
+  }
+});
+
 </script>
 
 </body>
