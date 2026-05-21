@@ -10,21 +10,13 @@ import { db } from "./firebase.js";
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
-  try {
-    const msgUint8 = new TextEncoder().encode(password);
+  const msgUint8 = new TextEncoder().encode(password);
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
 
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
 
-    return hashArray
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-
-  } catch (err) {
-    console.error("Hashing failed:", err);
-    throw err;
-  }
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /* ---------------- SIGNUP ---------------- */
@@ -40,13 +32,13 @@ async function signup(username, password) {
     await addDoc(collection(db, "users"), {
       username,
       passwordHash,
-      role: "user", // ✅ IMPORTANT DEFAULT ROLE
+      role: "user",
       created: Date.now()
     });
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
-    localStorage.setItem("role", "user"); // ✅ FIX
+    localStorage.setItem("role", "user");
 
     window.location.href = "home.html";
 
@@ -58,6 +50,7 @@ async function signup(username, password) {
 
 /* ---------------- LOGIN ---------------- */
 async function login(username, password) {
+
   if (!username || !password) {
     alert("Fill in both fields");
     return;
@@ -74,19 +67,26 @@ async function login(username, password) {
 
     const snapshot = await getDocs(q);
 
+    console.log("LOGIN SNAPSHOT SIZE:", snapshot.size);
+
     if (snapshot.empty) {
       alert("Invalid login");
       return;
     }
 
-    // ✅ GET USER DATA (THIS IS THE CRITICAL FIX)
-    const userData = snapshot.docs[0].data();
+    // 🔥 SAFELY GET FIRST MATCH
+    const userDoc = snapshot.docs[0];
+    const userData = userDoc.data();
+
+    console.log("USER DATA FROM FIRESTORE:", userData);
+
+    const role = userData.role ?? "user";
+
+    console.log("RESOLVED ROLE:", role);
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
-
-    // 🔥 FIX: STORE ROLE FROM FIRESTORE
-    localStorage.setItem("role", userData.role || "user");
+    localStorage.setItem("role", role);
 
     window.location.href = "home.html";
 
@@ -100,11 +100,11 @@ async function login(username, password) {
 function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("username");
-  localStorage.removeItem("role"); // ✅ FIX
+  localStorage.removeItem("role");
   window.location.href = "index.html";
 }
 
-/* ---------------- SAFE UI BINDING ---------------- */
+/* ---------------- UI ---------------- */
 function initAuthUI() {
   const loginBtn = document.getElementById("loginBtn");
   const signupBtn = document.getElementById("signupBtn");
@@ -126,5 +126,4 @@ function initAuthUI() {
   });
 }
 
-/* ---------------- START ---------------- */
 window.addEventListener("DOMContentLoaded", initAuthUI);
