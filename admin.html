@@ -97,12 +97,21 @@ import {
 import { db } from "./js/firebase.js";
 
 /* =================================================
-   🔐 ROLE PROTECTION (IMPORTANT)
+   🔐 ACCESS CONTROL (ROLE OR KEY)
 ================================================= */
 
 const role = localStorage.getItem("role");
 
-if (role !== "admin") {
+// 🔑 KEY ACCESS PROMPT
+let keyAccess = false;
+const key = prompt("Enter admin key (or cancel to use role):");
+
+if (key === "Wyatt-2") {
+  keyAccess = true;
+}
+
+// 🚫 BLOCK ACCESS IF NEITHER VALID
+if (role !== "admin" && !keyAccess) {
   alert("Access denied: Admins only");
   window.location.href = "index.html";
 }
