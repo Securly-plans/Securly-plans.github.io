@@ -40,11 +40,13 @@ async function signup(username, password) {
     await addDoc(collection(db, "users"), {
       username,
       passwordHash,
+      role: "user", // ✅ IMPORTANT DEFAULT ROLE
       created: Date.now()
     });
 
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
+    localStorage.setItem("role", "user"); // ✅ FIX
 
     window.location.href = "home.html";
 
@@ -77,8 +79,14 @@ async function login(username, password) {
       return;
     }
 
+    // ✅ GET USER DATA (THIS IS THE CRITICAL FIX)
+    const userData = snapshot.docs[0].data();
+
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("username", username);
+
+    // 🔥 FIX: STORE ROLE FROM FIRESTORE
+    localStorage.setItem("role", userData.role || "user");
 
     window.location.href = "home.html";
 
@@ -92,6 +100,7 @@ async function login(username, password) {
 function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("username");
+  localStorage.removeItem("role"); // ✅ FIX
   window.location.href = "index.html";
 }
 
