@@ -10,7 +10,7 @@ import { db } from "./firebase.js";
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
-  const msgUint8 = new TextEncoder().encode(password);
+  const msgUint8 = new TextEncoder().encode(password);A
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
 
