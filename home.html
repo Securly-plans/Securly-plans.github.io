@@ -1,29 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emerald</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emerald</title>
 
-    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
 
-    <!-- 🚨 SECURITY GATE -->
-    <script>
-    (function () {
+<!-- 🚨 SECURITY GATE -->
+<script>
+(function () {
 
-        const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-        if (!isLoggedIn) {
-            window.location.replace("index.html");
-            return;
-        }
+    if (!isLoggedIn) {
+        window.location.replace("index.html");
+        return;
+    }
 
-    })();
-    </script>
+})();
+</script>
+
+<style>
+/* ================= NAVBAR ================= */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #222;
+    padding: 12px 18px;
+    color: white;
+    font-family: Arial;
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.navbar a, .nav-btn {
+    color: white;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #333;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.navbar a:hover, .nav-btn:hover {
+    background: #444;
+}
+
+.admin-link {
+    background: #2196f3;
+}
+
+.logout-btn {
+    background: #f44336;
+}
+</style>
 
 </head>
 
 <body>
+
+<!-- ================= NAVBAR ================= -->
+<div class="navbar">
+
+    <div class="nav-left">
+        <a href="home.html">Home</a>
+    </div>
+
+    <div class="nav-right">
+
+        <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
+
+        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+            Admin
+        </a>
+
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+
+    </div>
+
+</div>
+
+<!-- ================= PAGE CONTENT ================= -->
 
 <header>
     <h1 style="color:powderblue;font-family:verdana;">Home</h1>
@@ -46,13 +111,10 @@
 <p style="color:purple;font-family:verdana;text-align:center;">
     Links:
     <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-
     <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/index.html">
         wyattmonroe2013-hash.github.io
     </a>
-
     <br>
-
     <a href="https://xXm1styXx.github.io/Securly-plans.github.io/index.html">
         xXm1styXx.github.io
     </a>
@@ -66,41 +128,8 @@
     Emerald Games - Alpha 1.5
 </p>
 
-<!-- LOGOUT BUTTON -->
-<div style="text-align:center; margin:30px 0;">
-    <button id="logoutBtn" style="
-        background:#f44336;
-        color:white;
-        border:none;
-        padding:12px 24px;
-        border-radius:8px;
-        font-size:16px;
-        cursor:pointer;
-    ">
-        Logout
-    </button>
-</div>
-
-<!-- 👤 PROFILE BUTTON (ONLY IF LOGGED IN) -->
-<div id="profileContainer" style="text-align:center; margin:10px 0; display:none;">
-    <button id="profileBtn" style="
-        background:#2196f3;
-        color:white;
-        border:none;
-        padding:12px 24px;
-        border-radius:8px;
-        font-size:16px;
-        cursor:pointer;
-    ">
-        Profile
-    </button>
-</div>
-
-<!-- 🔥 ADMIN BUTTON (ONLY SHOWS FOR ADMINS) -->
-<div id="adminContainer" style="text-align:center; margin-top:10px;"></div>
-
 <script>
-/* ---------------- LOGOUT ---------------- */
+/* ================= LOGOUT ================= */
 document.getElementById("logoutBtn").addEventListener("click", () => {
 
     localStorage.removeItem("loggedIn");
@@ -111,41 +140,20 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 
 });
 
-/* ---------------- PROFILE BUTTON ---------------- */
+/* ================= NAVBAR LOGIC ================= */
+
+const role = localStorage.getItem("role");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
+/* PROFILE */
 if (isLoggedIn) {
-    document.getElementById("profileContainer").style.display = "block";
-
-    document.getElementById("profileBtn").addEventListener("click", () => {
-        window.location.href = "profile.html";
-    });
+    document.getElementById("profileLink").style.display = "inline-block";
 }
 
-/* ---------------- ADMIN BUTTON ---------------- */
-(function () {
-
-    const role = localStorage.getItem("role");
-
-    if (role === "admin") {
-        const container = document.getElementById("adminContainer");
-
-        container.innerHTML = `
-            <a href="admin.html" style="
-                background:#2196f3;
-                color:white;
-                padding:12px 20px;
-                border-radius:8px;
-                text-decoration:none;
-                display:inline-block;
-                font-family:Arial;
-            ">
-                Admin Panel
-            </a>
-        `;
-    }
-
-})();
+/* ADMIN */
+if (role === "admin") {
+    document.getElementById("adminLink").style.display = "inline-block";
+}
 </script>
 
 <script src="script.js"></script>
