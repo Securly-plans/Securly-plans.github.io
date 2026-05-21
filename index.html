@@ -64,9 +64,7 @@ button {
   <input id="user" placeholder="Username">
   <input id="pass" type="password" placeholder="Password">
 
-  <button class="login" id="loginBtn">
-    Login
-  </button>
+  <button class="login" id="loginBtn">Login</button>
 
   <button class="signup" id="signupBtn" disabled>
     Please Ask Wyatt Monroe for an Account
@@ -74,36 +72,26 @@ button {
 
 </div>
 
-<!-- Your existing modules -->
+<!-- YOUR MODULES (KEEP THESE) -->
 <script type="module" src="js/firebase.js"></script>
 <script type="module" src="js/auth.js"></script>
 
 <!-- ================= FIREBASE AUTO REDIRECT ================= -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   doc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ---------------- FIREBASE CONFIG ---------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBLghWLth0syJhARDMWiJ7xNwyJAh7MWjQ",
-  authDomain: "securly-plans-main.firebaseapp.com",
-  projectId: "securly-plans-main"
-};
+import { db } from "./js/firebase.js"; // IMPORTANT: ONLY USE EXISTING FIREBASE INSTANCE
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* ---------------- SETTINGS ---------------- */
 const settingsRef = doc(db, "settings", "appConfig");
 const HOME_PAGE = "home.html";
 
 let redirected = false;
 
-/* ---------------- LIVE FIRESTORE LISTENER ---------------- */
+/* LIVE FIRESTORE LISTENER */
 onSnapshot(settingsRef, (snap) => {
 
   const autoRedirect = snap.exists()
@@ -138,7 +126,6 @@ onSnapshot(settingsRef, (snap) => {
     window.location.href = HOME_PAGE;
   }
 });
-
 </script>
 
 </body>
