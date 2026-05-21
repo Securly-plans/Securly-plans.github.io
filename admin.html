@@ -58,6 +58,40 @@ button {
   color: green;
   font-weight: bold;
 }
+
+/* ================= TOAST SYSTEM ================= */
+
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  min-width: 200px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+}
+
+.toast.success { background: #4caf50; }
+.toast.error { background: #f44336; }
+.toast.info { background: #2196f3; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
 </style>
 
 </head>
@@ -65,6 +99,9 @@ button {
 <body>
 
 <h1>Admin Panel</h1>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
 
 <!-- ================= USERS ================= -->
 <div class="box">
@@ -107,6 +144,24 @@ import {
 import { db } from "./js/firebase.js";
 
 /* =================================================
+   🔔 TOAST SYSTEM
+================================================= */
+
+function showToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
+
+/* =================================================
    🔐 ACCESS CONTROL
 ================================================= */
 
@@ -127,24 +182,23 @@ function isAdminAllowed() {
 }
 
 if (!isAdminAllowed()) {
-  alert("Access denied: Admins only");
+  showToast("Access denied", "error");
   window.location.href = "index.html";
 }
 
 /* =================================================
-   🔑 HASH
+   HASH
 ================================================= */
 
 async function hashPassword(password) {
   const msgUint8 = new TextEncoder().encode(password);
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /* =================================================
-   🔥 SETTINGS
+   SETTINGS
 ================================================= */
 
 const settingsRef = doc(db, "settings", "appConfig");
@@ -168,12 +222,13 @@ async function loadSettings() {
       autoRedirect: !current
     }, { merge: true });
 
+    showToast("Settings updated", "success");
     loadSettings();
   };
 }
 
 /* =================================================
-   👤 USERS
+   USERS
 ================================================= */
 
 async function loadUsers() {
@@ -214,8 +269,8 @@ async function loadUsers() {
 
       <br>
 
-      <b>Password (new):</b>
-      <input type="text" id="p-${docSnap.id}" placeholder="Set New Password">
+      <b>Password:</b>
+      <input type="text" id="p-${docSnap.id}" placeholder="New password">
 
       <br>
 
@@ -230,13 +285,15 @@ async function loadUsers() {
   });
 }
 
-/* ---------------- CREATE USER ---------------- */
+/* CREATE */
 window.createUser = async function() {
 
   const username = document.getElementById("newUser").value;
   const password = document.getElementById("newPass").value;
 
-  if (!username || !password) return alert("Fill both fields");
+  if (!username || !password) {
+    return showToast("Fill both fields", "error");
+  }
 
   const passwordHash = await hashPassword(password);
 
@@ -251,10 +308,11 @@ window.createUser = async function() {
   document.getElementById("newUser").value = "";
   document.getElementById("newPass").value = "";
 
+  showToast("User created", "success");
   loadUsers();
 };
 
-/* ---------------- SAVE USER ---------------- */
+/* SAVE */
 window.saveUser = async function(id) {
 
   const username = document.getElementById("u-" + id).value;
@@ -269,33 +327,33 @@ window.saveUser = async function(id) {
 
   await updateDoc(doc(db, "users", id), updateData);
 
+  showToast("User updated", "success");
   loadUsers();
 };
 
-/* ---------------- DELETE USER ---------------- */
+/* DELETE */
 window.deleteUser = async function(id) {
 
   if (!confirm("Delete this user?")) return;
 
   await deleteDoc(doc(db, "users", id));
 
+  showToast("User deleted", "success");
   loadUsers();
 };
 
-/* ---------------- LOCK / UNLOCK ---------------- */
-window.toggleLock = async function(id, currentState) {
+/* LOCK */
+window.toggleLock = async function(id, state) {
 
   await updateDoc(doc(db, "users", id), {
-    locked: !currentState
+    locked: !state
   });
 
+  showToast(state ? "User unlocked" : "User locked", "info");
   loadUsers();
 };
 
-/* =================================================
-   START
-================================================= */
-
+/* START */
 window.addEventListener("DOMContentLoaded", () => {
   loadUsers();
   loadSettings();
