@@ -6,7 +6,6 @@
 <title>Admin Panel</title>
 
 <style>
-
 body {
   font-family: Arial;
   padding: 20px;
@@ -38,6 +37,17 @@ button {
   cursor: pointer;
 }
 
+.toggle-on {
+  background: #4caf50;
+  color: white;
+  border: none;
+}
+
+.toggle-off {
+  background: #f44336;
+  color: white;
+  border: none;
+}
 </style>
 
 </head>
@@ -46,6 +56,7 @@ button {
 
 <h1>Admin Panel</h1>
 
+<!-- ================= USERS ================= -->
 <div class="box">
 
   <h3>Add User</h3>
@@ -57,8 +68,19 @@ button {
 
 </div>
 
+<!-- ================= SETTINGS ================= -->
+<div class="box">
+
+  <h3>System Settings</h3>
+
+  <button id="redirectToggleBtn">Loading...</button>
+
+</div>
+
+<!-- ================= USER LIST ================= -->
 <div id="users"></div>
 
+<!-- ================= FIREBASE ================= -->
 <script type="module">
 
 import {
@@ -67,7 +89,9 @@ import {
   addDoc,
   deleteDoc,
   updateDoc,
-  doc
+  doc,
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -96,7 +120,46 @@ async function hashPassword(password) {
     .join("");
 }
 
-/* ---------------- LOAD USERS ---------------- */
+/* =================================================
+   🔥 AUTO REDIRECT SETTINGS (NEW FEATURE)
+================================================= */
+
+const settingsRef = doc(db, "settings", "appConfig");
+
+const toggleBtn = document.getElementById("redirectToggleBtn");
+
+async function loadSettings() {
+  const snap = await getDoc(settingsRef);
+
+  const enabled = snap.exists()
+    ? snap.data().autoRedirect
+    : false;
+
+  updateToggleUI(enabled);
+}
+
+function updateToggleUI(enabled) {
+  toggleBtn.textContent = enabled
+    ? "Disable Auto Redirect"
+    : "Enable Auto Redirect";
+
+  toggleBtn.className = enabled
+    ? "toggle-on"
+    : "toggle-off";
+
+  toggleBtn.onclick = async () => {
+    await setDoc(settingsRef, {
+      autoRedirect: !enabled
+    }, { merge: true });
+
+    loadSettings();
+  };
+}
+
+/* =================================================
+   👤 USER SYSTEM (UNCHANGED LOGIC)
+================================================= */
+
 async function loadUsers() {
 
   const snapshot = await getDocs(collection(db, "users"));
@@ -170,9 +233,7 @@ window.saveUser = async function(id) {
   const username = document.getElementById("u-" + id).value;
   const newPass = document.getElementById("p-" + id).value;
 
-  const updateData = {
-    username
-  };
+  const updateData = { username };
 
   if (newPass && newPass.trim() !== "") {
     updateData.passwordHash = await hashPassword(newPass);
@@ -199,6 +260,7 @@ window.deleteUser = async function(id) {
 
 /* ---------------- START ---------------- */
 loadUsers();
+loadSettings();
 
 </script>
 
