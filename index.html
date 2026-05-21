@@ -1,46 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Securly Plans</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.box {
+  width: 320px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.login {
+  background: #4caf50;
+  color: white;
+  border: none;
+}
+
+.signup {
+  background: #2196f3;
+  color: white;
+  border: none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+  <h2>Securly Plans</h2>
+
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+
+  <button class="login" id="loginBtn">Login</button>
+
+  <button class="signup" id="signupBtn" disabled>
+    Please Ask Wyatt Monroe for an Account
+  </button>
+
+</div>
+
+<!-- AUTH -->
+<script type="module" src="js/auth.js"></script>
+
+<!-- ================= FIREBASE AUTO REDIRECT ================= -->
 <script type="module">
-import {
-  getFirestore,
-  doc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const settingsRef = doc(db, "settings", "appConfig");
 const HOME_PAGE = "home.html";
+const settingsRef = doc(db, "settings", "appConfig");
 
 let redirected = false;
 
-onSnapshot(settingsRef, (snap) => {
-
-  const autoRedirect = snap.exists()
-    ? snap.data().autoRedirect
-    : false;
-
-  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-  if (redirected) return;
-
-  // ADMIN FORCE REDIRECT
-  if (autoRedirect) {
-    redirected = true;
-    window.location.href = HOME_PAGE;
-    return;
-  }
-
-  // NORMAL LOGIN REDIRECT
-  if (isLoggedIn) {
+function redirectHome() {
+  if (!redirected) {
     redirected = true;
     window.location.href = HOME_PAGE;
   }
+}
 
-}, (error) => {
-  console.error(error);
+function isLoggedIn() {
+  return localStorage.getItem("loggedIn") === "true";
+}
 
-  if (localStorage.getItem("loggedIn") === "true" && !redirected) {
-    redirected = true;
-    window.location.href = HOME_PAGE;
+try {
+
+  onSnapshot(settingsRef, (snap) => {
+
+    const autoRedirect = snap.exists()
+      ? snap.data().autoRedirect
+      : false;
+
+    if (redirected) return;
+
+    // CASE 1: Admin force redirect
+    if (autoRedirect) {
+      redirectHome();
+      return;
+    }
+
+    // CASE 2: Normal login redirect
+    if (isLoggedIn()) {
+      redirectHome();
+    }
+
+  }, (error) => {
+
+    console.error("Firestore listener error:", error);
+
+    // SAFE FALLBACK (never leaves user stuck)
+    if (isLoggedIn()) {
+      redirectHome();
+    }
+
+  });
+
+} catch (e) {
+
+  console.error("Fatal Firebase error:", e);
+
+  if (isLoggedIn()) {
+    redirectHome();
   }
-});
+}
+
 </script>
+
+</body>
+</html>
