@@ -2,183 +2,280 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald</title>
-
-<link rel="stylesheet" href="style.css">
-
-<!-- 🚨 SECURITY GATE -->
-<script>
-(function () {
-    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-    if (!isLoggedIn) {
-        window.location.replace("index.html");
-    }
-})();
-</script>
+<title>Admin Panel</title>
 
 <style>
-.navbar {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#222;
-    padding:12px 18px;
-    color:white;
-    font-family:Arial;
-}
+body{font-family:Arial;padding:20px;background:#f4f4f4;}
+.box{background:white;padding:15px;border-radius:10px;margin-bottom:15px;}
+.user{background:#eee;padding:10px;margin:10px 0;border-radius:8px;}
+input,select{padding:8px;margin:5px;}
+button{padding:8px;margin:5px;cursor:pointer;}
 
-.nav-left, .nav-right {
-    display:flex;
-    gap:10px;
-    align-items:center;
-}
+.locked{color:red;font-weight:bold;}
+.unlocked{color:green;font-weight:bold;}
 
-.navbar a, .nav-btn {
-    color:white;
-    text-decoration:none;
-    padding:8px 12px;
-    border-radius:6px;
-    background:#333;
-    border:none;
-    cursor:pointer;
-    font-size:14px;
-}
-
-.admin-link { background:#2196f3; }
-.logout-btn { background:#f44336; }
-
-.username-badge {
-    padding:6px 10px;
-    border-radius:6px;
-    background:#444;
-    font-size:14px;
-}
+#toastContainer{position:fixed;top:20px;right:20px;z-index:9999;}
+.toast{padding:10px;border-radius:6px;color:white;margin-bottom:8px;}
+.toast.success{background:#4caf50;}
+.toast.error{background:#f44336;}
+.toast.info{background:#2196f3;}
 </style>
-
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
+<h1>Admin Panel</h1>
 
-    <div class="nav-left">
-        <a href="home.html">Home</a>
-    </div>
+<div id="toastContainer"></div>
 
-    <div class="nav-right">
-
-        <span id="usernameDisplay" class="username-badge"></span>
-
-        <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
-
-        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
-
-        <!-- ✅ CHAT BUTTON ADDED -->
-        <button id="chatBtn" class="nav-btn">Chat</button>
-
-        <button id="logoutBtn" class="logout-btn">Logout</button>
-    </div>
+<!-- USERS -->
+<div class="box">
+  <h3>Add User</h3>
+  <input id="newUser" placeholder="Username">
+  <input id="newPass" type="password" placeholder="Password">
+  <button onclick="createUser()">Add User</button>
 </div>
 
-<!-- PAGE -->
-<header>
-    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
-</header>
+<!-- SETTINGS -->
+<div class="box">
+  <h3>System Settings</h3>
+  <button id="redirectToggleBtn">Loading...</button>
+</div>
 
-<h2 style="color:green;font-family:verdana;">Games</h2>
+<!-- LOGS -->
+<div class="box">
+  <h3>Admin Logs</h3>
+  <button onclick="openLog()">View Logs</button>
+  <div id="logBox" style="display:none;"></div>
+</div>
 
-<main id="gameGrid" class="game-grid"></main>
-<main id="videoGrid" class="video-grid"></main>
+<!-- ================= CHAT MONITOR (NEW) ================= -->
+<div class="box">
+  <h3>Chat Monitoring</h3>
 
-<h1 style="color:purple;font-family:verdana;text-align:center;">
-NEW LINKS IN PROGRESS
-</h1>
+  <button onclick="loadChats()">Load Chats</button>
 
-<p style="color:green;font-family:verdana;text-align:center;">
-I am making new links if this gets blocked, just for you guys!
-</p>
+  <div id="chatList" style="margin-top:10px;"></div>
 
-<p style="color:purple;font-family:verdana;text-align:center;">
-Links:
-<a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-</p>
+  <div id="chatViewer" style="margin-top:10px;display:none;"></div>
+</div>
 
-<p style="color:yellow;font-family:verdana;text-align:center;">
-Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-</p>
+<!-- USERS -->
+<div id="users"></div>
 
-<p style="color:green;font-family:verdana;text-align:center;">
-Emerald Games - Alpha 1.5
-</p>
-
-<!-- LOGOUT + NAVBAR -->
-<script>
-document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.clear();
-    window.location.replace("index.html");
-});
-
-const role = localStorage.getItem("role");
-const username = localStorage.getItem("username");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-const usernameDisplay = document.getElementById("usernameDisplay");
-if (username && isLoggedIn) {
-    usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
-}
-
-if (isLoggedIn) {
-    document.getElementById("profileLink").style.display = "inline-block";
-}
-
-if (role === "admin") {
-    document.getElementById("adminLink").style.display = "inline-block";
-}
-</script>
-
-<!-- ================= CHAT SYSTEM V1 (FIXED WORKING CORE) ================= -->
 <script type="module">
 import {
-    collection,
-    addDoc,
-    query,
-    where,
-    getDocs,
-    serverTimestamp
+  collection,getDocs,addDoc,deleteDoc,updateDoc,doc,getDoc,setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* ---------------- OPEN CHAT UI ---------------- */
-document.getElementById("chatBtn").addEventListener("click", async () => {
+/* TOAST */
+function toast(msg,type="info"){
+  const c=document.getElementById("toastContainer");
+  const d=document.createElement("div");
+  d.className="toast "+type;
+  d.textContent=msg;
+  c.appendChild(d);
+  setTimeout(()=>d.remove(),3000);
+}
 
-    const otherUser = prompt("Enter username to chat with:");
-    if (!otherUser) return;
+/* ADMIN CHECK */
+if(localStorage.getItem("role")!=="admin"){
+  alert("Access denied");
+  location.href="index.html";
+}
 
-    const me = localStorage.getItem("username");
+/* LOG */
+async function log(action){
+  await addDoc(collection(db,"adminLogs"),{
+    action,
+    user:localStorage.getItem("username"),
+    time:Date.now()
+  });
+}
 
-    if (!me) return alert("Not logged in");
+/* ================= USERS (UNCHANGED) ================= */
 
-    /* create consistent chat id (DM system) */
-    const chatId = [me, otherUser].sort().join("_");
+async function loadUsers(){
+  const snap=await getDocs(collection(db,"users"));
+  const box=document.getElementById("users");
+  box.innerHTML="";
 
-    const msg = prompt("Message:");
-    if (!msg) return;
+  snap.forEach(d=>{
+    const data=d.data();
+    const locked=data.locked;
 
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-        from: me,
-        text: msg,
-        time: serverTimestamp()
-    });
+    const div=document.createElement("div");
+    div.className="user";
 
-    alert("Message sent!");
-});
+    div.innerHTML=`
+      <b>ID:</b> ${d.id}<br>
+
+      <span class="${locked?'locked':'unlocked'}">
+        ${locked?"🔒 Locked":"🔓 Active"}
+      </span><br>
+
+      Username:<br>
+      <input id="u-${d.id}" value="${data.username}"><br>
+
+      Role:<br>
+      <select id="r-${d.id}">
+        <option value="user" ${data.role==="user"?"selected":""}>User</option>
+        <option value="admin" ${data.role==="admin"?"selected":""}>Admin</option>
+      </select><br>
+
+      Password:<br>
+      <input id="p-${d.id}" placeholder="new password"><br>
+
+      <button onclick="saveUser('${d.id}')">Save</button>
+      <button onclick="deleteUser('${d.id}')">Delete</button>
+      <button onclick="toggleLock('${d.id}',${locked})">
+        ${locked?"Unlock":"Lock"}
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+window.createUser=async()=>{
+  await addDoc(collection(db,"users"),{
+    username:newUser.value,
+    passwordHash:"",
+    role:"user",
+    locked:false,
+    created:Date.now()
+  });
+
+  toast("User created","success");
+  log("Created user");
+  loadUsers();
+};
+
+window.saveUser=async(id)=>{
+  const u=document.getElementById("u-"+id).value;
+  const r=document.getElementById("r-"+id).value;
+  const p=document.getElementById("p-"+id).value;
+
+  const data={username:u,role:r};
+  if(p) data.passwordHash=p;
+
+  await updateDoc(doc(db,"users",id),data);
+
+  toast("Saved","success");
+  log("Updated "+id);
+  loadUsers();
+};
+
+window.deleteUser=async(id)=>{
+  await deleteDoc(doc(db,"users",id));
+  toast("Deleted","info");
+  log("Deleted "+id);
+  loadUsers();
+};
+
+window.toggleLock=async(id,state)=>{
+  await updateDoc(doc(db,"users",id),{locked:!state});
+  toast("Updated","info");
+  log("Lock toggle "+id);
+  loadUsers();
+};
+
+/* ================= LOGS ================= */
+
+window.openLog=async()=>{
+  const box=document.getElementById("logBox");
+
+  if(box.style.display==="block"){
+    box.style.display="none";
+    return;
+  }
+
+  const snap=await getDocs(collection(db,"adminLogs"));
+
+  box.innerHTML="<h4>Logs</h4>";
+
+  snap.forEach(d=>{
+    const x=d.data();
+    box.innerHTML+=`<div>${x.user}: ${x.action}</div>`;
+  });
+
+  box.style.display="block";
+};
+
+/* ================= CHAT MONITOR (NEW) ================= */
+
+window.loadChats = async function() {
+
+  const snap = await getDocs(collection(db,"chats"));
+  const list = document.getElementById("chatList");
+
+  list.innerHTML = "<h4>All Chats</h4>";
+
+  snap.forEach(d=>{
+    const data = d.data();
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>Chat ID:</b> ${d.id}<br>
+      <b>Users:</b> ${(data.participants || []).join(", ")}<br>
+      <button onclick="viewChat('${d.id}')">View</button>
+      <button onclick="deleteChat('${d.id}')">Delete Chat</button>
+    `;
+
+    list.appendChild(div);
+  });
+};
+
+window.viewChat = async function(chatId) {
+
+  const snap = await getDoc(doc(db,"chats",chatId));
+  const box = document.getElementById("chatViewer");
+
+  const data = snap.data();
+
+  box.style.display = "block";
+  box.innerHTML = `<h4>Chat: ${chatId}</h4>`;
+
+  (data.messages || []).forEach((m,i)=>{
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <b>${m.from}:</b> ${m.text}
+      <button onclick="deleteMsg('${chatId}',${i})">X</button>
+    `;
+    box.appendChild(div);
+  });
+};
+
+window.deleteMsg = async function(chatId,index) {
+
+  const ref = doc(db,"chats",chatId);
+  const snap = await getDoc(ref);
+  const data = snap.data();
+
+  data.messages.splice(index,1);
+
+  await updateDoc(ref,{
+    messages:data.messages
+  });
+
+  toast("Message deleted","info");
+  viewChat(chatId);
+};
+
+window.deleteChat = async function(chatId) {
+  await deleteDoc(doc(db,"chats",chatId));
+  toast("Chat deleted","info");
+  loadChats();
+};
+
+/* INIT */
+window.addEventListener("DOMContentLoaded",loadUsers);
+
 </script>
-
-<script src="script.js"></script>
 
 </body>
 </html>
