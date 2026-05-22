@@ -7,19 +7,16 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- ================= SECURITY GATE (FIXED) ================= -->
+<!-- 🚨 SECURITY GATE (FIXED WITHOUT BREAKING FLOW) -->
 <script>
 (function () {
 
     const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-    const bypass = localStorage.getItem("bypassGate") === "true";
 
-    if (!isLoggedIn && !bypass) {
+    // ONLY block if not logged in
+    if (!isLoggedIn) {
         window.location.replace("index.html");
     }
-
-    // remove bypass after use
-    localStorage.removeItem("bypassGate");
 
 })();
 </script>
@@ -28,30 +25,38 @@
 .navbar {
     display:flex;
     justify-content:space-between;
+    align-items:center;
     background:#222;
-    padding:12px;
+    padding:12px 18px;
     color:white;
     font-family:Arial;
 }
 
-.nav-right a, .nav-right button {
-    margin-left:10px;
-    padding:8px 12px;
-    background:#333;
+.nav-left, .nav-right {
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.navbar a, .nav-btn {
     color:white;
-    border:none;
-    border-radius:6px;
     text-decoration:none;
+    padding:8px 12px;
+    border-radius:6px;
+    background:#333;
+    border:none;
     cursor:pointer;
+    font-size:14px;
 }
 
 .admin-link { background:#2196f3; }
 .logout-btn { background:#f44336; }
 
 .username-badge {
-    background:#444;
     padding:6px 10px;
     border-radius:6px;
+    background:#444;
+    font-size:14px;
 }
 </style>
 
@@ -59,6 +64,7 @@
 
 <body>
 
+<!-- ================= NAVBAR (UNCHANGED STRUCTURE) ================= -->
 <div class="navbar">
 
     <div class="nav-left">
@@ -78,45 +84,67 @@
     </div>
 </div>
 
+<!-- ================= PAGE CONTENT (UNCHANGED) ================= -->
+
 <header>
-    <h1 style="color:powderblue;">Home</h1>
-    <input id="searchBar" placeholder="Search games...">
+    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
+    <input type="text" id="searchBar" placeholder="Search games...">
 </header>
 
-<h2 style="color:green;">Games</h2>
+<h2 style="color:green;font-family:verdana;">Games</h2>
 
-<main id="gameGrid"></main>
-<main id="videoGrid"></main>
+<main id="gameGrid" class="game-grid"></main>
+<main id="videoGrid" class="video-grid"></main>
 
-<h1 style="text-align:center;color:purple;">NEW LINKS IN PROGRESS</h1>
+<h1 style="color:purple;font-family:verdana;text-align:center;">
+    NEW LINKS IN PROGRESS
+</h1>
 
-<p style="text-align:center;color:green;">
-  I am making new links if this gets blocked.
+<p style="color:green;font-family:verdana;text-align:center;">
+    I am making new links if this gets blocked, just for you guys!
 </p>
 
-<p style="text-align:center;color:purple;">
+<p style="color:purple;font-family:verdana;text-align:center;">
     Links:
-    <a href="https://securly-plans.github.io/">Main</a>
+    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
 </p>
 
-<script>
-/* ================= LOGOUT ================= */
-document.getElementById("logoutBtn").onclick = () => {
-    localStorage.clear();
-    window.location.replace("index.html");
-};
+<p style="color:yellow;font-family:verdana;text-align:center;">
+    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+</p>
 
-/* ================= NAVBAR ================= */
+<p style="color:green;font-family:verdana;text-align:center;">
+    Emerald Games - Alpha 1.5
+</p>
+
+<!-- ================= SCRIPT (ONLY FIXES, NO UI CHANGES) ================= -->
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+
+    window.location.replace("index.html");
+});
+
+/* NAVBAR LOGIC (UNCHANGED FUNCTIONALLY) */
 const role = localStorage.getItem("role");
 const username = localStorage.getItem("username");
+const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-document.getElementById("usernameDisplay").textContent =
-    username ? (role === "admin" ? "🛡 " : "👤 ") + username : "";
+/* Username display */
+const usernameDisplay = document.getElementById("usernameDisplay");
+if (username && isLoggedIn) {
+    usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
+}
 
-if (localStorage.getItem("loggedIn") === "true") {
+/* Profile */
+if (isLoggedIn) {
     document.getElementById("profileLink").style.display = "inline-block";
 }
 
+/* Admin */
 if (role === "admin") {
     document.getElementById("adminLink").style.display = "inline-block";
 }
