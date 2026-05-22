@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <title>Ragdoll Hit</title>
+    
+    <!-- 1. MobileDetect and Poki Mocks -->
+    <script src="MobileDetect.js"></script>
+    <script>
+        // Emergency fallback for MobileDetect
+        if (typeof MobileDetect === 'undefined') {
+            window.MobileDetect = function() { return { mobile: function() { return false; } }; };
+        }
+
+        // 2. MOCK POKI SDK: Prevents "initPokiBridge is not a function" error
+        window.PokiSDK = {
+            init: function() { return Promise.resolve(); },
+            gameLoadingStart: function() {},
+            gameLoadingFinished: function() {},
+            gameplayStart: function() {},
+            gameplayStop: function() {},
+            commercialBreak: function() { return Promise.resolve(); },
+            rewardedBreak: function() { return Promise.resolve(true); },
+            displayAd: function() { return Promise.resolve(); },
+            shareableURL: function() { return window.location.href; },
+            getURLParam: function() { return ""; }
+        };
+        // Specific internal bridge function the error mentioned
+        window.initPokiBridge = function() { console.log("Poki Bridge Mocked"); };
+    </script>
+    
+    <style>
+        @font-face { font-family: 'TorusB'; src: url('torus-bold-webfont.woff2') format('woff2'); font-weight: 700; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #231F20; }
+        #loading-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: url('back.jpg'); background-size: cover; background-position: center; z-index: 99; transition: opacity 0.6s; }
+        #loader-content { display: flex; flex-direction: column; align-items: center; background: rgba(35, 31, 32, 0.85); padding: 35px; border-radius: 10px; min-width: 400px; }
+        #loader-status { font-family: 'TorusB', sans-serif; font-size: 18px; color: #ffffff; margin-bottom: 15px; }
+        #progress-wrap { width: 350px; height: 14px; background: #001c00; border-radius: 7px; overflow: hidden; border: 1px solid #007300; }
+        #progress-fill { width: 0%; height: 100%; background: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); transition: width 0.2s ease-out; }
+        #unity-canvas { width: 100vw; height: 100vh; background: #231f20; }
+    </style>
+</head>
+<body>
+    <div id="loading-cover">
+        <div id="loader-content">
+            <img src="logo.png" style="max-width: 200px; margin-bottom: 25px;" onerror="this.style.display='none'">
+            <div id="loader-status">Initializing Game...</div>
+            <div id="progress-wrap"><div id="progress-fill"></div></div>
+        </div>
+    </div>
+
+    <canvas id="unity-canvas"></canvas>
+
+    <script src="Build/v84.loader.js"></script>
+
+    <script>
+        const statusText = document.querySelector("#loader-status");
+        const progressFill = document.querySelector("#progress-fill");
+        const canvas = document.querySelector("#unity-canvas");
+
+        const wasmParts = [
+            "Build/f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.001",
+            "Build/f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.002"
+        ];
+
+        async function initGame() {
+            try {
+                const buffers = [];
+                for (let i = 0; i < wasmParts.length; i++) {
+                    statusText.innerHTML = `Downloading Engine (${i + 1}/2)...`;
+                    const response = await fetch(wasmParts[i]);
+                    if (!response.ok) throw new Error("File not found");
+                    buffers.push(await response.arrayBuffer());
+                    progressFill.style.width = ((i + 1) / 2 * 50) + "%"; 
+                }
+
+                const blobUrl = URL.createObjectURL(new Blob(buffers, { type: "application/wasm" }));
+
+                const config = {
+                    dataUrl: "Build/959bf1c60308f1c34bf072f43c3c17d4.data.unityweb",
+                    frameworkUrl: "Build/3276aa7c11496bcc48eb6908f112f0c3.js.unityweb",
+                    codeUrl: blobUrl,
+                    companyName: "Ericetto",
+                    productName: "Ragdoll Hit",
+                    productVersion: "0.1",
+                };
+
+                createUnityInstance(canvas, config, (progress) => {
+                    progressFill.style.width = (50 + (progress * 50)) + "%";
+                }).then(() => {
+                    document.querySelector("#loading-cover").style.opacity = "0";
+                    setTimeout(() => {
+                        document.querySelector("#loading-cover").style.display = "none";
+                        URL.revokeObjectURL(blobUrl);
+                    }, 600);
+                });
+
+            } catch (err) {
+                statusText.innerHTML = "Launch Failed";
+                console.error(err);
+            }
+        }
+        initGame();
+    </script>
+</body>
+</html>
