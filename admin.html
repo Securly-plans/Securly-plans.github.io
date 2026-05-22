@@ -1,347 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-
 <meta charset="UTF-8">
-<title>Admin Panel</title>
-
-<style>
-body {
-  font-family: Arial;
-  padding: 20px;
-  background: #f4f4f4;
-}
-
-.box {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-.user {
-  background: #eee;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
-}
-
-input {
-  padding: 8px;
-  margin: 5px;
-}
-
-button {
-  margin: 5px;
-  padding: 8px;
-  cursor: pointer;
-}
-
-.toggle-on {
-  background: #4caf50;
-  color: white;
-  border: none;
-}
-
-.toggle-off {
-  background: #f44336;
-  color: white;
-  border: none;
-}
-
-.locked {
-  color: red;
-  font-weight: bold;
-}
-
-.unlocked {
-  color: green;
-  font-weight: bold;
-}
-
-/* ================= TOAST SYSTEM ================= */
-
-#toastContainer {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
-}
-
-.toast {
-  padding: 12px 14px;
-  border-radius: 8px;
-  color: white;
-  font-size: 14px;
-  min-width: 200px;
-  animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
-}
-
-.toast.success { background: #4caf50; }
-.toast.error { background: #f44336; }
-.toast.info { background: #2196f3; }
-
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes fadeOut {
-  to { opacity: 0; transform: translateX(100%); }
-}
-</style>
-
+<title>Admin</title>
 </head>
 
 <body>
 
 <h1>Admin Panel</h1>
 
-<div id="toastContainer"></div>
+<button onclick="viewLogs()">View Logs</button>
 
-<!-- ================= USERS ================= -->
-<div class="box">
+<div id="logs"></div>
 
-  <h3>Add User</h3>
-
-  <input id="newUser" placeholder="Username">
-  <input id="newPass" type="password" placeholder="Password">
-
-  <button onclick="createUser()">Add User</button>
-
-</div>
-
-<!-- ================= SETTINGS ================= -->
-<div class="box">
-
-  <h3>System Settings</h3>
-
-  <button id="redirectToggleBtn">Loading...</button>
-
-</div>
-
-<!-- ================= USER LIST ================= -->
 <div id="users"></div>
 
-<!-- ================= FIREBASE ================= -->
 <script type="module">
-
 import {
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  getDoc,
-  setDoc
+  collection, getDocs, addDoc, deleteDoc, updateDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* =================================================
-   TOAST SYSTEM
-================================================= */
-
-function showToast(message, type = "info") {
-  const container = document.getElementById("toastContainer");
-
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerText = message;
-
-  container.appendChild(toast);
-
-  setTimeout(() => toast.remove(), 3500);
-}
-
-/* =================================================
-   🔐 ROLE ACCESS ONLY (NO KEY SYSTEM)
-================================================= */
-
 const role = localStorage.getItem("role");
+if (role !== "admin") location = "index.html";
 
-if (role !== "admin") {
-  showToast("Access denied", "error");
-  window.location.href = "index.html";
-}
-
-/* =================================================
-   HASH
-================================================= */
-
-async function hashPassword(password) {
-  const msgUint8 = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-/* =================================================
-   SETTINGS
-================================================= */
-
-const settingsRef = doc(db, "settings", "appConfig");
-const toggleBtn = document.getElementById("redirectToggleBtn");
-
-async function loadSettings() {
-  const snap = await getDoc(settingsRef);
-  const enabled = snap.exists() ? snap.data().autoRedirect : false;
-
-  toggleBtn.textContent = enabled
-    ? "Disable Auto Redirect"
-    : "Enable Auto Redirect";
-
-  toggleBtn.className = enabled ? "toggle-on" : "toggle-off";
-
-  toggleBtn.onclick = async () => {
-    const snap = await getDoc(settingsRef);
-    const current = snap.exists() ? snap.data().autoRedirect : false;
-
-    await setDoc(settingsRef, {
-      autoRedirect: !current
-    }, { merge: true });
-
-    showToast("Settings updated", "success");
-    loadSettings();
-  };
-}
-
-/* =================================================
-   USERS
-================================================= */
-
-async function loadUsers() {
-
-  const snapshot = await getDocs(collection(db, "users"));
-
-  const container = document.getElementById("users");
-  container.innerHTML = "";
-
-  snapshot.forEach((docSnap) => {
-
-    const data = docSnap.data();
-    const isLocked = data.locked === true;
-
-    const div = document.createElement("div");
-    div.className = "user";
-
-    div.innerHTML = `
-      <b>ID:</b> ${docSnap.id}<br>
-
-      <b>Status:</b>
-      <span class="${isLocked ? "locked" : "unlocked"}">
-        ${isLocked ? "🔒 Locked" : "🔓 Active"}
-      </span>
-
-      <br><br>
-
-      <b>Username:</b>
-      <input value="${data.username}" id="u-${docSnap.id}">
-
-      <br>
-
-      <b>Role:</b>
-      <select id="r-${docSnap.id}">
-        <option value="user" ${data.role === "user" ? "selected" : ""}>User</option>
-        <option value="admin" ${data.role === "admin" ? "selected" : ""}>Admin</option>
-      </select>
-
-      <br>
-
-      <b>Password:</b>
-      <input type="text" id="p-${docSnap.id}" placeholder="New password">
-
-      <br>
-
-      <button onclick="saveUser('${docSnap.id}')">Save</button>
-      <button onclick="deleteUser('${docSnap.id}')">Delete</button>
-      <button onclick="toggleLock('${docSnap.id}', ${isLocked})">
-        ${isLocked ? "Unlock" : "Lock"}
-      </button>
-    `;
-
-    container.appendChild(div);
+/* LOGGING */
+async function log(action, target) {
+  await addDoc(collection(db, "adminLogs"), {
+    action,
+    targetUser: target,
+    performedBy: localStorage.getItem("username"),
+    timestamp: Date.now()
   });
 }
 
-/* CREATE */
-window.createUser = async function() {
+/* VIEW LOGS */
+window.viewLogs = async () => {
+  const snap = await getDocs(collection(db, "adminLogs"));
 
-  const username = document.getElementById("newUser").value;
-  const password = document.getElementById("newPass").value;
+  const box = document.getElementById("logs");
+  box.innerHTML = "";
 
-  if (!username || !password) {
-    return showToast("Fill both fields", "error");
-  }
-
-  const passwordHash = await hashPassword(password);
-
-  await addDoc(collection(db, "users"), {
-    username,
-    passwordHash,
-    role: "user",
-    locked: false,
-    created: Date.now()
+  snap.forEach(d => {
+    const x = d.data();
+    box.innerHTML += `<p>${x.action} → ${x.targetUser}</p>`;
   });
-
-  document.getElementById("newUser").value = "";
-  document.getElementById("newPass").value = "";
-
-  showToast("User created", "success");
-  loadUsers();
 };
-
-/* SAVE */
-window.saveUser = async function(id) {
-
-  const username = document.getElementById("u-" + id).value;
-  const role = document.getElementById("r-" + id).value;
-  const newPass = document.getElementById("p-" + id).value;
-
-  const updateData = { username, role };
-
-  if (newPass) {
-    updateData.passwordHash = await hashPassword(newPass);
-  }
-
-  await updateDoc(doc(db, "users", id), updateData);
-
-  showToast("User updated", "success");
-  loadUsers();
-};
-
-/* DELETE */
-window.deleteUser = async function(id) {
-
-  if (!confirm("Delete this user?")) return;
-
-  await deleteDoc(doc(db, "users", id));
-
-  showToast("User deleted", "success");
-  loadUsers();
-};
-
-/* LOCK */
-window.toggleLock = async function(id, state) {
-
-  await updateDoc(doc(db, "users", id), {
-    locked: !state
-  });
-
-  showToast(state ? "User unlocked" : "User locked", "info");
-  loadUsers();
-};
-
-/* START */
-window.addEventListener("DOMContentLoaded", () => {
-  loadUsers();
-  loadSettings();
-});
-
 </script>
 
 </body>
