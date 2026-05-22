@@ -136,11 +136,66 @@ if (role === "admin") {
 }
 </script>
 
-<!-- ================= CHAT ADDITION (ONLY ADDITION) ================= -->
+<!-- ================= CHAT SYSTEM (ADDED ONLY) ================= -->
 <script type="module">
-import { getOrCreateDM, sendMessage } from "./auth.js";
+import {
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* quick test chat function */
+import { db } from "./js/firebase.js";
+
+const me = localStorage.getItem("username");
+
+/* CREATE CHAT ID */
+function getChatId(a, b) {
+    return [a, b].sort().join("_");
+}
+
+/* GET OR CREATE DM */
+async function getOrCreateDM(otherUser) {
+
+    if (!me || !otherUser) return null;
+
+    const chatId = getChatId(me, otherUser);
+    const ref = doc(db, "chats", chatId);
+
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        await setDoc(ref, {
+            type: "dm",
+            participants: [me, otherUser],
+            messages: [],
+            created: Date.now(),
+            updated: Date.now()
+        });
+    }
+
+    return chatId;
+}
+
+/* SEND MESSAGE */
+async function sendMessage(chatId, text) {
+
+    if (!chatId || !text) return;
+
+    const ref = doc(db, "chats", chatId);
+
+    await updateDoc(ref, {
+        messages: arrayUnion({
+            from: me,
+            text,
+            time: Date.now()
+        }),
+        updated: Date.now()
+    });
+}
+
+/* GLOBAL CHAT HOOK */
 window.startChat = async function(otherUser) {
     const chatId = await getOrCreateDM(otherUser);
     const msg = prompt("Message:");
