@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Chat</title>
+
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px; }
+
+.container {
+  max-width: 700px;
+  margin: auto;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+#messages {
+  height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.msg {
+  margin: 5px 0;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.me { background: #d1f5d3; }
+.other { background: #eee; }
+
+input,button {
+  padding: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Chat</h2>
+
+  <input id="toUser" placeholder="Chat with user (username)">
+  <button onclick="openChat()">Open Chat</button>
+
+  <div id="messages"></div>
+
+  <input id="msgInput" placeholder="Message...">
+  <button onclick="sendMsg()">Send</button>
+</div>
+
+<script type="module">
+import {
+  collection, doc, getDoc, setDoc, updateDoc, arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./js/firebase.js";
+
+const me = localStorage.getItem("username");
+
+let currentChatId = null;
+
+/* CREATE CHAT ID (consistent ordering) */
+function getChatId(a,b){
+  return [a,b].sort().join("_");
+}
+
+/* OPEN CHAT */
+window.openChat = async function() {
+
+  const other = document.getElementById("toUser").value.trim();
+  if (!other) return;
+
+  currentChatId = getChatId(me, other);
+
+  const ref = doc(db,"chats",currentChatId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref,{
+      participants:[me,other],
+      messages:[],
+      updated:Date.now()
+    });
+  }
+
+  loadMessages();
+};
+
+/* LOAD */
+async function loadMessages(){
+
+  if (!currentChatId) return;
+
+  const ref = doc(db,"chats",currentChatId);
+  const snap = await getDoc(ref);
+
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  const data = snap.data();
+  if (!data) return;
+
+  data.messages.forEach(m=>{
+    const div = document.createElement("div");
+    div.className = "msg " + (m.from===me?"me":"other");
+    div.textContent = m.from + ": " + m.text;
+    box.appendChild(div);
+  });
+
+  box.scrollTop = box.scrollHeight;
+}
+
+/* SEND */
+window.sendMsg = async function(){
+
+  const text = document.getElementById("msgInput").value;
+  if (!text || !currentChatId) return;
+
+  const ref = doc(db,"chats",currentChatId);
+
+  await updateDoc(ref,{
+    messages: arrayUnion({
+      from: me,
+      text,
+      time: Date.now()
+    }),
+    updated: Date.now()
+  });
+
+  document.getElementById("msgInput").value = "";
+  loadMessages();
+};
+
+/* LIVE REFRESH */
+setInterval(loadMessages,2000);
+</script>
+
+</body>
+</html>
