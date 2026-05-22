@@ -57,14 +57,14 @@
   },
 {
     "id": 9,
-    "title": "Ragdoll Archers: (May Work.)",
+    "title": "Ragdoll Archers",
     "thumbnail": "./assets/images/alone.webp",
     "category": "Action",
     "url": "./games/Ragdoll-Archers/index.html"
   },
 {
     "id": 10,
-    "title": "Ragdoll Hit",
+    "title": "Ragdoll Hit (May Work.)",
     "thumbnail": "./games/Ragdoll-Hit/3c892779be9dabb3589586c83ad3eeed.png",
     "category": "Action",
     "url": "./games/Ragdoll-Hit/index.html"
