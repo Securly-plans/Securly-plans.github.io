@@ -24,11 +24,10 @@ button{padding:8px;margin:5px;cursor:pointer;}
 
 <body>
 
-<h1 style="text-align:center;color:red;font-family:Courier New;">Admin Panel</h1>
+<h1>Admin Panel</h1>
 
 <div id="toastContainer"></div>
 
-<!-- USERS -->
 <div class="box">
   <h3>Add User</h3>
   <input id="newUser" placeholder="Username">
@@ -36,41 +35,36 @@ button{padding:8px;margin:5px;cursor:pointer;}
   <button onclick="createUser()">Add User</button>
 </div>
 
-<!-- SETTINGS -->
 <div class="box">
   <h3>System Settings</h3>
   <button id="redirectToggleBtn">Loading...</button>
 </div>
 
-<!-- LOGS -->
 <div class="box">
   <h3>Admin Logs</h3>
   <button onclick="openLog()">View Logs</button>
   <div id="logBox" style="display:none;"></div>
 </div>
 
-<!-- ================= CHAT MONITOR (NEW) ================= -->
-<div class="box">
-  <h3>Chat Monitoring</h3>
-
-  <button onclick="loadChats()">Load Chats</button>
-
-  <div id="chatList" style="margin-top:10px;"></div>
-
-  <div id="chatViewer" style="margin-top:10px;display:none;"></div>
-</div>
-
-<!-- USERS -->
 <div id="users"></div>
 
 <script type="module">
+
 import {
   collection,getDocs,addDoc,deleteDoc,updateDoc,doc,getDoc,setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* TOAST */
+/* ================= HASH PASSWORD (FIX) ================= */
+async function hashPassword(password) {
+  const msgUint8 = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* ================= TOAST ================= */
 function toast(msg,type="info"){
   const c=document.getElementById("toastContainer");
   const d=document.createElement("div");
@@ -80,13 +74,13 @@ function toast(msg,type="info"){
   setTimeout(()=>d.remove(),3000);
 }
 
-/* ADMIN CHECK */
+/* ================= ADMIN CHECK ================= */
 if(localStorage.getItem("role")!=="admin"){
   alert("Access denied");
   location.href="index.html";
 }
 
-/* LOG */
+/* ================= LOG ================= */
 async function log(action){
   await addDoc(collection(db,"adminLogs"),{
     action,
@@ -95,8 +89,7 @@ async function log(action){
   });
 }
 
-/* ================= USERS (UNCHANGED) ================= */
-
+/* ================= USERS ================= */
 async function loadUsers(){
   const snap=await getDocs(collection(db,"users"));
   const box=document.getElementById("users");
@@ -139,10 +132,17 @@ async function loadUsers(){
   });
 }
 
+/* ================= CREATE USER (HASH FIX) ================= */
 window.createUser=async()=>{
+
+  const username=newUser.value;
+  const password=newPass.value;
+
+  const passwordHash = await hashPassword(password); // ✅ FIXED
+
   await addDoc(collection(db,"users"),{
-    username:newUser.value,
-    passwordHash:"",
+    username,
+    passwordHash,
     role:"user",
     locked:false,
     created:Date.now()
@@ -153,13 +153,18 @@ window.createUser=async()=>{
   loadUsers();
 };
 
+/* ================= SAVE USER (HASH FIX) ================= */
 window.saveUser=async(id)=>{
+
   const u=document.getElementById("u-"+id).value;
   const r=document.getElementById("r-"+id).value;
   const p=document.getElementById("p-"+id).value;
 
   const data={username:u,role:r};
-  if(p) data.passwordHash=p;
+
+  if(p){
+    data.passwordHash = await hashPassword(p); // ✅ FIXED
+  }
 
   await updateDoc(doc(db,"users",id),data);
 
@@ -168,6 +173,7 @@ window.saveUser=async(id)=>{
   loadUsers();
 };
 
+/* ================= DELETE ================= */
 window.deleteUser=async(id)=>{
   await deleteDoc(doc(db,"users",id));
   toast("Deleted","info");
@@ -175,6 +181,7 @@ window.deleteUser=async(id)=>{
   loadUsers();
 };
 
+/* ================= LOCK ================= */
 window.toggleLock=async(id,state)=>{
   await updateDoc(doc(db,"users",id),{locked:!state});
   toast("Updated","info");
@@ -182,8 +189,7 @@ window.toggleLock=async(id,state)=>{
   loadUsers();
 };
 
-/* ================= LOGS ================= */
-
+/* ================= LOG VIEW ================= */
 window.openLog=async()=>{
   const box=document.getElementById("logBox");
 
@@ -204,75 +210,7 @@ window.openLog=async()=>{
   box.style.display="block";
 };
 
-/* ================= CHAT MONITOR (NEW) ================= */
-
-window.loadChats = async function() {
-
-  const snap = await getDocs(collection(db,"chats"));
-  const list = document.getElementById("chatList");
-
-  list.innerHTML = "<h4>All Chats</h4>";
-
-  snap.forEach(d=>{
-    const data = d.data();
-
-    const div = document.createElement("div");
-    div.className = "user";
-
-    div.innerHTML = `
-      <b>Chat ID:</b> ${d.id}<br>
-      <b>Users:</b> ${(data.participants || []).join(", ")}<br>
-      <button onclick="viewChat('${d.id}')">View</button>
-      <button onclick="deleteChat('${d.id}')">Delete Chat</button>
-    `;
-
-    list.appendChild(div);
-  });
-};
-
-window.viewChat = async function(chatId) {
-
-  const snap = await getDoc(doc(db,"chats",chatId));
-  const box = document.getElementById("chatViewer");
-
-  const data = snap.data();
-
-  box.style.display = "block";
-  box.innerHTML = `<h4>Chat: ${chatId}</h4>`;
-
-  (data.messages || []).forEach((m,i)=>{
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <b>${m.from}:</b> ${m.text}
-      <button onclick="deleteMsg('${chatId}',${i})">X</button>
-    `;
-    box.appendChild(div);
-  });
-};
-
-window.deleteMsg = async function(chatId,index) {
-
-  const ref = doc(db,"chats",chatId);
-  const snap = await getDoc(ref);
-  const data = snap.data();
-
-  data.messages.splice(index,1);
-
-  await updateDoc(ref,{
-    messages:data.messages
-  });
-
-  toast("Message deleted","info");
-  viewChat(chatId);
-};
-
-window.deleteChat = async function(chatId) {
-  await deleteDoc(doc(db,"chats",chatId));
-  toast("Chat deleted","info");
-  loadChats();
-};
-
-/* INIT */
+/* ================= START ================= */
 window.addEventListener("DOMContentLoaded",loadUsers);
 
 </script>
