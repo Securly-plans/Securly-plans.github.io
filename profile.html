@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <title>Profile</title>
 </head>
+
 <body>
 
 <h1>Profile</h1>
+
 <p>Username: <span id="username"></span></p>
 <p>Role: <span id="role"></span></p>
 
-<input id="newPass" placeholder="New password" type="password">
+<input id="newPass" type="password" placeholder="New password">
 <button id="saveBtn">Update Password</button>
 
 <br><br>
@@ -21,8 +23,10 @@
 <button id="logoutBtn">Logout</button>
 
 <script type="module">
+
 import {
-  collection, query, where, getDocs, updateDoc, doc
+  collection, query, where, getDocs,
+  updateDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -33,9 +37,9 @@ if (!usernameLS) window.location = "index.html";
 
 let docId;
 
-async function load() {
-
-  const q = query(collection(db, "users"), where("username", "==", usernameLS));
+/* load */
+async function load(){
+  const q = query(collection(db,"users"),where("username","==",usernameLS));
   const snap = await getDocs(q);
 
   const d = snap.docs[0];
@@ -48,11 +52,11 @@ async function load() {
 document.getElementById("saveUserBtn").onclick = async () => {
   const val = document.getElementById("newUsername").value;
 
-  await updateDoc(doc(db, "users", docId), {
+  await updateDoc(doc(db,"users",docId),{
     username: val
   });
 
-  localStorage.setItem("username", val);
+  localStorage.setItem("username",val);
   location.reload();
 };
 
@@ -62,6 +66,7 @@ document.getElementById("logoutBtn").onclick = () => {
 };
 
 load();
+
 </script>
 
 </body>
