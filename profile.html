@@ -1,195 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <button>
-    <a href="securly-plans.github.io"></a>
-    <p> back </p>
-  </button>
 <meta charset="UTF-8">
-<title>User Profile</title>
-
-<style>
-body {
-  font-family: Arial;
-  background: #f4f4f4;
-  margin: 0;
-  padding: 20px;
-}
-
-.card {
-  max-width: 420px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.1);
-}
-
-h1 {
-  text-align: center;
-}
-
-.row {
-  margin: 10px 0;
-}
-
-.label {
-  font-weight: bold;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-}
-
-.save {
-  background: #4caf50;
-  color: white;
-}
-
-.logout {
-  background: #f44336;
-  color: white;
-}
-</style>
+<title>Profile</title>
 </head>
 
 <body>
 
-<div class="card">
-  <h1>My Profile</h1>
+<h1>Profile</h1>
 
-  <div class="row">
-    <div class="label">Username:</div>
-    <div id="username">Loading...</div>
-  </div>
+<p>Username: <span id="username"></span></p>
+<p>Role: <span id="role"></span></p>
 
-  <div class="row">
-    <div class="label">Role:</div>
-    <div id="role">Loading...</div>
-  </div>
+<input id="newPass" placeholder="New password" type="password">
+<button id="saveBtn">Update Password</button>
 
-  <div class="row">
-    <div class="label">Status:</div>
-    <div id="status">Loading...</div>
-  </div>
+<br><br>
 
-  <hr>
+<input id="newUsername" placeholder="New username">
+<button id="saveUserBtn">Update Username</button>
 
-  <div class="row">
-    <div class="label">Change Password</div>
-    <input type="password" id="newPass" placeholder="New password">
-    <button class="save" id="saveBtn">Update Password</button>
-  </div>
-
-  <button class="logout" id="logoutBtn">Logout</button>
-</div>
+<button id="logoutBtn">Logout</button>
 
 <script type="module">
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc
+  collection, query, where, getDocs, updateDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* ================= SECURITY CHECK ================= */
-
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 const usernameLS = localStorage.getItem("username");
 
-if (!isLoggedIn || !usernameLS) {
-  window.location.href = "index.html";
+if (!usernameLS) window.location = "index.html";
+
+let docId;
+
+async function load() {
+
+  const q = query(collection(db, "users"), where("username", "==", usernameLS));
+  const snap = await getDocs(q);
+
+  const d = snap.docs[0];
+  docId = d.id;
+
+  document.getElementById("username").innerText = d.data().username;
+  document.getElementById("role").innerText = d.data().role;
 }
 
-/* ================= HASH PASSWORD ================= */
+document.getElementById("saveUserBtn").onclick = async () => {
+  const val = document.getElementById("newUsername").value;
 
-async function hashPassword(password) {
-  const msgUint8 = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-/* ================= LOAD USER ================= */
-
-let userDocId = null;
-
-async function loadUser() {
-
-  const q = query(
-    collection(db, "users"),
-    where("username", "==", usernameLS)
-  );
-
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    alert("User not found");
-    return;
-  }
-
-  const docSnap = snapshot.docs[0];
-  const data = docSnap.data();
-
-  userDocId = docSnap.id;
-
-  document.getElementById("username").innerText = data.username;
-  document.getElementById("role").innerText = data.role || "user";
-  document.getElementById("status").innerText = data.locked ? "Locked 🔒" : "Active 🔓";
-}
-
-/* ================= UPDATE PASSWORD ================= */
-
-document.getElementById("saveBtn").addEventListener("click", async () => {
-
-  const newPass = document.getElementById("newPass").value;
-
-  if (!newPass) {
-    alert("Enter a new password");
-    return;
-  }
-
-  const passwordHash = await hashPassword(newPass);
-
-  await updateDoc(doc(db, "users", userDocId), {
-    passwordHash
+  await updateDoc(doc(db, "users", docId), {
+    username: val
   });
 
-  alert("Password updated");
-  document.getElementById("newPass").value = "";
-});
+  localStorage.setItem("username", val);
+  location.reload();
+};
 
-/* ================= LOGOUT ================= */
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location = "index.html";
+};
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-
-  localStorage.removeItem("loggedIn");
-  localStorage.removeItem("username");
-  localStorage.removeItem("role");
-
-  window.location.href = "index.html";
-});
-
-/* ================= START ================= */
-
-loadUser();
-
+load();
 </script>
 
 </body>
