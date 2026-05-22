@@ -28,6 +28,7 @@ button{padding:8px;margin:5px;cursor:pointer;}
 
 <div id="toastContainer"></div>
 
+<!-- USERS -->
 <div class="box">
   <h3>Add User</h3>
   <input id="newUser" placeholder="Username">
@@ -35,17 +36,31 @@ button{padding:8px;margin:5px;cursor:pointer;}
   <button onclick="createUser()">Add User</button>
 </div>
 
+<!-- SETTINGS -->
 <div class="box">
   <h3>System Settings</h3>
   <button id="redirectToggleBtn">Loading...</button>
 </div>
 
+<!-- LOGS -->
 <div class="box">
   <h3>Admin Logs</h3>
   <button onclick="openLog()">View Logs</button>
   <div id="logBox" style="display:none;"></div>
 </div>
 
+<!-- ================= CHAT MONITOR (NEW) ================= -->
+<div class="box">
+  <h3>Chat Monitoring</h3>
+
+  <button onclick="loadChats()">Load Chats</button>
+
+  <div id="chatList" style="margin-top:10px;"></div>
+
+  <div id="chatViewer" style="margin-top:10px;display:none;"></div>
+</div>
+
+<!-- USERS -->
 <div id="users"></div>
 
 <script type="module">
@@ -80,7 +95,8 @@ async function log(action){
   });
 }
 
-/* USERS */
+/* ================= USERS (UNCHANGED) ================= */
+
 async function loadUsers(){
   const snap=await getDocs(collection(db,"users"));
   const box=document.getElementById("users");
@@ -166,6 +182,8 @@ window.toggleLock=async(id,state)=>{
   loadUsers();
 };
 
+/* ================= LOGS ================= */
+
 window.openLog=async()=>{
   const box=document.getElementById("logBox");
 
@@ -186,7 +204,77 @@ window.openLog=async()=>{
   box.style.display="block";
 };
 
+/* ================= CHAT MONITOR (NEW) ================= */
+
+window.loadChats = async function() {
+
+  const snap = await getDocs(collection(db,"chats"));
+  const list = document.getElementById("chatList");
+
+  list.innerHTML = "<h4>All Chats</h4>";
+
+  snap.forEach(d=>{
+    const data = d.data();
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>Chat ID:</b> ${d.id}<br>
+      <b>Users:</b> ${(data.participants || []).join(", ")}<br>
+      <button onclick="viewChat('${d.id}')">View</button>
+      <button onclick="deleteChat('${d.id}')">Delete Chat</button>
+    `;
+
+    list.appendChild(div);
+  });
+};
+
+window.viewChat = async function(chatId) {
+
+  const snap = await getDoc(doc(db,"chats",chatId));
+  const box = document.getElementById("chatViewer");
+
+  const data = snap.data();
+
+  box.style.display = "block";
+  box.innerHTML = `<h4>Chat: ${chatId}</h4>`;
+
+  (data.messages || []).forEach((m,i)=>{
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <b>${m.from}:</b> ${m.text}
+      <button onclick="deleteMsg('${chatId}',${i})">X</button>
+    `;
+    box.appendChild(div);
+  });
+};
+
+window.deleteMsg = async function(chatId,index) {
+
+  const ref = doc(db,"chats",chatId);
+  const snap = await getDoc(ref);
+  const data = snap.data();
+
+  data.messages.splice(index,1);
+
+  await updateDoc(ref,{
+    messages:data.messages
+  });
+
+  toast("Message deleted","info");
+  viewChat(chatId);
+};
+
+window.deleteChat = async function(chatId) {
+  await deleteDoc(doc(db,"chats",chatId));
+  toast("Chat deleted","info");
+  loadChats();
+};
+
+/* INIT */
 window.addEventListener("DOMContentLoaded",loadUsers);
+
 </script>
 
 </body>
