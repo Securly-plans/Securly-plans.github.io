@@ -85,6 +85,56 @@ async function login(username, password) {
   }
 }
 
+/* ---------------- CHAT HELPERS (NEW ONLY) ---------------- */
+
+// Create or get DM chat
+export async function getOrCreateDM(otherUser) {
+  const me = localStorage.getItem("username");
+
+  const q = query(collection(db, "chats"));
+  const snap = await getDocs(q);
+
+  let chat = null;
+
+  snap.forEach(d => {
+    const data = d.data();
+    if (
+      data.members?.includes(me) &&
+      data.members?.includes(otherUser) &&
+      data.members.length === 2
+    ) {
+      chat = { id: d.id, ...data };
+    }
+  });
+
+  if (chat) return chat.id;
+
+  const newChat = await addDoc(collection(db, "chats"), {
+    members: [me, otherUser],
+    isGroup: false,
+    createdAt: Date.now(),
+    lastMessage: ""
+  });
+
+  return newChat.id;
+}
+
+// Send message
+export async function sendMessage(chatId, text) {
+  const sender = localStorage.getItem("username");
+
+  await addDoc(collection(db, "messages"), {
+    chatId,
+    sender,
+    text,
+    time: Date.now()
+  });
+
+  await updateDoc(doc(db, "chats", chatId), {
+    lastMessage: text
+  });
+}
+
 /* ---------------- UI ---------------- */
 function initAuthUI() {
   const loginBtn = document.getElementById("loginBtn");
