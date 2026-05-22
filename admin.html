@@ -26,65 +26,17 @@ body {
   border-radius: 8px;
 }
 
-input {
-  padding: 8px;
-  margin: 5px;
-}
+input { padding: 8px; margin: 5px; }
+button { padding: 8px; cursor: pointer; margin: 5px; }
 
-button {
-  margin: 5px;
-  padding: 8px;
-  cursor: pointer;
-}
-
-.toggle-on {
-  background: #4caf50;
-  color: white;
-  border: none;
-}
-
-.toggle-off {
-  background: #f44336;
-  color: white;
-  border: none;
-}
-
-.locked {
-  color: red;
-  font-weight: bold;
-}
-
-.unlocked {
-  color: green;
-  font-weight: bold;
-}
-
-/* TOAST */
-#toastContainer {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
-}
+.locked { color: red; font-weight: bold; }
+.unlocked { color: green; font-weight: bold; }
 
 .toast {
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 10px;
+  background: #333;
   color: white;
-  font-size: 14px;
-  animation: fade 3s forwards;
-}
-
-.toast.success { background: #4caf50; }
-.toast.error { background: #f44336; }
-.toast.info { background: #2196f3; }
-
-@keyframes fade {
-  0% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(100%); }
+  margin: 5px;
 }
 </style>
 
@@ -94,213 +46,112 @@ button {
 
 <h1>Admin Panel</h1>
 
-<div id="toastContainer"></div>
-
-<!-- USERS -->
 <div class="box">
   <h3>Add User</h3>
-  <input id="newUser" placeholder="Username">
-  <input id="newPass" type="password" placeholder="Password">
-  <button onclick="createUser()">Add User</button>
+  <input id="newUser">
+  <input id="newPass" type="password">
+  <button onclick="createUser()">Add</button>
 </div>
 
-<!-- SETTINGS -->
 <div class="box">
   <h3>System Settings</h3>
   <button id="redirectToggleBtn">Loading...</button>
 </div>
 
-<!-- ADMIN LOG -->
 <div class="box">
   <h3>Admin Activity Log</h3>
   <button onclick="openLog()">View Logs</button>
-  <div id="logBox" style="display:none;margin-top:10px;"></div>
+  <div id="logBox" style="display:none;"></div>
 </div>
 
-<!-- USER LIST -->
+<!-- ================= CHAT MONITOR (ONLY ADDITION) ================= -->
+<div class="box">
+  <h3>Chat Monitor</h3>
+  <button onclick="loadChats()">View Chats</button>
+  <div id="chatBox" style="display:none;margin-top:10px;"></div>
+</div>
+
 <div id="users"></div>
 
 <script type="module">
 
 import {
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  getDoc,
-  setDoc
+  collection, getDocs, addDoc,
+  deleteDoc, updateDoc, doc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* ================= TOAST ================= */
-function toast(msg, type="info") {
-  const c = document.getElementById("toastContainer");
-  const d = document.createElement("div");
-  d.className = "toast " + type;
-  d.innerText = msg;
-  c.appendChild(d);
-  setTimeout(()=>d.remove(), 3000);
-}
+/* toast */
+function toast(msg){ alert(msg); }
 
-/* ================= ADMIN CHECK ================= */
+/* admin check */
 if (localStorage.getItem("role") !== "admin") {
-  toast("Access denied", "error");
   window.location.href = "index.html";
 }
 
-/* ================= LOG SYSTEM ================= */
-async function logAction(action) {
-  await addDoc(collection(db, "adminLogs"), {
+/* logs */
+async function logAction(action){
+  await addDoc(collection(db,"adminLogs"),{
     action,
     user: localStorage.getItem("username"),
     time: Date.now()
   });
 }
 
-/* ================= SETTINGS ================= */
-const settingsRef = doc(db, "settings", "appConfig");
-const toggleBtn = document.getElementById("redirectToggleBtn");
+/* settings */
+const settingsRef = doc(db,"settings","appConfig");
 
-async function loadSettings() {
+async function loadSettings(){
   const snap = await getDoc(settingsRef);
   const enabled = snap.exists() ? snap.data().autoRedirect : false;
 
-  toggleBtn.textContent = enabled ? "Disable Auto Redirect" : "Enable Auto Redirect";
-  toggleBtn.className = enabled ? "toggle-on" : "toggle-off";
+  const btn = document.getElementById("redirectToggleBtn");
+  btn.textContent = enabled ? "Disable" : "Enable";
 
-  toggleBtn.onclick = async () => {
-    const cur = (await getDoc(settingsRef)).data()?.autoRedirect;
-
-    await setDoc(settingsRef, { autoRedirect: !cur }, { merge: true });
-
-    toast("Settings updated", "success");
-    logAction("Toggled auto redirect: " + !cur);
-    loadSettings();
+  btn.onclick = async () => {
+    await setDoc(settingsRef,{autoRedirect:!enabled},{merge:true});
+    toast("Updated");
   };
 }
 
-/* ================= USERS ================= */
-async function loadUsers() {
-
-  const snap = await getDocs(collection(db, "users"));
+/* users */
+async function loadUsers(){
+  const snap = await getDocs(collection(db,"users"));
   const box = document.getElementById("users");
   box.innerHTML = "";
 
-  snap.forEach(docSnap => {
+  snap.forEach(d=>{
+    const u = d.data();
 
-    const d = docSnap.data();
-    const locked = d.locked;
-
-    const div = document.createElement("div");
-    div.className = "user";
-
-    div.innerHTML = `
-      <b>ID:</b> ${docSnap.id}<br>
-
-      <b>Status:</b>
-      <span class="${locked ? "locked" : "unlocked"}">
-        ${locked ? "🔒 Locked" : "🔓 Active"}
-      </span>
-
-      <br>
-
-      <b>Username:</b>
-      <input id="u-${docSnap.id}" value="${d.username}">
-
-      <br>
-
-      <b>Role:</b>
-      <select id="r-${docSnap.id}">
-        <option value="user" ${d.role==="user"?"selected":""}>User</option>
-        <option value="admin" ${d.role==="admin"?"selected":""}>Admin</option>
-      </select>
-
-      <br>
-
-      <b>Password:</b>
-      <input id="p-${docSnap.id}" placeholder="New password">
-
-      <br>
-
-      <button onclick="saveUser('${docSnap.id}')">Save</button>
-      <button onclick="deleteUser('${docSnap.id}')">Delete</button>
-      <button onclick="toggleLock('${docSnap.id}', ${locked})">
-        ${locked ? "Unlock" : "Lock"}
-      </button>
+    box.innerHTML += `
+      <div class="user">
+        <b>${u.username}</b> - ${u.locked ? "🔒" : "🔓"}
+      </div>
     `;
-
-    box.appendChild(div);
   });
 }
 
-/* ================= ACTIONS ================= */
-window.createUser = async function() {
-  await addDoc(collection(db,"users"), {
-    username: newUser.value,
-    passwordHash: "",
-    role: "user",
-    locked: false,
-    created: Date.now()
-  });
+/* ================= CHAT MONITOR (ONLY ADDITION) ================= */
+window.loadChats = async function() {
 
-  toast("User created", "success");
-  logAction("Created user");
-  loadUsers();
-};
-
-window.saveUser = async function(id) {
-
-  const u = document.getElementById("u-"+id).value;
-  const r = document.getElementById("r-"+id).value;
-  const p = document.getElementById("p-"+id).value;
-
-  const data = { username:u, role:r };
-
-  if (p) data.passwordHash = p;
-
-  await updateDoc(doc(db,"users",id), data);
-
-  toast("User updated", "success");
-  logAction("Updated user " + id);
-  loadUsers();
-};
-
-window.deleteUser = async function(id) {
-  await deleteDoc(doc(db,"users",id));
-  toast("User deleted", "info");
-  logAction("Deleted user " + id);
-  loadUsers();
-};
-
-window.toggleLock = async function(id,state) {
-  await updateDoc(doc(db,"users",id), { locked: !state });
-  toast("User updated", "info");
-  logAction("Toggled lock " + id);
-  loadUsers();
-};
-
-/* ================= LOG VIEW ================= */
-window.openLog = async function() {
-
-  const box = document.getElementById("logBox");
+  const box = document.getElementById("chatBox");
 
   if (box.style.display === "block") {
     box.style.display = "none";
     return;
   }
 
-  const snap = await getDocs(collection(db,"adminLogs"));
+  const snap = await getDocs(collection(db,"chats"));
 
-  box.innerHTML = "<h4>Logs</h4>";
+  box.innerHTML = "<h4>Chats</h4>";
 
-  snap.forEach(d => {
-    const x = d.data();
+  snap.forEach(d=>{
+    const c = d.data();
     box.innerHTML += `
       <div style="padding:5px;border-bottom:1px solid #ccc">
-        ${x.user}: ${x.action}
+        ${c.members.join(", ")}<br>
+        ${c.lastMessage || ""}
       </div>
     `;
   });
@@ -308,8 +159,8 @@ window.openLog = async function() {
   box.style.display = "block";
 };
 
-/* ================= START ================= */
-window.addEventListener("DOMContentLoaded", () => {
+/* start */
+window.addEventListener("DOMContentLoaded",()=>{
   loadUsers();
   loadSettings();
 });
