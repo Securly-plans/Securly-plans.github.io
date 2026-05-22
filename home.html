@@ -7,66 +7,51 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- 🚨 SECURITY GATE -->
+<!-- ================= SECURITY GATE (FIXED) ================= -->
 <script>
 (function () {
 
     const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+    const bypass = localStorage.getItem("bypassGate") === "true";
 
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !bypass) {
         window.location.replace("index.html");
-        return;
     }
+
+    // remove bypass after use
+    localStorage.removeItem("bypassGate");
 
 })();
 </script>
 
 <style>
-/* ================= NAVBAR ================= */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #222;
-    padding: 12px 18px;
-    color: white;
-    font-family: Arial;
+    display:flex;
+    justify-content:space-between;
+    background:#222;
+    padding:12px;
+    color:white;
+    font-family:Arial;
 }
 
-.nav-left, .nav-right {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.nav-right a, .nav-right button {
+    margin-left:10px;
+    padding:8px 12px;
+    background:#333;
+    color:white;
+    border:none;
+    border-radius:6px;
+    text-decoration:none;
+    cursor:pointer;
 }
 
-.navbar a, .nav-btn {
-    color: white;
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: #333;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.navbar a:hover, .nav-btn:hover {
-    background: #444;
-}
-
-.admin-link {
-    background: #2196f3;
-}
-
-.logout-btn {
-    background: #f44336;
-}
+.admin-link { background:#2196f3; }
+.logout-btn { background:#f44336; }
 
 .username-badge {
-    padding: 6px 10px;
-    border-radius: 6px;
-    background: #444;
-    font-size: 14px;
+    background:#444;
+    padding:6px 10px;
+    border-radius:6px;
 }
 </style>
 
@@ -74,7 +59,6 @@
 
 <body>
 
-<!-- ================= NAVBAR ================= -->
 <div class="navbar">
 
     <div class="nav-left">
@@ -87,84 +71,52 @@
 
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
-        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
-            Admin
-        </a>
+        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <button id="logoutBtn" class="logout-btn">Logout</button>
 
     </div>
 </div>
 
-<!-- ================= PAGE CONTENT ================= -->
-
 <header>
-    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
+    <h1 style="color:powderblue;">Home</h1>
+    <input id="searchBar" placeholder="Search games...">
 </header>
 
-<h2 style="color:green;font-family:verdana;">Games</h2>
+<h2 style="color:green;">Games</h2>
 
-<main id="gameGrid" class="game-grid"></main>
-<main id="videoGrid" class="video-grid"></main>
+<main id="gameGrid"></main>
+<main id="videoGrid"></main>
 
-<h1 style="color:purple;font-family:verdana;text-align:center;">
-    NEW LINKS IN PROGRESS
-</h1>
+<h1 style="text-align:center;color:purple;">NEW LINKS IN PROGRESS</h1>
 
-<p style="color:green;font-family:verdana;text-align:center;">
-    I am making new links if this gets blocked, just for you guys!
+<p style="text-align:center;color:green;">
+  I am making new links if this gets blocked.
 </p>
 
-<p style="color:purple;font-family:verdana;text-align:center;">
+<p style="text-align:center;color:purple;">
     Links:
-    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-    <a href="https://wyattmonroe2013-hash.github.io/Securly-plans.github.io/index.html">
-        wyattmonroe2013-hash.github.io
-    </a>
-    <br>
-    <a href="https://xXm1styXx.github.io/Securly-plans.github.io/index.html">
-        xXm1styXx.github.io
-    </a>
-</p>
-
-<p style="color:yellow;font-family:verdana;text-align:center;">
-    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-</p>
-
-<p style="color:green;font-family:verdana;text-align:center;">
-    Emerald Games - Alpha 1.5
+    <a href="https://securly-plans.github.io/">Main</a>
 </p>
 
 <script>
 /* ================= LOGOUT ================= */
-document.getElementById("logoutBtn").addEventListener("click", () => {
-
-    localStorage.removeItem("loggedIn");
-    localStorage.removeItem("username");
-    localStorage.removeItem("role");
-
+document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
     window.location.replace("index.html");
-});
+};
 
-/* ================= NAVBAR LOGIC ================= */
-
+/* ================= NAVBAR ================= */
 const role = localStorage.getItem("role");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 const username = localStorage.getItem("username");
 
-/* SHOW USERNAME */
-const usernameDisplay = document.getElementById("usernameDisplay");
-if (username && isLoggedIn) {
-    usernameDisplay.textContent = "👤 " + username;
-}
+document.getElementById("usernameDisplay").textContent =
+    username ? (role === "admin" ? "🛡 " : "👤 ") + username : "";
 
-/* PROFILE */
-if (isLoggedIn) {
+if (localStorage.getItem("loggedIn") === "true") {
     document.getElementById("profileLink").style.display = "inline-block";
 }
 
-/* ADMIN */
 if (role === "admin") {
     document.getElementById("adminLink").style.display = "inline-block";
 }
@@ -173,4 +125,4 @@ if (role === "admin") {
 <script src="script.js"></script>
 
 </body>
-</html>y
+</html>
