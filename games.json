@@ -36,7 +36,7 @@
   },
  {
     "id": 6,
-    "title": "Felix Bot",
+    "title": "60 Second Burger Run",
     "thumbnail": "./assets/images/cover.webp",
     "category": "Platformer",
     "url": "./games/60sbr/index.html"
@@ -65,7 +65,7 @@
 {
     "id": 10,
     "title": "Ragdoll Hit (May Work.)",
-    "thumbnail": "./games/Ragdoll-Hit/3c892779be9dabb3589586c83ad3eeed.png",
+    "thumbnail": "./assets/images/ragdoll-hit.webp",
     "category": "Action",
     "url": "./games/Ragdoll-Hit/index.html"
   },
