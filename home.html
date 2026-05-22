@@ -7,17 +7,13 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- 🚨 SECURITY GATE (FIXED WITHOUT BREAKING FLOW) -->
+<!-- 🚨 SECURITY GATE -->
 <script>
 (function () {
-
     const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-    // ONLY block if not logged in
     if (!isLoggedIn) {
         window.location.replace("index.html");
     }
-
 })();
 </script>
 
@@ -64,7 +60,7 @@
 
 <body>
 
-<!-- ================= NAVBAR (UNCHANGED STRUCTURE) ================= -->
+<!-- NAVBAR -->
 <div class="navbar">
 
     <div class="nav-left">
@@ -80,12 +76,10 @@
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <button id="logoutBtn" class="logout-btn">Logout</button>
-
     </div>
 </div>
 
-<!-- ================= PAGE CONTENT (UNCHANGED) ================= -->
-
+<!-- PAGE -->
 <header>
     <h1 style="color:powderblue;font-family:verdana;">Home</h1>
     <input type="text" id="searchBar" placeholder="Search games...">
@@ -97,57 +91,62 @@
 <main id="videoGrid" class="video-grid"></main>
 
 <h1 style="color:purple;font-family:verdana;text-align:center;">
-    NEW LINKS IN PROGRESS
+NEW LINKS IN PROGRESS
 </h1>
 
 <p style="color:green;font-family:verdana;text-align:center;">
-    I am making new links if this gets blocked, just for you guys!
+I am making new links if this gets blocked, just for you guys!
 </p>
 
 <p style="color:purple;font-family:verdana;text-align:center;">
-    Links:
-    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
+Links:
+<a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
 </p>
 
 <p style="color:yellow;font-family:verdana;text-align:center;">
-    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
 </p>
 
 <p style="color:green;font-family:verdana;text-align:center;">
-    Emerald Games - Alpha 1.5
+Emerald Games - Alpha 1.5
 </p>
 
-<!-- ================= SCRIPT (ONLY FIXES, NO UI CHANGES) ================= -->
+<!-- LOGOUT + NAVBAR -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
-
-    localStorage.removeItem("loggedIn");
-    localStorage.removeItem("username");
-    localStorage.removeItem("role");
-
+    localStorage.clear();
     window.location.replace("index.html");
 });
 
-/* NAVBAR LOGIC (UNCHANGED FUNCTIONALLY) */
 const role = localStorage.getItem("role");
 const username = localStorage.getItem("username");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-/* Username display */
 const usernameDisplay = document.getElementById("usernameDisplay");
 if (username && isLoggedIn) {
     usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
 }
 
-/* Profile */
 if (isLoggedIn) {
     document.getElementById("profileLink").style.display = "inline-block";
 }
 
-/* Admin */
 if (role === "admin") {
     document.getElementById("adminLink").style.display = "inline-block";
 }
+</script>
+
+<!-- ================= CHAT ADDITION (ONLY ADDITION) ================= -->
+<script type="module">
+import { getOrCreateDM, sendMessage } from "./auth.js";
+
+/* quick test chat function */
+window.startChat = async function(otherUser) {
+    const chatId = await getOrCreateDM(otherUser);
+    const msg = prompt("Message:");
+    if (!msg) return;
+    await sendMessage(chatId, msg);
+};
 </script>
 
 <script src="script.js"></script>
