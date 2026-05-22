@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Ragdoll Hit - Poki</title>
+    <style>
+        @font-face { font-family: 'TorusB'; src: url('torus-bold-webfont.woff2') format('woff2'); font-weight: 700; }
+        @font-face { font-family: 'Torus'; src: url('torus-regular-webfont.woff2') format('woff2'); font-weight: 400; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #231F20; }
+        #custom-loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: url('w.jpg'); background-size: cover; background-position: center; z-index: 99; transition: opacity 0.6s; }
+        #loader-content { display: flex; flex-direction: column; align-items: center; background: rgba(35, 31, 32, 0.85); padding: 35px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); min-width: 400px; }
+        #loader-status { font-family: 'TorusB', sans-serif; font-size: 18px; color: #ffffff; margin-bottom: 15px; text-align: center; }
+        #progress-wrap { width: 350px; height: 14px; background: #001c00; border-radius: 7px; overflow: hidden; border: 1px solid #007300; }
+        #progress-fill { width: 0%; height: 100%; background: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); transition: width 0.2s ease-out; }
+    </style>
+
+    <script>
+    // 1. FIXED POKI CONFIG: Added required top-level fields to prevent "No title" error
+    window.config = {
+        loader: 'unity-2020',
+        debug: false,
+        maxRatio: 24 / 9,
+        minRatio: 9 / 24,
+        title: 'Ragdoll Hit',
+        thumbnail: 'logo.png', // Poki loader requires this
+        numScreenshots: 4,      // Poki loader requires this
+        unityVersion: '2022.3.6f1',
+        unityWebglBuildUrl: 'Build/', 
+
+        "metadata": {
+            "background_color":"#4D4D4D",
+            "company_name":"Ericetto",
+            "product_name":"Ragdoll Hit",
+            "data_filename":"959bf1c60308f1c34bf072f43c3c17d4.data.unityweb",
+            "framework_filename":"3276aa7c11496bcc48eb6908f112f0c3.js.unityweb",
+            "loader_filename":"v84.loader.js",
+            "code_filename":"f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb",
+            "use_wasm":"true"
+        }
+    };
+
+    const wasmParts = [
+        'Build/f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.001',
+        'Build/f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.002'
+    ];
+
+    async function initRagdoll() {
+        const status = document.getElementById("loader-status");
+        const fill = document.getElementById("progress-fill");
+
+        try {
+            const buffers = [];
+            for (let i = 0; i < wasmParts.length; i++) {
+                status.innerHTML = `Assembling Engine (${i+1}/2)...`;
+                const resp = await fetch(wasmParts[i]);
+                if (!resp.ok) throw new Error(`Missing ${wasmParts[i]}`);
+                buffers.push(await resp.arrayBuffer());
+                fill.style.width = ((i+1)/2 * 100) + "%";
+            }
+
+            const blobUrl = URL.createObjectURL(new Blob(buffers, { type: "application/wasm" }));
+
+            // 2. NETWORK INTERCEPTOR: Forces the Poki loader to use our Blob for the WASM file
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === 'string' && url.includes('f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb') && !url.includes('.00')) {
+                    console.log("Redirecting Poki Engine request to Blob.");
+                    return originalFetch(blobUrl, options);
+                }
+                return originalFetch(url, options);
+            };
+
+            status.innerHTML = "Launching Ragdoll Hit...";
+
+            // 3. Inject scripts only AFTER reassembly and config are ready
+            const script = document.createElement('script');
+            script.src = "master-loader.js";
+            script.onload = () => {
+                setTimeout(() => {
+                    const overlay = document.getElementById("custom-loader");
+                    overlay.style.opacity = "0";
+                    setTimeout(() => overlay.style.display = "none", 600);
+                }, 3000);
+            };
+            document.body.appendChild(script);
+
+        } catch (err) {
+            status.innerHTML = "Assembly Error. Refresh page.";
+            console.error("Reassembly Failure:", err);
+        }
+    }
+    </script>
+    <script src="MobileDetect.js"></script>
+</head>
+<body onload="initRagdoll()">
+    <div id="custom-loader">
+        <div id="loader-content">
+            <img src="logo.png" style="max-width: 200px; margin-bottom: 25px;" onerror="this.style.display='none'">
+            <div id="loader-status">Initializing...</div>
+            <div id="progress-wrap"><div id="progress-fill"></div></div>
+        </div>
+    </div>
+</body>
+</html>

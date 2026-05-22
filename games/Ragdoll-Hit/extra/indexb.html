@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="robots" content="noindex,nofollow" />
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Ragdoll Hit - Poki</title>
+	<script>
+	window.config = {
+		loader: 'unity-2020',
+		debug: false,
+		maxRatio: 24 / 9,
+		minRatio: 9 / 24,
+		title: 'Ragdoll Hit',
+		unityVersion: '2022.3.6f1',
+		unityWebglBuildUrl: '', // Files are in the root directory per your image
+		
+		// These must match your image filenames exactly
+		cachedDecompressedFileSizes: {
+			'3276aa7c11496bcc48eb6908f112f0c3.js.unityweb': 357000, 
+			'959bf1c60308f1c34bf072f43c3c17d4.data.unityweb': 13145000,
+			'f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb': 24884000, // Combined size
+			'v84.loader.js': 112000,
+		},
+		"metadata": {
+			"background_color":"#4D4D4D",
+			"company_name":"Ericetto",
+			"product_name":"Ragdoll Hit",
+			"data_filename":"959bf1c60308f1c34bf072f43c3c17d4.data.unityweb",
+			"framework_filename":"3276aa7c11496bcc48eb6908f112f0c3.js.unityweb",
+			"loader_filename":"v84.loader.js",
+			"code_filename":"f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb", // This will be overwritten by blob
+			"use_wasm":"true"
+		}
+	};
+
+	// 1. Define the split parts for the WASM engine
+	const wasmParts = [
+		'f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.001',
+		'f23c0f3f40a28f1adce731399dde22aa.wasm.unityweb.002'
+	];
+
+	async function reassembleWasm() {
+		try {
+			console.log("Reassembling Ragdoll Hit Engine...");
+			const buffers = [];
+			
+			// 2. Fetch and combine .001 and .002
+			for (const part of wasmParts) {
+				const resp = await fetch(part);
+				if (!resp.ok) throw new Error(`Missing file: ${part}`);
+				buffers.push(await resp.arrayBuffer());
+			}
+
+			// 3. Create a Blob and URL with the correct WASM MIME type
+			const combinedBlob = new Blob(buffers, { type: "application/wasm" });
+			const blobUrl = URL.createObjectURL(combinedBlob);
+
+			// 4. Overwrite the config to point to our combined memory blob
+			window.config.metadata.code_filename = blobUrl;
+			console.log("Engine Ready. Launching master loader...");
+
+			// 5. Manually load the master loader only after reassembly is finished
+			const script = document.createElement('script');
+			script.src = "master-loader.js";
+			document.body.appendChild(script);
+
+		} catch (err) {
+			console.error("Critical Reassembly Error:", err);
+			document.body.innerHTML = `<h2 style='color:white;text-align:center;'>Failed to load engine parts.</h2>`;
+		}
+	}
+	</script>
+	<script src="MobileDetect.js"></script>
+</head>
+<body onload="reassembleWasm()">
+    <!-- master-loader.js is now injected dynamically by reassembleWasm() -->
+</body>
+</html>
