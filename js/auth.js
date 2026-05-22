@@ -3,7 +3,9 @@ import {
   addDoc,
   query,
   where,
-  getDocs
+  getDocs,
+  updateDoc,
+  doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
@@ -14,17 +16,12 @@ async function hashPassword(password) {
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
 
-  return hashArray
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /* ---------------- SIGNUP ---------------- */
 async function signup(username, password) {
-  if (!username || !password) {
-    alert("Fill in both fields");
-    return;
-  }
+  if (!username || !password) return alert("Fill in both fields");
 
   try {
     const passwordHash = await hashPassword(password);
@@ -33,8 +30,9 @@ async function signup(username, password) {
       username,
       passwordHash,
       role: "user",
-      locked: false, // 🔒 NEW FIELD
-      created: Date.now()
+      locked: false,
+      created: Date.now(),
+      lastUpdated: Date.now()
     });
 
     localStorage.setItem("loggedIn", "true");
@@ -44,18 +42,14 @@ async function signup(username, password) {
     window.location.href = "home.html";
 
   } catch (err) {
-    console.error("Signup error:", err);
+    console.error(err);
     alert("Signup failed");
   }
 }
 
 /* ---------------- LOGIN ---------------- */
 async function login(username, password) {
-
-  if (!username || !password) {
-    alert("Fill in both fields");
-    return;
-  }
+  if (!username || !password) return alert("Fill in both fields");
 
   try {
     const passwordHash = await hashPassword(password);
@@ -66,47 +60,29 @@ async function login(username, password) {
       where("passwordHash", "==", passwordHash)
     );
 
-    const snapshot = await getDocs(q);
+    const snap = await getDocs(q);
 
-    console.log("LOGIN SNAPSHOT SIZE:", snapshot.size);
+    if (snap.empty) return alert("Invalid login");
 
-    if (snapshot.empty) {
-      alert("Invalid login");
-      return;
-    }
+    const userDoc = snap.docs[0];
+    const data = userDoc.data();
 
-    const userDoc = snapshot.docs[0];
-    const userData = userDoc.data();
-
-    console.log("USER DATA:", userData);
-
-    // 🔒 ACCOUNT LOCK CHECK (NEW)
-    if (userData.locked === true) {
-      alert("This account is locked. Contact an admin.");
-      return;
-    }
-
-    const role = userData.role ?? "user";
+    if (data.locked) return alert("Account locked");
 
     localStorage.setItem("loggedIn", "true");
-    localStorage.setItem("username", username);
-    localStorage.setItem("role", role);
+    localStorage.setItem("username", data.username);
+    localStorage.setItem("role", data.role || "user");
+
+    await updateDoc(doc(db, "users", userDoc.id), {
+      lastLogin: Date.now()
+    });
 
     window.location.href = "home.html";
 
   } catch (err) {
-    console.error("Login error:", err);
+    console.error(err);
     alert("Login failed");
   }
-}
-
-/* ---------------- LOGOUT ---------------- */
-function logout() {
-  localStorage.removeItem("loggedIn");
-  localStorage.removeItem("username");
-  localStorage.removeItem("role");
-
-  window.location.href = "index.html";
 }
 
 /* ---------------- UI ---------------- */
@@ -116,20 +92,11 @@ function initAuthUI() {
 
   if (!loginBtn || !signupBtn) return;
 
-  loginBtn.addEventListener("click", () => {
-    login(
-      document.getElementById("user").value,
-      document.getElementById("pass").value
-    );
-  });
+  loginBtn.onclick = () =>
+    login(user.value, pass.value);
 
-  signupBtn.addEventListener("click", () => {
-    signup(
-      document.getElementById("user").value,
-      document.getElementById("pass").value
-    );
-  });
+  signupBtn.onclick = () =>
+    signup(user.value, pass.value);
 }
 
-/* ---------------- START ---------------- */
 window.addEventListener("DOMContentLoaded", initAuthUI);
