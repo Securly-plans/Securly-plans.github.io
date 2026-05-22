@@ -1,58 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald</title>
-
-<link rel="stylesheet" href="style.css">
-
-<!-- 🚨 SECURITY GATE -->
-<script>
-(function () {
-    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-    if (!isLoggedIn) {
-        window.location.replace("index.html");
-    }
-})();
-</script>
+<title>Admin Panel</title>
 
 <style>
-.navbar {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#222;
-    padding:12px 18px;
-    color:white;
-    font-family:Arial;
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #f4f4f4;
 }
 
-.nav-left, .nav-right {
-    display:flex;
-    gap:10px;
-    align-items:center;
+.box {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
 }
 
-.navbar a, .nav-btn {
-    color:white;
-    text-decoration:none;
-    padding:8px 12px;
-    border-radius:6px;
-    background:#333;
-    border:none;
-    cursor:pointer;
-    font-size:14px;
+.user {
+  background: #eee;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
 }
 
-.admin-link { background:#2196f3; }
-.logout-btn { background:#f44336; }
+input { padding: 8px; margin: 5px; }
+button { padding: 8px; cursor: pointer; margin: 5px; }
 
-.username-badge {
-    padding:6px 10px;
-    border-radius:6px;
-    background:#444;
-    font-size:14px;
+.locked { color: red; font-weight: bold; }
+.unlocked { color: green; font-weight: bold; }
+
+.toast {
+  padding: 10px;
+  background: #333;
+  color: white;
+  margin: 5px;
 }
 </style>
 
@@ -60,96 +44,128 @@
 
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
+<h1>Admin Panel</h1>
 
-    <div class="nav-left">
-        <a href="home.html">Home</a>
-    </div>
-
-    <div class="nav-right">
-
-        <span id="usernameDisplay" class="username-badge"></span>
-
-        <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
-
-        <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
-
-        <button id="logoutBtn" class="logout-btn">Logout</button>
-    </div>
+<div class="box">
+  <h3>Add User</h3>
+  <input id="newUser">
+  <input id="newPass" type="password">
+  <button onclick="createUser()">Add</button>
 </div>
 
-<!-- PAGE -->
-<header>
-    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
-</header>
+<div class="box">
+  <h3>System Settings</h3>
+  <button id="redirectToggleBtn">Loading...</button>
+</div>
 
-<h2 style="color:green;font-family:verdana;">Games</h2>
+<div class="box">
+  <h3>Admin Activity Log</h3>
+  <button onclick="openLog()">View Logs</button>
+  <div id="logBox" style="display:none;"></div>
+</div>
 
-<main id="gameGrid" class="game-grid"></main>
-<main id="videoGrid" class="video-grid"></main>
+<!-- ================= CHAT MONITOR (ONLY ADDITION) ================= -->
+<div class="box">
+  <h3>Chat Monitor</h3>
+  <button onclick="loadChats()">View Chats</button>
+  <div id="chatBox" style="display:none;margin-top:10px;"></div>
+</div>
 
-<h1 style="color:purple;font-family:verdana;text-align:center;">
-NEW LINKS IN PROGRESS
-</h1>
+<div id="users"></div>
 
-<p style="color:green;font-family:verdana;text-align:center;">
-I am making new links if this gets blocked, just for you guys!
-</p>
+<script type="module">
 
-<p style="color:purple;font-family:verdana;text-align:center;">
-Links:
-<a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-</p>
+import {
+  collection, getDocs, addDoc,
+  deleteDoc, updateDoc, doc, getDoc, setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<p style="color:yellow;font-family:verdana;text-align:center;">
-Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-</p>
+import { db } from "./js/firebase.js";
 
-<p style="color:green;font-family:verdana;text-align:center;">
-Emerald Games - Alpha 1.5
-</p>
+/* toast */
+function toast(msg){ alert(msg); }
 
-<!-- LOGOUT + NAVBAR -->
-<script>
-document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.clear();
-    window.location.replace("index.html");
+/* admin check */
+if (localStorage.getItem("role") !== "admin") {
+  window.location.href = "index.html";
+}
+
+/* logs */
+async function logAction(action){
+  await addDoc(collection(db,"adminLogs"),{
+    action,
+    user: localStorage.getItem("username"),
+    time: Date.now()
+  });
+}
+
+/* settings */
+const settingsRef = doc(db,"settings","appConfig");
+
+async function loadSettings(){
+  const snap = await getDoc(settingsRef);
+  const enabled = snap.exists() ? snap.data().autoRedirect : false;
+
+  const btn = document.getElementById("redirectToggleBtn");
+  btn.textContent = enabled ? "Disable" : "Enable";
+
+  btn.onclick = async () => {
+    await setDoc(settingsRef,{autoRedirect:!enabled},{merge:true});
+    toast("Updated");
+  };
+}
+
+/* users */
+async function loadUsers(){
+  const snap = await getDocs(collection(db,"users"));
+  const box = document.getElementById("users");
+  box.innerHTML = "";
+
+  snap.forEach(d=>{
+    const u = d.data();
+
+    box.innerHTML += `
+      <div class="user">
+        <b>${u.username}</b> - ${u.locked ? "🔒" : "🔓"}
+      </div>
+    `;
+  });
+}
+
+/* ================= CHAT MONITOR (ONLY ADDITION) ================= */
+window.loadChats = async function() {
+
+  const box = document.getElementById("chatBox");
+
+  if (box.style.display === "block") {
+    box.style.display = "none";
+    return;
+  }
+
+  const snap = await getDocs(collection(db,"chats"));
+
+  box.innerHTML = "<h4>Chats</h4>";
+
+  snap.forEach(d=>{
+    const c = d.data();
+    box.innerHTML += `
+      <div style="padding:5px;border-bottom:1px solid #ccc">
+        ${c.members.join(", ")}<br>
+        ${c.lastMessage || ""}
+      </div>
+    `;
+  });
+
+  box.style.display = "block";
+};
+
+/* start */
+window.addEventListener("DOMContentLoaded",()=>{
+  loadUsers();
+  loadSettings();
 });
 
-const role = localStorage.getItem("role");
-const username = localStorage.getItem("username");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-const usernameDisplay = document.getElementById("usernameDisplay");
-if (username && isLoggedIn) {
-    usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
-}
-
-if (isLoggedIn) {
-    document.getElementById("profileLink").style.display = "inline-block";
-}
-
-if (role === "admin") {
-    document.getElementById("adminLink").style.display = "inline-block";
-}
 </script>
-
-<!-- ================= CHAT ADDITION (ONLY ADDITION) ================= -->
-<script type="module">
-import { getOrCreateDM, sendMessage } from "./auth.js";
-
-/* quick test chat function */
-window.startChat = async function(otherUser) {
-    const chatId = await getOrCreateDM(otherUser);
-    const msg = prompt("Message:");
-    if (!msg) return;
-    await sendMessage(chatId, msg);
-};
-</script>
-
-<script src="script.js"></script>
 
 </body>
 </html>
