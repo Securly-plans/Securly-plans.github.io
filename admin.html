@@ -1,52 +1,319 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<title>Ruby</title>
+<title>Admin Panel</title>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #f4f4f4;
+}
+
+.box {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.user {
+  background: #eee;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+}
+
+input {
+  padding: 8px;
+  margin: 5px;
+}
+
+button {
+  margin: 5px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.toggle-on {
+  background: #4caf50;
+  color: white;
+  border: none;
+}
+
+.toggle-off {
+  background: #f44336;
+  color: white;
+  border: none;
+}
+
+.locked {
+  color: red;
+  font-weight: bold;
+}
+
+.unlocked {
+  color: green;
+  font-weight: bold;
+}
+
+/* TOAST */
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  animation: fade 3s forwards;
+}
+
+.toast.success { background: #4caf50; }
+.toast.error { background: #f44336; }
+.toast.info { background: #2196f3; }
+
+@keyframes fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+</style>
+
 </head>
 
 <body>
 
-<h1 style="color:red;" >Admin Panel</h1>
+<h1>Admin Panel</h1>
 
-<button onclick="viewLogs()">View Logs</button>
+<div id="toastContainer"></div>
 
-<div id="logs"></div>
+<!-- USERS -->
+<div class="box">
+  <h3>Add User</h3>
+  <input id="newUser" placeholder="Username">
+  <input id="newPass" type="password" placeholder="Password">
+  <button onclick="createUser()">Add User</button>
+</div>
 
+<!-- SETTINGS -->
+<div class="box">
+  <h3>System Settings</h3>
+  <button id="redirectToggleBtn">Loading...</button>
+</div>
+
+<!-- ADMIN LOG -->
+<div class="box">
+  <h3>Admin Activity Log</h3>
+  <button onclick="openLog()">View Logs</button>
+  <div id="logBox" style="display:none;margin-top:10px;"></div>
+</div>
+
+<!-- USER LIST -->
 <div id="users"></div>
 
 <script type="module">
+
 import {
-  collection, getDocs, addDoc, deleteDoc, updateDoc, doc
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-const role = localStorage.getItem("role");
-if (role !== "admin") location = "index.html";
+/* ================= TOAST ================= */
+function toast(msg, type="info") {
+  const c = document.getElementById("toastContainer");
+  const d = document.createElement("div");
+  d.className = "toast " + type;
+  d.innerText = msg;
+  c.appendChild(d);
+  setTimeout(()=>d.remove(), 3000);
+}
 
-/* LOGGING */
-async function log(action, target) {
+/* ================= ADMIN CHECK ================= */
+if (localStorage.getItem("role") !== "admin") {
+  toast("Access denied", "error");
+  window.location.href = "index.html";
+}
+
+/* ================= LOG SYSTEM ================= */
+async function logAction(action) {
   await addDoc(collection(db, "adminLogs"), {
     action,
-    targetUser: target,
-    performedBy: localStorage.getItem("username"),
-    timestamp: Date.now()
+    user: localStorage.getItem("username"),
+    time: Date.now()
   });
 }
 
-/* VIEW LOGS */
-window.viewLogs = async () => {
-  const snap = await getDocs(collection(db, "adminLogs"));
+/* ================= SETTINGS ================= */
+const settingsRef = doc(db, "settings", "appConfig");
+const toggleBtn = document.getElementById("redirectToggleBtn");
 
-  const box = document.getElementById("logs");
+async function loadSettings() {
+  const snap = await getDoc(settingsRef);
+  const enabled = snap.exists() ? snap.data().autoRedirect : false;
+
+  toggleBtn.textContent = enabled ? "Disable Auto Redirect" : "Enable Auto Redirect";
+  toggleBtn.className = enabled ? "toggle-on" : "toggle-off";
+
+  toggleBtn.onclick = async () => {
+    const cur = (await getDoc(settingsRef)).data()?.autoRedirect;
+
+    await setDoc(settingsRef, { autoRedirect: !cur }, { merge: true });
+
+    toast("Settings updated", "success");
+    logAction("Toggled auto redirect: " + !cur);
+    loadSettings();
+  };
+}
+
+/* ================= USERS ================= */
+async function loadUsers() {
+
+  const snap = await getDocs(collection(db, "users"));
+  const box = document.getElementById("users");
   box.innerHTML = "";
+
+  snap.forEach(docSnap => {
+
+    const d = docSnap.data();
+    const locked = d.locked;
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>ID:</b> ${docSnap.id}<br>
+
+      <b>Status:</b>
+      <span class="${locked ? "locked" : "unlocked"}">
+        ${locked ? "🔒 Locked" : "🔓 Active"}
+      </span>
+
+      <br>
+
+      <b>Username:</b>
+      <input id="u-${docSnap.id}" value="${d.username}">
+
+      <br>
+
+      <b>Role:</b>
+      <select id="r-${docSnap.id}">
+        <option value="user" ${d.role==="user"?"selected":""}>User</option>
+        <option value="admin" ${d.role==="admin"?"selected":""}>Admin</option>
+      </select>
+
+      <br>
+
+      <b>Password:</b>
+      <input id="p-${docSnap.id}" placeholder="New password">
+
+      <br>
+
+      <button onclick="saveUser('${docSnap.id}')">Save</button>
+      <button onclick="deleteUser('${docSnap.id}')">Delete</button>
+      <button onclick="toggleLock('${docSnap.id}', ${locked})">
+        ${locked ? "Unlock" : "Lock"}
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+/* ================= ACTIONS ================= */
+window.createUser = async function() {
+  await addDoc(collection(db,"users"), {
+    username: newUser.value,
+    passwordHash: "",
+    role: "user",
+    locked: false,
+    created: Date.now()
+  });
+
+  toast("User created", "success");
+  logAction("Created user");
+  loadUsers();
+};
+
+window.saveUser = async function(id) {
+
+  const u = document.getElementById("u-"+id).value;
+  const r = document.getElementById("r-"+id).value;
+  const p = document.getElementById("p-"+id).value;
+
+  const data = { username:u, role:r };
+
+  if (p) data.passwordHash = p;
+
+  await updateDoc(doc(db,"users",id), data);
+
+  toast("User updated", "success");
+  logAction("Updated user " + id);
+  loadUsers();
+};
+
+window.deleteUser = async function(id) {
+  await deleteDoc(doc(db,"users",id));
+  toast("User deleted", "info");
+  logAction("Deleted user " + id);
+  loadUsers();
+};
+
+window.toggleLock = async function(id,state) {
+  await updateDoc(doc(db,"users",id), { locked: !state });
+  toast("User updated", "info");
+  logAction("Toggled lock " + id);
+  loadUsers();
+};
+
+/* ================= LOG VIEW ================= */
+window.openLog = async function() {
+
+  const box = document.getElementById("logBox");
+
+  if (box.style.display === "block") {
+    box.style.display = "none";
+    return;
+  }
+
+  const snap = await getDocs(collection(db,"adminLogs"));
+
+  box.innerHTML = "<h4>Logs</h4>";
 
   snap.forEach(d => {
     const x = d.data();
-    box.innerHTML += `<p>${x.action} → ${x.targetUser}</p>`;
+    box.innerHTML += `
+      <div style="padding:5px;border-bottom:1px solid #ccc">
+        ${x.user}: ${x.action}
+      </div>
+    `;
   });
+
+  box.style.display = "block";
 };
+
+/* ================= START ================= */
+window.addEventListener("DOMContentLoaded", () => {
+  loadUsers();
+  loadSettings();
+});
+
 </script>
 
 </body>
