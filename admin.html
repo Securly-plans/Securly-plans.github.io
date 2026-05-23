@@ -5,7 +5,7 @@
 <title>Admin Panel</title>
 
 <style>
-body{font-family:Courier New;padding:20px;background:#23262a;}
+body{font-family:Arial;padding:20px;background:#f4f4f4;}
 .box{background:white;padding:15px;border-radius:10px;margin-bottom:15px;}
 .user{background:#eee;padding:10px;margin:10px 0;border-radius:8px;}
 input,select{padding:8px;margin:5px;}
@@ -37,7 +37,7 @@ button{padding:8px;margin:5px;cursor:pointer;}
 
 <div class="box">
   <h3>System Settings</h3>
-  <button id="redirectToggleBtn">Auto-Redirect</button>
+  <button id="redirectToggleBtn">Loading...</button>
 </div>
 
 <div class="box">
@@ -46,23 +46,44 @@ button{padding:8px;margin:5px;cursor:pointer;}
   <div id="logBox" style="display:none;"></div>
 </div>
 
+<!-- TOGGLE BUTTON -->
+<button onclick="toggleChatMonitor()">
+  ▼ Show Chat Monitor
+</button>
+
+<!-- LIVE CHAT MONITOR -->
+<div class="box">
+  <h3>Live Chat Monitor</h3>
+
+  <button onclick="loadChats()">
+    Refresh Chats
+  </button>
+
+  <!-- WRAPPED MONITOR (HIDDEN BY DEFAULT) -->
+  <div id="chatMonitorWrapper" style="display:none;">
+    <div id="chatMonitor"></div>
+  </div>
+</div>
+
 <div id="users"></div>
 
 <script type="module">
 
 import {
-  collection,getDocs,addDoc,deleteDoc,updateDoc,doc,getDoc,setDoc
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-/* ================= HASH PASSWORD (FIX) ================= */
-async function hashPassword(password) {
-  const msgUint8 = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
+/* ================= STATE ================= */
+let chatMonitorOpen = false;
 
 /* ================= TOAST ================= */
 function toast(msg,type="info"){
@@ -91,11 +112,14 @@ async function log(action){
 
 /* ================= USERS ================= */
 async function loadUsers(){
-  const snap=await getDocs(collection(db,"users"));
-  const box=document.getElementById("users");
+
+  const snap = await getDocs(collection(db,"users"));
+  const box = document.getElementById("users");
+
   box.innerHTML="";
 
   snap.forEach(d=>{
+
     const data=d.data();
     const locked=data.locked;
 
@@ -132,13 +156,13 @@ async function loadUsers(){
   });
 }
 
-/* ================= CREATE USER (HASH FIX) ================= */
-window.createUser=async()=>{
+/* ================= USER ACTIONS ================= */
+window.createUser = async () => {
 
-  const username=newUser.value;
-  const password=newPass.value;
+  const username = newUser.value;
+  const password = newPass.value;
 
-  const passwordHash = await hashPassword(password); // ✅ FIXED
+  const passwordHash = await hashPassword(password);
 
   await addDoc(collection(db,"users"),{
     username,
@@ -153,17 +177,16 @@ window.createUser=async()=>{
   loadUsers();
 };
 
-/* ================= SAVE USER (HASH FIX) ================= */
-window.saveUser=async(id)=>{
+window.saveUser = async (id) => {
 
   const u=document.getElementById("u-"+id).value;
   const r=document.getElementById("r-"+id).value;
   const p=document.getElementById("p-"+id).value;
 
-  const data={username:u,role:r};
+  const data={ username:u, role:r };
 
   if(p){
-    data.passwordHash = await hashPassword(p); // ✅ FIXED
+    data.passwordHash = await hashPassword(p);
   }
 
   await updateDoc(doc(db,"users",id),data);
@@ -173,24 +196,29 @@ window.saveUser=async(id)=>{
   loadUsers();
 };
 
-/* ================= DELETE ================= */
-window.deleteUser=async(id)=>{
+window.deleteUser = async (id) => {
+
   await deleteDoc(doc(db,"users",id));
+
   toast("Deleted","info");
   log("Deleted "+id);
   loadUsers();
 };
 
-/* ================= LOCK ================= */
-window.toggleLock=async(id,state)=>{
-  await updateDoc(doc(db,"users",id),{locked:!state});
+window.toggleLock = async (id,state) => {
+
+  await updateDoc(doc(db,"users",id),{
+    locked:!state
+  });
+
   toast("Updated","info");
   log("Lock toggle "+id);
   loadUsers();
 };
 
-/* ================= LOG VIEW ================= */
-window.openLog=async()=>{
+/* ================= LOGS ================= */
+window.openLog = async () => {
+
   const box=document.getElementById("logBox");
 
   if(box.style.display==="block"){
@@ -198,20 +226,146 @@ window.openLog=async()=>{
     return;
   }
 
-  const snap=await getDocs(collection(db,"adminLogs"));
+  const snap = await getDocs(collection(db,"adminLogs"));
 
   box.innerHTML="<h4>Logs</h4>";
 
   snap.forEach(d=>{
     const x=d.data();
-    box.innerHTML+=`<div>${x.user}: ${x.action}</div>`;
+    box.innerHTML += `<div>${x.user}: ${x.action}</div>`;
   });
 
   box.style.display="block";
 };
 
-/* ================= START ================= */
-window.addEventListener("DOMContentLoaded",loadUsers);
+/* ================= CHAT MONITOR TOGGLE (WHOLE SECTION) ================= */
+window.toggleChatMonitor = function () {
+
+  const wrapper = document.getElementById("chatMonitorWrapper");
+  const btn = document.querySelector("button[onclick='toggleChatMonitor()']");
+
+  chatMonitorOpen = !chatMonitorOpen;
+
+  if (chatMonitorOpen) {
+    wrapper.style.display = "block";
+    btn.innerText = "▲ Hide Chat Monitor";
+  } else {
+    wrapper.style.display = "none";
+    btn.innerText = "▼ Show Chat Monitor";
+  }
+};
+
+/* ================= LOAD CHATS ================= */
+window.loadChats = async function () {
+
+  const monitor = document.getElementById("chatMonitor");
+
+  monitor.innerHTML = "<p>Loading chats...</p>";
+
+  const chatsSnap = await getDocs(collection(db,"chats"));
+
+  monitor.innerHTML = "";
+
+  if (chatsSnap.empty) {
+    monitor.innerHTML = "<p>No chats found.</p>";
+    return;
+  }
+
+  chatsSnap.forEach(chatDoc => {
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>Chat:</b> ${chatDoc.id}<br>
+
+      <button onclick="toggleChat('${chatDoc.id}', this)">
+        ▼ View Messages
+      </button>
+
+      <button onclick="deleteChat('${chatDoc.id}', this)"
+        style="margin-left:5px;background:red;color:white;">
+        Delete Chat
+      </button>
+
+      <div id="chat-${chatDoc.id}"
+           style="margin-top:10px; display:none;">
+      </div>
+    `;
+
+    monitor.appendChild(div);
+  });
+};
+
+/* ================= TOGGLE CHAT DROPDOWN ================= */
+window.toggleChat = async function(chatId, btn){
+
+  const container = document.getElementById("chat-" + chatId);
+
+  const isOpen = container.style.display === "block";
+
+  if (isOpen) {
+    container.style.display = "none";
+    btn.innerText = "▼ View Messages";
+    return;
+  }
+
+  container.style.display = "block";
+  btn.innerText = "▲ Hide Messages";
+
+  if (container.dataset.loaded === "true") return;
+
+  container.innerHTML = "Loading messages...";
+
+  const snap = await getDoc(doc(db,"chats",chatId));
+
+  container.innerHTML = "";
+
+  if (!snap.exists()) {
+    container.innerHTML = "<i>No messages</i>";
+    return;
+  }
+
+  const data = snap.data();
+
+  if (!data.messages?.length) {
+    container.innerHTML = "<i>No messages</i>";
+    return;
+  }
+
+  data.messages.forEach(msg => {
+
+    const row = document.createElement("div");
+
+    row.style.padding = "5px";
+    row.style.borderBottom = "1px solid #ccc";
+
+    row.innerHTML = `
+      <b>${msg.from || "Unknown"}:</b>
+      ${msg.text || ""}
+    `;
+
+    container.appendChild(row);
+  });
+
+  container.dataset.loaded = "true";
+};
+
+/* ================= DELETE CHAT ================= */
+window.deleteChat = async function(chatId, btn){
+
+  if(!confirm(`Delete chat "${chatId}"?`)) return;
+
+  await deleteDoc(doc(db,"chats",chatId));
+
+  btn.parentElement.remove();
+};
+
+/* ================= INIT ================= */
+window.addEventListener("DOMContentLoaded", () => {
+  loadUsers();
+  loadChats();
+});
 
 </script>
 
