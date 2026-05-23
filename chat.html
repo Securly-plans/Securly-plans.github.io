@@ -1,70 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Irridium - Chat</title>
-
-<style>
-body { font-family: Arial; background:#23262a; padding:20px; }
-
-.container {
-  max-width: 700px;
-  margin: auto;
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-#messages {
-  height: 400px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-
-.msg {
-  margin: 5px 0;
-  padding: 6px;
-  border-radius: 6px;
-}
-
-.me { background: #d1f5d3; }
-.other { background: #eee; }
-
-input,button {
-  padding: 10px;
-  margin-top: 5px;
-}
-
-.topbar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <h2>Irridium Chat on Emerald</h2>
-
-  <!-- CHAT CONTROLS -->
-  <div class="topbar">
-    <input id="toUser" placeholder="Username for private chat">
-    <button onclick="openChat()">Private Chat</button>
-    <button onclick="openGlobalChat()">🌍 Global Chat</button>
-  </div>
-
-  <div id="messages"></div>
-
-  <input id="msgInput" placeholder="Message...">
-  <button onclick="sendMsg()">Send</button>
-
-</div>
-
 <script type="module">
 
 import {
@@ -72,7 +5,9 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  arrayUnion
+  arrayUnion,
+  collection,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -99,16 +34,17 @@ window.openChat = async function() {
 
   if (!snap.exists()) {
     await setDoc(ref,{
+      type:"private",
       participants:[me,other],
       messages:[],
-      updated:Date.now()
+      created:Date.now()
     });
   }
 
   loadMessages();
 };
 
-/* ================= 🌍 GLOBAL CHAT ================= */
+/* ================= GLOBAL CHAT ================= */
 window.openGlobalChat = async function() {
 
   currentChatId = "GLOBAL_CHAT";
@@ -118,16 +54,17 @@ window.openGlobalChat = async function() {
 
   if (!snap.exists()) {
     await setDoc(ref,{
+      type:"global",
       participants:["GLOBAL"],
       messages:[],
-      updated:Date.now()
+      created:Date.now()
     });
   }
 
   loadMessages();
 };
 
-/* ================= LOAD MESSAGES ================= */
+/* ================= LOAD MESSAGES (WITH TIMESTAMPS) ================= */
 async function loadMessages(){
 
   if (!currentChatId) return;
@@ -142,9 +79,29 @@ async function loadMessages(){
   if (!data) return;
 
   data.messages.forEach(m=>{
+
     const div = document.createElement("div");
     div.className = "msg " + (m.from===me ? "me" : "other");
-    div.textContent = m.from + ": " + m.text;
+
+    // ⏱ FORMAT TIMESTAMP
+    let timeText = "";
+
+    if (m.time) {
+      const date = new Date(m.time);
+      timeText = date.toLocaleString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    div.innerHTML = `
+      <b>${m.from || "Unknown"}:</b>
+      ${m.text || ""}
+      <span style="float:right; font-size:11px; opacity:0.6;">
+        ${timeText}
+      </span>
+    `;
+
     box.appendChild(div);
   });
 
@@ -176,6 +133,3 @@ window.sendMsg = async function(){
 setInterval(loadMessages,2000);
 
 </script>
-
-</body>
-</html>
