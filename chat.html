@@ -5,7 +5,7 @@
 <title>Irridium - Chat</title>
 
 <style>
-body { font-family: Arial; background:#f4f4f4; padding:20px; }
+body { font-family: Arial; background:#23262a; padding:20px; }
 
 .container {
   max-width: 700px;
@@ -34,27 +34,45 @@ body { font-family: Arial; background:#f4f4f4; padding:20px; }
 
 input,button {
   padding: 10px;
+  margin-top: 5px;
+}
+
+.topbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 </style>
 </head>
 
-<body style="background-color:#23262a;">
+<body>
 
 <div class="container">
+
   <h2>Irridium Chat on Emerald</h2>
 
-  <input id="toUser" placeholder="Chat with user (username)">
-  <button onclick="openChat()">Open Chat</button>
+  <!-- CHAT CONTROLS -->
+  <div class="topbar">
+    <input id="toUser" placeholder="Username for private chat">
+    <button onclick="openChat()">Private Chat</button>
+    <button onclick="openGlobalChat()">🌍 Global Chat</button>
+  </div>
 
   <div id="messages"></div>
 
   <input id="msgInput" placeholder="Message...">
   <button onclick="sendMsg()">Send</button>
+
 </div>
 
 <script type="module">
+
 import {
-  collection, doc, getDoc, setDoc, updateDoc, arrayUnion
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -63,12 +81,12 @@ const me = localStorage.getItem("username");
 
 let currentChatId = null;
 
-/* CREATE CHAT ID (consistent ordering) */
+/* ================= CHAT ID ================= */
 function getChatId(a,b){
   return [a,b].sort().join("_");
 }
 
-/* OPEN CHAT */
+/* ================= PRIVATE CHAT ================= */
 window.openChat = async function() {
 
   const other = document.getElementById("toUser").value.trim();
@@ -90,7 +108,26 @@ window.openChat = async function() {
   loadMessages();
 };
 
-/* LOAD */
+/* ================= 🌍 GLOBAL CHAT ================= */
+window.openGlobalChat = async function() {
+
+  currentChatId = "GLOBAL_CHAT";
+
+  const ref = doc(db,"chats",currentChatId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref,{
+      participants:["GLOBAL"],
+      messages:[],
+      updated:Date.now()
+    });
+  }
+
+  loadMessages();
+};
+
+/* ================= LOAD MESSAGES ================= */
 async function loadMessages(){
 
   if (!currentChatId) return;
@@ -106,7 +143,7 @@ async function loadMessages(){
 
   data.messages.forEach(m=>{
     const div = document.createElement("div");
-    div.className = "msg " + (m.from===me?"me":"other");
+    div.className = "msg " + (m.from===me ? "me" : "other");
     div.textContent = m.from + ": " + m.text;
     box.appendChild(div);
   });
@@ -114,7 +151,7 @@ async function loadMessages(){
   box.scrollTop = box.scrollHeight;
 }
 
-/* SEND */
+/* ================= SEND MESSAGE ================= */
 window.sendMsg = async function(){
 
   const text = document.getElementById("msgInput").value;
@@ -135,13 +172,10 @@ window.sendMsg = async function(){
   loadMessages();
 };
 
-/* LIVE REFRESH */
+/* ================= AUTO REFRESH ================= */
 setInterval(loadMessages,2000);
+
 </script>
 
-  
 </body>
 </html>
-
-
-
