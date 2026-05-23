@@ -57,6 +57,7 @@ input,button {
     <input id="toUser" placeholder="Private chat username">
     <button onclick="openChat()">Private Chat</button>
     <button onclick="openGlobalChat()">🌍 Global Chat</button>
+    <button onclick="openGroupList()">👥 Group Chats</button>
   </div>
 
   <!-- GROUP CHAT CREATOR -->
@@ -64,6 +65,17 @@ input,button {
     <input id="groupName" placeholder="Group name">
     <input id="groupUsers" placeholder="Users (comma separated)">
     <button onclick="createGroupChat()">👥 Create Group</button>
+  </div>
+
+  <!-- GROUP LIST -->
+  <div id="groupList"
+       style="
+         display:none;
+         border:1px solid #ccc;
+         padding:10px;
+         margin-bottom:10px;
+         border-radius:6px;
+         background:#fafafa;">
   </div>
 
   <div id="messages"></div>
@@ -78,6 +90,8 @@ input,button {
 import {
   doc,
   getDoc,
+  getDocs,
+  collection,
   setDoc,
   updateDoc,
   arrayUnion
@@ -117,7 +131,7 @@ window.openChat = async function() {
   loadMessages();
 };
 
-/* ================= 🌍 GLOBAL CHAT ================= */
+/* ================= GLOBAL CHAT ================= */
 window.openGlobalChat = async function() {
 
   currentChatId = "GLOBAL_CHAT";
@@ -137,7 +151,7 @@ window.openGlobalChat = async function() {
   loadMessages();
 };
 
-/* ================= 👥 GROUP CHAT ================= */
+/* ================= GROUP CHAT CREATION ================= */
 window.createGroupChat = async function() {
 
   const name = document.getElementById("groupName").value.trim();
@@ -147,8 +161,9 @@ window.createGroupChat = async function() {
 
   const list = users.split(",").map(u => u.trim());
 
-  // ensure creator is included
-  if (!list.includes(me)) list.push(me);
+  if (!list.includes(me)) {
+    list.push(me);
+  }
 
   const id = "group_" + Date.now();
 
@@ -165,6 +180,65 @@ window.createGroupChat = async function() {
   loadMessages();
 };
 
+/* ================= VIEW GROUP CHATS ================= */
+window.openGroupList = async function() {
+
+  const box = document.getElementById("groupList");
+
+  if (box.style.display === "block") {
+    box.style.display = "none";
+    return;
+  }
+
+  box.style.display = "block";
+  box.innerHTML = "Loading groups...";
+
+  const snap = await getDocs(collection(db,"chats"));
+
+  box.innerHTML = "";
+
+  let found = false;
+
+  snap.forEach(chatDoc => {
+
+    const data = chatDoc.data();
+
+    if (data.type !== "group") return;
+
+    found = true;
+
+    const row = document.createElement("div");
+
+    row.style.marginBottom = "10px";
+
+    row.innerHTML = `
+      <b>👥 ${data.name || chatDoc.id}</b>
+      <br>
+      <button onclick="joinGroupChat('${chatDoc.id}')">
+        Open Group
+      </button>
+    `;
+
+    box.appendChild(row);
+  });
+
+  if (!found) {
+    box.innerHTML = "<i>No group chats found.</i>";
+  }
+};
+
+/* ================= JOIN GROUP CHAT ================= */
+window.joinGroupChat = async function(chatId){
+
+  currentChatId = chatId;
+
+  document.getElementById(
+    "groupList"
+  ).style.display = "none";
+
+  loadMessages();
+};
+
 /* ================= LOAD MESSAGES ================= */
 async function loadMessages(){
 
@@ -177,19 +251,56 @@ async function loadMessages(){
   box.innerHTML = "";
 
   const data = snap.data();
+
   if (!data) return;
 
-  // optional label
   if (data.type === "group") {
+
     const title = document.createElement("div");
-    title.innerHTML = `<b>👥 Group: ${data.name}</b><hr>`;
+
+    title.innerHTML = `
+      <b>👥 Group: ${data.name}</b>
+      <hr>
+    `;
+
     box.appendChild(title);
   }
 
-  data.messages.forEach(m=>{
+  const messages = data.messages || [];
+
+  if (messages.length === 0) {
+    box.innerHTML += "<i>No messages yet</i>";
+    return;
+  }
+
+  messages.forEach(m => {
+
     const div = document.createElement("div");
-    div.className = "msg " + (m.from===me ? "me" : "other");
-    div.textContent = m.from + ": " + m.text;
+
+    div.className =
+      "msg " +
+      (m.from === me ? "me" : "other");
+
+    let timestamp = "";
+
+    if (m.time) {
+      timestamp =
+        new Date(m.time)
+        .toLocaleString();
+    }
+
+    div.innerHTML = `
+      <b>${m.from || "Unknown"}:</b>
+      ${m.text || ""}
+
+      <div style="
+        font-size:11px;
+        opacity:0.7;
+        margin-top:3px;">
+        ${timestamp}
+      </div>
+    `;
+
     box.appendChild(div);
   });
 
@@ -199,10 +310,13 @@ async function loadMessages(){
 /* ================= SEND MESSAGE ================= */
 window.sendMsg = async function(){
 
-  const text = document.getElementById("msgInput").value;
+  const text =
+    document.getElementById("msgInput").value;
+
   if (!text || !currentChatId) return;
 
-  const ref = doc(db,"chats",currentChatId);
+  const ref =
+    doc(db,"chats",currentChatId);
 
   await updateDoc(ref,{
     messages: arrayUnion({
@@ -214,6 +328,7 @@ window.sendMsg = async function(){
   });
 
   document.getElementById("msgInput").value = "";
+
   loadMessages();
 };
 
