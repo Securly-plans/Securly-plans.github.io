@@ -34,7 +34,7 @@ button {padding:8px; margin:5px; cursor:pointer;}
   <input id="newPass" type="password" placeholder="Password">
   <button onclick="createUser()">Add User</button>
 </div>
-
+  
 <div class="box">
   <h3>System Settings</h3>
   <button id="redirectToggleBtn">Loading...</button>
@@ -45,6 +45,27 @@ button {padding:8px; margin:5px; cursor:pointer;}
   <button onclick="openLog()">View Logs</button>
   <div id="logBox" style="display:none;"></div>
 </div>
+
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<!-- Modified version: user search, chat search, timestamps, server messages UI -->
+</head>
+<body>
+<p>This generated file contains the requested admin-panel additions. Merge it with your existing version if needed:</p>
+
+<h3>User Search</h3>
+<input id="userSearch" placeholder="Search users..." oninput="filterUsers()">
+
+<h3>Chat Search</h3>
+<input id="chatSearch" placeholder="Search chats..." oninput="filterChats()">
+
+<h3>Server Message</h3>
+<input id="serverChatId" placeholder="Chat ID (blank = all chats)">
+<input id="serverMessage" placeholder="Server message">
+<button onclick="sendServerMessage()">Send Server Message</button>
 
 <button onclick="toggleChatMonitor()">
   ▼ Show Chat Monitor
@@ -107,6 +128,40 @@ async function log(action){
   });
 }
 
+/*================== Chat serch functions ============= */
+window.filterUsers = function () {
+  const q =
+    document.getElementById('userSearch')
+      .value.toLowerCase();
+
+  document.querySelectorAll('#users .user')
+    .forEach(el => {
+
+      el.style.display =
+        el.textContent
+          .toLowerCase()
+          .includes(q)
+          ? 'block'
+          : 'none';
+    });
+};
+
+window.filterChats = function () {
+  const q =
+    document.getElementById('chatSearch')
+      .value.toLowerCase();
+
+  document.querySelectorAll('#chatMonitor .user')
+    .forEach(el => {
+
+      el.style.display =
+        el.textContent
+          .toLowerCase()
+          .includes(q)
+          ? 'block'
+          : 'none';
+    });
+};
 /* ================= PASSWORD HASHING ================= */
 // Added missing hash function using native Web Crypto API
 async function hashPassword(password) {
@@ -154,8 +209,7 @@ async function loadUsers(){
         ${locked ? "Unlock" : "Lock"}
       </button>
     `;
-
-    box.appendChild(div);
+buttonox.appendChild(div);
   });
 }
 
