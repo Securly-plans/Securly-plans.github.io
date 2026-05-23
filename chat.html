@@ -1,3 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Irridium - Chat</title>
+
+<style>
+body { font-family: Arial; background:#23262a; padding:20px; }
+
+.container {
+  max-width: 700px;
+  margin: auto;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+#messages {
+  height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.msg {
+  margin: 5px 0;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.me { background: #d1f5d3; }
+.other { background: #eee; }
+
+input,button {
+  padding: 10px;
+  margin-top: 5px;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>Irridium Chat on Emerald</h2>
+
+  <!-- CHAT CONTROLS -->
+  <div class="topbar">
+    <input id="toUser" placeholder="Private chat username">
+    <button onclick="openChat()">Private Chat</button>
+    <button onclick="openGlobalChat()">🌍 Global Chat</button>
+  </div>
+
+  <!-- GROUP CHAT CREATOR -->
+  <div class="topbar">
+    <input id="groupName" placeholder="Group name">
+    <input id="groupUsers" placeholder="Users (comma separated)">
+    <button onclick="createGroupChat()">👥 Create Group</button>
+  </div>
+
+  <div id="messages"></div>
+
+  <input id="msgInput" placeholder="Message...">
+  <button onclick="sendMsg()">Send</button>
+
+</div>
+
 <script type="module">
 
 import {
@@ -5,9 +80,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  arrayUnion,
-  collection,
-  getDocs
+  arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -44,7 +117,7 @@ window.openChat = async function() {
   loadMessages();
 };
 
-/* ================= GLOBAL CHAT ================= */
+/* ================= 🌍 GLOBAL CHAT ================= */
 window.openGlobalChat = async function() {
 
   currentChatId = "GLOBAL_CHAT";
@@ -64,7 +137,35 @@ window.openGlobalChat = async function() {
   loadMessages();
 };
 
-/* ================= LOAD MESSAGES (WITH TIMESTAMPS) ================= */
+/* ================= 👥 GROUP CHAT ================= */
+window.createGroupChat = async function() {
+
+  const name = document.getElementById("groupName").value.trim();
+  const users = document.getElementById("groupUsers").value.trim();
+
+  if (!name || !users) return;
+
+  const list = users.split(",").map(u => u.trim());
+
+  // ensure creator is included
+  if (!list.includes(me)) list.push(me);
+
+  const id = "group_" + Date.now();
+
+  currentChatId = id;
+
+  await setDoc(doc(db,"chats",id),{
+    type:"group",
+    name,
+    participants:list,
+    messages:[],
+    created:Date.now()
+  });
+
+  loadMessages();
+};
+
+/* ================= LOAD MESSAGES ================= */
 async function loadMessages(){
 
   if (!currentChatId) return;
@@ -78,30 +179,17 @@ async function loadMessages(){
   const data = snap.data();
   if (!data) return;
 
-  data.messages.forEach(m=>{
+  // optional label
+  if (data.type === "group") {
+    const title = document.createElement("div");
+    title.innerHTML = `<b>👥 Group: ${data.name}</b><hr>`;
+    box.appendChild(title);
+  }
 
+  data.messages.forEach(m=>{
     const div = document.createElement("div");
     div.className = "msg " + (m.from===me ? "me" : "other");
-
-    // ⏱ FORMAT TIMESTAMP
-    let timeText = "";
-
-    if (m.time) {
-      const date = new Date(m.time);
-      timeText = date.toLocaleString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
-    div.innerHTML = `
-      <b>${m.from || "Unknown"}:</b>
-      ${m.text || ""}
-      <span style="float:right; font-size:11px; opacity:0.6;">
-        ${timeText}
-      </span>
-    `;
-
+    div.textContent = m.from + ": " + m.text;
     box.appendChild(div);
   });
 
@@ -133,3 +221,6 @@ window.sendMsg = async function(){
 setInterval(loadMessages,2000);
 
 </script>
+
+</body>
+</html>
