@@ -1,73 +1,208 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Profile</title>
-</head>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <style>
+    /* CSS Variables for easy color theme management */
+    :root {
+      --primary: limegreen;
+      --primary-hover: #2eb82e;
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-main: #333333;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2828;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .profile-card {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .profile-card h1 {
+      text-align: center;
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+    }
+
+    .info-group {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .info-group p {
+      margin: 0.5rem 0;
+      font-weight: 600;
+    }
+
+    .info-group span {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .action-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(50, 205, 50, 0.1);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background-color: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      margin-top: 1rem;
+    }
+
+    .btn-danger:hover {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
 <body>
 
-<h1>Profile</h1>
+  <div class="profile-card">
+    <h1>Profile</h1>
 
-<p>Username: <span id="username"></span></p>
-<p>Role: <span id="role"></span></p>
+    <div class="info-group">
+      <p>Username: <span id="username">Loading...</span></p>
+      <p>Role: <span id="role">Loading...</span></p>
+    </div>
 
-<input id="newPass" type="password" placeholder="New password">
-<button id="saveBtn">Update Password</button>
+    <div class="action-group">
+      <input id="newPass" type="password" placeholder="New password">
+      <button id="saveBtn" class="btn-primary">Update Password</button>
+    </div>
 
-<br><br>
+    <div class="action-group">
+      <input id="newUsername" type="text" placeholder="New username">
+      <button id="saveUserBtn" class="btn-primary">Update Username</button>
+    </div>
 
-<input id="newUsername" placeholder="New username">
-<button id="saveUserBtn">Update Username</button>
+    <hr>
 
-<button id="logoutBtn">Logout</button>
+    <button id="logoutBtn" class="btn-danger">Log Out</button>
+  </div>
 
-<script type="module">
+  <script type="module">
+    import {
+      collection, query, where, getDocs,
+      updateDoc, doc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-  collection, query, where, getDocs,
-  updateDoc, doc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { db } from "./js/firebase.js";
 
-import { db } from "./js/firebase.js";
+    const usernameLS = localStorage.getItem("username");
 
-const usernameLS = localStorage.getItem("username");
+    if (!usernameLS) window.location = "index.html";
 
-if (!usernameLS) window.location = "index.html";
+    let docId;
 
-let docId;
+    /* load */
+    async function load(){
+      const q = query(collection(db,"users"), where("username","==",usernameLS));
+      const snap = await getDocs(q);
 
-/* load */
-async function load(){
-  const q = query(collection(db,"users"),where("username","==",usernameLS));
-  const snap = await getDocs(q);
+      if (!snap.empty) {
+        const d = snap.docs[0];
+        docId = d.id;
+        document.getElementById("username").innerText = d.data().username;
+        document.getElementById("role").innerText = d.data().role;
+      }
+    }
 
-  const d = snap.docs[0];
-  docId = d.id;
+    document.getElementById("saveUserBtn").onclick = async () => {
+      const val = document.getElementById("newUsername").value;
+      
+      if (!val) return; // Prevent empty username updates
 
-  document.getElementById("username").innerText = d.data().username;
-  document.getElementById("role").innerText = d.data().role;
-}
+      await updateDoc(doc(db,"users",docId), {
+        username: val
+      });
 
-document.getElementById("saveUserBtn").onclick = async () => {
-  const val = document.getElementById("newUsername").value;
+      localStorage.setItem("username", val);
+      location.reload();
+    };
 
-  await updateDoc(doc(db,"users",docId),{
-    username: val
-  });
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.clear();
+      window.location = "index.html";
+    };
 
-  localStorage.setItem("username",val);
-  location.reload();
-};
-
-document.getElementById("logoutBtn").onclick = () => {
-  localStorage.clear();
-  window.location = "index.html";
-};
-
-load();
-
-</script>
+    load();
+  </script>
 
 </body>
 </html>
+
+```
