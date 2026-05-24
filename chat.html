@@ -98,7 +98,7 @@ function getChatId(a,b){
   return [a,b].sort().join("_");
 }
 
-/* ================= UPDATE LAST SEEN ================= */
+/* ================= MARK AS SEEN ================= */
 async function markSeen(chatId){
   if(!chatId) return;
 
@@ -129,8 +129,7 @@ window.openChat = async function() {
     });
   }
 
-  await markSeen(currentChatId);   // ✅ NEW
-
+  await markSeen(currentChatId);
   loadMessages();
 };
 
@@ -151,8 +150,7 @@ window.openGlobalChat = async function() {
     });
   }
 
-  await markSeen(currentChatId);   // ✅ NEW
-
+  await markSeen(currentChatId);
   loadMessages();
 };
 
@@ -180,8 +178,7 @@ window.createGroupChat = async function() {
 
   currentChatId = id;
 
-  await markSeen(currentChatId);   // ✅ NEW
-
+  await markSeen(currentChatId);
   loadMessages();
 };
 
@@ -255,8 +252,7 @@ window.joinGroupChat = async function(chatId){
 
   document.getElementById("groupList").style.display = "none";
 
-  await markSeen(currentChatId);   // ✅ NEW
-
+  await markSeen(currentChatId);
   loadMessages();
 };
 
