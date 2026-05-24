@@ -210,10 +210,6 @@ async function loadUsers(){
   });
 }
 
-document.getElementById("userSearch").addEventListener("input", () => {
-  loadUsers();
-});
-
     // 🔎 SEARCH FILTER
     if (search &&
       !d.id.toLowerCase().includes(search) &&
@@ -506,6 +502,15 @@ window.deleteChat = async function(chatId, btn){
 window.addEventListener("DOMContentLoaded", () => {
   loadUsers();
   loadChats();
+
+  // 🔎 User search (FIXED: only added once)
+  const searchBox = document.getElementById("userSearch");
+
+  if (searchBox) {
+    searchBox.addEventListener("input", () => {
+      loadUsers();
+    });
+  }
 });
 
 </script>
