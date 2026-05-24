@@ -26,7 +26,7 @@ button{padding:8px;margin:5px;cursor:pointer;}
 
 <h1 style="color:red;text-align:center;">Admin Panel</h1>
 
-<h3 style="color:purple;text-align:center;">Attention all Administrators, for Administration updates, go to chat group 'Admin'.</h3>
+<h3 style="color:purple;text-align:center;">Administration Panel</h3>
 
 <div id="toastContainer"></div>
 
@@ -50,13 +50,12 @@ button{padding:8px;margin:5px;cursor:pointer;}
 
 <button onclick="window.location.href='chatmod.html'">Chat Moderation</button>
 
-<!-- TOGGLE BUTTON -->
 <button onclick="toggleChatMonitor()">▼ Show Chat Monitor</button>
 
-<!-- LIVE CHAT MONITOR -->
 <div class="box">
   <h3>Live Chat Monitor</h3>
   <button onclick="loadChats()">Refresh Chats</button>
+
   <div id="chatMonitorWrapper" style="display:none;">
     <div id="chatMonitor"></div>
   </div>
@@ -111,30 +110,28 @@ async function log(action){
   });
 }
 
-/* ================= PASSWORD HASHING ================= */
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2,"0")).join("");
+/* ================= HASH ================= */
+async function hashPassword(password){
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-256", enc.encode(password));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
 /* ================= USERS ================= */
-async function loadUsers() {
-  const snap = await getDocs(collection(db, "users"));
+async function loadUsers(){
+  const snap = await getDocs(collection(db,"users"));
   const box = document.getElementById("users");
-  const search = document.getElementById("userSearch")?.value?.toLowerCase() || "";
+  const search = (document.getElementById("userSearch")?.value || "").toLowerCase();
 
   box.innerHTML = "";
 
-  snap.forEach((d) => {
+  snap.forEach(d=>{
     const data = d.data();
 
-    if (search && !d.id.toLowerCase().includes(search) && !data.username.toLowerCase().includes(search))
-      return;
+    const username = (data.username || "").toLowerCase();
+    if(search && !d.id.toLowerCase().includes(search) && !username.includes(search)) return;
 
-    const locked = data.locked;
+    const locked = data.locked || false;
     const role = data.role || "user";
 
     const div = document.createElement("div");
@@ -142,108 +139,146 @@ async function loadUsers() {
 
     div.innerHTML = `
       <b>ID:</b> ${d.id}<br>
-      <span class="${locked ? "locked" : "unlocked"}">${locked ? "🔒 Locked" : "🔓 Active"}</span><br>
+
+      <span class="${locked ? "locked" : "unlocked"}">
+        ${locked ? "🔒 Locked" : "🔓 Active"}
+      </span><br>
+
       Username:<br>
       <input id="u-${d.id}" value="${data.username || ""}"><br>
+
       Role:<br>
       <select id="r-${d.id}">
         <option value="user" ${role==="user"?"selected":""}>User</option>
         <option value="mod" ${role==="mod"?"selected":""}>Mod</option>
         <option value="admin" ${role==="admin"?"selected":""}>Admin</option>
       </select><br>
+
       Password:<br>
       <input id="p-${d.id}" placeholder="new password"><br>
+
       Notes:<br>
       <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
+
       ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
+
       <button onclick="saveUser('${d.id}')">Save</button>
       <button onclick="deleteUser('${d.id}')">Delete</button>
-      <button onclick="toggleLock('${d.id}', ${locked})">${locked ? "Unlock" : "Lock"}</button>
+      <button onclick="toggleLock('${d.id}', ${locked})">
+        ${locked ? "Unlock" : "Lock"}
+      </button>
     `;
 
     box.appendChild(div);
   });
 }
 
-/* ================= USER ACTIONS ================= */
-window.createUser = async () => {
-  const username = document.getElementById("newUser").value.trim();
-  const password = document.getElementById("newPass").value;
+/* ================= ACTIONS ================= */
+window.createUser = async ()=>{
+  const u = document.getElementById("newUser").value.trim();
+  const p = document.getElementById("newPass").value;
 
-  if (!username || !password) {
-    toast("Username and password required", "error");
-    return;
-  }
-
-  const passwordHash = await hashPassword(password);
+  if(!u || !p) return toast("Missing fields","error");
 
   await addDoc(collection(db,"users"),{
-    username,
-    passwordHash,
+    username:u,
+    passwordHash:await hashPassword(p),
     role:"user",
     locked:false,
     created:Date.now()
   });
 
   toast("User created","success");
-  log("Created user");
   loadUsers();
 };
 
-window.saveUser = async (id) => {
-  const u = document.getElementById("u-" + id).value;
-  const r = document.getElementById("r-" + id).value;
-  const p = document.getElementById("p-" + id).value;
-  const n = document.getElementById("n-" + id).value;
+window.saveUser = async (id)=>{
+  const u = document.getElementById("u-"+id).value;
+  const r = document.getElementById("r-"+id).value;
+  const p = document.getElementById("p-"+id).value;
+  const n = document.getElementById("n-"+id).value;
 
-  const data = { username: u, role: r, adminNotes: n };
-  if (p) data.passwordHash = await hashPassword(p);
+  const data = {username:u, role:r, adminNotes:n};
+  if(p) data.passwordHash = await hashPassword(p);
 
-  await updateDoc(doc(db, "users", id), data);
+  await updateDoc(doc(db,"users",id),data);
 
-  toast("Saved", "success");
-  log("Updated " + id);
+  toast("Saved","success");
   loadUsers();
 };
 
-window.deleteUser = async (id) => {
+window.deleteUser = async (id)=>{
   await deleteDoc(doc(db,"users",id));
   toast("Deleted","info");
-  log("Deleted "+id);
   loadUsers();
 };
 
-window.toggleLock = async (id,state) => {
-  let lockReason = "";
-  if (!state) {
-    lockReason = prompt("Reason for locking this user:");
-    if (!lockReason) { alert("Lock cancelled - reason required."); return; }
+window.toggleLock = async (id,state)=>{
+  let reason = "";
+
+  if(!state){
+    reason = prompt("Lock reason:");
+    if(!reason) return;
   }
-  await updateDoc(doc(db,"users",id), { locked: !state, lockReason: !state ? lockReason : "" });
+
+  await updateDoc(doc(db,"users",id),{
+    locked:!state,
+    lockReason:!state?reason:""
+  });
+
   toast("Updated","info");
-  log("Lock toggle " + id);
   loadUsers();
 };
 
 /* ================= LOGS ================= */
-window.openLog = async () => {
+window.openLog = async ()=>{
   const box=document.getElementById("logBox");
-  if(box.style.display==="block"){ box.style.display="none"; return; }
+
+  if(box.style.display==="block"){
+    box.style.display="none";
+    return;
+  }
 
   const snap = await getDocs(collection(db,"adminLogs"));
+
   box.innerHTML="<h4>Logs</h4>";
-  snap.forEach(d=>{ const x=d.data(); box.innerHTML += `<div>${x.user}: ${x.action}</div>`; });
+  snap.forEach(d=>{
+    const x=d.data();
+    box.innerHTML += `<div>${x.user}: ${x.action}</div>`;
+  });
+
   box.style.display="block";
 };
 
 /* ================= CHAT MONITOR ================= */
-window.toggleChatMonitor = function () {
-  const wrapper = document.getElementById("chatMonitorWrapper");
-  const btn = document.querySelector("button[onclick='toggleChatMonitor()']");
-  chatMonitorOpen = !chatMonitorOpen;
-  if (chatMonitorOpen) { wrapper.style.display="block"; btn.innerText="▲ Hide Chat Monitor"; }
-  else { wrapper.style.display="none"; btn.innerText="▼ Show Chat Monitor"; }
+window.toggleChatMonitor = ()=>{
+  const w=document.getElementById("chatMonitorWrapper");
+  chatMonitorOpen=!chatMonitorOpen;
+  w.style.display=chatMonitorOpen?"block":"none";
 };
 
-window.loadChats = async function () {
-  const
+window.loadChats = async ()=>{
+  const monitor=document.getElementById("chatMonitor");
+  monitor.innerHTML="Loading...";
+
+  const snap = await getDocs(collection(db,"chats"));
+  monitor.innerHTML="";
+
+  snap.forEach(c=>{
+    const div=document.createElement("div");
+    div.className="user";
+    div.innerHTML=`<b>${c.id}</b>`;
+    monitor.appendChild(div);
+  });
+};
+
+/* ================= INIT ================= */
+window.addEventListener("DOMContentLoaded", ()=>{
+  loadUsers();
+
+  document.getElementById("userSearch").addEventListener("input", loadUsers);
+});
+</script>
+
+</body>
+</html>
