@@ -162,6 +162,10 @@ async function loadUsers(){
 
     const data = d.data();
 
+document.getElementById("userSearch").addEventListener("input", () => {
+  loadUsers();
+});
+
     // 🔎 SEARCH FILTER
     if (search &&
       !d.id.toLowerCase().includes(search) &&
