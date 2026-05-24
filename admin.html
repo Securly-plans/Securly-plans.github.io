@@ -118,59 +118,86 @@ async function hashPassword(password){
 }
 
 /* ================= USERS ================= */
-async function loadUsers(){
-  const snap = await getDocs(collection(db,"users"));
+async function loadUsers() {
   const box = document.getElementById("users");
-  const search = (document.getElementById("userSearch")?.value || "").toLowerCase();
+  box.innerHTML = "Loading users...";
 
-  box.innerHTML = "";
+  try {
+    const snap = await getDocs(collection(db, "users"));
 
-  snap.forEach(d=>{
-    const data = d.data();
+    console.log("Users fetched:", snap.size);
 
-    const username = (data.username || "").toLowerCase();
-    if(search && !d.id.toLowerCase().includes(search) && !username.includes(search)) return;
+    const search =
+      document.getElementById("userSearch")?.value?.toLowerCase() || "";
 
-    const locked = data.locked || false;
-    const role = data.role || "user";
+    box.innerHTML = "";
 
-    const div = document.createElement("div");
-    div.className = "user";
+    if (snap.empty) {
+      box.innerHTML = "<p>No users found in Firestore.</p>";
+      return;
+    }
 
-    div.innerHTML = `
-      <b>ID:</b> ${d.id}<br>
+    snap.forEach((d) => {
+      const data = d.data() || {};
 
-      <span class="${locked ? "locked" : "unlocked"}">
-        ${locked ? "🔒 Locked" : "🔓 Active"}
-      </span><br>
+      const username = (data.username || "").toString();
+      const role = data.role || "user";
+      const locked = !!data.locked;
 
-      Username:<br>
-      <input id="u-${d.id}" value="${data.username || ""}"><br>
+      // SAFE SEARCH (prevents crashes)
+      if (
+        search &&
+        !d.id.toLowerCase().includes(search) &&
+        !username.toLowerCase().includes(search)
+      ) return;
 
-      Role:<br>
-      <select id="r-${d.id}">
-        <option value="user" ${role==="user"?"selected":""}>User</option>
-        <option value="mod" ${role==="mod"?"selected":""}>Mod</option>
-        <option value="admin" ${role==="admin"?"selected":""}>Admin</option>
-      </select><br>
+      const div = document.createElement("div");
+      div.className = "user";
 
-      Password:<br>
-      <input id="p-${d.id}" placeholder="new password"><br>
+      div.innerHTML = `
+        <b>ID:</b> ${d.id}<br>
 
-      Notes:<br>
-      <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
+        <span class="${locked ? "locked" : "unlocked"}">
+          ${locked ? "🔒 Locked" : "🔓 Active"}
+        </span><br>
 
-      ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
+        Username:<br>
+        <input id="u-${d.id}" value="${username}"><br>
 
-      <button onclick="saveUser('${d.id}')">Save</button>
-      <button onclick="deleteUser('${d.id}')">Delete</button>
-      <button onclick="toggleLock('${d.id}', ${locked})">
-        ${locked ? "Unlock" : "Lock"}
-      </button>
+        Role:<br>
+        <select id="r-${d.id}">
+          <option value="user" ${role === "user" ? "selected" : ""}>User</option>
+          <option value="mod" ${role === "mod" ? "selected" : ""}>Mod</option>
+          <option value="admin" ${role === "admin" ? "selected" : ""}>Admin</option>
+        </select><br>
+
+        Password:<br>
+        <input id="p-${d.id}" placeholder="new password"><br>
+
+        Notes:<br>
+        <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
+
+        ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
+
+        <button onclick="saveUser('${d.id}')">Save</button>
+        <button onclick="deleteUser('${d.id}')">Delete</button>
+        <button onclick="toggleLock('${d.id}', ${locked})">
+          ${locked ? "Unlock" : "Lock"}
+        </button>
+      `;
+
+      box.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("🔥 Firestore error loading users:", err);
+    box.innerHTML = `
+      <p style="color:red;">
+        Failed to load users.<br>
+        Check console (F12) for Firebase error.
+      </p>
     `;
-
-    box.appendChild(div);
-  });
+  }
 }
 
 /* ================= ACTIONS ================= */
