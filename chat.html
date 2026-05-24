@@ -152,9 +152,7 @@ window.createGroupChat = async function() {
 
   const list = users.split(",").map(u => u.trim());
 
-  if (!list.includes(me)) {
-    list.push(me);
-  }
+  if (!list.includes(me)) list.push(me);
 
   const id = "group_" + Date.now();
 
@@ -170,7 +168,7 @@ window.createGroupChat = async function() {
   loadMessages();
 };
 
-/* ================= GROUP LIST ================= */
+/* ================= GROUP LIST (SECURE FILTER) ================= */
 window.openGroupList = async function() {
 
   const box = document.getElementById("groupList");
@@ -192,7 +190,11 @@ window.openGroupList = async function() {
   snap.forEach(chatDoc => {
 
     const data = chatDoc.data();
+
     if (data.type !== "group") return;
+
+    // 🔒 ONLY SHOW GROUPS USER IS IN
+    if (!data.participants || !data.participants.includes(me)) return;
 
     found = true;
 
@@ -210,11 +212,11 @@ window.openGroupList = async function() {
   });
 
   if (!found) {
-    box.innerHTML = "<i>No group chats found.</i>";
+    box.innerHTML = "<i>No group chats available.</i>";
   }
 };
 
-/* ================= JOIN GROUP (FIXED SECURITY) ================= */
+/* ================= JOIN GROUP (SECURE) ================= */
 window.joinGroupChat = async function(chatId){
 
   const ref = doc(db,"chats",chatId);
@@ -255,15 +257,13 @@ async function loadMessages(){
   const data = snap.data();
   if (!data) return;
 
-  // 🚫 SECURITY CHECK
+  // 🔒 GROUP ACCESS CHECK
   if (data.type === "group") {
     if (!data.participants || !data.participants.includes(me)) {
       box.innerHTML = "<b>Access denied: You are not in this group.</b>";
       return;
     }
-  }
 
-  if (data.type === "group") {
     box.innerHTML += `<b>👥 Group: ${data.name}</b><hr>`;
   }
 
@@ -309,7 +309,7 @@ window.sendMsg = async function(){
 
   const data = snap.data();
 
-  // 🚫 SECURITY CHECK
+  // 🔒 GROUP SEND CHECK
   if (data.type === "group") {
     if (!data.participants || !data.participants.includes(me)) {
       alert("You are not allowed to send messages in this group.");
