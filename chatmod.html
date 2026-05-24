@@ -61,11 +61,9 @@ small{
 import {
   collection,
   getDocs,
-  query,
-  where,
-  deleteDoc,
-  updateDoc,
-  doc
+  doc,
+  getDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -120,23 +118,25 @@ window.toggleChat = async function(chatId, btn){
 
   box.innerHTML = "Loading messages...";
 
-  const q = query(
-    collection(db,"messages"),
-    where("chatId","==",chatId)
-  );
+  const ref = doc(db, "chats", chatId);
+  const snap = await getDoc(ref);
 
-  const snap = await getDocs(q);
+  if (!snap.exists()){
+    box.innerHTML = "Chat not found";
+    return;
+  }
+
+  const data = snap.data();
+  const messages = data.messages || [];
 
   box.innerHTML = "";
 
-  if (snap.empty){
+  if (messages.length === 0){
     box.innerHTML = "<i>No messages</i>";
     return;
   }
 
-  snap.forEach(msgDoc => {
-
-    const msg = msgDoc.data();
+  messages.forEach((msg, index) => {
 
     const time = msg.time
       ? new Date(msg.time).toLocaleString()
@@ -146,16 +146,14 @@ window.toggleChat = async function(chatId, btn){
     row.className = "message";
 
     row.innerHTML = `
-      <b>${msg.sender || "Unknown"}:</b>
-      ${msg.text || ""}<br>
-
+      <b>${msg.from || "Unknown"}:</b> ${msg.text || ""}<br>
       <small>${time}</small><br>
 
-      <button onclick="editMessage('${msgDoc.id}', \`${msg.text}\`)">
+      <button onclick="editMessage('${chatId}', ${index})">
         Edit
       </button>
 
-      <button onclick="deleteMessage('${msgDoc.id}')"
+      <button onclick="deleteMessage('${chatId}', ${index})"
         style="background:red;color:white;">
         Delete
       </button>
@@ -165,24 +163,44 @@ window.toggleChat = async function(chatId, btn){
   });
 };
 
-/* ================= DELETE MESSAGE ================= */
-window.deleteMessage = async function(id){
+/* ================= EDIT MESSAGE ================= */
+window.editMessage = async function(chatId, index){
 
-  if(!confirm("Delete message?")) return;
+  const ref = doc(db, "chats", chatId);
+  const snap = await getDoc(ref);
 
-  await deleteDoc(doc(db,"messages",id));
+  const data = snap.data();
+  const messages = data.messages || [];
+
+  const oldText = messages[index]?.text || "";
+  const newText = prompt("Edit message:", oldText);
+
+  if (!newText) return;
+
+  messages[index].text = newText;
+
+  await updateDoc(ref, {
+    messages: messages
+  });
 
   loadChats();
 };
 
-/* ================= EDIT MESSAGE ================= */
-window.editMessage = async function(id, oldText){
+/* ================= DELETE MESSAGE ================= */
+window.deleteMessage = async function(chatId, index){
 
-  const newText = prompt("Edit message:", oldText);
-  if (!newText) return;
+  if(!confirm("Delete message?")) return;
 
-  await updateDoc(doc(db,"messages",id), {
-    text: newText
+  const ref = doc(db, "chats", chatId);
+  const snap = await getDoc(ref);
+
+  const data = snap.data();
+  const messages = data.messages || [];
+
+  messages.splice(index, 1);
+
+  await updateDoc(ref, {
+    messages: messages
   });
 
   loadChats();
