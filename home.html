@@ -7,7 +7,6 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- SECURITY GATE -->
 <script>
 (function () {
     const isLoggedIn = localStorage.getItem("loggedIn") === "true";
@@ -47,13 +46,20 @@
 
 .admin-link { background:#2196f3; }
 .logout-btn { background:#f44336; }
-.chat-link { background:#555; } 
+.chat-link { background:#555; }
 
 .username-badge {
     padding:6px 10px;
     border-radius:6px;
     background:#444;
     font-size:14px;
+}
+
+#msgBadge {
+    display:none;
+    margin-left:6px;
+    color:red;
+    font-weight:bold;
 }
 </style>
 
@@ -72,14 +78,16 @@
 
         <span id="usernameDisplay" class="username-badge"></span>
 
-        <a href="chat.html" class="chat-link">Chat</a>
+        <a href="chat.html" class="chat-link">
+            Chat <span id="msgBadge">● New</span>
+        </a>
 
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">Chat Mod</a>
-        
+
         <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
 </div>
@@ -116,6 +124,71 @@ Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
 Emerald Games - Alpha 1.8
 </p>
 
+<script type="module">
+
+import {
+  collection,
+  getDocs,
+  getDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./js/firebase.js";
+
+const me = localStorage.getItem("username");
+
+const badge = document.getElementById("msgBadge");
+
+/* ================= CHECK NEW MESSAGES ================= */
+async function checkMessages() {
+
+  if (!me) return;
+
+  const chatsSnap = await getDocs(collection(db, "chats"));
+
+  let hasNew = false;
+
+  for (const chatDoc of chatsSnap.docs) {
+
+    const data = chatDoc.data();
+
+    // only private chats
+    if (data.type !== "private") continue;
+
+    if (!data.participants?.includes(me)) continue;
+
+    const chatId = chatDoc.id;
+
+    const seenRef = doc(db, "chatSeen", chatId + "_" + me);
+    const seenSnap = await getDoc(seenRef);
+
+    const lastSeen = seenSnap.exists()
+      ? seenSnap.data().lastSeen
+      : 0;
+
+    const messages = data.messages || [];
+
+    const unread = messages.some(m => m.time > lastSeen);
+
+    if (unread) {
+      hasNew = true;
+      break;
+    }
+  }
+
+  if (hasNew) {
+    badge.style.display = "inline";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+/* run loop */
+setInterval(checkMessages, 5000);
+checkMessages();
+
+</script>
+
 <!-- LOGOUT + NAVBAR -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -143,6 +216,7 @@ if (role === "admin") {
 if (role === "admin" || role === "mod") {
     document.getElementById("modChatLink").style.display = "inline-block";
 }
+
 </script>
 
 <script src="script.js"></script>
