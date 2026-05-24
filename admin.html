@@ -252,10 +252,10 @@ window.createUser = async () => {
 
 window.saveUser = async (id) => {
 
-  const u = document.getElementById("u-"+id).value;
-  const r = document.getElementById("r-"+id).value;
-  const p = document.getElementById("p-"+id).value;
-  const n = document.getElementById("n-"+id).value;
+  const u = document.getElementById("u-" + id).value;
+  const r = document.getElementById("r-" + id).value;
+  const p = document.getElementById("p-" + id).value;
+  const n = document.getElementById("n-" + id).value;
 
   const data = {
     username: u,
@@ -267,17 +267,10 @@ window.saveUser = async (id) => {
     data.passwordHash = await hashPassword(p);
   }
 
-  await updateDoc(doc(db,"users",id), data);
+  await updateDoc(doc(db, "users", id), data);
 
-  toast("Saved","success");
+  toast("Saved", "success");
   log("Updated " + id);
-  loadUsers();
-};
-
-  await updateDoc(doc(db,"users",id),data);
-
-  toast("Saved","success");
-  log("Updated "+id);
   loadUsers();
 };
 
