@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chat Monitor</title>
+
+<style>
+body{
+  font-family:Arial;
+  padding:20px;
+  background:#f4f4f4;
+}
+
+h1{
+  text-align:center;
+  color:#d10000;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+
+.chat{
+  background:#eee;
+  padding:10px;
+  margin:10px 0;
+  border-radius:8px;
+}
+
+.message{
+  padding:6px;
+  border-bottom:1px solid #ccc;
+}
+
+button{
+  padding:6px;
+  margin:4px;
+  cursor:pointer;
+}
+
+small{
+  color:gray;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Chat Moderator Panel</h1>
+
+<div class="box">
+  <button onclick="loadChats()">Refresh Chats</button>
+  <div id="chatList"></div>
+</div>
+
+<script type="module">
+
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  updateDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./js/firebase.js";
+
+/* ================= LOAD CHATS ================= */
+window.loadChats = async function(){
+
+  const box = document.getElementById("chatList");
+  box.innerHTML = "Loading chats...";
+
+  const snap = await getDocs(collection(db,"chats"));
+
+  box.innerHTML = "";
+
+  if (snap.empty){
+    box.innerHTML = "No chats found";
+    return;
+  }
+
+  snap.forEach(d => {
+
+    const div = document.createElement("div");
+    div.className = "chat";
+
+    div.innerHTML = `
+      <b>Chat ID:</b> ${d.id}<br>
+
+      <button onclick="toggleChat('${d.id}', this)">
+        ▼ View Messages
+      </button>
+
+      <div id="chat-${d.id}" style="display:none;margin-top:10px;"></div>
+    `;
+
+    box.appendChild(div);
+  });
+};
+
+/* ================= TOGGLE CHAT ================= */
+window.toggleChat = async function(chatId, btn){
+
+  const box = document.getElementById("chat-" + chatId);
+
+  if (box.style.display === "block"){
+    box.style.display = "none";
+    btn.innerText = "▼ View Messages";
+    return;
+  }
+
+  box.style.display = "block";
+  btn.innerText = "▲ Hide Messages";
+
+  box.innerHTML = "Loading messages...";
+
+  const q = query(
+    collection(db,"messages"),
+    where("chatId","==",chatId)
+  );
+
+  const snap = await getDocs(q);
+
+  box.innerHTML = "";
+
+  if (snap.empty){
+    box.innerHTML = "<i>No messages</i>";
+    return;
+  }
+
+  snap.forEach(msgDoc => {
+
+    const msg = msgDoc.data();
+
+    const time = msg.time
+      ? new Date(msg.time).toLocaleString()
+      : "Unknown";
+
+    const row = document.createElement("div");
+    row.className = "message";
+
+    row.innerHTML = `
+      <b>${msg.sender || "Unknown"}:</b>
+      ${msg.text || ""}<br>
+
+      <small>${time}</small><br>
+
+      <button onclick="editMessage('${msgDoc.id}', \`${msg.text}\`)">
+        Edit
+      </button>
+
+      <button onclick="deleteMessage('${msgDoc.id}')"
+        style="background:red;color:white;">
+        Delete
+      </button>
+    `;
+
+    box.appendChild(row);
+  });
+};
+
+/* ================= DELETE MESSAGE ================= */
+window.deleteMessage = async function(id){
+
+  if(!confirm("Delete message?")) return;
+
+  await deleteDoc(doc(db,"messages",id));
+
+  loadChats();
+};
+
+/* ================= EDIT MESSAGE ================= */
+window.editMessage = async function(id, oldText){
+
+  const newText = prompt("Edit message:", oldText);
+  if (!newText) return;
+
+  await updateDoc(doc(db,"messages",id), {
+    text: newText
+  });
+
+  loadChats();
+};
+
+/* ================= INIT ================= */
+window.addEventListener("DOMContentLoaded", loadChats);
+
+</script>
+
+</body>
+</html>

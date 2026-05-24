@@ -48,6 +48,10 @@ button{padding:8px;margin:5px;cursor:pointer;}
   <div id="logBox" style="display:none;"></div>
 </div>
 
+<button onclick="window.location.href='chatmod.html'">
+    Chat Moderation
+</button>
+
 <!-- TOGGLE BUTTON -->
 <button onclick="toggleChatMonitor()">
   ▼ Show Chat Monitor
@@ -112,6 +116,32 @@ async function log(action){
   });
 }
 
+/* ================= PASSWORD HASHING ================= */
+async function hashPassword(password) {
+
+  const encoder = new TextEncoder();
+
+  const data = encoder.encode(password);
+
+  const hashBuffer =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+  const hashArray =
+    Array.from(
+      new Uint8Array(hashBuffer)
+    );
+
+  return hashArray
+    .map(b =>
+      b.toString(16)
+       .padStart(2,"0")
+    )
+    .join("");
+}
+
 /* ================= USERS ================= */
 async function loadUsers(){
 
@@ -161,8 +191,26 @@ async function loadUsers(){
 /* ================= USER ACTIONS ================= */
 window.createUser = async () => {
 
-  const username = newUser.value;
-  const password = newPass.value;
+  const username =
+  document
+    .getElementById("newUser")
+    .value
+    .trim();
+
+  const password =
+  document
+    .getElementById("newPass")
+    .value;
+
+  if (!username || !password) {
+
+  toast(
+    "Username and password required",
+    "error"
+  );
+
+  return;
+}
 
   const passwordHash = await hashPassword(password);
 
