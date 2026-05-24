@@ -54,13 +54,6 @@
     background:#444;
     font-size:14px;
 }
-
-#msgBadge {
-    display:none;
-    margin-left:6px;
-    color:red;
-    font-weight:bold;
-}
 </style>
 
 </head>
@@ -78,9 +71,7 @@
 
         <span id="usernameDisplay" class="username-badge"></span>
 
-        <a href="chat.html" class="chat-link">
-            Chat <span id="msgBadge">● New</span>
-        </a>
+        <a href="chat.html" class="chat-link">Chat</a>
 
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
@@ -92,7 +83,6 @@
     </div>
 </div>
 
-<!-- PAGE -->
 <header>
     <h1 style="color:powderblue;font-family:verdana;">Home</h1>
     <input type="text" id="searchBar" placeholder="Search games...">
@@ -124,68 +114,64 @@ Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
 Emerald Games - Alpha 1.8
 </p>
 
+<!-- FIREBASE NOTIFICATIONS -->
 <script type="module">
 
 import {
   collection,
-  getDocs,
-  getDoc,
-  doc
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
 const me = localStorage.getItem("username");
 
-const badge = document.getElementById("msgBadge");
+let notified = new Set();
 
-/* ================= CHECK NEW MESSAGES ================= */
-async function checkMessages() {
-
-  if (!me) return;
-
-  const chatsSnap = await getDocs(collection(db, "chats"));
-
-  let hasNew = false;
-
-  for (const chatDoc of chatsSnap.docs) {
-
-    const data = chatDoc.data();
-
-    // only private chats
-    if (data.type !== "private") continue;
-
-    if (!data.participants?.includes(me)) continue;
-
-    const chatId = chatDoc.id;
-
-    const seenRef = doc(db, "chatSeen", chatId + "_" + me);
-    const seenSnap = await getDoc(seenRef);
-
-    const lastSeen = seenSnap.exists()
-      ? seenSnap.data().lastSeen
-      : 0;
-
-    const messages = data.messages || [];
-
-    const unread = messages.some(m => m.time > lastSeen);
-
-    if (unread) {
-      hasNew = true;
-      break;
-    }
-  }
-
-  if (hasNew) {
-    badge.style.display = "inline";
-  } else {
-    badge.style.display = "none";
-  }
+/* 🔔 REQUEST NOTIFICATION PERMISSION */
+if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
 }
 
-/* run loop */
-setInterval(checkMessages, 5000);
-checkMessages();
+/* 🔥 REAL-TIME MESSAGE LISTENER */
+onSnapshot(collection(db, "chats"), (snapshot) => {
+
+    snapshot.docChanges().forEach(change => {
+
+        if (change.type !== "modified") return;
+
+        const data = change.doc.data();
+        const chatId = change.doc.id;
+
+        if (data.type !== "private") return;
+        if (!data.participants?.includes(me)) return;
+
+        const messages = data.messages || [];
+        const last = messages[messages.length - 1];
+
+        if (!last) return;
+
+        if (last.from === me) return;
+
+        const key = chatId + "_" + last.time;
+
+        if (notified.has(key)) return;
+        notified.add(key);
+
+        showNotification(last.from, last.text);
+    });
+});
+
+/* 🔔 NOTIFICATION POPUP */
+function showNotification(sender, text) {
+
+    if (Notification.permission !== "granted") return;
+
+    new Notification("💬 New message from " + sender, {
+        body: text.length > 60 ? text.slice(0, 60) + "..." : text,
+        icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+    });
+}
 
 </script>
 
@@ -216,7 +202,6 @@ if (role === "admin") {
 if (role === "admin" || role === "mod") {
     document.getElementById("modChatLink").style.display = "inline-block";
 }
-
 </script>
 
 <script src="script.js"></script>
