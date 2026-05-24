@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Chat Moderator</title>
 
+<script type="module" src="./js/session.js"></script>
+
 <style>
 body{
     margin:0;
@@ -154,6 +156,13 @@ getDoc,
 updateDoc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Admin access check
+if(localStorage.getItem("role")!=="admin"){
+    alert("Access denied");
+    location.href="index.html";
+    throw new Error("Admin access required");
+}
 
 const chatList = document.getElementById("chatList");
 const messagesDiv = document.getElementById("messages");
