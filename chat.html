@@ -91,12 +91,22 @@ import {
 import { db } from "./js/firebase.js";
 
 const me = localStorage.getItem("username");
-
 let currentChatId = null;
 
 /* ================= CHAT ID ================= */
 function getChatId(a,b){
   return [a,b].sort().join("_");
+}
+
+/* ================= UPDATE LAST SEEN ================= */
+async function markSeen(chatId){
+  if(!chatId) return;
+
+  await setDoc(doc(db,"chatSeen",chatId + "_" + me),{
+    chatId,
+    user: me,
+    lastSeen: Date.now()
+  });
 }
 
 /* ================= PRIVATE CHAT ================= */
@@ -119,6 +129,8 @@ window.openChat = async function() {
     });
   }
 
+  await markSeen(currentChatId);   // ✅ NEW
+
   loadMessages();
 };
 
@@ -138,6 +150,8 @@ window.openGlobalChat = async function() {
       created:Date.now()
     });
   }
+
+  await markSeen(currentChatId);   // ✅ NEW
 
   loadMessages();
 };
@@ -165,10 +179,13 @@ window.createGroupChat = async function() {
   });
 
   currentChatId = id;
+
+  await markSeen(currentChatId);   // ✅ NEW
+
   loadMessages();
 };
 
-/* ================= GROUP LIST (SECURE FILTER) ================= */
+/* ================= GROUP LIST ================= */
 window.openGroupList = async function() {
 
   const box = document.getElementById("groupList");
@@ -190,10 +207,8 @@ window.openGroupList = async function() {
   snap.forEach(chatDoc => {
 
     const data = chatDoc.data();
-
     if (data.type !== "group") return;
 
-    // 🔒 ONLY SHOW GROUPS USER IS IN
     if (!data.participants || !data.participants.includes(me)) return;
 
     found = true;
@@ -216,7 +231,7 @@ window.openGroupList = async function() {
   }
 };
 
-/* ================= JOIN GROUP (SECURE) ================= */
+/* ================= JOIN GROUP ================= */
 window.joinGroupChat = async function(chatId){
 
   const ref = doc(db,"chats",chatId);
@@ -240,10 +255,12 @@ window.joinGroupChat = async function(chatId){
 
   document.getElementById("groupList").style.display = "none";
 
+  await markSeen(currentChatId);   // ✅ NEW
+
   loadMessages();
 };
 
-/* ================= LOAD MESSAGES (SECURE) ================= */
+/* ================= LOAD MESSAGES ================= */
 async function loadMessages(){
 
   if (!currentChatId) return;
@@ -257,7 +274,6 @@ async function loadMessages(){
   const data = snap.data();
   if (!data) return;
 
-  // 🔒 GROUP ACCESS CHECK
   if (data.type === "group") {
     if (!data.participants || !data.participants.includes(me)) {
       box.innerHTML = "<b>Access denied: You are not in this group.</b>";
@@ -298,7 +314,7 @@ async function loadMessages(){
   box.scrollTop = box.scrollHeight;
 }
 
-/* ================= SEND MESSAGE (SECURE) ================= */
+/* ================= SEND MESSAGE ================= */
 window.sendMsg = async function(){
 
   const text = document.getElementById("msgInput").value;
@@ -309,7 +325,6 @@ window.sendMsg = async function(){
 
   const data = snap.data();
 
-  // 🔒 GROUP SEND CHECK
   if (data.type === "group") {
     if (!data.participants || !data.participants.includes(me)) {
       alert("You are not allowed to send messages in this group.");
