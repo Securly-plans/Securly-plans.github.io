@@ -71,6 +71,11 @@ button{padding:8px;margin:5px;cursor:pointer;}
   </div>
 </div>
 
+<div class="box">
+  <h3>User Search</h3>
+  <input id="userSearch" placeholder="Search username or ID...">
+</div>
+
 <div id="users"></div>
 
 <script type="module">
@@ -148,21 +153,83 @@ async function loadUsers(){
   const snap = await getDocs(collection(db,"users"));
   const box = document.getElementById("users");
 
-  box.innerHTML="";
+  const search =
+    document.getElementById("userSearch")?.value?.toLowerCase() || "";
 
-  snap.forEach(d=>{
+  box.innerHTML = "";
 
-    const data=d.data();
-    const locked=data.locked;
+  snap.forEach(d => {
 
-    const div=document.createElement("div");
-    div.className="user";
+    const data = d.data();
 
-    div.innerHTML=`
+    if (search &&
+      !d.id.toLowerCase().includes(search) &&
+      !data.username.toLowerCase().includes(search)
+    ) return;
+
+    const locked = data.locked;
+
+    const role = data.role || "user";
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
       <b>ID:</b> ${d.id}<br>
 
-      <span class="${locked?'locked':'unlocked'}">
-        ${locked?"🔒 Locked":"🔓 Active"}
+      <span class="${locked ? 'locked' : 'unlocked'}">
+        ${locked ? "🔒 Locked" : "🔓 Active"}
+      </span><br>
+
+      Username:<br>
+      <input id="u-${d.id}" value="${data.username || ""}"><br>
+
+      Role:<br>
+      <select id="r-${d.id}">
+        <option value="user" ${role==="user"?"selected":""}>User</option>
+        <option value="mod" ${role==="mod"?"selected":""}>Mod</option>
+        <option value="admin" ${role==="admin"?"selected":""}>Admin</option>
+      </select><br>
+
+      Password:<br>
+      <input id="p-${d.id}" placeholder="new password"><br>
+
+      Notes:<br>
+      <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
+
+      ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
+
+      <button onclick="saveUser('${d.id}')">Save</button>
+      <button onclick="deleteUser('${d.id}')">Delete</button>
+      <button onclick="toggleLock('${d.id}',${locked})">
+        ${locked ? "Unlock" : "Lock"}
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+document.getElementById("userSearch").addEventListener("input", () => {
+  loadUsers();
+});
+
+    // 🔎 SEARCH FILTER
+    if (search &&
+      !d.id.toLowerCase().includes(search) &&
+      !data.username.toLowerCase().includes(search)
+    ) return;
+
+    const locked = data.locked;
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>ID:</b> ${d.id}<br>
+
+      <span class="${locked ? 'locked' : 'unlocked'}">
+        ${locked ? "🔒 Locked" : "🔓 Active"}
       </span><br>
 
       Username:<br>
@@ -171,17 +238,24 @@ async function loadUsers(){
       Role:<br>
       <select id="r-${d.id}">
         <option value="user" ${data.role==="user"?"selected":""}>User</option>
-        <option value="admin" ${data.role==="admin"?"selected":""}>Admin</option>
         <option value="mod" ${data.role==="mod"?"selected":""}>Mod</option>
+        <option value="admin" ${data.role==="admin"?"selected":""}>Admin</option>
       </select><br>
 
       Password:<br>
       <input id="p-${d.id}" placeholder="new password"><br>
 
+      <!-- 📝 ADMIN NOTES -->
+      Notes:<br>
+      <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
+
+      <!-- 🔒 LOCK REASON -->
+      ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
+
       <button onclick="saveUser('${d.id}')">Save</button>
       <button onclick="deleteUser('${d.id}')">Delete</button>
       <button onclick="toggleLock('${d.id}',${locked})">
-        ${locked?"Unlock":"Lock"}
+        ${locked ? "Unlock" : "Lock"}
       </button>
     `;
 
@@ -230,20 +304,25 @@ window.createUser = async () => {
 
 window.saveUser = async (id) => {
 
-  const u=document.getElementById("u-"+id).value;
-  const r=document.getElementById("r-"+id).value;
-  const p=document.getElementById("p-"+id).value;
+  const u = document.getElementById("u-" + id).value;
+  const r = document.getElementById("r-" + id).value;
+  const p = document.getElementById("p-" + id).value;
+  const n = document.getElementById("n-" + id).value;
 
-  const data={ username:u, role:r };
+  const data = {
+    username: u,
+    role: r,
+    adminNotes: n
+  };
 
-  if(p){
+  if (p) {
     data.passwordHash = await hashPassword(p);
   }
 
-  await updateDoc(doc(db,"users",id),data);
+  await updateDoc(doc(db, "users", id), data);
 
-  toast("Saved","success");
-  log("Updated "+id);
+  toast("Saved", "success");
+  log("Updated " + id);
   loadUsers();
 };
 
@@ -258,12 +337,23 @@ window.deleteUser = async (id) => {
 
 window.toggleLock = async (id,state) => {
 
+  let lockReason = "";
+
+  if (!state) {
+    lockReason = prompt("Reason for locking this user:");
+    if (!lockReason) {
+      alert("Lock cancelled - reason required.");
+      return;
+    }
+  }
+
   await updateDoc(doc(db,"users",id),{
-    locked:!state
+    locked: !state,
+    lockReason: !state ? lockReason : ""
   });
 
   toast("Updated","info");
-  log("Lock toggle "+id);
+  log("Lock toggle " + id);
   loadUsers();
 };
 
