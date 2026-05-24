@@ -2,212 +2,341 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chat Monitor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Chat Moderator</title>
 
 <style>
 body{
-  font-family:Arial;
-  padding:20px;
-  background:#f4f4f4;
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
 }
 
-h1{
-  text-align:center;
-  color:#d10000;
+header{
+    background:#c40000;
+    color:white;
+    padding:15px;
+    text-align:center;
 }
 
-.box{
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
+.container{
+    display:flex;
+    height:calc(100vh - 60px);
 }
 
-.chat{
-  background:#eee;
-  padding:10px;
-  margin:10px 0;
-  border-radius:8px;
+.sidebar{
+    width:300px;
+    background:white;
+    border-right:1px solid #ddd;
+    overflow-y:auto;
+}
+
+.chat-list{
+    padding:10px;
+}
+
+.chat-item{
+    padding:12px;
+    margin-bottom:5px;
+    background:#eee;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.chat-item:hover{
+    background:#ddd;
+}
+
+.main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+.tools{
+    background:white;
+    padding:10px;
+    border-bottom:1px solid #ddd;
+    display:flex;
+    gap:10px;
+}
+
+.tools input{
+    padding:8px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+.messages{
+    flex:1;
+    overflow-y:auto;
+    padding:15px;
 }
 
 .message{
-  padding:6px;
-  border-bottom:1px solid #ccc;
+    background:white;
+    margin-bottom:10px;
+    padding:10px;
+    border-radius:8px;
+    border-left:4px solid #c40000;
+}
+
+.meta{
+    color:#777;
+    font-size:12px;
+    margin-bottom:5px;
+}
+
+.actions{
+    margin-top:8px;
+}
+
+.actions button{
+    margin-right:5px;
+}
+
+.server-box{
+    background:white;
+    padding:10px;
+    border-top:1px solid #ddd;
+    display:flex;
+    gap:10px;
+}
+
+.server-box input{
+    flex:1;
+    padding:10px;
 }
 
 button{
-  padding:6px;
-  margin:4px;
-  cursor:pointer;
-}
-
-small{
-  color:gray;
+    cursor:pointer;
 }
 </style>
 </head>
-
 <body>
 
-<h1>Chat Moderator Panel</h1>
+<header>
+<h2>Chat Moderator Panel</h2>
+</header>
 
-<div class="box">
-  <button onclick="loadChats()">Refresh Chats</button>
-  <div id="chatList"></div>
+<div class="container">
+
+<div class="sidebar">
+<div class="chat-list" id="chatList"></div>
+</div>
+
+<div class="main">
+
+<div class="tools">
+<input id="userSearch" placeholder="Search username">
+<input id="msgSearch" placeholder="Search message">
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="server-box">
+<input id="serverMessage" placeholder="Send server announcement">
+<button id="sendServer">Send</button>
+</div>
+
+</div>
 </div>
 
 <script type="module">
 
+import { db } from "./firebase.js";
+
 import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+collection,
+getDocs,
+doc,
+getDoc,
+updateDoc
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js";
+const chatList = document.getElementById("chatList");
+const messagesDiv = document.getElementById("messages");
 
-/* ================= LOAD CHATS ================= */
-window.loadChats = async function(){
+let currentChat = null;
+let currentMessages = [];
 
-  const box = document.getElementById("chatList");
-  box.innerHTML = "Loading chats...";
+async function loadChats(){
 
-  const snap = await getDocs(collection(db,"chats"));
+    chatList.innerHTML = "";
 
-  box.innerHTML = "";
+    const snap = await getDocs(collection(db,"chats"));
 
-  if (snap.empty){
-    box.innerHTML = "No chats found";
-    return;
-  }
+    snap.forEach(docSnap=>{
 
-  snap.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "chat-item";
+        div.textContent = docSnap.id;
 
-    const div = document.createElement("div");
-    div.className = "chat";
+        div.onclick = ()=>loadChat(docSnap.id);
 
-    div.innerHTML = `
-      <b>Chat ID:</b> ${d.id}<br>
+        chatList.appendChild(div);
 
-      <button onclick="toggleChat('${d.id}', this)">
-        ▼ View Messages
-      </button>
+    });
 
-      <div id="chat-${d.id}" style="display:none;margin-top:10px;"></div>
-    `;
+}
 
-    box.appendChild(div);
-  });
+async function loadChat(chatId){
+
+    currentChat = chatId;
+
+    const ref = doc(db,"chats",chatId);
+    const snap = await getDoc(ref);
+
+    if(!snap.exists()) return;
+
+    const data = snap.data();
+
+    currentMessages = data.messages || [];
+
+    renderMessages();
+
+}
+
+function renderMessages(){
+
+    const userFilter =
+        document.getElementById("userSearch")
+        .value
+        .toLowerCase();
+
+    const msgFilter =
+        document.getElementById("msgSearch")
+        .value
+        .toLowerCase();
+
+    messagesDiv.innerHTML = "";
+
+    currentMessages.forEach((msg,index)=>{
+
+        if(
+            userFilter &&
+            !msg.from.toLowerCase().includes(userFilter)
+        ) return;
+
+        if(
+            msgFilter &&
+            !msg.text.toLowerCase().includes(msgFilter)
+        ) return;
+
+        const div = document.createElement("div");
+        div.className = "message";
+
+        const date = new Date(msg.time);
+
+        div.innerHTML = `
+        <div class="meta">
+            <b>${msg.from}</b><br>
+            ${date.toLocaleString()}
+        </div>
+
+        <div>${msg.text}</div>
+
+        <div class="actions">
+            <button onclick="editMsg(${index})">
+                Edit
+            </button>
+
+            <button onclick="deleteMsg(${index})">
+                Delete
+            </button>
+        </div>
+        `;
+
+        messagesDiv.appendChild(div);
+
+    });
+
+}
+
+window.editMsg = async function(index){
+
+    const newText = prompt(
+        "Edit message",
+        currentMessages[index].text
+    );
+
+    if(newText === null) return;
+
+    currentMessages[index].text = newText;
+
+    await saveMessages();
+
+}
+
+window.deleteMsg = async function(index){
+
+    if(!confirm("Delete this message?")) return;
+
+    currentMessages.splice(index,1);
+
+    await saveMessages();
+
+}
+
+async function saveMessages(){
+
+    const ref = doc(db,"chats",currentChat);
+
+    await updateDoc(ref,{
+        messages: currentMessages
+    });
+
+    renderMessages();
+
+}
+
+document
+.getElementById("sendServer")
+.onclick = async ()=>{
+
+    if(!currentChat){
+        alert("Select a chat first.");
+        return;
+    }
+
+    const text =
+        document
+        .getElementById("serverMessage")
+        .value
+        .trim();
+
+    if(!text) return;
+
+    currentMessages.push({
+        from:"Server",
+        text:text,
+        time:Date.now()
+    });
+
+    await saveMessages();
+
+    document
+    .getElementById("serverMessage")
+    .value = "";
+
 };
 
-/* ================= TOGGLE CHAT ================= */
-window.toggleChat = async function(chatId, btn){
+document
+.getElementById("userSearch")
+.addEventListener("input",renderMessages);
 
-  const box = document.getElementById("chat-" + chatId);
+document
+.getElementById("msgSearch")
+.addEventListener("input",renderMessages);
 
-  if (box.style.display === "block"){
-    box.style.display = "none";
-    btn.innerText = "▼ View Messages";
-    return;
-  }
+loadChats();
 
-  box.style.display = "block";
-  btn.innerText = "▲ Hide Messages";
-
-  box.innerHTML = "Loading messages...";
-
-  const ref = doc(db, "chats", chatId);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()){
-    box.innerHTML = "Chat not found";
-    return;
-  }
-
-  const data = snap.data();
-  const messages = data.messages || [];
-
-  box.innerHTML = "";
-
-  if (messages.length === 0){
-    box.innerHTML = "<i>No messages</i>";
-    return;
-  }
-
-  messages.forEach((msg, index) => {
-
-    const time = msg.time
-      ? new Date(msg.time).toLocaleString()
-      : "Unknown";
-
-    const row = document.createElement("div");
-    row.className = "message";
-
-    row.innerHTML = `
-      <b>${msg.from || "Unknown"}:</b> ${msg.text || ""}<br>
-      <small>${time}</small><br>
-
-      <button onclick="editMessage('${chatId}', ${index})">
-        Edit
-      </button>
-
-      <button onclick="deleteMessage('${chatId}', ${index})"
-        style="background:red;color:white;">
-        Delete
-      </button>
-    `;
-
-    box.appendChild(row);
-  });
-};
-
-/* ================= EDIT MESSAGE ================= */
-window.editMessage = async function(chatId, index){
-
-  const ref = doc(db, "chats", chatId);
-  const snap = await getDoc(ref);
-
-  const data = snap.data();
-  const messages = data.messages || [];
-
-  const oldText = messages[index]?.text || "";
-  const newText = prompt("Edit message:", oldText);
-
-  if (!newText) return;
-
-  messages[index].text = newText;
-
-  await updateDoc(ref, {
-    messages: messages
-  });
-
-  loadChats();
-};
-
-/* ================= DELETE MESSAGE ================= */
-window.deleteMessage = async function(chatId, index){
-
-  if(!confirm("Delete message?")) return;
-
-  const ref = doc(db, "chats", chatId);
-  const snap = await getDoc(ref);
-
-  const data = snap.data();
-  const messages = data.messages || [];
-
-  messages.splice(index, 1);
-
-  await updateDoc(ref, {
-    messages: messages
-  });
-
-  loadChats();
-};
-
-/* ================= INIT ================= */
-window.addEventListener("DOMContentLoaded", loadChats);
+setInterval(()=>{
+    if(currentChat){
+        loadChat(currentChat);
+    }
+},3000);
 
 </script>
 
