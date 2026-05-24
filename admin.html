@@ -48,24 +48,15 @@ button{padding:8px;margin:5px;cursor:pointer;}
   <div id="logBox" style="display:none;"></div>
 </div>
 
-<button onclick="window.location.href='chatmod.html'">
-    Chat Moderation
-</button>
+<button onclick="window.location.href='chatmod.html'">Chat Moderation</button>
 
 <!-- TOGGLE BUTTON -->
-<button onclick="toggleChatMonitor()">
-  ▼ Show Chat Monitor
-</button>
+<button onclick="toggleChatMonitor()">▼ Show Chat Monitor</button>
 
 <!-- LIVE CHAT MONITOR -->
 <div class="box">
   <h3>Live Chat Monitor</h3>
-
-  <button onclick="loadChats()">
-    Refresh Chats
-  </button>
-
-  <!-- WRAPPED MONITOR (HIDDEN BY DEFAULT) -->
+  <button onclick="loadChats()">Refresh Chats</button>
   <div id="chatMonitorWrapper" style="display:none;">
     <div id="chatMonitor"></div>
   </div>
@@ -87,8 +78,7 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-  getDoc,
-  setDoc
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -123,49 +113,26 @@ async function log(action){
 
 /* ================= PASSWORD HASHING ================= */
 async function hashPassword(password) {
-
   const encoder = new TextEncoder();
-
   const data = encoder.encode(password);
-
-  const hashBuffer =
-    await crypto.subtle.digest(
-      "SHA-256",
-      data
-    );
-
-  const hashArray =
-    Array.from(
-      new Uint8Array(hashBuffer)
-    );
-
-  return hashArray
-    .map(b =>
-      b.toString(16)
-       .padStart(2,"0")
-    )
-    .join("");
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,"0")).join("");
 }
 
 /* ================= USERS ================= */
-
 async function loadUsers() {
   const snap = await getDocs(collection(db, "users"));
   const box = document.getElementById("users");
-
-  const search =
-    document.getElementById("userSearch")?.value?.toLowerCase() || "";
+  const search = document.getElementById("userSearch")?.value?.toLowerCase() || "";
 
   box.innerHTML = "";
 
   snap.forEach((d) => {
     const data = d.data();
 
-    if (
-      search &&
-      !d.id.toLowerCase().includes(search) &&
-      !data.username.toLowerCase().includes(search)
-    ) return;
+    if (search && !d.id.toLowerCase().includes(search) && !data.username.toLowerCase().includes(search))
+      return;
 
     const locked = data.locked;
     const role = data.role || "user";
@@ -175,87 +142,23 @@ async function loadUsers() {
 
     div.innerHTML = `
       <b>ID:</b> ${d.id}<br>
-
-      <span class="${locked ? "locked" : "unlocked"}">
-        ${locked ? "🔒 Locked" : "🔓 Active"}
-      </span><br>
-
+      <span class="${locked ? "locked" : "unlocked"}">${locked ? "🔒 Locked" : "🔓 Active"}</span><br>
       Username:<br>
       <input id="u-${d.id}" value="${data.username || ""}"><br>
-
       Role:<br>
       <select id="r-${d.id}">
-        <option value="user" ${role === "user" ? "selected" : ""}>User</option>
-        <option value="mod" ${role === "mod" ? "selected" : ""}>Mod</option>
-        <option value="admin" ${role === "admin" ? "selected" : ""}>Admin</option>
+        <option value="user" ${role==="user"?"selected":""}>User</option>
+        <option value="mod" ${role==="mod"?"selected":""}>Mod</option>
+        <option value="admin" ${role==="admin"?"selected":""}>Admin</option>
       </select><br>
-
       Password:<br>
       <input id="p-${d.id}" placeholder="new password"><br>
-
       Notes:<br>
       <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
-
-      ${
-        locked
-          ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>`
-          : ""
-      }
-
-      <button onclick="saveUser('${d.id}')">Save</button>
-      <button onclick="deleteUser('${d.id}')">Delete</button>
-      <button onclick="toggleLock('${d.id}', ${locked})">
-        ${locked ? "Unlock" : "Lock"}
-      </button>
-    `;
-
-    box.appendChild(div);
-  });
-}
-
-    // 🔎 SEARCH FILTER
-    if (search &&
-      !d.id.toLowerCase().includes(search) &&
-      !data.username.toLowerCase().includes(search)
-    ) return;
-
-    const locked = data.locked;
-
-    const div = document.createElement("div");
-    div.className = "user";
-
-    div.innerHTML = `
-      <b>ID:</b> ${d.id}<br>
-
-      <span class="${locked ? 'locked' : 'unlocked'}">
-        ${locked ? "🔒 Locked" : "🔓 Active"}
-      </span><br>
-
-      Username:<br>
-      <input id="u-${d.id}" value="${data.username}"><br>
-
-      Role:<br>
-      <select id="r-${d.id}">
-        <option value="user" ${data.role==="user"?"selected":""}>User</option>
-        <option value="mod" ${data.role==="mod"?"selected":""}>Mod</option>
-        <option value="admin" ${data.role==="admin"?"selected":""}>Admin</option>
-      </select><br>
-
-      Password:<br>
-      <input id="p-${d.id}" placeholder="new password"><br>
-
-      <!-- 📝 ADMIN NOTES -->
-      Notes:<br>
-      <textarea id="n-${d.id}" style="width:100%;height:60px;">${data.adminNotes || ""}</textarea><br>
-
-      <!-- 🔒 LOCK REASON -->
       ${locked ? `<div class="locked">Reason: ${data.lockReason || "No reason given"}</div>` : ""}
-
       <button onclick="saveUser('${d.id}')">Save</button>
       <button onclick="deleteUser('${d.id}')">Delete</button>
-      <button onclick="toggleLock('${d.id}',${locked})">
-        ${locked ? "Unlock" : "Lock"}
-      </button>
+      <button onclick="toggleLock('${d.id}', ${locked})">${locked ? "Unlock" : "Lock"}</button>
     `;
 
     box.appendChild(div);
@@ -264,27 +167,13 @@ async function loadUsers() {
 
 /* ================= USER ACTIONS ================= */
 window.createUser = async () => {
-
-  const username =
-  document
-    .getElementById("newUser")
-    .value
-    .trim();
-
-  const password =
-  document
-    .getElementById("newPass")
-    .value;
+  const username = document.getElementById("newUser").value.trim();
+  const password = document.getElementById("newPass").value;
 
   if (!username || !password) {
-
-  toast(
-    "Username and password required",
-    "error"
-  );
-
-  return;
-}
+    toast("Username and password required", "error");
+    return;
+  }
 
   const passwordHash = await hashPassword(password);
 
@@ -302,21 +191,13 @@ window.createUser = async () => {
 };
 
 window.saveUser = async (id) => {
-
   const u = document.getElementById("u-" + id).value;
   const r = document.getElementById("r-" + id).value;
   const p = document.getElementById("p-" + id).value;
   const n = document.getElementById("n-" + id).value;
 
-  const data = {
-    username: u,
-    role: r,
-    adminNotes: n
-  };
-
-  if (p) {
-    data.passwordHash = await hashPassword(p);
-  }
+  const data = { username: u, role: r, adminNotes: n };
+  if (p) data.passwordHash = await hashPassword(p);
 
   await updateDoc(doc(db, "users", id), data);
 
@@ -326,31 +207,19 @@ window.saveUser = async (id) => {
 };
 
 window.deleteUser = async (id) => {
-
   await deleteDoc(doc(db,"users",id));
-
   toast("Deleted","info");
   log("Deleted "+id);
   loadUsers();
 };
 
 window.toggleLock = async (id,state) => {
-
   let lockReason = "";
-
   if (!state) {
     lockReason = prompt("Reason for locking this user:");
-    if (!lockReason) {
-      alert("Lock cancelled - reason required.");
-      return;
-    }
+    if (!lockReason) { alert("Lock cancelled - reason required."); return; }
   }
-
-  await updateDoc(doc(db,"users",id),{
-    locked: !state,
-    lockReason: !state ? lockReason : ""
-  });
-
+  await updateDoc(doc(db,"users",id), { locked: !state, lockReason: !state ? lockReason : "" });
   toast("Updated","info");
   log("Lock toggle " + id);
   loadUsers();
@@ -358,165 +227,23 @@ window.toggleLock = async (id,state) => {
 
 /* ================= LOGS ================= */
 window.openLog = async () => {
-
   const box=document.getElementById("logBox");
-
-  if(box.style.display==="block"){
-    box.style.display="none";
-    return;
-  }
+  if(box.style.display==="block"){ box.style.display="none"; return; }
 
   const snap = await getDocs(collection(db,"adminLogs"));
-
   box.innerHTML="<h4>Logs</h4>";
-
-  snap.forEach(d=>{
-    const x=d.data();
-    box.innerHTML += `<div>${x.user}: ${x.action}</div>`;
-  });
-
+  snap.forEach(d=>{ const x=d.data(); box.innerHTML += `<div>${x.user}: ${x.action}</div>`; });
   box.style.display="block";
 };
 
-/* ================= CHAT MONITOR TOGGLE (WHOLE SECTION) ================= */
+/* ================= CHAT MONITOR ================= */
 window.toggleChatMonitor = function () {
-
   const wrapper = document.getElementById("chatMonitorWrapper");
   const btn = document.querySelector("button[onclick='toggleChatMonitor()']");
-
   chatMonitorOpen = !chatMonitorOpen;
-
-  if (chatMonitorOpen) {
-    wrapper.style.display = "block";
-    btn.innerText = "▲ Hide Chat Monitor";
-  } else {
-    wrapper.style.display = "none";
-    btn.innerText = "▼ Show Chat Monitor";
-  }
+  if (chatMonitorOpen) { wrapper.style.display="block"; btn.innerText="▲ Hide Chat Monitor"; }
+  else { wrapper.style.display="none"; btn.innerText="▼ Show Chat Monitor"; }
 };
 
-/* ================= LOAD CHATS ================= */
 window.loadChats = async function () {
-
-  const monitor = document.getElementById("chatMonitor");
-
-  monitor.innerHTML = "<p>Loading chats...</p>";
-
-  const chatsSnap = await getDocs(collection(db,"chats"));
-
-  monitor.innerHTML = "";
-
-  if (chatsSnap.empty) {
-    monitor.innerHTML = "<p>No chats found.</p>";
-    return;
-  }
-
-  chatsSnap.forEach(chatDoc => {
-
-    const div = document.createElement("div");
-    div.className = "user";
-
-    div.innerHTML = `
-      <b>Chat:</b> ${chatDoc.id}<br>
-
-      <button onclick="toggleChat('${chatDoc.id}', this)">
-        ▼ View Messages
-      </button>
-
-      <button onclick="deleteChat('${chatDoc.id}', this)"
-        style="margin-left:5px;background:red;color:white;">
-        Delete Chat
-      </button>
-
-      <div id="chat-${chatDoc.id}"
-           style="margin-top:10px; display:none;">
-      </div>
-    `;
-
-    monitor.appendChild(div);
-  });
-};
-
-/* ================= TOGGLE CHAT DROPDOWN ================= */
-window.toggleChat = async function(chatId, btn){
-
-  const container = document.getElementById("chat-" + chatId);
-
-  const isOpen = container.style.display === "block";
-
-  if (isOpen) {
-    container.style.display = "none";
-    btn.innerText = "▼ View Messages";
-    return;
-  }
-
-  container.style.display = "block";
-  btn.innerText = "▲ Hide Messages";
-
-  if (container.dataset.loaded === "true") return;
-
-  container.innerHTML = "Loading messages...";
-
-  const snap = await getDoc(doc(db,"chats",chatId));
-
-  container.innerHTML = "";
-
-  if (!snap.exists()) {
-    container.innerHTML = "<i>No messages</i>";
-    return;
-  }
-
-  const data = snap.data();
-
-  if (!data.messages?.length) {
-    container.innerHTML = "<i>No messages</i>";
-    return;
-  }
-
-  data.messages.forEach(msg => {
-
-    const row = document.createElement("div");
-
-    row.style.padding = "5px";
-    row.style.borderBottom = "1px solid #ccc";
-
-    row.innerHTML = `
-      <b>${msg.from || "Unknown"}:</b>
-      ${msg.text || ""}
-    `;
-
-    container.appendChild(row);
-  });
-
-  container.dataset.loaded = "true";
-};
-
-/* ================= DELETE CHAT ================= */
-window.deleteChat = async function(chatId, btn){
-
-  if(!confirm(`Delete chat "${chatId}"?`)) return;
-
-  await deleteDoc(doc(db,"chats",chatId));
-
-  btn.parentElement.remove();
-};
-
-/* ================= INIT ================= */
-window.addEventListener("DOMContentLoaded", () => {
-  loadUsers();
-  loadChats();
-
-  // 🔎 User search (FIXED: only added once)
-  const searchBox = document.getElementById("userSearch");
-
-  if (searchBox) {
-    searchBox.addEventListener("input", () => {
-      loadUsers();
-    });
-  }
-});
-
-</script>
-
-</body>
-</html>
+  const
