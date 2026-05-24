@@ -158,10 +158,12 @@ updateDoc
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Admin access check
-if(localStorage.getItem("role")!=="admin"){
+const role = localStorage.getItem("role");
+
+if (role !== "admin" && role !== "mod") {
     alert("Access denied");
-    location.href="index.html";
-    throw new Error("Admin access required");
+    location.href = "index.html";
+    throw new Error("Moderator access required");
 }
 
 const chatList = document.getElementById("chatList");
