@@ -52,7 +52,6 @@ input,button {
 
   <h2>Irridium Chat on Emerald</h2>
 
-  <!-- CHAT CONTROLS -->
   <div class="topbar">
     <input id="toUser" placeholder="Private chat username">
     <button onclick="openChat()">Private Chat</button>
@@ -60,22 +59,14 @@ input,button {
     <button onclick="openGroupList()">👥 Group Chats</button>
   </div>
 
-  <!-- GROUP CHAT CREATOR -->
   <div class="topbar">
     <input id="groupName" placeholder="Group name">
     <input id="groupUsers" placeholder="Users (comma separated)">
     <button onclick="createGroupChat()">👥 Create Group</button>
   </div>
 
-  <!-- GROUP LIST -->
   <div id="groupList"
-       style="
-         display:none;
-         border:1px solid #ccc;
-         padding:10px;
-         margin-bottom:10px;
-         border-radius:6px;
-         background:#fafafa;">
+       style="display:none;border:1px solid #ccc;padding:10px;margin-bottom:10px;border-radius:6px;background:#fafafa;">
   </div>
 
   <div id="messages"></div>
@@ -167,8 +158,6 @@ window.createGroupChat = async function() {
 
   const id = "group_" + Date.now();
 
-  currentChatId = id;
-
   await setDoc(doc(db,"chats",id),{
     type:"group",
     name,
@@ -177,10 +166,11 @@ window.createGroupChat = async function() {
     created:Date.now()
   });
 
+  currentChatId = id;
   loadMessages();
 };
 
-/* ================= VIEW GROUP CHATS ================= */
+/* ================= GROUP LIST ================= */
 window.openGroupList = async function() {
 
   const box = document.getElementById("groupList");
@@ -202,18 +192,15 @@ window.openGroupList = async function() {
   snap.forEach(chatDoc => {
 
     const data = chatDoc.data();
-
     if (data.type !== "group") return;
 
     found = true;
 
     const row = document.createElement("div");
-
     row.style.marginBottom = "10px";
 
     row.innerHTML = `
-      <b>👥 ${data.name || chatDoc.id}</b>
-      <br>
+      <b>👥 ${data.name || chatDoc.id}</b><br>
       <button onclick="joinGroupChat('${chatDoc.id}')">
         Open Group
       </button>
@@ -227,19 +214,34 @@ window.openGroupList = async function() {
   }
 };
 
-/* ================= JOIN GROUP CHAT ================= */
+/* ================= JOIN GROUP (FIXED SECURITY) ================= */
 window.joinGroupChat = async function(chatId){
+
+  const ref = doc(db,"chats",chatId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("Group not found.");
+    return;
+  }
+
+  const data = snap.data();
+
+  if (data.type === "group") {
+    if (!data.participants || !data.participants.includes(me)) {
+      alert("You are not a member of this group.");
+      return;
+    }
+  }
 
   currentChatId = chatId;
 
-  document.getElementById(
-    "groupList"
-  ).style.display = "none";
+  document.getElementById("groupList").style.display = "none";
 
   loadMessages();
 };
 
-/* ================= LOAD MESSAGES ================= */
+/* ================= LOAD MESSAGES (SECURE) ================= */
 async function loadMessages(){
 
   if (!currentChatId) return;
@@ -251,19 +253,18 @@ async function loadMessages(){
   box.innerHTML = "";
 
   const data = snap.data();
-
   if (!data) return;
 
+  // 🚫 SECURITY CHECK
   if (data.type === "group") {
+    if (!data.participants || !data.participants.includes(me)) {
+      box.innerHTML = "<b>Access denied: You are not in this group.</b>";
+      return;
+    }
+  }
 
-    const title = document.createElement("div");
-
-    title.innerHTML = `
-      <b>👥 Group: ${data.name}</b>
-      <hr>
-    `;
-
-    box.appendChild(title);
+  if (data.type === "group") {
+    box.innerHTML += `<b>👥 Group: ${data.name}</b><hr>`;
   }
 
   const messages = data.messages || [];
@@ -277,26 +278,16 @@ async function loadMessages(){
 
     const div = document.createElement("div");
 
-    div.className =
-      "msg " +
-      (m.from === me ? "me" : "other");
+    div.className = "msg " + (m.from === me ? "me" : "other");
 
-    let timestamp = "";
-
-    if (m.time) {
-      timestamp =
-        new Date(m.time)
-        .toLocaleString();
-    }
+    const timestamp = m.time
+      ? new Date(m.time).toLocaleString()
+      : "";
 
     div.innerHTML = `
       <b>${m.from || "Unknown"}:</b>
       ${m.text || ""}
-
-      <div style="
-        font-size:11px;
-        opacity:0.7;
-        margin-top:3px;">
+      <div style="font-size:11px;opacity:0.7;margin-top:3px;">
         ${timestamp}
       </div>
     `;
@@ -307,16 +298,24 @@ async function loadMessages(){
   box.scrollTop = box.scrollHeight;
 }
 
-/* ================= SEND MESSAGE ================= */
+/* ================= SEND MESSAGE (SECURE) ================= */
 window.sendMsg = async function(){
 
-  const text =
-    document.getElementById("msgInput").value;
-
+  const text = document.getElementById("msgInput").value;
   if (!text || !currentChatId) return;
 
-  const ref =
-    doc(db,"chats",currentChatId);
+  const ref = doc(db,"chats",currentChatId);
+  const snap = await getDoc(ref);
+
+  const data = snap.data();
+
+  // 🚫 SECURITY CHECK
+  if (data.type === "group") {
+    if (!data.participants || !data.participants.includes(me)) {
+      alert("You are not allowed to send messages in this group.");
+      return;
+    }
+  }
 
   await updateDoc(ref,{
     messages: arrayUnion({
