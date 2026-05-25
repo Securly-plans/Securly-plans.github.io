@@ -82,7 +82,10 @@ input,button {
   <!-- MESSAGE INPUT + MEDIA -->
   <input id="msgInput" placeholder="Message...">
 
-  <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.zip">
+  <input
+  type="file"
+  id="fileInput"
+  accept="image/*,video/*,audio/*,.pdf,.txt,.zip,.doc,.docx"> 
 
   <button onclick="sendMsg()">Send</button>
 
@@ -91,28 +94,31 @@ input,button {
 <script type="module">
 
 import {
-  doc, getDoc, getDocs,
-  collection, setDoc, updateDoc,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  setDoc,
+  updateDoc,
   arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+import {
+  db,
+  storage
+} from "./js/firebase.js";
 
 const me = localStorage.getItem("username");
 let currentChatId = null;
 
 function getChatId(a,b){
   return [a,b].sort().join("_");
-}
-
-/* CONVERT FILE → BASE64 */
-function fileToBase64(file){
-  return new Promise((res,rej)=>{
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
 }
 
 /* MARK SEEN */
@@ -167,76 +173,264 @@ window.openGlobalChat = async function() {
   loadMessages();
 };
 
+/* CREATE GROUP */
+window.createGroupChat = async function(){
+
+  const name =
+    document.getElementById("groupName")
+    .value
+    .trim();
+
+  if(!name){
+    alert("Enter group name");
+    return;
+  }
+
+  let users =
+    document.getElementById("groupUsers")
+    .value
+    .split(",")
+    .map(u=>u.trim())
+    .filter(Boolean);
+
+  if(!users.includes(me)){
+    users.push(me);
+  }
+
+  const groupId =
+    "group_" + Date.now();
+
+  await setDoc(
+    doc(db,"chats",groupId),
+    {
+      type:"group",
+      name,
+      participants:users,
+      messages:[],
+      created:Date.now()
+    }
+  );
+
+  currentChatId = groupId;
+await markSeen(groupId);
+loadMessages();
+alert("Group created.");
+};
+
+/* OPEN GROUP LIST */
+window.openGroupList = async function(){
+
+  const box =
+    document.getElementById("groupList");
+
+  box.style.display =
+    box.style.display==="block"
+      ? "none"
+      : "block";
+
+  if(box.style.display==="none"){
+    return;
+  }
+
+  box.innerHTML = "Loading...";
+
+  const snap =
+    await getDocs(collection(db,"chats"));
+
+  box.innerHTML = "";
+
+  snap.forEach(chat=>{
+
+    const data = chat.data();
+
+    if(data.type!=="group"){
+      return;
+    }
+
+    if(
+      !data.participants ||
+      !data.participants.includes(me)
+    ){
+      return;
+    }
+
+    const btn =
+      document.createElement("button");
+
+    btn.textContent =
+      "👥 " + data.name;
+
+    btn.onclick = async () => {
+  currentChatId = chat.id;
+  await markSeen(chat.id);
+  loadMessages();
+};
+    };
+
+    box.appendChild(btn);
+    box.appendChild(document.createElement("br"));
+  });
+};
+
 /* SEND MESSAGE (WITH MEDIA) */
 window.sendMsg = async function(){
 
-  if (!currentChatId) return;
-
-  const text = document.getElementById("msgInput").value;
-  const file = document.getElementById("fileInput").files[0];
-
-  let media = null;
-
-  if (file) {
-    media = await fileToBase64(file);
+  if(!currentChatId){
+    alert("Open a chat first.");
+    return;
   }
 
-  if (!text && !media) return;
+  const text =
+    document.getElementById("msgInput")
+    .value
+    .trim();
 
-  const ref = doc(db,"chats",currentChatId);
+  const file =
+    document.getElementById("fileInput")
+    .files[0];
 
-  await updateDoc(ref,{
-    messages: arrayUnion({
-      from: me,
-      text: text || "",
-      media: media || null,
-      time: Date.now()
+  let mediaURL = null;
+  let mediaType = null;
+
+  if(file){
+
+    const storageRef =
+      ref(
+        storage,
+        `chatUploads/${currentChatId}/${Date.now()}_${file.name}`
+      );
+
+    await uploadBytes(
+      storageRef,
+      file
+    );
+
+    mediaURL =
+      await getDownloadURL(storageRef);
+
+    mediaType =
+      file.type;
+  }
+
+  if(!text && !mediaURL){
+    return;
+  }
+
+  const chatRef =
+    doc(db,"chats",currentChatId);
+
+  await updateDoc(chatRef,{
+    messages:arrayUnion({
+      from:me,
+      text:text || "",
+      media:mediaURL,
+      mediaType,
+      time:Date.now()
     }),
-    updated: Date.now()
+    updated:Date.now()
   });
 
-  document.getElementById("msgInput").value = "";
-  document.getElementById("fileInput").value = "";
+  document.getElementById("msgInput").value="";
+  document.getElementById("fileInput").value="";
 
   loadMessages();
 };
-
 /* LOAD MESSAGES */
 async function loadMessages(){
 
-  if (!currentChatId) return;
+  if(!currentChatId){
+    return;
+  }
 
-  const ref = doc(db,"chats",currentChatId);
-  const snap = await getDoc(ref);
+  const chatRef =
+    doc(db,"chats",currentChatId);
 
-  const box = document.getElementById("messages");
+  const snap =
+    await getDoc(chatRef);
+
+  const box =
+    document.getElementById("messages");
+
+  const wasNearBottom =
+    box.scrollHeight -
+    box.scrollTop -
+    box.clientHeight < 50;
+
   box.innerHTML = "";
 
-  const data = snap.data();
-  if (!data) return;
+  const data =
+    snap.data();
 
-  const messages = data.messages || [];
+  if(!data){
+    return;
+  }
 
-  messages.forEach(m => {
+  const messages =
+    data.messages || [];
 
-    const div = document.createElement("div");
-    div.className = "msg " + (m.from === me ? "me" : "other");
+  messages.forEach(m=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "msg " +
+      (m.from===me
+        ? "me"
+        : "other");
 
     let mediaHTML = "";
 
-    if (m.media) {
-      if (m.media.startsWith("data:image")) {
-        mediaHTML = `<img src="${m.media}">`;
-      } else {
-        mediaHTML = `<a href="${m.media}" target="_blank">📎 Download File</a>`;
+    if(m.media){
+
+      if(
+        m.mediaType &&
+        m.mediaType.startsWith("image/")
+      ){
+
+        mediaHTML =
+          `<img src="${m.media}">`;
+
+      }else if(
+        m.mediaType &&
+        m.mediaType.startsWith("video/")
+      ){
+
+        mediaHTML =
+          `
+          <video controls width="250">
+            <source src="${m.media}">
+          </video>
+          `;
+
+      }else if(
+        m.mediaType &&
+        m.mediaType.startsWith("audio/")
+      ){
+
+        mediaHTML =
+          `
+          <audio controls>
+            <source src="${m.media}">
+          </audio>
+          `;
+
+      }else{
+
+        mediaHTML =
+          `
+          <a href="${m.media}" target="_blank">
+            📎 Download File
+          </a>
+          `;
       }
     }
 
     div.innerHTML = `
       <b>${m.from}:</b>
-      <div>${m.text}</div>
+      <div>${m.text || ""}</div>
       ${mediaHTML}
-      <div style="font-size:11px;opacity:0.7;">
+      <div style="font-size:11px;opacity:.7;">
         ${new Date(m.time).toLocaleString()}
       </div>
     `;
@@ -244,10 +438,13 @@ async function loadMessages(){
     box.appendChild(div);
   });
 
-  box.scrollTop = box.scrollHeight;
+  if(wasNearBottom){
+    box.scrollTop =
+      box.scrollHeight;
+  }
 }
 
-setInterval(loadMessages,2000);
+setInterval(loadMessages, 2000);
 
 </script>
 
