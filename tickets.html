@@ -2,10 +2,345 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tickets</title>
+<title>Support Tickets</title>
 
 <style>
-body{font-family:Arial;background:#f4f4f4;padding:20px}
-.container{max-width:800px;margin:auto;background:#fff;padding:15px;border-radius:10px}
-.ticket{padding:10px;border:1px solid #ddd;margin:10px 0;border-radius:6px;cursor:pointer}
-.ticket:hover
+body{
+  font-family:Arial,sans-serif;
+  background:#f4f4f4;
+  margin:0;
+  padding:20px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+}
+
+h2{
+  margin-top:0;
+}
+
+.create-box{
+  border:1px solid #ddd;
+  padding:15px;
+  border-radius:8px;
+  margin-bottom:20px;
+}
+
+input,
+textarea{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  margin-bottom:10px;
+  box-sizing:border-box;
+}
+
+button{
+  padding:10px 15px;
+  cursor:pointer;
+}
+
+.ticket{
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.ticket-title{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.meta{
+  color:#666;
+  font-size:12px;
+  margin-top:5px;
+}
+
+.status{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:5px;
+  font-size:12px;
+  margin-top:5px;
+}
+
+.open{
+  background:#dff7df;
+}
+
+.closed{
+  background:#ffdede;
+}
+
+.pending{
+  background:#fff3cd;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Support Tickets</h2>
+
+<div class="create-box">
+
+<h3>Create Ticket</h3>
+
+<input
+  id="subject"
+  placeholder="Ticket Subject"
+>
+
+<textarea
+  id="message"
+  rows="5"
+  placeholder="Describe your issue..."
+></textarea>
+
+<button id="createTicket">
+Create Ticket
+</button>
+
+</div>
+
+<h3>My Tickets</h3>
+
+<div id="ticketList">
+Loading...
+</div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./js/firebase.js";
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  serverTimestamp,
+  onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const username =
+  localStorage.getItem("username");
+
+const role =
+  localStorage.getItem("role") || "user";
+
+if(!username){
+  location.href = "index.html";
+}
+
+/* CREATE TICKET */
+
+document
+.getElementById("createTicket")
+.onclick =
+async ()=>{
+
+  const subject =
+    document
+    .getElementById("subject")
+    .value
+    .trim();
+
+  const message =
+    document
+    .getElementById("message")
+    .value
+    .trim();
+
+  if(!subject || !message){
+    alert("Fill in all fields.");
+    return;
+  }
+
+  const ticketRef =
+    await addDoc(
+      collection(db,"tickets"),
+      {
+        subject,
+        user: username,
+        status:"open",
+        created: Date.now(),
+        lastUpdated: Date.now(),
+        assignedTo:null
+      }
+    );
+
+  await addDoc(
+    collection(
+      db,
+      "tickets",
+      ticketRef.id,
+      "messages"
+    ),
+    {
+      from: username,
+      role: role,
+      text: message,
+      time: Date.now()
+    }
+  );
+
+  document
+  .getElementById("subject")
+  .value = "";
+
+  document
+  .getElementById("message")
+  .value = "";
+
+  location.href =
+    "ticket.html?id=" +
+    ticketRef.id;
+};
+
+/* LOAD TICKETS */
+
+function loadTickets(){
+
+  const ticketList =
+    document.getElementById(
+      "ticketList"
+    );
+
+  let q;
+
+  if(
+    role === "admin" ||
+    role === "mod"
+  ){
+
+    q =
+      collection(
+        db,
+        "tickets"
+      );
+
+  }else{
+
+    q =
+      query(
+        collection(
+          db,
+          "tickets"
+        ),
+        where(
+          "user",
+          "==",
+          username
+        )
+      );
+
+  }
+
+  onSnapshot(
+    q,
+    snap=>{
+
+      ticketList.innerHTML = "";
+
+      if(snap.empty){
+
+        ticketList.innerHTML =
+          "<i>No tickets found.</i>";
+
+        return;
+      }
+
+      const docs = [];
+
+      snap.forEach(docSnap=>{
+        docs.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+
+      docs.sort(
+        (a,b)=>
+          (b.lastUpdated||0) -
+          (a.lastUpdated||0)
+      );
+
+      docs.forEach(ticket=>{
+
+        const div =
+          document.createElement(
+            "div"
+          );
+
+        div.className =
+          "ticket";
+
+        const statusClass =
+          ticket.status || "open";
+
+        div.innerHTML = `
+        <div class="ticket-title">
+          ${ticket.subject}
+        </div>
+
+        <div class="meta">
+          User:
+          ${ticket.user}
+        </div>
+
+        <div class="meta">
+          Created:
+          ${
+            new Date(
+              ticket.created
+            ).toLocaleString()
+          }
+        </div>
+
+        <div class="status ${statusClass}">
+          ${
+            ticket.status ||
+            "open"
+          }
+        </div>
+
+        <br><br>
+
+        <button
+          onclick="
+          location.href=
+          'ticket.html?id=${ticket.id}'
+          ">
+          Open Ticket
+        </button>
+        `;
+
+        ticketList.appendChild(div);
+
+      });
+
+    }
+  );
+
+}
+
+loadTickets();
+
+</script>
+
+</body>
+</html>
