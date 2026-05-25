@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ticket</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#f4f4f4;
+  margin:0;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.top{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.messages{
+  background:white;
+  height:500px;
+  overflow-y:auto;
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:10px;
+}
+
+.message{
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+}
+
+.mine{
+  background:#dff7df;
+}
+
+.other{
+  background:#eee;
+}
+
+.meta{
+  font-size:12px;
+  color:#666;
+  margin-bottom:5px;
+}
+
+.bottom{
+  display:flex;
+  gap:10px;
+}
+
+.bottom input{
+  flex:1;
+  padding:10px;
+}
+
+button{
+  padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="top">
+  <h2 id="subject">Loading...</h2>
+
+  <div>
+    Status:
+    <span id="status">Loading...</span>
+  </div>
+
+  <br>
+
+  <button id="closeBtn">
+    Close Ticket
+  </button>
+
+  <button id="reopenBtn">
+    Reopen Ticket
+  </button>
+</div>
+
+<div
+  class="messages"
+  id="messages">
+</div>
+
+<div class="bottom">
+  <input
+    id="msgInput"
+    placeholder="Reply..."
+  >
+
+  <button id="sendBtn">
+    Send
+  </button>
+</div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./js/firebase.js";
+
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const username =
+  localStorage.getItem("username");
+
+const role =
+  localStorage.getItem("role") || "user";
+
+const params =
+  new URLSearchParams(location.search);
+
+const ticketId =
+  params.get("id");
+
+if(!ticketId){
+  alert("Ticket ID missing");
+  location.href="tickets.html";
+}
+
+const ticketRef =
+  doc(db,"tickets",ticketId);
+
+async function loadTicket(){
+
+  const snap =
+    await getDoc(ticketRef);
+
+  if(!snap.exists()){
+    alert("Ticket not found");
+    return;
+  }
+
+  const data =
+    snap.data();
+
+  document.getElementById(
+    "subject"
+  ).innerText =
+    data.subject;
+
+  document.getElementById(
+    "status"
+  ).innerText =
+    data.status;
+
+}
+
+document
+.getElementById("closeBtn")
+.onclick =
+async ()=>{
+
+  if(
+    role!=="admin" &&
+    role!=="mod"
+  ) return;
+
+  await updateDoc(
+    ticketRef,
+    {
+      status:"closed"
+    }
+  );
+
+};
+
+document
+.getElementById("reopenBtn")
+.onclick =
+async ()=>{
+
+  if(
+    role!=="admin" &&
+    role!=="mod"
+  ) return;
+
+  await updateDoc(
+    ticketRef,
+    {
+      status:"open"
+    }
+  );
+
+};
+
+document
+.getElementById("sendBtn")
+.onclick =
+async ()=>{
+
+  const text =
+    document
+    .getElementById(
+      "msgInput"
+    )
+    .value
+    .trim();
+
+  if(!text) return;
+
+  await addDoc(
+    collection(
+      db,
+      "tickets",
+      ticketId,
+      "messages"
+    ),
+    {
+      from: username,
+      role: role,
+      text,
+      time: Date.now()
+    }
+  );
+
+  await updateDoc(
+    ticketRef,
+    {
+      lastUpdated:
+        Date.now()
+    }
+  );
+
+  document
+  .getElementById(
+    "msgInput"
+  )
+  .value="";
+
+};
+
+const messagesRef =
+  query(
+    collection(
+      db,
+      "tickets",
+      ticketId,
+      "messages"
+    ),
+    orderBy("time")
+  );
+
+onSnapshot(
+  messagesRef,
+  snap=>{
+
+    const box =
+      document.getElementById(
+        "messages"
+      );
+
+    box.innerHTML="";
+
+    snap.forEach(docSnap=>{
+
+      const m =
+        docSnap.data();
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+      div.className =
+        "message " +
+        (
+          m.from===username
+          ? "mine"
+          : "other"
+        );
+
+      div.innerHTML = `
+      <div class="meta">
+        <b>${m.from}</b>
+        (${m.role})
+        •
+        ${new Date(m.time).toLocaleString()}
+      </div>
+
+      <div>${m.text}</div>
+      `;
+
+      box.appendChild(div);
+
+    });
+
+    box.scrollTop =
+      box.scrollHeight;
+
+  }
+);
+
+loadTicket();
+
+</script>
+
+</body>
+</html>
