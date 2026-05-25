@@ -48,3 +48,164 @@ setDoc,
 getDoc,
 updateDoc,
 collection,
+addDoc,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= DEBUG ================= */
+console.log("Video page loaded");
+
+/* ================= WEBRTC SETUP ================= */
+const servers = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" }
+  ]
+};
+
+let pc;
+let localStream;
+
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+
+/* ================= INIT MEDIA ================= */
+async function initMedia() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+
+    localVideo.srcObject = localStream;
+
+    pc = new RTCPeerConnection(servers);
+
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+
+    pc.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+    };
+
+    console.log("Media initialized");
+  } catch (err) {
+    console.error("Camera error:", err);
+    alert("Camera/mic error: " + err.message);
+  }
+}
+
+/* ================= START CALL (CREATOR) ================= */
+window.startCall = async function () {
+  await initMedia();
+
+  const callRef = doc(collection(db, "calls"));
+  const callId = callRef.id;
+
+  console.log("Call created:", callId);
+
+  /* ICE CANDIDATES */
+  pc.onicecandidate = async (event) => {
+    if (event.candidate) {
+      await addDoc(
+        collection(db, "calls", callId, "candidates"),
+        event.candidate.toJSON()
+      );
+    }
+  };
+
+  /* CREATE OFFER */
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await setDoc(callRef, {
+    offer: {
+      type: offer.type,
+      sdp: offer.sdp
+    }
+  });
+
+  /* LISTEN FOR ANSWER */
+  onSnapshot(callRef, async (snap) => {
+    const data = snap.data();
+    if (!pc.currentRemoteDescription && data?.answer) {
+      await pc.setRemoteDescription(
+        new RTCSessionDescription(data.answer)
+      );
+    }
+  });
+
+  /* LISTEN FOR ICE FROM JOINER */
+  onSnapshot(collection(db, "calls", callId, "candidates"), (snap) => {
+    snap.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        await pc.addIceCandidate(
+          new RTCIceCandidate(change.doc.data())
+        );
+      }
+    });
+  });
+
+  alert("Call ID: " + callId + " (share this)");
+};
+
+/* ================= JOIN CALL ================= */
+window.joinCall = async function () {
+  const callId = prompt("Enter Call ID:");
+  if (!callId) return;
+
+  await initMedia();
+
+  const callRef = doc(db, "calls", callId);
+
+  /* ICE CANDIDATES */
+  pc.onicecandidate = async (event) => {
+    if (event.candidate) {
+      await addDoc(
+        collection(db, "calls", callId, "candidates"),
+        event.candidate.toJSON()
+      );
+    }
+  };
+
+  /* GET OFFER */
+  const callData = (await getDoc(callRef)).data();
+
+  if (!callData?.offer) {
+    alert("Invalid call ID");
+    return;
+  }
+
+  await pc.setRemoteDescription(
+    new RTCSessionDescription(callData.offer)
+  );
+
+  /* CREATE ANSWER */
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  await updateDoc(callRef, {
+    answer: {
+      type: answer.type,
+      sdp: answer.sdp
+    }
+  });
+
+  /* LISTEN FOR ICE FROM CREATOR */
+  onSnapshot(collection(db, "calls", callId, "candidates"), (snap) => {
+    snap.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        await pc.addIceCandidate(
+          new RTCIceCandidate(change.doc.data())
+        );
+      }
+    });
+  });
+
+  console.log("Joined call:", callId);
+};
+
+</script>
+
+</body>
+</html>
