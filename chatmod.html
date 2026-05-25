@@ -113,6 +113,20 @@ header{
 button{
     cursor:pointer;
 }
+
+/* MEDIA STYLES */
+.message img{
+    max-width:180px;
+    margin-top:6px;
+    border-radius:6px;
+    display:block;
+}
+
+.message a{
+    color:blue;
+    display:inline-block;
+    margin-top:5px;
+}
 </style>
 </head>
 <body>
@@ -157,7 +171,7 @@ updateDoc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Admin access check
+/* ADMIN CHECK */
 const role = localStorage.getItem("role");
 
 if (role !== "admin" && role !== "mod") {
@@ -172,6 +186,7 @@ const messagesDiv = document.getElementById("messages");
 let currentChat = null;
 let currentMessages = [];
 
+/* LOAD CHATS */
 async function loadChats(){
 
     chatList.innerHTML = "";
@@ -192,6 +207,7 @@ async function loadChats(){
 
 }
 
+/* LOAD SINGLE CHAT */
 async function loadChat(chatId){
 
     currentChat = chatId;
@@ -206,65 +222,58 @@ async function loadChat(chatId){
     currentMessages = data.messages || [];
 
     renderMessages();
-
 }
 
+/* RENDER MESSAGES (WITH MEDIA SUPPORT) */
 function renderMessages(){
 
     const userFilter =
-        document.getElementById("userSearch")
-        .value
-        .toLowerCase();
+        document.getElementById("userSearch").value.toLowerCase();
 
     const msgFilter =
-        document.getElementById("msgSearch")
-        .value
-        .toLowerCase();
+        document.getElementById("msgSearch").value.toLowerCase();
 
     messagesDiv.innerHTML = "";
 
     currentMessages.forEach((msg,index)=>{
 
-        if(
-            userFilter &&
-            !msg.from.toLowerCase().includes(userFilter)
-        ) return;
+        if(userFilter && !msg.from.toLowerCase().includes(userFilter)) return;
+        if(msgFilter && !msg.text.toLowerCase().includes(msgFilter)) return;
 
-        if(
-            msgFilter &&
-            !msg.text.toLowerCase().includes(msgFilter)
-        ) return;
+        let mediaHTML = "";
+
+        if (msg.media) {
+            if (msg.media.startsWith("data:image")) {
+                mediaHTML = `<img src="${msg.media}">`;
+            } else {
+                mediaHTML = `<a href="${msg.media}" target="_blank">📎 Open File</a>`;
+            }
+        }
 
         const div = document.createElement("div");
         div.className = "message";
 
-        const date = new Date(msg.time);
-
         div.innerHTML = `
-        <div class="meta">
-            <b>${msg.from}</b><br>
-            ${date.toLocaleString()}
-        </div>
+            <div class="meta">
+                <b>${msg.from}</b><br>
+                ${new Date(msg.time).toLocaleString()}
+            </div>
 
-        <div>${msg.text}</div>
+            <div>${msg.text || ""}</div>
 
-        <div class="actions">
-            <button onclick="editMsg(${index})">
-                Edit
-            </button>
+            ${mediaHTML}
 
-            <button onclick="deleteMsg(${index})">
-                Delete
-            </button>
-        </div>
+            <div class="actions">
+                <button onclick="editMsg(${index})">Edit</button>
+                <button onclick="deleteMsg(${index})">Delete</button>
+            </div>
         `;
 
         messagesDiv.appendChild(div);
-
     });
-
 }
 
+/* EDIT MESSAGE */
 window.editMsg = async function(index){
 
     const newText = prompt(
@@ -277,9 +286,9 @@ window.editMsg = async function(index){
     currentMessages[index].text = newText;
 
     await saveMessages();
+};
 
-}
-
+/* DELETE MESSAGE */
 window.deleteMsg = async function(index){
 
     if(!confirm("Delete this message?")) return;
@@ -287,9 +296,9 @@ window.deleteMsg = async function(index){
     currentMessages.splice(index,1);
 
     await saveMessages();
+};
 
-}
-
+/* SAVE */
 async function saveMessages(){
 
     const ref = doc(db,"chats",currentChat);
@@ -299,12 +308,10 @@ async function saveMessages(){
     });
 
     renderMessages();
-
 }
 
-document
-.getElementById("sendServer")
-.onclick = async ()=>{
+/* SERVER MESSAGE */
+document.getElementById("sendServer").onclick = async ()=>{
 
     if(!currentChat){
         alert("Select a chat first.");
@@ -312,35 +319,26 @@ document
     }
 
     const text =
-        document
-        .getElementById("serverMessage")
-        .value
-        .trim();
+        document.getElementById("serverMessage").value.trim();
 
     if(!text) return;
 
     currentMessages.push({
         from:"Server",
-        text:text,
+        text,
         time:Date.now()
     });
 
     await saveMessages();
 
-    document
-    .getElementById("serverMessage")
-    .value = "";
-
+    document.getElementById("serverMessage").value = "";
 };
 
-document
-.getElementById("userSearch")
-.addEventListener("input",renderMessages);
+/* FILTERS */
+document.getElementById("userSearch").addEventListener("input",renderMessages);
+document.getElementById("msgSearch").addEventListener("input",renderMessages);
 
-document
-.getElementById("msgSearch")
-.addEventListener("input",renderMessages);
-
+/* INIT */
 loadChats();
 
 setInterval(()=>{
