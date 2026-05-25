@@ -1,1 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Tickets</title>
 
+<style>
+body{
+  font-family:Arial;
+  background:#f4f4f4;
+  padding:20px;
+}
+
+.container{
+  max-width:1000px;
+  margin:auto;
+  background:white;
+  padding:15px;
+  border-radius:10px;
+}
+
+.ticket{
+  border:1px solid #ddd;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:8px;
+}
+
+button{
+  padding:8px;
+  margin-top:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Support Tickets</h2>
+
+<input
+  id="searchUser"
+  placeholder="Search username"
+>
+
+<br><br>
+
+<div id="ticketList">
+Loading...
+</div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./js/firebase.js";
+
+import {
+  collection,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const role =
+  localStorage.getItem("role");
+
+if(
+  role!=="admin" &&
+  role!=="mod"
+){
+  alert("Access denied");
+  location.href="index.html";
+}
+
+const list =
+  document.getElementById(
+    "ticketList"
+  );
+
+async function loadTickets(){
+
+  const filter =
+    document
+    .getElementById(
+      "searchUser"
+    )
+    .value
+    .toLowerCase();
+
+  const snap =
+    await getDocs(
+      collection(
+        db,
+        "tickets"
+      )
+    );
+
+  list.innerHTML="";
+
+  snap.forEach(docSnap=>{
+
+    const t =
+      docSnap.data();
+
+    if(
+      filter &&
+      !t.user
+      .toLowerCase()
+      .includes(filter)
+    ){
+      return;
+    }
+
+    const div =
+      document.createElement(
+        "div"
+      );
+
+    div.className =
+      "ticket";
+
+    div.innerHTML = `
+    <b>${t.subject}</b><br>
+
+    User:
+    ${t.user}
+    <br>
+
+    Status:
+    ${t.status}
+    <br>
+
+    Created:
+    ${
+      new Date(
+        t.created
+      ).toLocaleString()
+    }
+    <br>
+
+    <button
+      onclick="
+      location.href=
+      'ticket.html?id=${docSnap.id}'
+      ">
+      Open Ticket
+    </button>
+    `;
+
+    list.appendChild(div);
+
+  });
+
+}
+
+document
+.getElementById(
+  "searchUser"
+)
+.addEventListener(
+  "input",
+  loadTickets
+);
+
+loadTickets();
+
+</script>
+
+</body>
+</html>
