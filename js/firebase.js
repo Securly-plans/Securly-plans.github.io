@@ -6,6 +6,11 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import {
+  getStorage
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBLghWLth0syJhARDMWiJ7xNwyJAh7MWjQ",
   authDomain: "securly-plans-main.firebaseapp.com",
@@ -17,4 +22,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+/* ================= FIREBASE SERVICES ================= */
 export const db = getFirestore(app);
+export const storage = getStorage(app);
