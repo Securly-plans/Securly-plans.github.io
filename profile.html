@@ -1,208 +1,552 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Profile</title>
-  <style>
-    /* CSS Variables for easy color theme management */
-    :root {
-      --primary: limegreen;
-      --primary-hover: #2eb82e;
-      --bg-color: #f3f4f6;
-      --card-bg: #ffffff;
-      --text-main: #333333;
-      --text-muted: #6b7280;
-      --border-color: #e5e7eb;
-      --danger: #ef4444;
-      --danger-hover: #dc2828;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Profile</title>
 
-    body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+<style>
+:root{
+  --primary:limegreen;
+  --primary-hover:#2eb82e;
+  --bg-color:#f3f4f6;
+  --card-bg:#ffffff;
+  --text-main:#333333;
+  --text-muted:#6b7280;
+  --border-color:#e5e7eb;
+  --danger:#ef4444;
+}
 
-    .profile-card {
-      background-color: var(--card-bg);
-      width: 100%;
-      max-width: 400px;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
+body{
+  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  background:var(--bg-color);
+  color:var(--text-main);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  margin:0;
+  padding:20px;
+  box-sizing:border-box;
+}
 
-    .profile-card h1 {
-      text-align: center;
-      color: var(--primary);
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      font-size: 2rem;
-    }
+.profile-card{
+  background:var(--card-bg);
+  width:100%;
+  max-width:400px;
+  padding:2rem;
+  border-radius:12px;
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,.1),
+    0 2px 4px -1px rgba(0,0,0,.06);
+}
 
-    .info-group {
-      background: #f9fafb;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--border-color);
-    }
+.profile-card h1{
+  text-align:center;
+  color:var(--primary);
+  margin-top:0;
+  margin-bottom:1.5rem;
+}
 
-    .info-group p {
-      margin: 0.5rem 0;
-      font-weight: 600;
-    }
+.info-group{
+  background:#f9fafb;
+  padding:1rem;
+  border-radius:8px;
+  margin-bottom:1.5rem;
+  border:1px solid var(--border-color);
+}
 
-    .info-group span {
-      font-weight: 400;
-      color: var(--text-muted);
-    }
+.info-group p{
+  margin:.5rem 0;
+  font-weight:600;
+}
 
-    .action-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
+.info-group span{
+  font-weight:400;
+  color:var(--text-muted);
+}
 
-    input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 1rem;
-      box-sizing: border-box;
-      transition: border-color 0.2s;
-    }
+.action-group{
+  display:flex;
+  flex-direction:column;
+  gap:.75rem;
+  margin-bottom:1.5rem;
+}
 
-    input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(50, 205, 50, 0.1);
-    }
+input{
+  width:100%;
+  padding:.75rem;
+  border:1px solid var(--border-color);
+  border-radius:6px;
+  font-size:1rem;
+  box-sizing:border-box;
+}
 
-    button {
-      width: 100%;
-      padding: 0.75rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+button{
+  width:100%;
+  padding:.75rem;
+  border:none;
+  border-radius:6px;
+  font-size:1rem;
+  font-weight:600;
+  cursor:pointer;
+}
 
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-    }
+.btn-primary{
+  background:var(--primary);
+  color:white;
+}
 
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-    }
+.btn-primary:hover{
+  background:var(--primary-hover);
+}
 
-    .btn-danger {
-      background-color: transparent;
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      margin-top: 1rem;
-    }
+.btn-danger{
+  background:transparent;
+  color:var(--danger);
+  border:1px solid var(--danger);
+}
 
-    .btn-danger:hover {
-      background-color: var(--danger);
-      color: white;
-    }
+.btn-danger:hover{
+  background:var(--danger);
+  color:white;
+}
 
-    hr {
-      border: none;
-      border-top: 1px solid var(--border-color);
-      margin: 1.5rem 0;
-    }
-  </style>
+.friend-item{
+  padding:6px 0;
+  border-bottom:1px solid #ddd;
+}
+
+hr{
+  border:none;
+  border-top:1px solid var(--border-color);
+  margin:1.5rem 0;
+}
+</style>
 </head>
 <body>
 
-  <div class="profile-card">
-    <h1>Profile</h1>
+<div class="profile-card">
 
-    <div class="info-group">
-      <p>Username: <span id="username">Loading...</span></p>
-      <p>Role: <span id="role">Loading...</span></p>
-    </div>
+  <h1>Profile</h1>
 
-    <div class="action-group">
-      <input id="newPass" type="password" placeholder="New password">
-      <button id="saveBtn" class="btn-primary">Update Password</button>
-    </div>
-
-    <div class="action-group">
-      <input id="newUsername" type="text" placeholder="New username">
-      <button id="saveUserBtn" class="btn-primary">Update Username</button>
-    </div>
-
-    <hr>
-
-    <button id="logoutBtn" class="btn-danger">Log Out</button>
+  <div class="info-group">
+    <p>Username: <span id="username">Loading...</span></p>
+    <p>Role: <span id="role">Loading...</span></p>
+    <p>Joined: <span id="joinedDate">Loading...</span></p>
+    <p>Friends: <span id="friendCount">0</span></p>
   </div>
 
-  <script type="module">
-    import {
-      collection, query, where, getDocs,
-      updateDoc, doc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <div class="info-group">
+    <p>Bio:</p>
+    <span id="bioDisplay">No bio set.</span>
+  </div>
 
-    import { db } from "./js/firebase.js";
+  <div class="action-group">
+    <input
+      id="bioInput"
+      maxlength="120"
+      placeholder="Write your bio..."
+    >
 
-    const usernameLS = localStorage.getItem("username");
+    <button
+      id="saveBioBtn"
+      class="btn-primary">
+      Save Bio
+    </button>
+  </div>
 
-    if (!usernameLS) window.location = "index.html";
+  <div class="action-group">
+    <input
+      id="newPass"
+      type="password"
+      placeholder="New password"
+    >
 
-    let docId;
+    <button
+      id="saveBtn"
+      class="btn-primary">
+      Update Password
+    </button>
+  </div>
 
-    /* load */
-    async function load(){
-      const q = query(collection(db,"users"), where("username","==",usernameLS));
-      const snap = await getDocs(q);
+  <div class="action-group">
+    <input
+      id="newUsername"
+      type="text"
+      placeholder="New username"
+    >
 
-      if (!snap.empty) {
-        const d = snap.docs[0];
-        docId = d.id;
-        document.getElementById("username").innerText = d.data().username;
-        document.getElementById("role").innerText = d.data().role;
-      }
+    <button
+      id="saveUserBtn"
+      class="btn-primary">
+      Update Username
+    </button>
+  </div>
+
+  <div class="action-group">
+    <input
+      id="friendUser"
+      placeholder="Username to add"
+    >
+
+    <button
+      id="addFriendBtn"
+      class="btn-primary">
+      Add Friend
+    </button>
+  </div>
+
+  <div class="info-group">
+    <p>Friends List:</p>
+
+    <div id="friendList">
+      No friends yet.
+    </div>
+  </div>
+
+  <hr>
+
+  <button
+    id="logoutBtn"
+    class="btn-danger">
+    Log Out
+  </button>
+
+</div>
+
+<script type="module">
+
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+  arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./js/firebase.js";
+
+const usernameLS =
+  localStorage.getItem("username");
+
+if(!usernameLS){
+  window.location="index.html";
+}
+
+let docId = null;
+
+/* SHA256 HASH */
+async function hashPassword(password){
+
+  const encoder =
+    new TextEncoder();
+
+  const data =
+    encoder.encode(password);
+
+  const hashBuffer =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+  const hashArray =
+    Array.from(
+      new Uint8Array(hashBuffer)
+    );
+
+  return hashArray
+    .map(b =>
+      b.toString(16)
+       .padStart(2,"0")
+    )
+    .join("");
+}
+
+/* LOAD PROFILE */
+async function load(){
+
+  const q =
+    query(
+      collection(db,"users"),
+      where(
+        "username",
+        "==",
+        usernameLS
+      )
+    );
+
+  const snap =
+    await getDocs(q);
+
+  if(snap.empty){
+    alert("User not found.");
+    return;
+  }
+
+  const d =
+    snap.docs[0];
+
+  docId =
+    d.id;
+
+  const user =
+    d.data();
+
+  document.getElementById(
+    "username"
+  ).innerText =
+    user.username || "";
+
+  document.getElementById(
+    "role"
+  ).innerText =
+    user.role || "user";
+
+  document.getElementById(
+    "bioDisplay"
+  ).innerText =
+    user.bio ||
+    "No bio set.";
+
+  document.getElementById(
+    "friendCount"
+  ).innerText =
+    user.friends?.length || 0;
+
+  if(user.created){
+
+    document.getElementById(
+      "joinedDate"
+    ).innerText =
+      new Date(
+        user.created
+      ).toLocaleDateString();
+
+  }else{
+
+    document.getElementById(
+      "joinedDate"
+    ).innerText =
+      "Unknown";
+
+  }
+
+  const list =
+    document.getElementById(
+      "friendList"
+    );
+
+  list.innerHTML = "";
+
+  if(
+    user.friends &&
+    user.friends.length
+  ){
+
+    user.friends.forEach(friend => {
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+      div.className =
+        "friend-item";
+
+      div.textContent =
+        friend;
+
+      list.appendChild(div);
+
+    });
+
+  }else{
+
+    list.textContent =
+      "No friends yet.";
+
+  }
+}
+
+/* SAVE BIO */
+document
+.getElementById(
+  "saveBioBtn"
+)
+.onclick =
+async () => {
+
+  const bio =
+    document
+    .getElementById(
+      "bioInput"
+    )
+    .value
+    .trim();
+
+  await updateDoc(
+    doc(
+      db,
+      "users",
+      docId
+    ),
+    {
+      bio
     }
+  );
 
-    document.getElementById("saveUserBtn").onclick = async () => {
-      const val = document.getElementById("newUsername").value;
-      
-      if (!val) return; // Prevent empty username updates
+  load();
+};
 
-      await updateDoc(doc(db,"users",docId), {
-        username: val
-      });
+/* CHANGE PASSWORD */
+document
+.getElementById(
+  "saveBtn"
+)
+.onclick =
+async () => {
 
-      localStorage.setItem("username", val);
-      location.reload();
-    };
+  const pass =
+    document
+    .getElementById(
+      "newPass"
+    )
+    .value;
 
-    document.getElementById("logoutBtn").onclick = () => {
-      localStorage.clear();
-      window.location = "index.html";
-    };
+  if(!pass){
+    alert(
+      "Enter a password."
+    );
+    return;
+  }
 
-    load();
-  </script>
+  const passwordHash =
+    await hashPassword(
+      pass
+    );
+
+  await updateDoc(
+    doc(
+      db,
+      "users",
+      docId
+    ),
+    {
+      passwordHash
+    }
+  );
+
+  document
+  .getElementById(
+    "newPass"
+  )
+  .value = "";
+
+  alert(
+    "Password updated."
+  );
+};
+
+/* CHANGE USERNAME */
+document
+.getElementById(
+  "saveUserBtn"
+)
+.onclick =
+async () => {
+
+  const val =
+    document
+    .getElementById(
+      "newUsername"
+    )
+    .value
+    .trim();
+
+  if(!val) return;
+
+  await updateDoc(
+    doc(
+      db,
+      "users",
+      docId
+    ),
+    {
+      username:val
+    }
+  );
+
+  localStorage.setItem(
+    "username",
+    val
+  );
+
+  location.reload();
+};
+
+/* ADD FRIEND */
+document
+.getElementById(
+  "addFriendBtn"
+)
+.onclick =
+async () => {
+
+  const friend =
+    document
+    .getElementById(
+      "friendUser"
+    )
+    .value
+    .trim();
+
+  if(!friend) return;
+
+  await updateDoc(
+    doc(
+      db,
+      "users",
+      docId
+    ),
+    {
+      friends:
+        arrayUnion(
+          friend
+        )
+    }
+  );
+
+  document
+  .getElementById(
+    "friendUser"
+  )
+  .value="";
+
+  load();
+};
+
+/* LOGOUT */
+document
+.getElementById(
+  "logoutBtn"
+)
+.onclick =
+() => {
+
+  localStorage.clear();
+
+  window.location =
+    "index.html";
+
+};
+
+load();
+
+</script>
 
 </body>
 </html>
-
-```
