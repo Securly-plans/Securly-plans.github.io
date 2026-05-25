@@ -43,6 +43,12 @@ input,button {
   gap: 10px;
   margin-bottom: 10px;
 }
+
+.media-preview {
+  max-width: 200px;
+  margin-top: 5px;
+  border-radius: 6px;
+}
 </style>
 </head>
 
@@ -65,13 +71,16 @@ input,button {
     <button onclick="createGroupChat()">👥 Create Group</button>
   </div>
 
-  <div id="groupList"
-       style="display:none;border:1px solid #ccc;padding:10px;margin-bottom:10px;border-radius:6px;background:#fafafa;">
-  </div>
+  <div id="groupList" style="display:none;border:1px solid #ccc;padding:10px;margin-bottom:10px;border-radius:6px;background:#fafafa;"></div>
 
   <div id="messages"></div>
 
+  <!-- MESSAGE INPUT -->
   <input id="msgInput" placeholder="Message...">
+
+  <!-- MEDIA INPUT -->
+  <input type="file" id="mediaInput" accept="image/*,video/*">
+
   <button onclick="sendMsg()">Send</button>
 
 </div>
@@ -88,20 +97,23 @@ import {
   arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+import { db, storage } from "./js/firebase.js";
 
 const me = localStorage.getItem("username");
 let currentChatId = null;
 
-/* ================= CHAT ID ================= */
 function getChatId(a,b){
   return [a,b].sort().join("_");
 }
 
-/* ================= MARK AS SEEN ================= */
 async function markSeen(chatId){
   if(!chatId) return;
-
   await setDoc(doc(db,"chatSeen",chatId + "_" + me),{
     chatId,
     user: me,
@@ -109,7 +121,8 @@ async function markSeen(chatId){
   });
 }
 
-/* ================= PRIVATE CHAT ================= */
+/* ================= CHAT OPENERS ================= */
+
 window.openChat = async function() {
 
   const other = document.getElementById("toUser").value.trim();
@@ -117,11 +130,11 @@ window.openChat = async function() {
 
   currentChatId = getChatId(me, other);
 
-  const ref = doc(db,"chats",currentChatId);
-  const snap = await getDoc(ref);
+  const refDoc = doc(db,"chats",currentChatId);
+  const snap = await getDoc(refDoc);
 
   if (!snap.exists()) {
-    await setDoc(ref,{
+    await setDoc(refDoc,{
       type:"private",
       participants:[me,other],
       messages:[],
@@ -133,16 +146,15 @@ window.openChat = async function() {
   loadMessages();
 };
 
-/* ================= GLOBAL CHAT ================= */
 window.openGlobalChat = async function() {
 
   currentChatId = "GLOBAL_CHAT";
 
-  const ref = doc(db,"chats",currentChatId);
-  const snap = await getDoc(ref);
+  const refDoc = doc(db,"chats",currentChatId);
+  const snap = await getDoc(refDoc);
 
   if (!snap.exists()) {
-    await setDoc(ref,{
+    await setDoc(refDoc,{
       type:"global",
       participants:["GLOBAL"],
       messages:[],
@@ -154,7 +166,6 @@ window.openGlobalChat = async function() {
   loadMessages();
 };
 
-/* ================= GROUP CHAT CREATION ================= */
 window.createGroupChat = async function() {
 
   const name = document.getElementById("groupName").value.trim();
@@ -163,7 +174,6 @@ window.createGroupChat = async function() {
   if (!name || !users) return;
 
   const list = users.split(",").map(u => u.trim());
-
   if (!list.includes(me)) list.push(me);
 
   const id = "group_" + Date.now();
@@ -177,12 +187,12 @@ window.createGroupChat = async function() {
   });
 
   currentChatId = id;
-
   await markSeen(currentChatId);
   loadMessages();
 };
 
 /* ================= GROUP LIST ================= */
+
 window.openGroupList = async function() {
 
   const box = document.getElementById("groupList");
@@ -199,108 +209,72 @@ window.openGroupList = async function() {
 
   box.innerHTML = "";
 
-  let found = false;
-
   snap.forEach(chatDoc => {
 
     const data = chatDoc.data();
     if (data.type !== "group") return;
-
-    if (!data.participants || !data.participants.includes(me)) return;
-
-    found = true;
+    if (!data.participants?.includes(me)) return;
 
     const row = document.createElement("div");
-    row.style.marginBottom = "10px";
 
     row.innerHTML = `
-      <b>👥 ${data.name || chatDoc.id}</b><br>
-      <button onclick="joinGroupChat('${chatDoc.id}')">
-        Open Group
-      </button>
+      <b>👥 ${data.name}</b><br>
+      <button onclick="joinGroupChat('${chatDoc.id}')">Open Group</button>
     `;
 
     box.appendChild(row);
   });
-
-  if (!found) {
-    box.innerHTML = "<i>No group chats available.</i>";
-  }
 };
 
-/* ================= JOIN GROUP ================= */
 window.joinGroupChat = async function(chatId){
 
-  const ref = doc(db,"chats",chatId);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    alert("Group not found.");
-    return;
-  }
-
-  const data = snap.data();
-
-  if (data.type === "group") {
-    if (!data.participants || !data.participants.includes(me)) {
-      alert("You are not a member of this group.");
-      return;
-    }
-  }
-
   currentChatId = chatId;
-
   document.getElementById("groupList").style.display = "none";
-
   await markSeen(currentChatId);
   loadMessages();
 };
 
 /* ================= LOAD MESSAGES ================= */
+
 async function loadMessages(){
 
   if (!currentChatId) return;
 
-  const ref = doc(db,"chats",currentChatId);
-  const snap = await getDoc(ref);
-
+  const snap = await getDoc(doc(db,"chats",currentChatId));
   const box = document.getElementById("messages");
+
   box.innerHTML = "";
 
   const data = snap.data();
   if (!data) return;
 
-  if (data.type === "group") {
-    if (!data.participants || !data.participants.includes(me)) {
-      box.innerHTML = "<b>Access denied: You are not in this group.</b>";
-      return;
-    }
-
-    box.innerHTML += `<b>👥 Group: ${data.name}</b><hr>`;
+  if (data.type === "group" && !data.participants?.includes(me)) {
+    box.innerHTML = "<b>Access denied</b>";
+    return;
   }
 
   const messages = data.messages || [];
 
-  if (messages.length === 0) {
-    box.innerHTML += "<i>No messages yet</i>";
-    return;
-  }
-
   messages.forEach(m => {
 
     const div = document.createElement("div");
-
     div.className = "msg " + (m.from === me ? "me" : "other");
 
-    const timestamp = m.time
-      ? new Date(m.time).toLocaleString()
-      : "";
+    let mediaHTML = "";
+
+    if (m.imageURL) {
+      mediaHTML += `<img src="${m.imageURL}" class="media-preview">`;
+    }
+
+    if (m.videoURL) {
+      mediaHTML += `<video src="${m.videoURL}" controls class="media-preview"></video>`;
+    }
 
     div.innerHTML = `
-      <b>${m.from || "Unknown"}:</b>
-      ${m.text || ""}
-      <div style="font-size:11px;opacity:0.7;margin-top:3px;">
-        ${timestamp}
+      <b>${m.from}:</b> ${m.text || ""}
+      ${mediaHTML}
+      <div style="font-size:11px;opacity:.7;margin-top:3px;">
+        ${m.time ? new Date(m.time).toLocaleString() : ""}
       </div>
     `;
 
@@ -310,40 +284,55 @@ async function loadMessages(){
   box.scrollTop = box.scrollHeight;
 }
 
-/* ================= SEND MESSAGE ================= */
+/* ================= SEND MESSAGE (TEXT + MEDIA) ================= */
+
 window.sendMsg = async function(){
 
-  const text = document.getElementById("msgInput").value;
-  if (!text || !currentChatId) return;
+  if (!currentChatId) return;
 
-  const ref = doc(db,"chats",currentChatId);
-  const snap = await getDoc(ref);
+  const text = document.getElementById("msgInput").value.trim();
+  const file = document.getElementById("mediaInput").files[0];
 
+  const refDoc = doc(db,"chats",currentChatId);
+  const snap = await getDoc(refDoc);
   const data = snap.data();
 
-  if (data.type === "group") {
-    if (!data.participants || !data.participants.includes(me)) {
-      alert("You are not allowed to send messages in this group.");
-      return;
+  let imageURL = null;
+  let videoURL = null;
+
+  if (file) {
+
+    const storageRef = ref(storage, "chatMedia/" + Date.now() + "-" + file.name);
+
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    if (file.type.startsWith("image")) {
+      imageURL = url;
+    } else if (file.type.startsWith("video")) {
+      videoURL = url;
     }
   }
 
-  await updateDoc(ref,{
+  await updateDoc(refDoc,{
     messages: arrayUnion({
       from: me,
       text,
+      imageURL,
+      videoURL,
       time: Date.now()
     }),
     updated: Date.now()
   });
 
   document.getElementById("msgInput").value = "";
+  document.getElementById("mediaInput").value = "";
 
   loadMessages();
 };
 
 /* ================= AUTO REFRESH ================= */
-setInterval(loadMessages,2000);
+setInterval(loadMessages, 2000);
 
 </script>
 
