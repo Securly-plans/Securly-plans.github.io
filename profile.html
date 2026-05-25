@@ -113,8 +113,13 @@ button{
 }
 
 .friend-item{
-  padding:6px 0;
+  padding:6px;
   border-bottom:1px solid #ddd;
+  cursor:pointer;
+}
+
+.friend-item:hover{
+  background:#f3f3f3;
 }
 
 hr{
@@ -124,424 +129,176 @@ hr{
 }
 </style>
 </head>
+
 <body>
 
 <div class="profile-card">
 
-  <h1>Profile</h1>
+<h1>Profile</h1>
 
-  <div class="info-group">
-    <p>Username: <span id="username">Loading...</span></p>
-    <p>Role: <span id="role">Loading...</span></p>
-    <p>Joined: <span id="joinedDate">Loading...</span></p>
-    <p>Friends: <span id="friendCount">0</span></p>
-  </div>
+<div class="info-group">
+  <p>Username: <span id="username">Loading...</span></p>
+  <p>Role: <span id="role">Loading...</span></p>
+  <p>Joined: <span id="joinedDate">Loading...</span></p>
+  <p>Friends: <span id="friendCount">0</span></p>
+</div>
 
-  <div class="info-group">
-    <p>Bio:</p>
-    <span id="bioDisplay">No bio set.</span>
-  </div>
+<div class="info-group">
+  <p>Bio:</p>
+  <span id="bioDisplay">No bio set.</span>
+</div>
 
-  <div class="action-group">
-    <input
-      id="bioInput"
-      maxlength="120"
-      placeholder="Write your bio..."
-    >
+<div class="action-group">
+  <input id="bioInput" maxlength="120" placeholder="Write your bio...">
+  <button id="saveBioBtn" class="btn-primary">Save Bio</button>
+</div>
 
-    <button
-      id="saveBioBtn"
-      class="btn-primary">
-      Save Bio
-    </button>
-  </div>
+<div class="action-group">
+  <input id="newPass" type="password" placeholder="New password">
+  <button id="saveBtn" class="btn-primary">Update Password</button>
+</div>
 
-  <div class="action-group">
-    <input
-      id="newPass"
-      type="password"
-      placeholder="New password"
-    >
+<div class="action-group">
+  <input id="newUsername" type="text" placeholder="New username">
+  <button id="saveUserBtn" class="btn-primary">Update Username</button>
+</div>
 
-    <button
-      id="saveBtn"
-      class="btn-primary">
-      Update Password
-    </button>
-  </div>
+<div class="action-group">
+  <input id="friendUser" placeholder="Username to add">
+  <button id="addFriendBtn" class="btn-primary">Add Friend</button>
+</div>
 
-  <div class="action-group">
-    <input
-      id="newUsername"
-      type="text"
-      placeholder="New username"
-    >
+<div class="info-group">
+  <p>Friends List:</p>
+  <div id="friendList">No friends yet.</div>
+</div>
 
-    <button
-      id="saveUserBtn"
-      class="btn-primary">
-      Update Username
-    </button>
-  </div>
+<hr>
 
-  <div class="action-group">
-    <input
-      id="friendUser"
-      placeholder="Username to add"
-    >
-
-    <button
-      id="addFriendBtn"
-      class="btn-primary">
-      Add Friend
-    </button>
-  </div>
-
-  <div class="info-group">
-    <p>Friends List:</p>
-
-    <div id="friendList">
-      No friends yet.
-    </div>
-  </div>
-
-  <hr>
-
-  <button
-    id="logoutBtn"
-    class="btn-danger">
-    Log Out
-  </button>
+<button id="logoutBtn" class="btn-danger">Log Out</button>
 
 </div>
 
 <script type="module">
 
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc,
-  arrayUnion
+  collection, query, where, getDocs,
+  updateDoc, doc, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
-const usernameLS =
-  localStorage.getItem("username");
-
-if(!usernameLS){
-  window.location="index.html";
-}
+const usernameLS = localStorage.getItem("username");
+if(!usernameLS) window.location="index.html";
 
 let docId = null;
 
-/* SHA256 HASH */
+/* HASH */
 async function hashPassword(password){
-
-  const encoder =
-    new TextEncoder();
-
-  const data =
-    encoder.encode(password);
-
-  const hashBuffer =
-    await crypto.subtle.digest(
-      "SHA-256",
-      data
-    );
-
-  const hashArray =
-    Array.from(
-      new Uint8Array(hashBuffer)
-    );
-
-  return hashArray
-    .map(b =>
-      b.toString(16)
-       .padStart(2,"0")
-    )
-    .join("");
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-256", enc.encode(password));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-/* LOAD PROFILE */
+/* LOAD */
 async function load(){
 
-  const q =
-    query(
-      collection(db,"users"),
-      where(
-        "username",
-        "==",
-        usernameLS
-      )
-    );
-
-  const snap =
-    await getDocs(q);
+  const q = query(collection(db,"users"), where("username","==",usernameLS));
+  const snap = await getDocs(q);
 
   if(snap.empty){
-    alert("User not found.");
+    alert("User not found");
     return;
   }
 
-  const d =
-    snap.docs[0];
+  const d = snap.docs[0];
+  docId = d.id;
+  const user = d.data();
 
-  docId =
-    d.id;
+  document.getElementById("username").innerText = user.username;
+  document.getElementById("role").innerText = user.role || "user";
+  document.getElementById("bioDisplay").innerText = user.bio || "No bio set.";
+  document.getElementById("friendCount").innerText = user.friends?.length || 0;
 
-  const user =
-    d.data();
+  document.getElementById("joinedDate").innerText =
+    user.created ? new Date(user.created).toLocaleDateString() : "Unknown";
 
-  document.getElementById(
-    "username"
-  ).innerText =
-    user.username || "";
-
-  document.getElementById(
-    "role"
-  ).innerText =
-    user.role || "user";
-
-  document.getElementById(
-    "bioDisplay"
-  ).innerText =
-    user.bio ||
-    "No bio set.";
-
-  document.getElementById(
-    "friendCount"
-  ).innerText =
-    user.friends?.length || 0;
-
-  if(user.created){
-
-    document.getElementById(
-      "joinedDate"
-    ).innerText =
-      new Date(
-        user.created
-      ).toLocaleDateString();
-
-  }else{
-
-    document.getElementById(
-      "joinedDate"
-    ).innerText =
-      "Unknown";
-
-  }
-
-  const list =
-    document.getElementById(
-      "friendList"
-    );
-
+  const list = document.getElementById("friendList");
   list.innerHTML = "";
 
-  if(
-    user.friends &&
-    user.friends.length
-  ){
+  if(user.friends?.length){
 
-    user.friends.forEach(friend => {
+    user.friends.forEach(f => {
 
-      const div =
-        document.createElement(
-          "div"
-        );
+      const div = document.createElement("div");
+      div.className = "friend-item";
+      div.textContent = f;
 
-      div.className =
-        "friend-item";
-
-      div.textContent =
-        friend;
+      div.onclick = async () => {
+        if(confirm("Remove friend?")){
+          const updated = user.friends.filter(x => x !== f);
+          await updateDoc(doc(db,"users",docId),{ friends: updated });
+          load();
+        }
+      };
 
       list.appendChild(div);
 
     });
 
-  }else{
-
-    list.textContent =
-      "No friends yet.";
-
+  } else {
+    list.textContent = "No friends yet.";
   }
 }
 
-/* SAVE BIO */
-document
-.getElementById(
-  "saveBioBtn"
-)
-.onclick =
-async () => {
-
-  const bio =
-    document
-    .getElementById(
-      "bioInput"
-    )
-    .value
-    .trim();
-
-  await updateDoc(
-    doc(
-      db,
-      "users",
-      docId
-    ),
-    {
-      bio
-    }
-  );
-
+/* BIO */
+document.getElementById("saveBioBtn").onclick = async () => {
+  const bio = document.getElementById("bioInput").value.trim();
+  await updateDoc(doc(db,"users",docId),{ bio });
   load();
 };
 
-/* CHANGE PASSWORD */
-document
-.getElementById(
-  "saveBtn"
-)
-.onclick =
-async () => {
+/* PASSWORD */
+document.getElementById("saveBtn").onclick = async () => {
+  const pass = document.getElementById("newPass").value;
+  if(!pass) return alert("Enter password");
 
-  const pass =
-    document
-    .getElementById(
-      "newPass"
-    )
-    .value;
+  const passwordHash = await hashPassword(pass);
 
-  if(!pass){
-    alert(
-      "Enter a password."
-    );
-    return;
-  }
+  await updateDoc(doc(db,"users",docId),{ passwordHash });
 
-  const passwordHash =
-    await hashPassword(
-      pass
-    );
-
-  await updateDoc(
-    doc(
-      db,
-      "users",
-      docId
-    ),
-    {
-      passwordHash
-    }
-  );
-
-  document
-  .getElementById(
-    "newPass"
-  )
-  .value = "";
-
-  alert(
-    "Password updated."
-  );
+  document.getElementById("newPass").value = "";
+  alert("Updated");
 };
 
-/* CHANGE USERNAME */
-document
-.getElementById(
-  "saveUserBtn"
-)
-.onclick =
-async () => {
-
-  const val =
-    document
-    .getElementById(
-      "newUsername"
-    )
-    .value
-    .trim();
-
+/* USERNAME */
+document.getElementById("saveUserBtn").onclick = async () => {
+  const val = document.getElementById("newUsername").value.trim();
   if(!val) return;
 
-  await updateDoc(
-    doc(
-      db,
-      "users",
-      docId
-    ),
-    {
-      username:val
-    }
-  );
+  await updateDoc(doc(db,"users",docId),{ username:val });
 
-  localStorage.setItem(
-    "username",
-    val
-  );
-
+  localStorage.setItem("username",val);
   location.reload();
 };
 
-/* ADD FRIEND */
-document
-.getElementById(
-  "addFriendBtn"
-)
-.onclick =
-async () => {
-
-  const friend =
-    document
-    .getElementById(
-      "friendUser"
-    )
-    .value
-    .trim();
-
+/* FRIEND */
+document.getElementById("addFriendBtn").onclick = async () => {
+  const friend = document.getElementById("friendUser").value.trim();
   if(!friend) return;
 
-  await updateDoc(
-    doc(
-      db,
-      "users",
-      docId
-    ),
-    {
-      friends:
-        arrayUnion(
-          friend
-        )
-    }
-  );
+  await updateDoc(doc(db,"users",docId),{
+    friends: arrayUnion(friend)
+  });
 
-  document
-  .getElementById(
-    "friendUser"
-  )
-  .value="";
-
+  document.getElementById("friendUser").value = "";
   load();
 };
 
 /* LOGOUT */
-document
-.getElementById(
-  "logoutBtn"
-)
-.onclick =
-() => {
-
+document.getElementById("logoutBtn").onclick = () => {
   localStorage.clear();
-
-  window.location =
-    "index.html";
-
+  window.location = "index.html";
 };
 
 load();
