@@ -73,7 +73,11 @@
 
         <a href="chat.html" class="chat-link">Chat</a>
 
+        <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
+
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
+
+        <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">Resp. Support</a>
 
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
@@ -192,7 +196,15 @@ if (username && isLoggedIn) {
 }
 
 if (isLoggedIn) {
+    document.getElementById("ticketslink").style.display = "inline-block";
+}
+
+if (isLoggedIn) {
     document.getElementById("profileLink").style.display = "inline-block";
+}
+
+if (role === "admin" || role === "mod") {
+    document.getElementById("modChatLink").style.display = "inline-block";
 }
 
 if (role === "admin") {
