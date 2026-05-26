@@ -1,0 +1,50 @@
+@font-face {
+  font-family: m6x11;
+  src: url(./assets/m6x11plus.ttf);
+}
+
+:root {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+
+    font-family: m6x11;
+
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: gray;
+
+    --blue: hsl(211, 100%, 59%);
+    --red: hsl(6, 87%, 62%);
+    --yellow: hsl(39, 71%, 60%);
+    --orange: hsl(33, 87%, 51%);
+    --dark-orange: hsl(33, 87%, 51%);
+    --green: #38bd85;
+    --indigo: #6265d7;
+    --purple: #9c80b7;
+    --dark-purple: #231e79;
+    --aqua: hsl(188, 63%, 52%);
+    --dark-grey: #1C2729;
+    --grey: #384244;
+    --light-grey: #b7c2cc;
+    --small-blind-primary: hsl(210, 70%, 42%);
+    --small-blind-secondary: #224B69;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+.blue { color: var(--blue) }
+.red { color: var(--red) }
+.red-invert { color: aliceblue; background-color: var(--red); border-radius: 2px; padding: 0 2px 0 4px; }
+.yellow { color: var(--yellow) }
+.orange { color: var(--orange) }
+.green { color: var(--green) }
+.indigo { color: var(--indigo) }
+.aqua { color: var(--aqua) }
+.purple { color: var(--purple) }
+.dark-purple { color: var(--dark-purple) }
+.grey { color: var(--light-grey) }
+.black { color: black }
