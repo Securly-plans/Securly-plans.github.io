@@ -81,13 +81,8 @@ h1{
     font-size:14px;
 }
 
-.online{
-    color:green;
-}
-
-.offline{
-    color:gray;
-}
+.online{ color:green; }
+.offline{ color:gray; }
 
 .bio{
     margin-top:12px;
@@ -176,14 +171,16 @@ const searchInput =
 
 let allUsers = [];
 
-function formatDate(timestamp){
+/* ✅ FIXED FORMAT FUNCTION */
+function formatDate(created){
 
-    if(!timestamp) return "Unknown";
+    if(!created) return "Unknown";
 
     try{
-        return new Date(
-            timestamp.seconds * 1000
-        ).toLocaleDateString();
+        const ms = Number(created);
+        if (isNaN(ms)) return "Unknown";
+
+        return new Date(ms).toLocaleDateString();
     }catch{
         return "Unknown";
     }
