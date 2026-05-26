@@ -1,0 +1,250 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    width: 142px;
+    height: 190px;
+    border-radius: 8px;
+    font-size: 32px;
+    transition: .1s;
+    z-index: auto;
+}
+.card.deck-view {
+    width: 85px;
+    height: 114px;
+}
+
+.card img {
+    pointer-events: none;
+    width: 142px;
+    height: 190px;
+    z-index: 1;
+}
+.card.deck-view img {
+    width: 85px;
+    height: 114px;
+}
+
+#card-bkg {
+    position: absolute;
+    z-index: 0;
+}
+
+.Spades { color: var(--dark-purple); }
+.Hearts { color: var(--red); }
+.Clubs { color: var(--blue); }
+.Diamonds { color: var(--orange); }
+
+.Foil img {
+    filter: drop-shadow(0 0 10px blue)
+}
+.Holographic img {
+    filter: blur(2px)
+}
+.Negative img {
+    filter: invert(1)
+}
+.Polychrome img {
+    filter: saturate(1000%) brightness(.8)
+}
+
+.card img.debuff {
+    position: absolute;
+    background-color: rgb(56, 66, 68, 0.3);
+    border-radius: 7px;
+    z-index: 4;
+}
+
+#card-edition {
+    position: absolute;
+    opacity: .3;
+    z-index: 2;
+}
+
+#seal-icon {
+    position: absolute;
+    z-index: 3;
+}
+
+.card:hover { scale: 1.1; }
+.card.standard:hover {
+    cursor: pointer;
+    z-index: 1;
+}
+
+.card:active { z-index: 2; }
+
+.card.selected {
+    transform: translateY(-3vh);
+    z-index: 1;
+}
+
+.card.drawn { opacity: .3; }
+
+.card.submitted {
+    margin: 0 8px;
+    cursor: initial;
+    position: relative;
+}
+
+.card.unscored {
+    margin: 32px 8px 0;
+}
+
+#playing-card-popup {
+    display: none;
+    position: absolute;
+    bottom: 200px;
+    padding: 2px;
+    color: var(--grey);
+    background-color: aliceblue;
+    border-radius: 8px;
+    font-size: 24px;
+    width: max-content;
+}
+
+.card:hover #playing-card-popup {
+    display: initial;
+}
+
+.deck-view #playing-card-popup {
+    font-size: 20px;
+    bottom: 120px;
+}
+
+#playing-card-popup-inner {
+    background-color: var(--grey);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+#playing-card-name {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    background-color: aliceblue;
+    border-radius: 8px;
+    font-size: 20px;
+    padding: 2px;
+    margin: 0 0px 4px;
+    min-width: 128px;
+}
+
+#playing-card-description {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: aliceblue;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+#playing-card-debuffed {
+    text-align: center;
+}
+
+.deck-view #playing-card-debuffed {
+    font-size: 16px;
+}
+
+#playing-card-chips {
+    display: flex;
+}
+
+#playing-card-enhancement-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+}
+
+#playing-card-enhancement-info div {
+    text-align: center;
+}
+
+#playing-card-tags {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2px 0 0;
+}
+
+.tag {
+    margin: 4px 0 0;
+    font-size: 20px;
+    color: aliceblue;
+    background-color: var(--blue);
+    padding: 0 0 2px;
+    width: 128px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+#debuffed-tag {
+    background-color: var(--red);
+    font-size: 28px;
+    line-height: 24px;
+    letter-spacing: 1px;
+}
+
+#enhancement {
+    font-size: 28px;
+    line-height: 24px;
+    letter-spacing: 1px;
+    padding: 2px 0 4px;
+}
+
+#tags-side {
+    position: absolute;
+    right: 100%;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tag-info {
+    background-color: aliceblue;
+    border-radius: 8px;
+    margin: 2px 0;
+    width: fit-content;
+}
+
+.tag-info-inner {
+    background-color: #637377;
+    border-radius: 8px;
+    color: aliceblue;
+    font-size: 20px;
+    margin: 2px 2px 0;
+}
+
+.tag-name {
+    margin: 0 2px;
+    text-align: center;
+}
+
+.tag-description {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: aliceblue;
+    border-radius: 8px;
+    padding: 4px;
+    color: var(--grey);
+}
+
+.tag-description div {
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    margin: 0 2px;
+}
+
+.tag-description div div {
+    width: max-content;
+}
