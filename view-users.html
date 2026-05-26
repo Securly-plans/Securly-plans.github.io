@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>View Users</title>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+.header{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1{
+    margin:0 0 15px 0;
+    color:#c40000;
+}
+
+.search{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+.users-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:20px;
+}
+
+.user-card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    transition:.2s;
+}
+
+.user-card:hover{
+    transform:translateY(-2px);
+}
+
+.avatar{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    display:block;
+    margin:auto;
+    border:3px solid #ddd;
+}
+
+.username{
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+.status{
+    text-align:center;
+    margin-top:5px;
+    font-size:14px;
+}
+
+.online{
+    color:green;
+}
+
+.offline{
+    color:gray;
+}
+
+.bio{
+    margin-top:12px;
+    min-height:45px;
+    color:#444;
+    text-align:center;
+}
+
+.info{
+    margin-top:12px;
+    font-size:14px;
+    color:#666;
+}
+
+.badges{
+    margin-top:12px;
+}
+
+.badge{
+    display:inline-block;
+    background:#c40000;
+    color:white;
+    padding:4px 8px;
+    border-radius:20px;
+    font-size:12px;
+    margin:2px;
+}
+
+.profile-btn{
+    margin-top:15px;
+    width:100%;
+    padding:10px;
+    border:none;
+    background:#c40000;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.profile-btn:hover{
+    background:#a30000;
+}
+
+.empty{
+    text-align:center;
+    color:#777;
+    margin-top:30px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>User Directory</h1>
+
+        <input
+            type="text"
+            id="search"
+            class="search"
+            placeholder="Search username..."
+        >
+    </div>
+
+    <div id="users" class="users-grid"></div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./js/firebase.js";
+
+import {
+    collection,
+    onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const usersContainer =
+    document.getElementById("users");
+
+const searchInput =
+    document.getElementById("search");
+
+let allUsers = [];
+
+function formatDate(timestamp){
+
+    if(!timestamp) return "Unknown";
+
+    try{
+        return new Date(
+            timestamp.seconds * 1000
+        ).toLocaleDateString();
+    }catch{
+        return "Unknown";
+    }
+}
+
+function renderUsers(){
+
+    const search =
+        searchInput.value.trim().toLowerCase();
+
+    usersContainer.innerHTML = "";
+
+    const filtered = allUsers.filter(user => {
+
+        const username =
+            (user.username || "")
+            .toLowerCase();
+
+        return username.includes(search);
+
+    });
+
+    if(filtered.length === 0){
+
+        usersContainer.innerHTML =
+        `<div class="empty">
+            No users found.
+        </div>`;
+
+        return;
+    }
+
+    filtered.forEach(user => {
+
+        const card =
+        document.createElement("div");
+
+        card.className = "user-card";
+
+        const badges =
+        Array.isArray(user.badges)
+        ? user.badges
+        : [];
+
+        card.innerHTML = `
+            <img
+                class="avatar"
+                src="${
+                    user.photoURL ||
+                    'https://via.placeholder.com/90'
+                }"
+            >
+
+            <div class="username">
+                ${user.username || "Unknown User"}
+            </div>
+
+            <div class="status ${
+                user.status === "Online"
+                ? "online"
+                : "offline"
+            }">
+                ${user.status || "Offline"}
+            </div>
+
+            <div class="bio">
+                ${user.bio || "No bio provided."}
+            </div>
+
+            <div class="info">
+                Joined:
+                ${formatDate(user.joinDate)}
+            </div>
+
+            <div class="badges">
+                ${badges.map(b =>
+                    `<span class="badge">${b}</span>`
+                ).join("")}
+            </div>
+
+            <button
+                class="profile-btn"
+                data-uid="${user.uid}"
+            >
+                View Profile
+            </button>
+        `;
+
+        card.querySelector(".profile-btn")
+        .addEventListener("click", () => {
+
+            location.href =
+            `profile.html?uid=${user.uid}`;
+
+        });
+
+        usersContainer.appendChild(card);
+    });
+}
+
+onSnapshot(
+    collection(db,"users"),
+    snapshot => {
+
+        allUsers = [];
+
+        snapshot.forEach(doc => {
+
+            allUsers.push({
+                uid: doc.id,
+                ...doc.data()
+            });
+
+        });
+
+        renderUsers();
+    }
+);
+
+searchInput.addEventListener(
+    "input",
+    renderUsers
+);
+
+</script>
+
+</body>
+</html>
