@@ -82,6 +82,8 @@
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">Chat Mod</a>
+        
+        <a href="view-users.html" id="viewUsersLink" style="display:none;">Users</a>
 
         <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
@@ -213,6 +215,10 @@ if (role === "admin") {
 
 if (role === "admin" || role === "mod") {
     document.getElementById("modChatLink").style.display = "inline-block";
+}
+
+if (isLoggedIn) {
+    document.getElementById("viewUsersLink").style.display = "inline-block";
 }
 </script>
 
