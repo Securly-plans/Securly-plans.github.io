@@ -73,7 +73,7 @@ body{
   margin-bottom:1.5rem;
 }
 
-input{
+input,select{
   width:100%;
   padding:.75rem;
   border:1px solid var(--border-color);
@@ -137,10 +137,16 @@ hr{
 <h1>Profile</h1>
 
 <div class="info-group">
+  <div style="text-align:center;margin-bottom:15px;">
+  <img id="avatar" src="https://via.placeholder.com/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid limegreen;">
+</div>
   <p>Username: <span id="username">Loading...</span></p>
   <p>Role: <span id="role">Loading...</span></p>
+  <p>Status: <span id="statusDisplay">Offline</span></p>
+  <p>Reputation: <span id="reputation">0</span></p>
   <p>Joined: <span id="joinedDate">Loading...</span></p>
   <p>Friends: <span id="friendCount">0</span></p>
+  <div id="badgesContainer"></div>
 </div>
 
 <div class="info-group">
@@ -151,6 +157,21 @@ hr{
 <div class="action-group">
   <input id="bioInput" maxlength="120" placeholder="Write your bio...">
   <button id="saveBioBtn" class="btn-primary">Save Bio</button>
+</div>
+
+<div class="action-group">
+  <input id="avatarInput" placeholder="Profile image URL">
+  <button id="saveAvatarBtn" class="btn-primary">Save Avatar</button>
+</div>
+
+<div class="action-group">
+<select id="statusSelect">
+<option>Online</option>
+<option>Away</option>
+<option>Busy</option>
+<option>Offline</option>
+</select>
+<button id="saveStatusBtn" class="btn-primary">Save Status</button>
 </div>
 
 <div class="action-group">
@@ -220,6 +241,30 @@ async function load(){
   document.getElementById("bioDisplay").innerText = user.bio || "No bio set.";
   document.getElementById("friendCount").innerText = user.friends?.length || 0;
 
+  document.getElementById("avatar").src =
+    user.photoURL || "https://via.placeholder.com/120";
+
+  document.getElementById("statusDisplay").innerText =
+    user.status || "Offline";
+
+  document.getElementById("reputation").innerText =
+    user.reputation || 0;
+
+  const badgesDiv = document.getElementById("badgesContainer");
+  badgesDiv.innerHTML = "";
+
+  (user.badges || []).forEach(badge => {
+    const span = document.createElement("span");
+    span.textContent = badge;
+    span.style.background = "limegreen";
+    span.style.color = "white";
+    span.style.padding = "4px 8px";
+    span.style.margin = "2px";
+    span.style.borderRadius = "15px";
+    span.style.display = "inline-block";
+    badgesDiv.appendChild(span);
+  });
+
   document.getElementById("joinedDate").innerText =
     user.created ? new Date(user.created).toLocaleDateString() : "Unknown";
 
@@ -255,6 +300,19 @@ async function load(){
 document.getElementById("saveBioBtn").onclick = async () => {
   const bio = document.getElementById("bioInput").value.trim();
   await updateDoc(doc(db,"users",docId),{ bio });
+  load();
+};
+
+document.getElementById("saveAvatarBtn").onclick = async () => {
+  const photoURL = document.getElementById("avatarInput").value.trim();
+  if(!photoURL) return;
+  await updateDoc(doc(db,"users",docId),{ photoURL });
+  load();
+};
+
+document.getElementById("saveStatusBtn").onclick = async () => {
+  const status = document.getElementById("statusSelect").value;
+  await updateDoc(doc(db,"users",docId),{ status });
   load();
 };
 
