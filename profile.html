@@ -143,7 +143,6 @@ hr{
   <p>Username: <span id="username">Loading...</span></p>
   <p>Role: <span id="role">Loading...</span></p>
   <p>Status: <span id="statusDisplay">Offline</span></p>
-  <p>Reputation: <span id="reputation">0</span></p>
   <p>Joined: <span id="joinedDate">Loading...</span></p>
   <p>Friends: <span id="friendCount">0</span></p>
   <div id="badgesContainer"></div>
@@ -246,9 +245,6 @@ async function load(){
 
   document.getElementById("statusDisplay").innerText =
     user.status || "Offline";
-
-  document.getElementById("reputation").innerText =
-    user.reputation || 0;
 
   const badgesDiv = document.getElementById("badgesContainer");
   badgesDiv.innerHTML = "";
