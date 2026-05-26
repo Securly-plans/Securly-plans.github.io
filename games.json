@@ -75,5 +75,12 @@
     "thumbnail": "./assets/images/glad.webp",
     "category": "Strategy",
     "url": "./games/gladdihoppers/index.html"
+  },
+{
+    "id": 12,
+    "title": "Balatro (WIP)",
+    "thumbnail": "https://static0.gamerantimages.com/wordpress/wp-content/uploads/2025/02/balatro.jpg",
+    "category": "Strategy",
+    "url": "./games/Balatro/index.html"
   }
 ]
