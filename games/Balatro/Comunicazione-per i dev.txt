@@ -1,4 +1,0 @@
-0 : Creazione del progetto
-1 : Rispolverata di come si crea una carta
-2 : Migliorato il README
-3 :
