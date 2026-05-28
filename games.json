@@ -80,15 +80,22 @@
     "id": 12,
     "title": "moto x3m",
     "thumbnail": "https://img.playmox.com/game-icons/5b0abd4c0faa4f5eb190a9a16d5a1b4c-1200x630.jpg",
-    "category": "Action",
+    "category": "Casual",
     "url": "./games/motox3m/index.html"
   },
 {
     "id": 13,
     "title": "Pixel Balatro",
     "thumbnail": "https://camo.githubusercontent.com/011e5013eb3ea62b547090a6492d0a8844dfab4286e2842c55b77fe35cb12ed3/68747470733a2f2f6f7574626c6164652e6769746875622e696f2f62616c6174726f2d7765622f736f6369616c2e706e67",
-    "category": "Action",
+    "category": "Strategy",
     "url": "./games/px-webatro/index.html" 
+  },
+{
+    "id": 14,
+    "title": "Ragdoll Drop",
+    "thumbnail": "https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/518d4d2ed6c3c1b00930ba6313783c94/ragdoll-drop.jfif",
+    "category": "Action",
+    "url": "./games/Ragdoll-Drop/index.html" 
   }
 ]
 
