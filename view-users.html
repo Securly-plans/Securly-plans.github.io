@@ -6,117 +6,135 @@
 <title>View Users</title>
 
 <style>
+:root{
+    --primary:#c40000;
+    --primary-hover:#a30000;
+    --bg:#f4f4f4;
+    --card:#ffffff;
+    --text:#222;
+    --muted:#666;
+}
+
 body{
     margin:0;
-    padding:20px;
     font-family:Arial,sans-serif;
-    background:#f4f4f4;
+    background:var(--bg);
+    color:var(--text);
 }
 
 .container{
     max-width:1200px;
     margin:auto;
+    padding:20px;
 }
 
+/* HEADER */
 .header{
-    background:white;
+    background:var(--card);
     padding:20px;
     border-radius:12px;
     margin-bottom:20px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    border-left:6px solid var(--primary);
 }
 
 h1{
-    margin:0 0 15px 0;
-    color:#c40000;
+    margin:0 0 12px 0;
+    color:var(--primary);
 }
 
 .search{
     width:100%;
     padding:12px;
-    border:1px solid #ccc;
+    border:1px solid #ddd;
     border-radius:8px;
-    font-size:16px;
-    box-sizing:border-box;
+    font-size:15px;
+    outline:none;
 }
 
+/* GRID */
 .users-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
     gap:20px;
 }
 
+/* CARD */
 .user-card{
-    background:white;
+    background:var(--card);
     border-radius:12px;
-    padding:20px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    padding:18px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
     transition:.2s;
+    border-top:4px solid var(--primary);
 }
 
 .user-card:hover{
-    transform:translateY(-2px);
+    transform:translateY(-3px);
 }
 
 .avatar{
-    width:90px;
-    height:90px;
+    width:85px;
+    height:85px;
     border-radius:50%;
     object-fit:cover;
     display:block;
     margin:auto;
-    border:3px solid #ddd;
+    border:3px solid #eee;
 }
 
 .username{
     text-align:center;
-    font-size:20px;
+    font-size:18px;
     font-weight:bold;
     margin-top:10px;
 }
 
 .status{
     text-align:center;
-    margin-top:5px;
-    font-size:14px;
+    margin-top:4px;
+    font-size:13px;
 }
 
 .online{ color:green; }
 .offline{ color:gray; }
 
 .bio{
-    margin-top:12px;
-    min-height:45px;
-    color:#444;
+    margin-top:10px;
+    font-size:14px;
+    color:var(--muted);
     text-align:center;
+    min-height:40px;
 }
 
 .info{
-    margin-top:12px;
-    font-size:14px;
-    color:#666;
+    margin-top:10px;
+    font-size:13px;
+    color:var(--muted);
+    text-align:center;
 }
 
 .badges{
-    margin-top:12px;
+    margin-top:10px;
+    text-align:center;
 }
 
 .badge{
     display:inline-block;
-    background:#c40000;
+    background:var(--primary);
     color:white;
-    padding:4px 8px;
+    padding:3px 8px;
     border-radius:20px;
-    font-size:12px;
+    font-size:11px;
     margin:2px;
 }
 
 .profile-btn{
-    margin-top:15px;
+    margin-top:12px;
     width:100%;
     padding:10px;
     border:none;
-    background:#c40000;
+    background:var(--primary);
     color:white;
     border-radius:8px;
     cursor:pointer;
@@ -124,7 +142,7 @@ h1{
 }
 
 .profile-btn:hover{
-    background:#a30000;
+    background:var(--primary-hover);
 }
 
 .empty{
@@ -134,19 +152,14 @@ h1{
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
     <div class="header">
         <h1>User Directory</h1>
-
-        <input
-            type="text"
-            id="search"
-            class="search"
-            placeholder="Search username..."
-        >
+        <input type="text" id="search" class="search" placeholder="Search username...">
     </div>
 
     <div id="users" class="users-grid"></div>
@@ -156,93 +169,52 @@ h1{
 <script type="module">
 
 import { db } from "./js/firebase.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-    collection,
-    onSnapshot
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const usersContainer =
-    document.getElementById("users");
-
-const searchInput =
-    document.getElementById("search");
+const usersContainer = document.getElementById("users");
+const searchInput = document.getElementById("search");
 
 let allUsers = [];
 
-/* ✅ FIXED FORMAT FUNCTION */
 function formatDate(created){
-
     if(!created) return "Unknown";
-
-    try{
-        const ms = Number(created);
-        if (isNaN(ms)) return "Unknown";
-
-        return new Date(ms).toLocaleDateString();
-    }catch{
-        return "Unknown";
-    }
+    const ms = Number(created);
+    if (isNaN(ms)) return "Unknown";
+    return new Date(ms).toLocaleDateString();
 }
 
 function renderUsers(){
 
-    const search =
-        searchInput.value.trim().toLowerCase();
-
+    const search = searchInput.value.trim().toLowerCase();
     usersContainer.innerHTML = "";
 
-    const filtered = allUsers.filter(user => {
-
-        const username =
-            (user.username || "")
-            .toLowerCase();
-
-        return username.includes(search);
-
-    });
+    const filtered = allUsers.filter(user =>
+        (user.username || "").toLowerCase().includes(search)
+    );
 
     if(filtered.length === 0){
-
         usersContainer.innerHTML =
-        `<div class="empty">
-            No users found.
-        </div>`;
-
+        `<div class="empty">No users found.</div>`;
         return;
     }
 
     filtered.forEach(user => {
 
-        const card =
-        document.createElement("div");
-
+        const card = document.createElement("div");
         card.className = "user-card";
 
-        const badges =
-        Array.isArray(user.badges)
-        ? user.badges
-        : [];
+        const badges = Array.isArray(user.badges) ? user.badges : [];
 
         card.innerHTML = `
-            <img
-                class="avatar"
-                src="${
-                    user.photoURL ||
-                    'https://via.placeholder.com/90'
-                }"
+            <img class="avatar"
+                src="${user.photoURL || 'https://via.placeholder.com/85'}"
             >
 
             <div class="username">
                 ${user.username || "Unknown User"}
             </div>
 
-            <div class="status ${
-                user.status === "Online"
-                ? "online"
-                : "offline"
-            }">
+            <div class="status ${user.status === "Online" ? "online" : "offline"}">
                 ${user.status || "Offline"}
             </div>
 
@@ -251,59 +223,41 @@ function renderUsers(){
             </div>
 
             <div class="info">
-                Joined:
-                ${formatDate(user.created)}
+                Joined: ${formatDate(user.created)}
             </div>
 
             <div class="badges">
-                ${badges.map(b =>
-                    `<span class="badge">${b}</span>`
-                ).join("")}
+                ${badges.map(b => `<span class="badge">${b}</span>`).join("")}
             </div>
 
-            <button
-                class="profile-btn"
-                data-uid="${user.uid}"
-            >
+            <button class="profile-btn" data-uid="${user.uid}">
                 View Profile
             </button>
         `;
 
-        card.querySelector(".profile-btn")
-        .addEventListener("click", () => {
-
-            location.href =
-            `profile.html?uid=${user.uid}`;
-
+        card.querySelector(".profile-btn").addEventListener("click", () => {
+            location.href = `view-profile.html?uid=${user.uid}`;
         });
 
         usersContainer.appendChild(card);
     });
 }
 
-onSnapshot(
-    collection(db,"users"),
-    snapshot => {
+onSnapshot(collection(db,"users"), snapshot => {
 
-        allUsers = [];
+    allUsers = [];
 
-        snapshot.forEach(doc => {
-
-            allUsers.push({
-                uid: doc.id,
-                ...doc.data()
-            });
-
+    snapshot.forEach(doc => {
+        allUsers.push({
+            uid: doc.id,
+            ...doc.data()
         });
+    });
 
-        renderUsers();
-    }
-);
+    renderUsers();
+});
 
-searchInput.addEventListener(
-    "input",
-    renderUsers
-);
+searchInput.addEventListener("input", renderUsers);
 
 </script>
 
