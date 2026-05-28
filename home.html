@@ -3,56 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald</title>
+<title>Emerald Dashboard</title>
 
 <link rel="stylesheet" href="style.css">
 
-<script>
-(function () {
-    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-    if (!isLoggedIn) {
-        window.location.replace("index.html");
-    }
-})();
-</script>
-
 <style>
-.navbar {
+:root{
+    --primary:#c40000;
+    --primary-hover:#a30000;
+    --bg:#f4f4f4;
+    --card:#ffffff;
+    --text:#222;
+    --muted:#666;
+}
+
+/* GLOBAL */
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+/* TOP NAV (ADMIN STYLE) */
+.navbar{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    background:#222;
+    background:var(--card);
     padding:12px 18px;
-    color:white;
-    font-family:Arial;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    border-bottom:4px solid var(--primary);
+    position:sticky;
+    top:0;
+    z-index:1000;
 }
 
-.nav-left, .nav-right {
+.nav-left, .nav-right{
     display:flex;
     gap:10px;
     align-items:center;
 }
 
-.navbar a, .nav-btn {
-    color:white;
+.navbar a,
+.nav-btn{
     text-decoration:none;
     padding:8px 12px;
-    border-radius:6px;
-    background:#333;
+    border-radius:8px;
+    font-size:14px;
     border:none;
     cursor:pointer;
+    background:#eee;
+    color:var(--text);
+    transition:.2s;
+}
+
+.navbar a:hover,
+.nav-btn:hover{
+    background:#ddd;
+}
+
+/* ACCENT BUTTONS */
+.admin-link{
+    background:var(--primary);
+    color:white !important;
+}
+
+.admin-link:hover{
+    background:var(--primary-hover);
+}
+
+.chat-link{
+    background:#333;
+    color:white !important;
+}
+
+.logout-btn{
+    background:var(--primary);
+    color:white;
+}
+
+.logout-btn:hover{
+    background:var(--primary-hover);
+}
+
+.username-badge{
+    padding:6px 10px;
+    border-radius:8px;
+    background:#eee;
     font-size:14px;
 }
 
-.admin-link { background:#2196f3; }
-.logout-btn { background:#f44336; }
-.chat-link { background:#555; }
+/* HEADER CARD */
+.page-header{
+    max-width:1200px;
+    margin:20px auto;
+    background:var(--card);
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    border-left:6px solid var(--primary);
+}
 
-.username-badge {
-    padding:6px 10px;
-    border-radius:6px;
-    background:#444;
-    font-size:14px;
+.page-header h1{
+    margin:0 0 10px 0;
+    color:var(--primary);
+}
+
+#searchBar{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:15px;
+}
+
+/* SECTIONS */
+.section-title{
+    max-width:1200px;
+    margin:20px auto 10px auto;
+    font-size:18px;
+    color:var(--primary);
+    font-weight:bold;
+}
+
+/* GRIDS (unchanged structure) */
+.game-grid,
+.video-grid{
+    max-width:1200px;
+    margin:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:15px;
+    padding:0 20px;
+}
+
+/* FOOTER TEXT */
+.footer-text{
+    text-align:center;
+    color:var(--muted);
+    margin:25px 0;
 }
 </style>
 
@@ -77,50 +167,52 @@
 
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
-        <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">Resp. Support</a>
+        <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">Support Admin</a>
 
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">Chat Mod</a>
         
-        <a href="view-users.html" id="viewUsersLink" style="display:none;">Users</a>
+        <a href="view-users.html" id="viewUsersLink" class="admin-link" style="display:none;">Users</a>
 
         <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
 </div>
 
-<header>
-    <h1 style="color:powderblue;font-family:verdana;">Home</h1>
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h1>Home Dashboard</h1>
     <input type="text" id="searchBar" placeholder="Search games...">
-</header>
+</div>
 
-<h2 style="color:green;font-family:verdana;">Games</h2>
-
+<h2 class="section-title">Games</h2>
 <main id="gameGrid" class="game-grid"></main>
+
 <main id="videoGrid" class="video-grid"></main>
 
-<h1 style="color:purple;font-family:verdana;text-align:center;">
+<!-- ANNOUNCEMENTS -->
+<h1 class="footer-text" style="color:purple;">
 NEW LINKS IN PROGRESS
 </h1>
 
-<p style="color:green;font-family:verdana;text-align:center;">
+<p class="footer-text">
 I am making new links if this gets blocked, just for you guys!
 </p>
 
-<p style="color:purple;font-family:verdana;text-align:center;">
+<p class="footer-text">
 Links:
 <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
 </p>
 
-<p style="color:yellow;font-family:verdana;text-align:center;">
+<p class="footer-text">
 Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
 </p>
 
-<p style="color:green;font-family:verdana;text-align:center;">
+<p class="footer-text">
 Emerald Games - Alpha 1.8
 </p>
 
-<!-- FIREBASE NOTIFICATIONS -->
+<!-- FIREBASE NOTIFICATIONS (UNCHANGED) -->
 <script type="module">
 
 import {
@@ -134,12 +226,10 @@ const me = localStorage.getItem("username");
 
 let notified = new Set();
 
-/* 🔔 REQUEST NOTIFICATION PERMISSION */
 if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission();
 }
 
-/* 🔥 REAL-TIME MESSAGE LISTENER */
 onSnapshot(collection(db, "chats"), (snapshot) => {
 
     snapshot.docChanges().forEach(change => {
@@ -156,7 +246,6 @@ onSnapshot(collection(db, "chats"), (snapshot) => {
         const last = messages[messages.length - 1];
 
         if (!last) return;
-
         if (last.from === me) return;
 
         const key = chatId + "_" + last.time;
@@ -168,7 +257,6 @@ onSnapshot(collection(db, "chats"), (snapshot) => {
     });
 });
 
-/* 🔔 NOTIFICATION POPUP */
 function showNotification(sender, text) {
 
     if (Notification.permission !== "granted") return;
@@ -181,7 +269,7 @@ function showNotification(sender, text) {
 
 </script>
 
-<!-- LOGOUT + NAVBAR -->
+<!-- LOGOUT + NAV -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
@@ -193,32 +281,24 @@ const username = localStorage.getItem("username");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
 const usernameDisplay = document.getElementById("usernameDisplay");
+
 if (username && isLoggedIn) {
     usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
 }
 
 if (isLoggedIn) {
     document.getElementById("ticketslink").style.display = "inline-block";
-}
-
-if (isLoggedIn) {
     document.getElementById("profileLink").style.display = "inline-block";
+    document.getElementById("viewUsersLink").style.display = "inline-block";
 }
 
 if (role === "admin" || role === "mod") {
     document.getElementById("adminticketslink").style.display = "inline-block";
+    document.getElementById("modChatLink").style.display = "inline-block";
 }
 
 if (role === "admin") {
     document.getElementById("adminLink").style.display = "inline-block";
-}
-
-if (role === "admin" || role === "mod") {
-    document.getElementById("modChatLink").style.display = "inline-block";
-}
-
-if (isLoggedIn) {
-    document.getElementById("viewUsersLink").style.display = "inline-block";
 }
 </script>
 
