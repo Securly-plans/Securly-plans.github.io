@@ -1,54 +1,344 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Tickets</title>
 
+<script type="module" src="./js/session.js"></script>
+
 <style>
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
+}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
-  font-family:Arial;
-  background:#f4f4f4;
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.header{
+  background:#111827;
   padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.header h1{
+  margin:0;
+  color:#ef4444;
+}
+
+.header .status{
+  color:var(--primary);
+  font-size:14px;
 }
 
 .container{
-  max-width:1000px;
+  max-width:1200px;
   margin:auto;
-  background:white;
-  padding:15px;
-  border-radius:10px;
+  padding:20px;
+}
+
+.topbar{
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+.search-box{
+  flex:1;
+  min-width:250px;
+}
+
+.search-box input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+  outline:none;
+}
+
+.search-box input:focus{
+  border-color:var(--info);
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+}
+
+.card h3{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:15px;
+}
+
+.card .value{
+  font-size:30px;
+  font-weight:bold;
+}
+
+.ticket-list{
+  display:flex;
+  flex-direction:column;
+  gap:15px;
 }
 
 .ticket{
-  border:1px solid #ddd;
-  padding:12px;
-  margin-bottom:10px;
-  border-radius:8px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  transition:0.2s;
+}
+
+.ticket:hover{
+  border-color:#3b82f6;
+}
+
+.ticket-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.ticket-title{
+  font-size:20px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.ticket-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.meta-badge{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:6px 12px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.status{
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.status-open{
+  background:rgba(74,222,128,0.15);
+  color:#4ade80;
+}
+
+.status-closed{
+  background:rgba(239,68,68,0.15);
+  color:#ef4444;
+}
+
+.status-pending{
+  background:rgba(245,158,11,0.15);
+  color:#f59e0b;
+}
+
+.ticket-actions{
+  margin-top:15px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
 }
 
 button{
-  padding:8px;
-  margin-top:5px;
+  padding:10px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
+  color:white;
+  font-weight:bold;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.btn-primary{
+  background:var(--info);
+}
+
+.btn-success{
+  background:var(--primary);
+  color:black;
+}
+
+.btn-danger{
+  background:var(--danger);
+}
+
+.empty{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px;
+  text-align:center;
+  color:var(--muted);
+}
+
+#toastContainer{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 16px;
+  border-radius:10px;
+  color:white;
+  margin-bottom:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.toast.success{
+  background:#16a34a;
+}
+
+.toast.error{
+  background:#dc2626;
+}
+
+.toast.info{
+  background:#2563eb;
+}
+
+@media(max-width:800px){
+
+  .ticket-top{
+    flex-direction:column;
+  }
+
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">
+
+  <h1>Admin Ticket Dashboard</h1>
+
+  <div class="status">
+    ● Moderator Session Active
+  </div>
+
+</div>
+
+<div id="toastContainer"></div>
+
 <div class="container">
 
-<h2>Support Tickets</h2>
+  <div class="topbar">
 
-<input
-  id="searchUser"
-  placeholder="Search username"
->
+    <div class="search-box">
+      <input
+        id="searchUser"
+        placeholder="Search username..."
+      >
+    </div>
 
-<br><br>
+    <button
+      class="btn-primary"
+      onclick="loadTickets()">
+      Refresh Tickets
+    </button>
 
-<div id="ticketList">
-Loading...
-</div>
+    <button
+      class="btn-success"
+      onclick="window.location.href='admin.html'">
+      Admin Panel
+    </button>
+
+  </div>
+
+  <div class="stats">
+
+    <div class="card">
+      <h3>Total Tickets</h3>
+      <div
+        class="value"
+        id="totalTickets">
+        0
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Open Tickets</h3>
+      <div
+        class="value"
+        id="openTickets">
+        0
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Closed Tickets</h3>
+      <div
+        class="value"
+        id="closedTickets">
+        0
+      </div>
+    </div>
+
+  </div>
+
+  <div
+    class="ticket-list"
+    id="ticketList">
+
+    <div class="empty">
+      Loading tickets...
+    </div>
+
+  </div>
 
 </div>
 
@@ -58,101 +348,350 @@ import { db } from "./js/firebase.js";
 
 import {
   collection,
-  getDocs
+  getDocs,
+  doc,
+  updateDoc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= ROLE CHECK ================= */
 
 const role =
   localStorage.getItem("role");
 
 if(
-  role!=="admin" &&
-  role!=="mod"
+  role !== "admin" &&
+  role !== "mod"
 ){
+
   alert("Access denied");
-  location.href="index.html";
+
+  location.href =
+    "index.html";
+
 }
+
+/* ================= ELEMENTS ================= */
 
 const list =
   document.getElementById(
     "ticketList"
   );
 
-async function loadTickets(){
+/* ================= TOAST ================= */
 
-  const filter =
-    document
-    .getElementById(
-      "searchUser"
-    )
-    .value
-    .toLowerCase();
+function toast(msg,type="info"){
 
-  const snap =
-    await getDocs(
-      collection(
-        db,
-        "tickets"
-      )
+  const container =
+    document.getElementById(
+      "toastContainer"
     );
 
-  list.innerHTML="";
+  const div =
+    document.createElement("div");
 
-  snap.forEach(docSnap=>{
+  div.className =
+    "toast " + type;
 
-    const t =
-      docSnap.data();
+  div.textContent = msg;
 
-    if(
-      filter &&
-      !t.user
-      .toLowerCase()
-      .includes(filter)
-    ){
+  container.appendChild(div);
+
+  setTimeout(()=>{
+    div.remove();
+  },3000);
+
+}
+
+/* ================= LOAD TICKETS ================= */
+
+window.loadTickets =
+async function(){
+
+  try{
+
+    const filter =
+      document
+      .getElementById(
+        "searchUser"
+      )
+      .value
+      .toLowerCase();
+
+    const snap =
+      await getDocs(
+        collection(
+          db,
+          "tickets"
+        )
+      );
+
+    list.innerHTML = "";
+
+    if(snap.empty){
+
+      list.innerHTML = `
+        <div class="empty">
+          No tickets found.
+        </div>
+      `;
+
       return;
     }
 
-    const div =
-      document.createElement(
-        "div"
-      );
+    const tickets = [];
 
-    div.className =
-      "ticket";
+    snap.forEach(docSnap=>{
 
-    div.innerHTML = `
-    <b>${t.subject}</b><br>
+      tickets.push({
+        id:docSnap.id,
+        ...docSnap.data()
+      });
 
-    User:
-    ${t.user}
-    <br>
+    });
 
-    Status:
-    ${t.status}
-    <br>
+    tickets.sort(
+      (a,b)=>
+        (b.lastUpdated || 0) -
+        (a.lastUpdated || 0)
+    );
 
-    Created:
-    ${
-      new Date(
-        t.created
-      ).toLocaleString()
+    const filtered =
+      tickets.filter(t=>{
+
+        if(
+          filter &&
+          !(
+            t.user || ""
+          )
+          .toLowerCase()
+          .includes(filter)
+        ){
+          return false;
+        }
+
+        return true;
+
+      });
+
+    document.getElementById(
+      "totalTickets"
+    ).textContent =
+      filtered.length;
+
+    document.getElementById(
+      "openTickets"
+    ).textContent =
+      filtered.filter(
+        t=>t.status==="open"
+      ).length;
+
+    document.getElementById(
+      "closedTickets"
+    ).textContent =
+      filtered.filter(
+        t=>t.status==="closed"
+      ).length;
+
+    if(filtered.length === 0){
+
+      list.innerHTML = `
+        <div class="empty">
+          No matching tickets found.
+        </div>
+      `;
+
+      return;
     }
-    <br>
 
-    <button
-      onclick="
-      location.href=
-      'ticket.html?id=${docSnap.id}'
-      ">
-      Open Ticket
-    </button>
+    filtered.forEach(ticket=>{
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+      div.className =
+        "ticket";
+
+      const status =
+        ticket.status || "open";
+
+      div.innerHTML = `
+
+        <div class="ticket-top">
+
+          <div>
+
+            <div class="ticket-title">
+              ${escapeHtml(
+                ticket.subject ||
+                "Untitled Ticket"
+              )}
+            </div>
+
+            <div class="ticket-meta">
+
+              <div class="meta-badge">
+                User:
+                ${escapeHtml(
+                  ticket.user ||
+                  "Unknown"
+                )}
+              </div>
+
+              <div class="meta-badge">
+                Created:
+                ${
+                  formatDate(
+                    ticket.created
+                  )
+                }
+              </div>
+
+              <div class="meta-badge">
+                Updated:
+                ${
+                  formatDate(
+                    ticket.lastUpdated
+                  )
+                }
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="
+            status
+            status-${status}
+          ">
+            ${status.toUpperCase()}
+          </div>
+
+        </div>
+
+        <div class="ticket-actions">
+
+          <button
+            class="btn-primary"
+            onclick="
+              location.href=
+              'ticket.html?id=${ticket.id}'
+            ">
+            Open Ticket
+          </button>
+
+          <button
+            class="btn-success"
+            onclick="
+              setTicketStatus(
+                '${ticket.id}',
+                'open'
+              )
+            ">
+            Reopen
+          </button>
+
+          <button
+            class="btn-danger"
+            onclick="
+              setTicketStatus(
+                '${ticket.id}',
+                'closed'
+              )
+            ">
+            Close
+          </button>
+
+        </div>
+
+      `;
+
+      list.appendChild(div);
+
+    });
+
+  }catch(err){
+
+    console.error(err);
+
+    list.innerHTML = `
+      <div class="empty">
+        Failed to load tickets.
+      </div>
     `;
 
-    list.appendChild(div);
+    toast(
+      "Failed to load tickets",
+      "error"
+    );
 
-  });
+  }
+
+};
+
+/* ================= STATUS UPDATE ================= */
+
+window.setTicketStatus =
+async function(id,status){
+
+  try{
+
+    await updateDoc(
+      doc(db,"tickets",id),
+      {
+        status,
+        lastUpdated:Date.now()
+      }
+    );
+
+    toast(
+      "Ticket updated",
+      "success"
+    );
+
+    loadTickets();
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Failed to update ticket",
+      "error"
+    );
+
+  }
+
+};
+
+/* ================= HELPERS ================= */
+
+function formatDate(time){
+
+  if(!time){
+    return "Unknown";
+  }
+
+  return new Date(
+    time
+  ).toLocaleString();
 
 }
+
+function escapeHtml(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+/* ================= EVENTS ================= */
 
 document
 .getElementById(
@@ -162,6 +701,8 @@ document
   "input",
   loadTickets
 );
+
+/* ================= INIT ================= */
 
 loadTickets();
 
