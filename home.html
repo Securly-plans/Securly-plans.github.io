@@ -29,10 +29,7 @@
   --info:#3b82f6;
 }
 
-/* GLOBAL */
-*{
-  box-sizing:border-box;
-}
+*{ box-sizing:border-box; }
 
 body{
   margin:0;
@@ -62,7 +59,6 @@ body{
 }
 
 .navbar a,
-.nav-btn,
 .navbar button{
   color:var(--text);
   text-decoration:none;
@@ -72,16 +68,14 @@ body{
   background:var(--panel);
   cursor:pointer;
   font-size:14px;
-  transition:0.2s;
 }
 
 .navbar a:hover,
 .navbar button:hover{
   border-color:var(--info);
-  transform:translateY(-1px);
 }
 
-/* SPECIAL BUTTONS */
+/* BADGES */
 .admin-link{
   background:rgba(59,130,246,0.15);
   color:#60a5fa !important;
@@ -90,13 +84,11 @@ body{
 
 .logout-btn{
   background:rgba(239,68,68,0.15);
-  color:#f87171;
   border-color:var(--danger);
 }
 
 .chat-link{
   background:rgba(74,222,128,0.10);
-  color:#4ade80;
   border-color:var(--primary);
 }
 
@@ -105,7 +97,6 @@ body{
   border-radius:999px;
   background:var(--panel);
   border:1px solid var(--border);
-  font-size:14px;
   color:var(--muted);
 }
 
@@ -135,7 +126,6 @@ header input:focus{
   border-color:var(--info);
 }
 
-/* CONTENT */
 h2{
   margin:20px;
   color:#4ade80;
@@ -144,26 +134,11 @@ h2{
 main{
   padding:0 20px;
 }
-
-/* FOOTER TEXT BLOCKS */
-footer-note,
-p{
-  text-align:center;
-}
-
-/* RESPONSIVE */
-@media(max-width:700px){
-  .navbar{
-    flex-direction:column;
-    align-items:flex-start;
-  }
-}
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
 
   <div class="nav-left">
@@ -214,26 +189,25 @@ p{
   NEW LINKS IN PROGRESS
 </h1>
 
-<p style="color:#4ade80;">
+<p style="color:#4ade80; text-align:center;">
   I am making new links if this gets blocked, just for you guys!
 </p>
 
-<p style="color:#a78bfa;">
+<p style="color:#a78bfa; text-align:center;">
   Links:
   <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
     Securly-plans.github.io
   </a>
 </p>
 
-<p style="color:#facc15;">
+<p style="color:#facc15; text-align:center;">
   Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
 </p>
 
-<p style="color:#4ade80;">
+<p style="color:#4ade80; text-align:center;">
   Emerald Games - Alpha 1.8
 </p>
 
-<!-- FIREBASE NOTIFICATIONS -->
 <script type="module">
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
@@ -258,8 +232,7 @@ onSnapshot(collection(db, "chats"), (snapshot) => {
     const messages = data.messages || [];
     const last = messages[messages.length - 1];
 
-    if (!last) return;
-    if (last.from === me) return;
+    if (!last || last.from === me) return;
 
     const key = chatId + "_" + last.time;
     if (notified.has(key)) return;
@@ -279,7 +252,6 @@ function showNotification(sender, text) {
 }
 </script>
 
-<!-- LOGOUT + NAVBAR -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.clear();
@@ -310,6 +282,33 @@ if (role === "admin" || role === "mod") {
 if (role === "admin") {
   document.getElementById("adminLink").style.display = "inline-block";
 }
+
+/* ================= SEARCH LOGIC ================= */
+
+const searchBar = document.getElementById("searchBar");
+const gameGrid = document.getElementById("gameGrid");
+const videoGrid = document.getElementById("videoGrid");
+
+function filterItems() {
+  const query = searchBar.value.toLowerCase().trim();
+
+  const allItems = [
+    ...gameGrid.children,
+    ...videoGrid.children
+  ];
+
+  allItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+
+    if (!query || text.includes(query)) {
+      item.style.display = "";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
+searchBar.addEventListener("input", filterItems);
 </script>
 
 <script src="script.js"></script>
