@@ -1,221 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emerald</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emerald</title>
 
-  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
 
-  <script>
-    (function () {
-      const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-      if (!isLoggedIn) {
-        window.location.replace("index.html");
-      }
-    })();
-  </script>
-
-  <style>
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #222;
-      padding: 12px 18px;
-      color: white;
-      font-family: Arial;
+<script>
+  (function () {
+    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+    if (!isLoggedIn) {
+      window.location.replace("index.html");
     }
+  })();
+</script>
 
-    .nav-left,
-    .nav-right {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
+<style>
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --info:#3b82f6;
+}
 
-    .navbar a,
-    .nav-btn {
-      color: white;
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: #333;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-    }
+/* GLOBAL */
+*{
+  box-sizing:border-box;
+}
 
-    .admin-link {
-      background: #2196f3;
-    }
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
 
-    .logout-btn {
-      background: #f44336;
-    }
+/* NAVBAR */
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:16px 20px;
+  background:#111827;
+  border-bottom:1px solid var(--border);
+}
 
-    .chat-link {
-      background: #555;
-    }
+.nav-left,
+.nav-right{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
 
-    .username-badge {
-      padding: 6px 10px;
-      border-radius: 6px;
-      background: #444;
-      font-size: 14px;
-    }
-  </style>
+.navbar a,
+.nav-btn,
+.navbar button{
+  color:var(--text);
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  cursor:pointer;
+  font-size:14px;
+  transition:0.2s;
+}
+
+.navbar a:hover,
+.navbar button:hover{
+  border-color:var(--info);
+  transform:translateY(-1px);
+}
+
+/* SPECIAL BUTTONS */
+.admin-link{
+  background:rgba(59,130,246,0.15);
+  color:#60a5fa !important;
+  border-color:#3b82f6;
+}
+
+.logout-btn{
+  background:rgba(239,68,68,0.15);
+  color:#f87171;
+  border-color:var(--danger);
+}
+
+.chat-link{
+  background:rgba(74,222,128,0.10);
+  color:#4ade80;
+  border-color:var(--primary);
+}
+
+.username-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  font-size:14px;
+  color:var(--muted);
+}
+
+/* HEADER */
+header{
+  padding:20px;
+  border-bottom:1px solid var(--border);
+}
+
+header h1{
+  margin:0 0 10px;
+  color:#93c5fd;
+}
+
+header input{
+  width:100%;
+  max-width:400px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:var(--text);
+  outline:none;
+}
+
+header input:focus{
+  border-color:var(--info);
+}
+
+/* CONTENT */
+h2{
+  margin:20px;
+  color:#4ade80;
+}
+
+main{
+  padding:0 20px;
+}
+
+/* FOOTER TEXT BLOCKS */
+footer-note,
+p{
+  text-align:center;
+}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .navbar{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <!-- NAVBAR -->
-  <div class="navbar">
-    <div class="nav-left">
-      <a href="home.html">Home</a>
-    </div>
+<!-- NAVBAR -->
+<div class="navbar">
 
-    <div class="nav-right">
-      <span id="usernameDisplay" class="username-badge"></span>
-
-      <a href="chat.html" class="chat-link">Chat</a>
-      <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
-      <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
-
-      <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">
-        Resp. Support
-      </a>
-
-      <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
-        Admin
-      </a>
-
-      <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
-        Chat Mod
-      </a>
-
-      <a href="view-users.html" id="viewUsersLink" style="display:none;">
-        Users
-      </a>
-
-      <button id="logoutBtn" class="logout-btn">Logout</button>
-    </div>
+  <div class="nav-left">
+    <a href="home.html">Home</a>
   </div>
 
-  <header>
-    <h1 style="color:powderblue; font-family:verdana;">Home</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
-  </header>
+  <div class="nav-right">
 
-  <h2 style="color:green; font-family:verdana;">Games</h2>
+    <span id="usernameDisplay" class="username-badge"></span>
 
-  <main id="gameGrid" class="game-grid"></main>
-  <main id="videoGrid" class="video-grid"></main>
+    <a href="chat.html" class="chat-link">Chat</a>
 
-  <h1 style="color:purple; font-family:verdana; text-align:center;">
-    NEW LINKS IN PROGRESS
-  </h1>
+    <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
+    <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
-  <p style="color:green; font-family:verdana; text-align:center;">
-    I am making new links if this gets blocked, just for you guys!
-  </p>
+    <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">
+      Resp. Support
+    </a>
 
-  <p style="color:purple; font-family:verdana; text-align:center;">
-    Links:
-    <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-  </p>
+    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+      Admin
+    </a>
 
-  <p style="color:yellow; font-family:verdana; text-align:center;">
-    Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-  </p>
+    <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
+      Chat Mod
+    </a>
 
-  <p style="color:green; font-family:verdana; text-align:center;">
-    Emerald Games - Alpha 1.8
-  </p>
+    <a href="view-users.html" id="viewUsersLink" style="display:none;">
+      Users
+    </a>
 
-  <!-- FIREBASE NOTIFICATIONS -->
-  <script type="module">
-    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { db } from "./js/firebase.js";
+    <button id="logoutBtn" class="logout-btn">Logout</button>
 
-    const me = localStorage.getItem("username");
-    let notified = new Set();
+  </div>
+</div>
 
-    /* 🔔 REQUEST NOTIFICATION PERMISSION */
-    if ("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
+<header>
+  <h1>Home</h1>
+  <input type="text" id="searchBar" placeholder="Search games...">
+</header>
 
-    /* 🔥 REAL-TIME MESSAGE LISTENER */
-    onSnapshot(collection(db, "chats"), (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type !== "modified") return;
+<h2>Games</h2>
 
-        const data = change.doc.data();
-        const chatId = change.doc.id;
+<main id="gameGrid" class="game-grid"></main>
+<main id="videoGrid" class="video-grid"></main>
 
-        if (data.type !== "private") return;
-        if (!data.participants?.includes(me)) return;
+<h1 style="color:#a78bfa; text-align:center; margin-top:40px;">
+  NEW LINKS IN PROGRESS
+</h1>
 
-        const messages = data.messages || [];
-        const last = messages[messages.length - 1];
+<p style="color:#4ade80;">
+  I am making new links if this gets blocked, just for you guys!
+</p>
 
-        if (!last) return;
-        if (last.from === me) return;
+<p style="color:#a78bfa;">
+  Links:
+  <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
+    Securly-plans.github.io
+  </a>
+</p>
 
-        const key = chatId + "_" + last.time;
-        if (notified.has(key)) return;
+<p style="color:#facc15;">
+  Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
+</p>
 
-        notified.add(key);
-        showNotification(last.from, last.text);
-      });
-    });
+<p style="color:#4ade80;">
+  Emerald Games - Alpha 1.8
+</p>
 
-    /* 🔔 NOTIFICATION POPUP */
-    function showNotification(sender, text) {
-      if (Notification.permission !== "granted") return;
+<!-- FIREBASE NOTIFICATIONS -->
+<script type="module">
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "./js/firebase.js";
 
-      new Notification("💬 New message from " + sender, {
-        body: text.length > 60 ? text.slice(0, 60) + "..." : text,
-        icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
-      });
-    }
-  </script>
+const me = localStorage.getItem("username");
+let notified = new Set();
 
-  <!-- LOGOUT + NAVBAR -->
-  <script>
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      localStorage.clear();
-      window.location.replace("index.html");
-    });
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
 
-    const role = localStorage.getItem("role");
-    const username = localStorage.getItem("username");
-    const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+onSnapshot(collection(db, "chats"), (snapshot) => {
+  snapshot.docChanges().forEach(change => {
+    if (change.type !== "modified") return;
 
-    const usernameDisplay = document.getElementById("usernameDisplay");
+    const data = change.doc.data();
+    const chatId = change.doc.id;
 
-    if (username && isLoggedIn) {
-      usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
-    }
+    if (data.type !== "private") return;
+    if (!data.participants?.includes(me)) return;
 
-    if (isLoggedIn) {
-      document.getElementById("ticketslink").style.display = "inline-block";
-      document.getElementById("profileLink").style.display = "inline-block";
-      document.getElementById("viewUsersLink").style.display = "inline-block";
-    }
+    const messages = data.messages || [];
+    const last = messages[messages.length - 1];
 
-    if (role === "admin" || role === "mod") {
-      document.getElementById("adminticketslink").style.display = "inline-block";
-      document.getElementById("modChatLink").style.display = "inline-block";
-    }
+    if (!last) return;
+    if (last.from === me) return;
 
-    if (role === "admin") {
-      document.getElementById("adminLink").style.display = "inline-block";
-    }
-  </script>
+    const key = chatId + "_" + last.time;
+    if (notified.has(key)) return;
 
-  <script src="script.js"></script>
+    notified.add(key);
+    showNotification(last.from, last.text);
+  });
+});
+
+function showNotification(sender, text) {
+  if (Notification.permission !== "granted") return;
+
+  new Notification("💬 New message from " + sender, {
+    body: text.length > 60 ? text.slice(0, 60) + "..." : text,
+    icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+  });
+}
+</script>
+
+<!-- LOGOUT + NAVBAR -->
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.replace("index.html");
+});
+
+const role = localStorage.getItem("role");
+const username = localStorage.getItem("username");
+const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
+const usernameDisplay = document.getElementById("usernameDisplay");
+
+if (username && isLoggedIn) {
+  usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
+}
+
+if (isLoggedIn) {
+  document.getElementById("ticketslink").style.display = "inline-block";
+  document.getElementById("profileLink").style.display = "inline-block";
+  document.getElementById("viewUsersLink").style.display = "inline-block";
+}
+
+if (role === "admin" || role === "mod") {
+  document.getElementById("adminticketslink").style.display = "inline-block";
+  document.getElementById("modChatLink").style.display = "inline-block";
+}
+
+if (role === "admin") {
+  document.getElementById("adminLink").style.display = "inline-block";
+}
+</script>
+
+<script src="script.js"></script>
 
 </body>
 </html>
