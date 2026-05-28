@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Emerald Dashboard</title>
 
-<link rel="stylesheet" href="style.css">
-
 <style>
 :root{
     --primary:#c40000;
@@ -17,7 +15,6 @@
     --muted:#666;
 }
 
-/* GLOBAL */
 body{
     margin:0;
     font-family:Arial,sans-serif;
@@ -25,18 +22,14 @@ body{
     color:var(--text);
 }
 
-/* TOP NAV (ADMIN STYLE) */
+/* ================= NAVBAR ================= */
 .navbar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     background:var(--card);
     padding:12px 18px;
-    box-shadow:0 2px 10px rgba(0,0,0,.08);
-    border-bottom:4px solid var(--primary);
-    position:sticky;
-    top:0;
-    z-index:1000;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
 
 .nav-left, .nav-right{
@@ -48,7 +41,7 @@ body{
 .navbar a,
 .nav-btn{
     text-decoration:none;
-    padding:8px 12px;
+    padding:7px 12px;
     border-radius:8px;
     font-size:14px;
     border:none;
@@ -58,12 +51,10 @@ body{
     transition:.2s;
 }
 
-.navbar a:hover,
-.nav-btn:hover{
+.navbar a:hover{
     background:#ddd;
 }
 
-/* ACCENT BUTTONS */
 .admin-link{
     background:var(--primary);
     color:white !important;
@@ -94,20 +85,26 @@ body{
     font-size:14px;
 }
 
-/* HEADER CARD */
-.page-header{
+/* ================= PAGE WRAPPER ================= */
+.page{
     max-width:1200px;
     margin:20px auto;
+    padding:0 15px;
+}
+
+/* ================= HEADER CARD ================= */
+.page-header{
     background:var(--card);
-    padding:20px;
+    padding:18px;
     border-radius:12px;
-    box-shadow:0 2px 10px rgba(0,0,0,.08);
-    border-left:6px solid var(--primary);
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+    margin-bottom:18px;
 }
 
 .page-header h1{
     margin:0 0 10px 0;
     color:var(--primary);
+    font-size:22px;
 }
 
 #searchBar{
@@ -116,33 +113,33 @@ body{
     border:1px solid #ddd;
     border-radius:8px;
     font-size:15px;
+    outline:none;
 }
 
-/* SECTIONS */
+#searchBar:focus{
+    border-color:var(--primary);
+}
+
+/* ================= SECTIONS ================= */
 .section-title{
-    max-width:1200px;
-    margin:20px auto 10px auto;
-    font-size:18px;
+    margin:15px 0;
     color:var(--primary);
     font-weight:bold;
 }
 
-/* GRIDS (unchanged structure) */
+/* ================= GRIDS ================= */
 .game-grid,
 .video-grid{
-    max-width:1200px;
-    margin:auto;
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
     gap:15px;
-    padding:0 20px;
 }
 
-/* FOOTER TEXT */
+/* ================= FOOTER TEXT ================= */
 .footer-text{
     text-align:center;
     color:var(--muted);
-    margin:25px 0;
+    margin:20px 0;
 }
 </style>
 
@@ -172,58 +169,49 @@ body{
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
 
         <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">Chat Mod</a>
-        
+
         <a href="view-users.html" id="viewUsersLink" class="admin-link" style="display:none;">Users</a>
 
         <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
 </div>
 
-<!-- PAGE HEADER -->
-<div class="page-header">
-    <h1>Home Dashboard</h1>
-    <input type="text" id="searchBar" placeholder="Search games...">
+<!-- PAGE -->
+<div class="page">
+
+    <div class="page-header">
+        <h1>Home Dashboard</h1>
+        <input type="text" id="searchBar" placeholder="Search games...">
+    </div>
+
+    <div class="section-title">Games</div>
+
+    <main id="gameGrid" class="game-grid"></main>
+    <main id="videoGrid" class="video-grid"></main>
+
 </div>
 
-<h2 class="section-title">Games</h2>
-<main id="gameGrid" class="game-grid"></main>
+<!-- FOOTER -->
+<h1 class="footer-text" style="color:purple;">NEW LINKS IN PROGRESS</h1>
 
-<main id="videoGrid" class="video-grid"></main>
-
-<!-- ANNOUNCEMENTS -->
-<h1 class="footer-text" style="color:purple;">
-NEW LINKS IN PROGRESS
-</h1>
-
-<p class="footer-text">
-I am making new links if this gets blocked, just for you guys!
-</p>
+<p class="footer-text">I am making new links if this gets blocked, just for you guys!</p>
 
 <p class="footer-text">
 Links:
 <a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
 </p>
 
-<p class="footer-text">
-Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-</p>
+<p class="footer-text">Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell</p>
 
-<p class="footer-text">
-Emerald Games - Alpha 1.8
-</p>
+<p class="footer-text">Emerald Games - Alpha 1.8</p>
 
-<!-- FIREBASE NOTIFICATIONS (UNCHANGED) -->
+<!-- NOTIFICATIONS (UNCHANGED) -->
 <script type="module">
 
-import {
-  collection,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
 const me = localStorage.getItem("username");
-
 let notified = new Set();
 
 if ("Notification" in window && Notification.permission !== "granted") {
@@ -245,31 +233,23 @@ onSnapshot(collection(db, "chats"), (snapshot) => {
         const messages = data.messages || [];
         const last = messages[messages.length - 1];
 
-        if (!last) return;
-        if (last.from === me) return;
+        if (!last || last.from === me) return;
 
         const key = chatId + "_" + last.time;
 
         if (notified.has(key)) return;
         notified.add(key);
 
-        showNotification(last.from, last.text);
+        new Notification("💬 New message from " + last.from, {
+            body: last.text.length > 60 ? last.text.slice(0,60)+"..." : last.text,
+            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+        });
     });
 });
 
-function showNotification(sender, text) {
-
-    if (Notification.permission !== "granted") return;
-
-    new Notification("💬 New message from " + sender, {
-        body: text.length > 60 ? text.slice(0, 60) + "..." : text,
-        icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
-    });
-}
-
 </script>
 
-<!-- LOGOUT + NAV -->
+<!-- LOGOUT / NAV -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
