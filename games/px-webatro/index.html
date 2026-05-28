@@ -1,4 +1,144 @@
 <!DOCTYPE html>
-<html>
-<iframe src="outblade.github.io/balatro-web" title="Balatro"></iframe>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+  <!-- ── SEO ─────────────────────────────────────────────────── -->
+  <title>Balatro GBA – Play in Browser</title>
+  <meta name="description" content="Play the Balatro GBA fan demake directly in your browser. No download, no install – just click and play. Works on PC and mobile." />
+  <meta name="keywords" content="Balatro, GBA, Game Boy Advance, browser game, card game, roguelike, fan game, play online" />
+  <link rel="canonical" href="https://outblade.github.io/balatro-web/" />
+
+  <!-- ── Open Graph (Discord, Twitter, WhatsApp previews) ─────── -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://outblade.github.io/balatro-web/" />
+  <meta property="og:title"       content="Balatro GBA – Play in Browser" />
+  <meta property="og:description" content="Play the Balatro GBA fan demake in your browser. No download needed." />
+  <meta property="og:image"       content="https://outblade.github.io/balatro-web/social.png" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="twitter:title"      content="Balatro GBA – Play in Browser" />
+  <meta name="twitter:description" content="Play the Balatro GBA fan demake in your browser. No download needed." />
+  <meta name="twitter:image"      content="https://outblade.github.io/balatro-web/social.png" />
+
+  <!-- ── Emulator styles ──────────────────────────────────────── -->
+  <link rel="stylesheet" href="https://cdn.emulatorjs.org/stable/data/emulator.min.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* ── Emulator fills viewport ────────────────────────────── */
+    #game { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+
+    /* ── Fullscreen button (top-right) ──────────────────────── */
+    #btn-fs {
+      position: fixed; top: 10px; right: 10px; z-index: 9999;
+      background: rgba(10,10,22,0.7);
+      border: 1px solid rgba(232,168,56,0.4);
+      border-radius: 6px; padding: 5px 12px;
+      color: #e8a838; font: 700 0.72rem 'Segoe UI', sans-serif;
+      cursor: pointer; user-select: none; letter-spacing: 1px;
+      transition: background 0.15s, opacity 0.15s;
+      opacity: 0.6;
+    }
+    #btn-fs:hover { background: rgba(232,168,56,0.2); opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="game"></div>
+<div id="btn-fs" title="Fullscreen (F / F11)">&#9974; FS</div>
+
+<!-- EmulatorJS (individual scripts to bypass min.js abort bug) -->
+<script src="https://cdn.emulatorjs.org/stable/data/src/emulator.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/nipplejs.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/shaders.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/storage.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/gamepad.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/GameManager.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/socket.io.min.js"></script>
+<script src="https://cdn.emulatorjs.org/stable/data/src/compression.js"></script>
+
+<script>
+// ── Canvas cover-fill (removes black bars) ──────────────────────
+function fixCanvas() {
+  var canvas = document.querySelector('canvas.ejs_canvas');
+  if (!canvas) { setTimeout(fixCanvas, 200); return; }
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var cw = canvas.width  || canvas.offsetWidth  || 240;
+  var ch = canvas.height || canvas.offsetHeight || 160;
+  // GBA native: 240×160 (3:2). Use actual ratio for cover-fill.
+  var ar = cw / ch;
+  var scale, dW, dH;
+  if (vw / vh > ar) {
+    // viewport is wider → scale to fill width
+    dW = vw; dH = vw / ar;
+  } else {
+    // viewport is taller → scale to fill height
+    dH = vh; dW = vh * ar;
+  }
+  var left = (vw - dW) / 2;
+  var top  = (vh - dH) / 2;
+  var p = canvas.parentElement;
+  p.style.cssText = 'width:100%!important;height:100%!important;overflow:hidden!important;position:relative!important;';
+  canvas.style.cssText =
+    'position:absolute!important;' +
+    'width:'  + dW   + 'px!important;' +
+    'height:' + dH   + 'px!important;' +
+    'left:'   + left + 'px!important;' +
+    'top:'    + top  + 'px!important;';
+}
+window.addEventListener('resize', fixCanvas);
+document.addEventListener('fullscreenchange', function () { setTimeout(fixCanvas, 150); });
+
+// ── Fullscreen (F / F11 / button) ──────────────────────────────
+function toggleFS() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(function () {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
+    e.preventDefault();
+    toggleFS();
+  }
+});
+document.getElementById('btn-fs').addEventListener('click', toggleFS);
+
+// ── Start emulator ──────────────────────────────────────────────
+window.EJS_emulator = new EmulatorJS('#game', {
+  gameUrl:     'balatro-gba.gba',
+  dataPath:    'https://cdn.emulatorjs.org/stable/data/',
+  system:      'mgba',
+  color:       '#e8a838',
+  startOnLoad: true,
+  defaultControllers: {
+    0: {
+      0: { value: 'escape',      value2: 'BUTTON_2'            }, // B      = Esc
+      1: { value: 'space',       value2: 'BUTTON_4'            }, // A      = Space
+      2: { value: 'shift',       value2: 'SELECT'              }, // Select = Shift
+      3: { value: 'tab',         value2: 'START'               }, // Start  = Tab
+      4: { value: 'up arrow',    value2: 'DPAD_UP'             },
+      5: { value: 'down arrow',  value2: 'DPAD_DOWN'           },
+      6: { value: 'left arrow',  value2: 'DPAD_LEFT'           },
+      7: { value: 'right arrow', value2: 'DPAD_RIGHT'          },
+      8: { value: 'enter',       value2: 'LEFT_TOP_SHOULDER'   }, // L = Enter      (Play Hand)
+      9: { value: 'backspace',   value2: 'RIGHT_TOP_SHOULDER'  }  // R = Backspace  (Discard)
+    },
+    1: {}, 2: {}, 3: {}
+  }
+});
+
+fixCanvas();
+</script>
+
+</body>
 </html>
