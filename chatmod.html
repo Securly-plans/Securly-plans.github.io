@@ -8,154 +8,352 @@
 <script type="module" src="./js/session.js"></script>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#f4f4f4;
+
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
 }
 
-header{
-    background:#c40000;
-    color:white;
-    padding:15px;
-    text-align:center;
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.header{
+  background:#111827;
+  padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.header h1{
+  margin:0;
+  color:#ef4444;
+}
+
+.status{
+  color:var(--primary);
+  font-size:14px;
 }
 
 .container{
-    display:flex;
-    height:calc(100vh - 60px);
+  display:grid;
+  grid-template-columns:280px 1fr;
+  height:calc(100vh - 81px);
 }
 
 .sidebar{
-    width:300px;
-    background:white;
-    border-right:1px solid #ddd;
-    overflow-y:auto;
+  background:#151922;
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  padding:20px;
+}
+
+.sidebar h2{
+  margin-top:0;
 }
 
 .chat-list{
-    padding:10px;
+  margin-top:15px;
 }
 
 .chat-item{
-    padding:12px;
-    margin-bottom:5px;
-    background:#eee;
-    border-radius:8px;
-    cursor:pointer;
+  background:var(--panel);
+  border:1px solid var(--border);
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:0.2s;
+  word-break:break-word;
 }
 
 .chat-item:hover{
-    background:#ddd;
+  background:var(--panel2);
+}
+
+.chat-item.active{
+  border-color:var(--info);
 }
 
 .main{
-    flex:1;
-    display:flex;
-    flex-direction:column;
+  display:flex;
+  flex-direction:column;
 }
 
-.tools{
-    background:white;
-    padding:10px;
-    border-bottom:1px solid #ddd;
-    display:flex;
-    gap:10px;
+.toolbar{
+  background:#151922;
+  border-bottom:1px solid var(--border);
+  padding:15px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
-.tools input{
-    padding:8px;
-    border:1px solid #ccc;
-    border-radius:5px;
+.toolbar input{
+  padding:10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+}
+
+.toolbar button{
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+  transition:0.2s;
+}
+
+.toolbar button:hover{
+  opacity:0.9;
+}
+
+.primary{
+  background:var(--info);
+}
+
+.danger{
+  background:var(--danger);
+}
+
+.warning{
+  background:var(--warning);
+  color:black;
+}
+
+.success{
+  background:var(--primary);
+  color:black;
 }
 
 .messages{
-    flex:1;
-    overflow-y:auto;
-    padding:15px;
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
 }
 
 .message{
-    background:white;
-    margin-bottom:10px;
-    padding:10px;
-    border-radius:8px;
-    border-left:4px solid #c40000;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-left:4px solid var(--danger);
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:15px;
+}
+
+.server-msg{
+  border-left-color:var(--info);
 }
 
 .meta{
-    color:#777;
-    font-size:12px;
-    margin-bottom:5px;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:10px;
 }
 
-.actions{
-    margin-top:8px;
-}
-
-.actions button{
-    margin-right:5px;
-}
-
-.server-box{
-    background:white;
-    padding:10px;
-    border-top:1px solid #ddd;
-    display:flex;
-    gap:10px;
-}
-
-.server-box input{
-    flex:1;
-    padding:10px;
-}
-
-button{
-    cursor:pointer;
-}
-
-/* MEDIA STYLES */
 .message img{
-    max-width:180px;
-    margin-top:6px;
-    border-radius:6px;
-    display:block;
+  max-width:220px;
+  border-radius:10px;
+  margin-top:10px;
+  display:block;
 }
 
 .message a{
-    color:blue;
-    display:inline-block;
-    margin-top:5px;
+  color:#60a5fa;
+  display:inline-block;
+  margin-top:10px;
 }
+
+.actions{
+  margin-top:12px;
+}
+
+.actions button{
+  margin-right:8px;
+}
+
+.server-box{
+  background:#151922;
+  border-top:1px solid var(--border);
+  padding:15px;
+  display:flex;
+  gap:10px;
+}
+
+.server-box input{
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+}
+
+.server-box button{
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  background:var(--info);
+  color:white;
+  cursor:pointer;
+}
+
+.empty{
+  color:var(--muted);
+  text-align:center;
+  margin-top:40px;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.stat{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+}
+
+.stat .label{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.stat .value{
+  font-size:22px;
+  font-weight:bold;
+  margin-top:5px;
+}
+
+@media(max-width:900px){
+
+  .container{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    height:250px;
+  }
+
+  .toolbar{
+    flex-direction:column;
+  }
+
+  .toolbar input{
+    width:100%;
+  }
+
+}
+
 </style>
 </head>
 <body>
 
-<header>
-<h2>Chat Moderator Panel</h2>
-</header>
+<div class="header">
+  <h1>Chat Moderator</h1>
+  <div class="status">● Moderator Session Active</div>
+</div>
 
 <div class="container">
 
-<div class="sidebar">
-<div class="chat-list" id="chatList"></div>
-</div>
+  <div class="sidebar">
 
-<div class="main">
+    <h2>Chats</h2>
 
-<div class="tools">
-<input id="userSearch" placeholder="Search username">
-<input id="msgSearch" placeholder="Search message">
-</div>
+    <div class="stats">
 
-<div class="messages" id="messages"></div>
+      <div class="stat">
+        <div class="label">Chats</div>
+        <div class="value" id="chatCount">0</div>
+      </div>
 
-<div class="server-box">
-<input id="serverMessage" placeholder="Send server announcement">
-<button id="sendServer">Send</button>
-</div>
+      <div class="stat">
+        <div class="label">Messages</div>
+        <div class="value" id="msgCount">0</div>
+      </div>
 
-</div>
+      <div class="stat">
+        <div class="label">Selected</div>
+        <div class="value" id="selectedCount">0</div>
+      </div>
+
+    </div>
+
+    <div class="chat-list" id="chatList"></div>
+
+  </div>
+
+  <div class="main">
+
+    <div class="toolbar">
+
+      <input id="userSearch" placeholder="Search username">
+
+      <input id="msgSearch" placeholder="Search message">
+
+      <button class="primary" id="refreshChats">
+        Refresh
+      </button>
+
+      <button class="warning" id="clearChatBtn">
+        Clear Chat
+      </button>
+
+      <button class="danger" id="deleteChatBtn">
+        Delete Chat
+      </button>
+
+      <button class="success" id="exportBtn">
+        Export
+      </button>
+
+    </div>
+
+    <div class="messages" id="messages">
+
+      <div class="empty">
+        Select a chat to begin moderating.
+      </div>
+
+    </div>
+
+    <div class="server-box">
+
+      <input
+        id="serverMessage"
+        placeholder="Send server announcement">
+
+      <button id="sendServer">
+        Send
+      </button>
+
+    </div>
+
+  </div>
+
 </div>
 
 <script type="module">
@@ -163,56 +361,138 @@ button{
 import { db } from "./js/firebase.js";
 
 import {
-collection,
-getDocs,
-doc,
-getDoc,
-updateDoc
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  addDoc
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ADMIN CHECK */
+/* ================= ACCESS ================= */
+
 const role = localStorage.getItem("role");
 
-if (role !== "admin" && role !== "mod") {
-    alert("Access denied");
-    location.href = "index.html";
-    throw new Error("Moderator access required");
+if(role !== "admin" && role !== "mod"){
+
+  alert("Access denied");
+
+  location.href = "index.html";
+
+  throw new Error("Moderator access required");
 }
 
-const chatList = document.getElementById("chatList");
-const messagesDiv = document.getElementById("messages");
+/* ================= ELEMENTS ================= */
+
+const chatList =
+  document.getElementById("chatList");
+
+const messagesDiv =
+  document.getElementById("messages");
+
+/* ================= STATE ================= */
 
 let currentChat = null;
 let currentMessages = [];
+let currentChatElement = null;
 
-/* LOAD CHATS */
+/* ================= LOGGING ================= */
+
+async function logAction(type,details){
+
+  try{
+
+    await addDoc(collection(db,"adminLogs"),{
+      type,
+      details,
+      moderator:
+        localStorage.getItem("username")
+        || "Unknown",
+      timestamp:Date.now()
+    });
+
+  }catch(err){
+    console.error(err);
+  }
+}
+
+/* ================= LOAD CHATS ================= */
+
 async function loadChats(){
 
-    chatList.innerHTML = "";
+  chatList.innerHTML = "";
 
-    const snap = await getDocs(collection(db,"chats"));
+  try{
+
+    const snap =
+      await getDocs(collection(db,"chats"));
+
+    document.getElementById("chatCount")
+      .textContent = snap.size;
+
+    if(snap.empty){
+
+      chatList.innerHTML = `
+        <div class="empty">
+          No chats found.
+        </div>
+      `;
+
+      return;
+    }
 
     snap.forEach(docSnap=>{
 
-        const div = document.createElement("div");
-        div.className = "chat-item";
-        div.textContent = docSnap.id;
+      const div =
+        document.createElement("div");
 
-        div.onclick = ()=>loadChat(docSnap.id);
+      div.className = "chat-item";
 
-        chatList.appendChild(div);
+      div.innerHTML = `
+        <b>${escapeHtml(docSnap.id)}</b>
+      `;
+
+      div.onclick = ()=>{
+
+        if(currentChatElement){
+          currentChatElement.classList.remove("active");
+        }
+
+        div.classList.add("active");
+
+        currentChatElement = div;
+
+        loadChat(docSnap.id);
+      };
+
+      chatList.appendChild(div);
 
     });
 
+  }catch(err){
+
+    console.error(err);
+
+    chatList.innerHTML = `
+      <div class="empty">
+        Failed to load chats.
+      </div>
+    `;
+  }
 }
 
-/* LOAD SINGLE CHAT */
+/* ================= LOAD CHAT ================= */
+
 async function loadChat(chatId){
 
-    currentChat = chatId;
+  currentChat = chatId;
+
+  try{
 
     const ref = doc(db,"chats",chatId);
+
     const snap = await getDoc(ref);
 
     if(!snap.exists()) return;
@@ -221,130 +501,358 @@ async function loadChat(chatId){
 
     currentMessages = data.messages || [];
 
+    document.getElementById("selectedCount")
+      .textContent = "1";
+
+    document.getElementById("msgCount")
+      .textContent = currentMessages.length;
+
     renderMessages();
+
+  }catch(err){
+
+    console.error(err);
+
+    messagesDiv.innerHTML = `
+      <div class="empty">
+        Failed to load chat.
+      </div>
+    `;
+  }
 }
 
-/* RENDER MESSAGES (WITH MEDIA SUPPORT) */
+/* ================= RENDER ================= */
+
 function renderMessages(){
 
-    const userFilter =
-        document.getElementById("userSearch").value.toLowerCase();
+  const userFilter =
+    document.getElementById("userSearch")
+    .value
+    .toLowerCase();
 
-    const msgFilter =
-        document.getElementById("msgSearch").value.toLowerCase();
+  const msgFilter =
+    document.getElementById("msgSearch")
+    .value
+    .toLowerCase();
 
-    messagesDiv.innerHTML = "";
+  messagesDiv.innerHTML = "";
 
-    currentMessages.forEach((msg,index)=>{
+  let visible = 0;
 
-        if(userFilter && !msg.from.toLowerCase().includes(userFilter)) return;
-        if(msgFilter && !msg.text.toLowerCase().includes(msgFilter)) return;
+  currentMessages.forEach((msg,index)=>{
 
-        let mediaHTML = "";
+    if(
+      userFilter &&
+      !String(msg.from || "")
+      .toLowerCase()
+      .includes(userFilter)
+    ) return;
 
-        if (msg.media) {
-            if (msg.media.startsWith("data:image")) {
-                mediaHTML = `<img src="${msg.media}">`;
-            } else {
-                mediaHTML = `<a href="${msg.media}" target="_blank">📎 Open File</a>`;
-            }
-        }
+    if(
+      msgFilter &&
+      !String(msg.text || "")
+      .toLowerCase()
+      .includes(msgFilter)
+    ) return;
 
-        const div = document.createElement("div");
-        div.className = "message";
+    visible++;
 
-        div.innerHTML = `
-            <div class="meta">
-                <b>${msg.from}</b><br>
-                ${new Date(msg.time).toLocaleString()}
-            </div>
+    let mediaHTML = "";
 
-            <div>${msg.text || ""}</div>
+    if(msg.media){
 
-            ${mediaHTML}
+      if(msg.media.startsWith("data:image")){
 
-            <div class="actions">
-                <button onclick="editMsg(${index})">Edit</button>
-                <button onclick="deleteMsg(${index})">Delete</button>
-            </div>
+        mediaHTML = `
+          <img src="${msg.media}">
         `;
 
-        messagesDiv.appendChild(div);
-    });
-}
+      }else{
 
-/* EDIT MESSAGE */
-window.editMsg = async function(index){
-
-    const newText = prompt(
-        "Edit message",
-        currentMessages[index].text
-    );
-
-    if(newText === null) return;
-
-    currentMessages[index].text = newText;
-
-    await saveMessages();
-};
-
-/* DELETE MESSAGE */
-window.deleteMsg = async function(index){
-
-    if(!confirm("Delete this message?")) return;
-
-    currentMessages.splice(index,1);
-
-    await saveMessages();
-};
-
-/* SAVE */
-async function saveMessages(){
-
-    const ref = doc(db,"chats",currentChat);
-
-    await updateDoc(ref,{
-        messages: currentMessages
-    });
-
-    renderMessages();
-}
-
-/* SERVER MESSAGE */
-document.getElementById("sendServer").onclick = async ()=>{
-
-    if(!currentChat){
-        alert("Select a chat first.");
-        return;
+        mediaHTML = `
+          <a href="${msg.media}" target="_blank">
+            📎 Open File
+          </a>
+        `;
+      }
     }
 
-    const text =
-        document.getElementById("serverMessage").value.trim();
+    const div =
+      document.createElement("div");
 
-    if(!text) return;
+    div.className =
+      msg.from === "Server"
+      ? "message server-msg"
+      : "message";
 
-    currentMessages.push({
-        from:"Server",
-        text,
-        time:Date.now()
-    });
+    div.innerHTML = `
+      <div class="meta">
 
-    await saveMessages();
+        <b>
+          ${escapeHtml(msg.from || "Unknown")}
+        </b>
 
-    document.getElementById("serverMessage").value = "";
+        <br>
+
+        ${new Date(msg.time).toLocaleString()}
+
+      </div>
+
+      <div>
+        ${escapeHtml(msg.text || "")}
+      </div>
+
+      ${mediaHTML}
+
+      <div class="actions">
+
+        <button
+          class="primary"
+          onclick="editMsg(${index})">
+          Edit
+        </button>
+
+        <button
+          class="danger"
+          onclick="deleteMsg(${index})">
+          Delete
+        </button>
+
+      </div>
+    `;
+
+    messagesDiv.appendChild(div);
+
+  });
+
+  if(visible === 0){
+
+    messagesDiv.innerHTML = `
+      <div class="empty">
+        No messages match filters.
+      </div>
+    `;
+  }
+}
+
+/* ================= EDIT ================= */
+
+window.editMsg = async function(index){
+
+  const newText = prompt(
+    "Edit message",
+    currentMessages[index].text || ""
+  );
+
+  if(newText === null) return;
+
+  currentMessages[index].text = newText;
+
+  await saveMessages();
+
+  await logAction(
+    "edit-message",
+    `Edited message in ${currentChat}`
+  );
 };
 
-/* FILTERS */
-document.getElementById("userSearch").addEventListener("input",renderMessages);
-document.getElementById("msgSearch").addEventListener("input",renderMessages);
+/* ================= DELETE ================= */
 
-/* INIT */
+window.deleteMsg = async function(index){
+
+  if(!confirm("Delete this message?")) return;
+
+  currentMessages.splice(index,1);
+
+  await saveMessages();
+
+  await logAction(
+    "delete-message",
+    `Deleted message in ${currentChat}`
+  );
+};
+
+/* ================= SAVE ================= */
+
+async function saveMessages(){
+
+  if(!currentChat) return;
+
+  const ref = doc(db,"chats",currentChat);
+
+  await updateDoc(ref,{
+    messages:currentMessages
+  });
+
+  document.getElementById("msgCount")
+    .textContent = currentMessages.length;
+
+  renderMessages();
+}
+
+/* ================= CLEAR ================= */
+
+document.getElementById("clearChatBtn")
+.onclick = async ()=>{
+
+  if(!currentChat){
+
+    alert("Select a chat first.");
+
+    return;
+  }
+
+  if(!confirm(
+    "Clear ALL messages in this chat?"
+  )) return;
+
+  currentMessages = [];
+
+  await saveMessages();
+
+  await logAction(
+    "clear-chat",
+    `Cleared ${currentChat}`
+  );
+
+  alert("Chat cleared.");
+};
+
+/* ================= DELETE CHAT ================= */
+
+document.getElementById("deleteChatBtn")
+.onclick = async ()=>{
+
+  if(!currentChat){
+
+    alert("Select a chat first.");
+
+    return;
+  }
+
+  if(!confirm(
+    "Delete this ENTIRE chat?"
+  )) return;
+
+  await deleteDoc(doc(db,"chats",currentChat));
+
+  await logAction(
+    "delete-chat",
+    `Deleted ${currentChat}`
+  );
+
+  currentChat = null;
+  currentMessages = [];
+
+  messagesDiv.innerHTML = `
+    <div class="empty">
+      Chat deleted.
+    </div>
+  `;
+
+  loadChats();
+};
+
+/* ================= EXPORT ================= */
+
+document.getElementById("exportBtn")
+.onclick = ()=>{
+
+  if(!currentChat){
+
+    alert("Select a chat first.");
+
+    return;
+  }
+
+  const blob = new Blob(
+    [JSON.stringify(currentMessages,null,2)],
+    {type:"application/json"}
+  );
+
+  const a =
+    document.createElement("a");
+
+  a.href =
+    URL.createObjectURL(blob);
+
+  a.download =
+    `${currentChat}-chatlog.json`;
+
+  a.click();
+};
+
+/* ================= SERVER MESSAGE ================= */
+
+document.getElementById("sendServer")
+.onclick = async ()=>{
+
+  if(!currentChat){
+
+    alert("Select a chat first.");
+
+    return;
+  }
+
+  const text =
+    document.getElementById("serverMessage")
+    .value
+    .trim();
+
+  if(!text) return;
+
+  currentMessages.push({
+    from:"Server",
+    text,
+    time:Date.now()
+  });
+
+  await saveMessages();
+
+  await logAction(
+    "server-message",
+    `Server message sent in ${currentChat}`
+  );
+
+  document.getElementById("serverMessage")
+    .value = "";
+};
+
+/* ================= FILTERS ================= */
+
+document.getElementById("userSearch")
+.addEventListener("input",renderMessages);
+
+document.getElementById("msgSearch")
+.addEventListener("input",renderMessages);
+
+/* ================= REFRESH ================= */
+
+document.getElementById("refreshChats")
+.onclick = loadChats;
+
+/* ================= HELPERS ================= */
+
+function escapeHtml(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+/* ================= INIT ================= */
+
 loadChats();
 
 setInterval(()=>{
-    if(currentChat){
-        loadChat(currentChat);
-    }
+
+  if(currentChat){
+    loadChat(currentChat);
+  }
+
 },3000);
 
 </script>
