@@ -82,8 +82,14 @@
     "thumbnail": "https://img.playmox.com/game-icons/5b0abd4c0faa4f5eb190a9a16d5a1b4c-1200x630.jpg",
     "category": "Action",
     "url": "./games/motox3m/index.html"
+  },
+{
+    "id": 13,
+    "title": "moto x3m",
+    "thumbnail": "https://camo.githubusercontent.com/011e5013eb3ea62b547090a6492d0a8844dfab4286e2842c55b77fe35cb12ed3/68747470733a2f2f6f7574626c6164652e6769746875622e696f2f62616c6174726f2d7765622f736f6369616c2e706e67",
+    "category": "Action",
+    "url": "./games/px-webatro/index.html" 
   }
 ]
-
 
 
