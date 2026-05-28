@@ -6,140 +6,186 @@
 <title>Emerald Dashboard</title>
 
 <style>
-:root{
-    --primary:#c40000;
-    --primary-hover:#a30000;
-    --bg:#f4f4f4;
-    --card:#ffffff;
-    --text:#222;
-    --muted:#666;
+:root {
+    --primary: #c40000;
+    --primary-hover: #a30000;
+    --bg: #f4f6f8; /* Slightly softer background */
+    --card: #ffffff;
+    --text: #333333;
+    --muted: #666666;
+    --border-radius: 8px;
+    --transition: 0.2s ease;
 }
 
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:var(--bg);
-    color:var(--text);
+/* ================= GLOBAL RESET ================= */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
 }
 
 /* ================= NAVBAR ================= */
-.navbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:var(--card);
-    padding:12px 18px;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allows links to wrap on small screens */
+    background: var(--card);
+    padding: 12px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.nav-left, .nav-right{
-    display:flex;
-    gap:10px;
-    align-items:center;
+.nav-left, .nav-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
 }
 
 .navbar a,
-.nav-btn{
-    text-decoration:none;
-    padding:7px 12px;
-    border-radius:8px;
-    font-size:14px;
-    border:none;
-    cursor:pointer;
-    background:#eee;
-    color:var(--text);
-    transition:.2s;
+.nav-btn,
+.username-badge {
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    background: #eef0f2;
+    color: var(--text);
+    transition: background var(--transition), transform var(--transition);
 }
 
-.navbar a:hover{
-    background:#ddd;
+.username-badge {
+    cursor: default;
+    background: #e2e6ea;
 }
 
-.admin-link{
-    background:var(--primary);
-    color:white !important;
+.navbar a:hover {
+    background: #dfe3e7;
 }
 
-.admin-link:hover{
-    background:var(--primary-hover);
+.admin-link {
+    background: var(--primary);
+    color: white !important;
 }
 
-.chat-link{
-    background:#333;
-    color:white !important;
+.admin-link:hover {
+    background: var(--primary-hover);
 }
 
-.logout-btn{
-    background:var(--primary);
-    color:white;
+.chat-link {
+    background: #333;
+    color: white !important;
 }
 
-.logout-btn:hover{
-    background:var(--primary-hover);
+.chat-link:hover {
+    background: #111;
 }
 
-.username-badge{
-    padding:6px 10px;
-    border-radius:8px;
-    background:#eee;
-    font-size:14px;
+.logout-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.logout-btn:hover {
+    background: var(--primary-hover);
 }
 
 /* ================= PAGE WRAPPER ================= */
-.page{
-    max-width:1200px;
-    margin:20px auto;
-    padding:0 15px;
+.page {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
 }
 
 /* ================= HEADER CARD ================= */
-.page-header{
-    background:var(--card);
-    padding:18px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
-    margin-bottom:18px;
+.page-header {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    margin-bottom: 25px;
 }
 
-.page-header h1{
-    margin:0 0 10px 0;
-    color:var(--primary);
-    font-size:22px;
+.page-header h1 {
+    margin: 0 0 15px 0;
+    color: var(--primary);
+    font-size: 24px;
 }
 
-#searchBar{
-    width:100%;
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    font-size:15px;
-    outline:none;
+#searchBar {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e1e4e8;
+    border-radius: var(--border-radius);
+    font-size: 15px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-#searchBar:focus{
-    border-color:var(--primary);
+#searchBar:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(196, 0, 0, 0.1);
 }
 
 /* ================= SECTIONS ================= */
-.section-title{
-    margin:15px 0;
-    color:var(--primary);
-    font-weight:bold;
+.section-title {
+    margin: 25px 0 15px 0;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* ================= GRIDS ================= */
 .game-grid,
-.video-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-    gap:15px;
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
 }
 
-/* ================= FOOTER TEXT ================= */
-.footer-text{
-    text-align:center;
-    color:var(--muted);
-    margin:20px 0;
+/* ================= FOOTER ================= */
+.footer {
+    text-align: center;
+    padding: 40px 20px;
+    margin-top: 40px;
+    border-top: 1px solid #e1e4e8;
+}
+
+.footer-alert {
+    color: #8e44ad; /* Replaced inline purple style */
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.footer-text {
+    color: var(--muted);
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.footer-text a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.footer-text a:hover {
+    text-decoration: underline;
 }
 </style>
 
@@ -147,67 +193,47 @@ body{
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
-
     <div class="nav-left">
         <a href="home.html">Home</a>
     </div>
 
     <div class="nav-right">
-
         <span id="usernameDisplay" class="username-badge"></span>
-
         <a href="chat.html" class="chat-link">Chat</a>
-
         <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
-
         <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
-
         <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">Support Admin</a>
-
         <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">Admin</a>
-
         <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">Chat Mod</a>
-
         <a href="view-users.html" id="viewUsersLink" class="admin-link" style="display:none;">Users</a>
-
         <button id="logoutBtn" class="logout-btn">Logout</button>
     </div>
 </div>
 
-<!-- PAGE -->
 <div class="page">
-
     <div class="page-header">
         <h1>Home Dashboard</h1>
         <input type="text" id="searchBar" placeholder="Search games...">
     </div>
 
     <div class="section-title">Games</div>
-
     <main id="gameGrid" class="game-grid"></main>
+    
     <main id="videoGrid" class="video-grid"></main>
-
 </div>
 
-<!-- FOOTER -->
-<h1 class="footer-text" style="color:purple;">NEW LINKS IN PROGRESS</h1>
+<footer class="footer">
+    <h2 class="footer-alert">NEW LINKS IN PROGRESS</h2>
+    <p class="footer-text">I am making new links if this gets blocked, just for you guys!</p>
+    <p class="footer-text">
+        Links: <a href="https://securly-plans.github.io/" target="_blank" rel="noopener noreferrer">Securly-plans.github.io</a>
+    </p>
+    <p class="footer-text">Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell</p>
+    <p class="footer-text">Emerald Games - Alpha 1.8</p>
+</footer>
 
-<p class="footer-text">I am making new links if this gets blocked, just for you guys!</p>
-
-<p class="footer-text">
-Links:
-<a href="https://securly-plans.github.io/">Securly-plans.github.io</a>
-</p>
-
-<p class="footer-text">Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell</p>
-
-<p class="footer-text">Emerald Games - Alpha 1.8</p>
-
-<!-- NOTIFICATIONS (UNCHANGED) -->
 <script type="module">
-
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
@@ -219,9 +245,7 @@ if ("Notification" in window && Notification.permission !== "granted") {
 }
 
 onSnapshot(collection(db, "chats"), (snapshot) => {
-
     snapshot.docChanges().forEach(change => {
-
         if (change.type !== "modified") return;
 
         const data = change.doc.data();
@@ -246,10 +270,8 @@ onSnapshot(collection(db, "chats"), (snapshot) => {
         });
     });
 });
-
 </script>
 
-<!-- LOGOUT / NAV -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
