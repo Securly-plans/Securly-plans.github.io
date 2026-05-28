@@ -3,356 +3,945 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Profile</title>
+<title>Profile</title>
+
+<script type="module" src="./js/session.js"></script>
 
 <style>
 :root{
-  --primary:limegreen;
-  --primary-hover:#2eb82e;
-  --bg-color:#f3f4f6;
-  --card-bg:#ffffff;
-  --text-main:#333333;
-  --text-muted:#6b7280;
-  --border-color:#e5e7eb;
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --primaryHover:#22c55e;
   --danger:#ef4444;
+  --dangerHover:#dc2626;
+  --info:#3b82f6;
+  --warning:#f59e0b;
+}
+
+*{
+  box-sizing:border-box;
 }
 
 body{
-  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
-  background:var(--bg-color);
-  color:var(--text-main);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
   margin:0;
-  padding:20px;
-  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
-.profile-card{
-  background:var(--card-bg);
-  width:100%;
-  max-width:400px;
-  padding:2rem;
-  border-radius:12px;
-  box-shadow:
-    0 4px 6px -1px rgba(0,0,0,.1),
-    0 2px 4px -1px rgba(0,0,0,.06);
-}
-
-.profile-card h1{
-  text-align:center;
-  color:var(--primary);
-  margin-top:0;
-  margin-bottom:1.5rem;
-}
-
-.info-group{
-  background:#f9fafb;
-  padding:1rem;
-  border-radius:8px;
-  margin-bottom:1.5rem;
-  border:1px solid var(--border-color);
-}
-
-.info-group p{
-  margin:.5rem 0;
-  font-weight:600;
-}
-
-.info-group span{
-  font-weight:400;
-  color:var(--text-muted);
-}
-
-.action-group{
+.header{
+  background:#111827;
+  border-bottom:1px solid var(--border);
+  padding:18px 25px;
   display:flex;
-  flex-direction:column;
-  gap:.75rem;
-  margin-bottom:1.5rem;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
-input,select{
+.header h1{
+  margin:0;
+  color:var(--primary);
+  font-size:28px;
+}
+
+.header .status{
+  color:var(--muted);
+  font-size:14px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:25px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:350px 1fr;
+  gap:20px;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.card h2,
+.card h3{
+  margin-top:0;
+}
+
+.profile-top{
+  text-align:center;
+}
+
+.avatar{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid var(--primary);
+  margin-bottom:15px;
+  background:#111827;
+}
+
+.username{
+  font-size:26px;
+  font-weight:bold;
+}
+
+.role-badge{
+  display:inline-block;
+  margin-top:10px;
+  padding:6px 14px;
+  border-radius:999px;
+  background:#111827;
+  border:1px solid var(--border);
+  color:var(--primary);
+  font-size:14px;
+}
+
+.status-badge{
+  margin-top:12px;
+  display:inline-block;
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:13px;
+  background:#1f2937;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.info-row:last-child{
+  border-bottom:none;
+}
+
+.label{
+  color:var(--muted);
+}
+
+.bio-box{
+  background:#111827;
+  border:1px solid var(--border);
+  padding:15px;
+  border-radius:12px;
+  line-height:1.5;
+}
+
+input,
+select,
+textarea{
   width:100%;
-  padding:.75rem;
-  border:1px solid var(--border-color);
-  border-radius:6px;
-  font-size:1rem;
-  box-sizing:border-box;
+  padding:12px;
+  margin-top:8px;
+  margin-bottom:14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+  font-size:15px;
+}
+
+textarea{
+  resize:vertical;
+  min-height:90px;
 }
 
 button{
   width:100%;
-  padding:.75rem;
+  padding:12px;
   border:none;
-  border-radius:6px;
-  font-size:1rem;
-  font-weight:600;
+  border-radius:12px;
   cursor:pointer;
+  font-size:15px;
+  font-weight:bold;
+  transition:0.2s;
+}
+
+button:hover{
+  opacity:0.92;
 }
 
 .btn-primary{
   background:var(--primary);
-  color:white;
+  color:black;
 }
 
 .btn-primary:hover{
-  background:var(--primary-hover);
+  background:var(--primaryHover);
 }
 
 .btn-danger{
-  background:transparent;
-  color:var(--danger);
-  border:1px solid var(--danger);
-}
-
-.btn-danger:hover{
   background:var(--danger);
   color:white;
 }
 
-.friend-item{
-  padding:6px;
-  border-bottom:1px solid #ddd;
-  cursor:pointer;
+.btn-danger:hover{
+  background:var(--dangerHover);
 }
 
-.friend-item:hover{
-  background:#f3f3f3;
+.badges{
+  margin-top:10px;
 }
 
-hr{
-  border:none;
-  border-top:1px solid var(--border-color);
-  margin:1.5rem 0;
+.badge{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  margin:4px;
+  background:var(--info);
+  font-size:13px;
+}
+
+.friend-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.friend{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.friend button{
+  width:auto;
+  padding:8px 12px;
+  background:var(--danger);
+  color:white;
+}
+
+.section-title{
+  margin-bottom:15px;
+  color:var(--primary);
+}
+
+.toast-container{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 16px;
+  border-radius:10px;
+  margin-bottom:10px;
+  color:white;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.toast.success{
+  background:#16a34a;
+}
+
+.toast.error{
+  background:#dc2626;
+}
+
+.toast.info{
+  background:#2563eb;
+}
+
+@media(max-width:900px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .container{
+    padding:15px;
+  }
+
 }
 </style>
 </head>
 
 <body>
 
-<div class="profile-card">
+<div class="header">
+  <h1>My Profile</h1>
 
-<h1>Profile</h1>
-
-<div class="info-group">
-  <div style="text-align:center;margin-bottom:15px;">
-  <img id="avatar" src="https://via.placeholder.com/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid limegreen;">
-</div>
-  <p>Username: <span id="username">Loading...</span></p>
-  <p>Role: <span id="role">Loading...</span></p>
-  <p>Status: <span id="statusDisplay">Offline</span></p>
-  <p>Joined: <span id="joinedDate">Loading...</span></p>
-  <p>Friends: <span id="friendCount">0</span></p>
-  <div id="badgesContainer"></div>
+  <div class="status">
+    Iridium User Panel
+  </div>
 </div>
 
-<div class="info-group">
-  <p>Bio:</p>
-  <span id="bioDisplay">No bio set.</span>
-</div>
+<div class="toast-container" id="toastContainer"></div>
 
-<div class="action-group">
-  <input id="bioInput" maxlength="120" placeholder="Write your bio...">
-  <button id="saveBioBtn" class="btn-primary">Save Bio</button>
-</div>
+<div class="container">
 
-<div class="action-group">
-  <input id="avatarInput" placeholder="Profile image URL">
-  <button id="saveAvatarBtn" class="btn-primary">Save Avatar</button>
-</div>
+  <div class="grid">
 
-<div class="action-group">
-<select id="statusSelect">
-<option>Online</option>
-<option>Away</option>
-<option>Busy</option>
-<option>Offline</option>
-</select>
-<button id="saveStatusBtn" class="btn-primary">Save Status</button>
-</div>
+    <!-- LEFT -->
+    <div>
 
-<div class="action-group">
-  <input id="newPass" type="password" placeholder="New password">
-  <button id="saveBtn" class="btn-primary">Update Password</button>
-</div>
+      <div class="card profile-top">
 
-<div class="action-group">
-  <input id="newUsername" type="text" placeholder="New username">
-  <button id="saveUserBtn" class="btn-primary">Update Username</button>
-</div>
+        <img
+          id="avatar"
+          class="avatar"
+          src="https://via.placeholder.com/140"
+        >
 
-<div class="action-group">
-  <input id="friendUser" placeholder="Username to add">
-  <button id="addFriendBtn" class="btn-primary">Add Friend</button>
-</div>
+        <div
+          class="username"
+          id="username"
+        >
+          Loading...
+        </div>
 
-<div class="info-group">
-  <p>Friends List:</p>
-  <div id="friendList">No friends yet.</div>
-</div>
+        <div
+          class="role-badge"
+          id="role"
+        >
+          user
+        </div>
 
-<hr>
+        <div
+          class="status-badge"
+          id="statusDisplay"
+        >
+          Offline
+        </div>
 
-<button id="logoutBtn" class="btn-danger">Log Out</button>
+        <div class="badges" id="badgesContainer"></div>
+
+      </div>
+
+      <div class="card">
+
+        <h3 class="section-title">
+          Account Information
+        </h3>
+
+        <div class="info-row">
+          <span class="label">Joined</span>
+          <span id="joinedDate">Loading...</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Friends</span>
+          <span id="friendCount">0</span>
+        </div>
+
+      </div>
+
+      <div class="card">
+
+        <h3 class="section-title">
+          Bio
+        </h3>
+
+        <div
+          class="bio-box"
+          id="bioDisplay"
+        >
+          No bio set.
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+
+      <div class="card">
+
+        <h2 class="section-title">
+          Edit Profile
+        </h2>
+
+        <textarea
+          id="bioInput"
+          maxlength="120"
+          placeholder="Write your bio..."
+        ></textarea>
+
+        <button
+          id="saveBioBtn"
+          class="btn-primary"
+        >
+          Save Bio
+        </button>
+
+        <br><br>
+
+        <input
+          id="avatarInput"
+          placeholder="Profile image URL"
+        >
+
+        <button
+          id="saveAvatarBtn"
+          class="btn-primary"
+        >
+          Update Avatar
+        </button>
+
+        <br><br>
+
+        <select id="statusSelect">
+          <option>Online</option>
+          <option>Away</option>
+          <option>Busy</option>
+          <option>Offline</option>
+        </select>
+
+        <button
+          id="saveStatusBtn"
+          class="btn-primary"
+        >
+          Update Status
+        </button>
+
+      </div>
+
+      <div class="card">
+
+        <h2 class="section-title">
+          Security
+        </h2>
+
+        <input
+          id="newPass"
+          type="password"
+          placeholder="New password"
+        >
+
+        <button
+          id="saveBtn"
+          class="btn-primary"
+        >
+          Change Password
+        </button>
+
+        <br><br>
+
+        <input
+          id="newUsername"
+          type="text"
+          placeholder="New username"
+        >
+
+        <button
+          id="saveUserBtn"
+          class="btn-primary"
+        >
+          Change Username
+        </button>
+
+      </div>
+
+      <div class="card">
+
+        <h2 class="section-title">
+          Friends
+        </h2>
+
+        <input
+          id="friendUser"
+          placeholder="Username to add"
+        >
+
+        <button
+          id="addFriendBtn"
+          class="btn-primary"
+        >
+          Add Friend
+        </button>
+
+        <br><br>
+
+        <div
+          class="friend-list"
+          id="friendList"
+        >
+          No friends yet.
+        </div>
+
+      </div>
+
+      <div class="card">
+
+        <button
+          id="logoutBtn"
+          class="btn-danger"
+        >
+          Log Out
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
 
 </div>
 
 <script type="module">
 
 import {
-  collection, query, where, getDocs,
-  updateDoc, doc, arrayUnion
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+  arrayUnion
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js";
+import { db }
+from "./js/firebase.js";
 
-const usernameLS = localStorage.getItem("username");
-if(!usernameLS) window.location="index.html";
+const usernameLS =
+  localStorage.getItem("username");
+
+if(!usernameLS){
+  window.location = "index.html";
+}
 
 let docId = null;
+let currentUser = null;
+
+/* TOAST */
+function toast(msg,type="info"){
+
+  const box =
+    document.getElementById("toastContainer");
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "toast " + type;
+
+  div.textContent = msg;
+
+  box.appendChild(div);
+
+  setTimeout(()=>{
+    div.remove();
+  },3000);
+
+}
 
 /* HASH */
 async function hashPassword(password){
-  const enc = new TextEncoder();
-  const buf = await crypto.subtle.digest("SHA-256", enc.encode(password));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+
+  const enc =
+    new TextEncoder();
+
+  const buf =
+    await crypto.subtle.digest(
+      "SHA-256",
+      enc.encode(password)
+    );
+
+  return Array
+    .from(new Uint8Array(buf))
+    .map(b=>b.toString(16).padStart(2,"0"))
+    .join("");
+
 }
 
-/* LOAD */
+/* LOAD PROFILE */
 async function load(){
 
-  const q = query(collection(db,"users"), where("username","==",usernameLS));
-  const snap = await getDocs(q);
+  const q =
+    query(
+      collection(db,"users"),
+      where("username","==",usernameLS)
+    );
+
+  const snap =
+    await getDocs(q);
 
   if(snap.empty){
-    alert("User not found");
+
+    toast("User not found","error");
+
     return;
   }
 
-  const d = snap.docs[0];
+  const d =
+    snap.docs[0];
+
   docId = d.id;
-  const user = d.data();
 
-  document.getElementById("username").innerText = user.username;
-  document.getElementById("role").innerText = user.role || "user";
-  document.getElementById("bioDisplay").innerText = user.bio || "No bio set.";
-  document.getElementById("friendCount").innerText = user.friends?.length || 0;
+  currentUser =
+    d.data();
 
-  document.getElementById("avatar").src =
-    user.photoURL || "https://via.placeholder.com/120";
+  document.getElementById(
+    "username"
+  ).innerText =
+    currentUser.username;
 
-  document.getElementById("statusDisplay").innerText =
-    user.status || "Offline";
+  document.getElementById(
+    "role"
+  ).innerText =
+    currentUser.role || "user";
 
-  const badgesDiv = document.getElementById("badgesContainer");
-  badgesDiv.innerHTML = "";
+  document.getElementById(
+    "bioDisplay"
+  ).innerText =
+    currentUser.bio || "No bio set.";
 
-  (user.badges || []).forEach(badge => {
-    const span = document.createElement("span");
-    span.textContent = badge;
-    span.style.background = "limegreen";
-    span.style.color = "white";
-    span.style.padding = "4px 8px";
-    span.style.margin = "2px";
-    span.style.borderRadius = "15px";
-    span.style.display = "inline-block";
-    badgesDiv.appendChild(span);
+  document.getElementById(
+    "friendCount"
+  ).innerText =
+    currentUser.friends?.length || 0;
+
+  document.getElementById(
+    "avatar"
+  ).src =
+    currentUser.photoURL ||
+    "https://via.placeholder.com/140";
+
+  document.getElementById(
+    "statusDisplay"
+  ).innerText =
+    currentUser.status || "Offline";
+
+  document.getElementById(
+    "joinedDate"
+  ).innerText =
+    currentUser.created
+      ? new Date(
+          currentUser.created
+        ).toLocaleDateString()
+      : "Unknown";
+
+  /* BADGES */
+  const badges =
+    document.getElementById(
+      "badgesContainer"
+    );
+
+  badges.innerHTML = "";
+
+  (currentUser.badges || [])
+  .forEach(badge=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "badge";
+
+    div.textContent =
+      badge;
+
+    badges.appendChild(div);
+
   });
 
-  document.getElementById("joinedDate").innerText =
-    user.created ? new Date(user.created).toLocaleDateString() : "Unknown";
+  /* FRIENDS */
+  const list =
+    document.getElementById(
+      "friendList"
+    );
 
-  const list = document.getElementById("friendList");
   list.innerHTML = "";
 
-  if(user.friends?.length){
+  if(currentUser.friends?.length){
 
-    user.friends.forEach(f => {
+    currentUser.friends
+    .forEach(friend=>{
 
-      const div = document.createElement("div");
-      div.className = "friend-item";
-      div.textContent = f;
+      const div =
+        document.createElement("div");
 
-      div.onclick = async () => {
-        if(confirm("Remove friend?")){
-          const updated = user.friends.filter(x => x !== f);
-          await updateDoc(doc(db,"users",docId),{ friends: updated });
-          load();
-        }
-      };
+      div.className =
+        "friend";
+
+      div.innerHTML = `
+        <span>${friend}</span>
+
+        <button onclick="removeFriend('${friend}')">
+          Remove
+        </button>
+      `;
 
       list.appendChild(div);
 
     });
 
-  } else {
-    list.textContent = "No friends yet.";
+  }else{
+
+    list.innerHTML =
+      "<div style='color:var(--muted)'>No friends yet.</div>";
+
   }
+
 }
 
-/* BIO */
-document.getElementById("saveBioBtn").onclick = async () => {
-  const bio = document.getElementById("bioInput").value.trim();
-  await updateDoc(doc(db,"users",docId),{ bio });
+/* REMOVE FRIEND */
+window.removeFriend =
+async function(friend){
+
+  const updated =
+    currentUser.friends
+    .filter(f=>f!==friend);
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      friends: updated
+    }
+  );
+
+  toast("Friend removed","info");
+
   load();
+
 };
 
-document.getElementById("saveAvatarBtn").onclick = async () => {
-  const photoURL = document.getElementById("avatarInput").value.trim();
-  if(!photoURL) return;
-  await updateDoc(doc(db,"users",docId),{ photoURL });
+/* SAVE BIO */
+document.getElementById(
+  "saveBioBtn"
+).onclick =
+async ()=>{
+
+  const bio =
+    document
+    .getElementById("bioInput")
+    .value
+    .trim();
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      bio
+    }
+  );
+
+  toast("Bio updated","success");
+
   load();
+
 };
 
-document.getElementById("saveStatusBtn").onclick = async () => {
-  const status = document.getElementById("statusSelect").value;
-  await updateDoc(doc(db,"users",docId),{ status });
+/* AVATAR */
+document.getElementById(
+  "saveAvatarBtn"
+).onclick =
+async ()=>{
+
+  const photoURL =
+    document
+    .getElementById("avatarInput")
+    .value
+    .trim();
+
+  if(!photoURL){
+    return toast(
+      "Enter image URL",
+      "error"
+    );
+  }
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      photoURL
+    }
+  );
+
+  toast(
+    "Avatar updated",
+    "success"
+  );
+
   load();
+
+};
+
+/* STATUS */
+document.getElementById(
+  "saveStatusBtn"
+).onclick =
+async ()=>{
+
+  const status =
+    document
+    .getElementById("statusSelect")
+    .value;
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      status
+    }
+  );
+
+  toast(
+    "Status updated",
+    "success"
+  );
+
+  load();
+
 };
 
 /* PASSWORD */
-document.getElementById("saveBtn").onclick = async () => {
-  const pass = document.getElementById("newPass").value;
-  if(!pass) return alert("Enter password");
+document.getElementById(
+  "saveBtn"
+).onclick =
+async ()=>{
 
-  const passwordHash = await hashPassword(pass);
+  const pass =
+    document
+    .getElementById("newPass")
+    .value;
 
-  await updateDoc(doc(db,"users",docId),{ passwordHash });
+  if(!pass){
 
-  document.getElementById("newPass").value = "";
-  alert("Updated");
+    return toast(
+      "Enter password",
+      "error"
+    );
+
+  }
+
+  const passwordHash =
+    await hashPassword(pass);
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      passwordHash
+    }
+  );
+
+  document.getElementById(
+    "newPass"
+  ).value = "";
+
+  toast(
+    "Password updated",
+    "success"
+  );
+
 };
 
 /* USERNAME */
-document.getElementById("saveUserBtn").onclick = async () => {
-  const val = document.getElementById("newUsername").value.trim();
-  if(!val) return;
+document.getElementById(
+  "saveUserBtn"
+).onclick =
+async ()=>{
 
-  await updateDoc(doc(db,"users",docId),{ username:val });
+  const val =
+    document
+    .getElementById("newUsername")
+    .value
+    .trim();
 
-  localStorage.setItem("username",val);
-  location.reload();
+  if(!val){
+
+    return toast(
+      "Enter username",
+      "error"
+    );
+
+  }
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      username: val
+    }
+  );
+
+  localStorage.setItem(
+    "username",
+    val
+  );
+
+  toast(
+    "Username updated",
+    "success"
+  );
+
+  setTimeout(()=>{
+    location.reload();
+  },1000);
+
 };
 
 /* FRIEND */
-document.getElementById("addFriendBtn").onclick = async () => {
-  const friend = document.getElementById("friendUser").value.trim();
-  if(!friend) return;
+document.getElementById(
+  "addFriendBtn"
+).onclick =
+async ()=>{
 
-  await updateDoc(doc(db,"users",docId),{
-    friends: arrayUnion(friend)
-  });
+  const friend =
+    document
+    .getElementById("friendUser")
+    .value
+    .trim();
 
-  document.getElementById("friendUser").value = "";
+  if(!friend){
+
+    return toast(
+      "Enter username",
+      "error"
+    );
+
+  }
+
+  await updateDoc(
+    doc(db,"users",docId),
+    {
+      friends: arrayUnion(friend)
+    }
+  );
+
+  document.getElementById(
+    "friendUser"
+  ).value = "";
+
+  toast(
+    "Friend added",
+    "success"
+  );
+
   load();
+
 };
 
 /* LOGOUT */
-document.getElementById("logoutBtn").onclick = () => {
+document.getElementById(
+  "logoutBtn"
+).onclick = ()=>{
+
   localStorage.clear();
-  window.location = "index.html";
+
+  window.location =
+    "index.html";
+
 };
 
 load();
