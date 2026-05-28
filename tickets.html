@@ -1,122 +1,448 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Support Tickets</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Iridium Support Tickets</title>
+
+<script type="module" src="./js/session.js"></script>
 
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#f4f4f4;
-  margin:0;
-  padding:20px;
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  background:white;
-  padding:20px;
-  border-radius:10px;
-}
-
-h2{
-  margin-top:0;
-}
-
-.create-box{
-  border:1px solid #ddd;
-  padding:15px;
-  border-radius:8px;
-  margin-bottom:20px;
-}
-
-input,
-textarea{
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  margin-bottom:10px;
+*{
   box-sizing:border-box;
 }
 
-button{
-  padding:10px 15px;
-  cursor:pointer;
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
 }
 
-.ticket{
-  border:1px solid #ddd;
-  border-radius:8px;
-  padding:12px;
-  margin-bottom:10px;
+.header{
+  background:#111827;
+  padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
-.ticket-title{
-  font-weight:bold;
-  font-size:16px;
-}
-
-.meta{
-  color:#666;
-  font-size:12px;
-  margin-top:5px;
+.header h1{
+  margin:0;
+  color:var(--danger);
 }
 
 .status{
+  color:var(--primary);
+  font-size:14px;
+}
+
+.container{
+  max-width:1400px;
+  margin:auto;
+  padding:20px;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:20px;
+}
+
+.sidebar{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  height:fit-content;
+}
+
+.sidebar h2{
+  margin-top:0;
+}
+
+.nav-btn{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:10px;
+  background:var(--panel2);
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+  text-align:left;
+  font-weight:bold;
+}
+
+.nav-btn:hover{
+  opacity:0.9;
+}
+
+.main{
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+}
+
+.panel h2,
+.panel h3{
+  margin-top:0;
+}
+
+input,
+textarea,
+select{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  margin-bottom:14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+  font-size:14px;
+}
+
+textarea{
+  resize:vertical;
+}
+
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
+  font-weight:bold;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.primary{
+  background:var(--info);
+  color:white;
+}
+
+.success{
+  background:var(--primary);
+  color:black;
+}
+
+.warning{
+  background:var(--warning);
+  color:black;
+}
+
+.danger{
+  background:var(--danger);
+  color:white;
+}
+
+.ticket-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:16px;
+}
+
+.ticket{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  transition:0.2s;
+}
+
+.ticket:hover{
+  transform:translateY(-2px);
+}
+
+.ticket-title{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+.meta{
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.status-badge{
   display:inline-block;
-  padding:4px 8px;
-  border-radius:5px;
+  padding:6px 12px;
+  border-radius:999px;
   font-size:12px;
-  margin-top:5px;
+  font-weight:bold;
+  margin-top:10px;
+  text-transform:uppercase;
 }
 
-.open{
-  background:#dff7df;
+.status-open{
+  background:#14532d;
+  color:#bbf7d0;
 }
 
-.closed{
-  background:#ffdede;
+.status-pending{
+  background:#78350f;
+  color:#fde68a;
 }
 
-.pending{
-  background:#fff3cd;
+.status-closed{
+  background:#7f1d1d;
+  color:#fecaca;
+}
+
+.ticket-actions{
+  margin-top:18px;
+}
+
+.ticket-actions button{
+  width:100%;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+}
+
+.card{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+}
+
+.card h4{
+  margin:0 0 10px;
+  color:var(--muted);
+}
+
+.card .value{
+  font-size:28px;
+  font-weight:bold;
+}
+
+.empty{
+  padding:30px;
+  text-align:center;
+  color:var(--muted);
+  background:#111827;
+  border-radius:14px;
+  border:1px solid var(--border);
+}
+
+#toastContainer{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 16px;
+  border-radius:10px;
+  color:white;
+  margin-bottom:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.toast.success{
+  background:#16a34a;
+}
+
+.toast.error{
+  background:#dc2626;
+}
+
+.toast.info{
+  background:#2563eb;
+}
+
+.search-box{
+  margin-bottom:15px;
+}
+
+@media(max-width:1000px){
+
+  .layout{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">
+  <h1>Iridium Support Center</h1>
+
+  <div class="status">
+    ● Secure Ticket System Online
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
 <div class="container">
 
-<h2>Support Tickets</h2>
+  <div class="layout">
 
-<div class="create-box">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
 
-<h3>Create Ticket</h3>
+      <h2>Navigation</h2>
 
-<input
-  id="subject"
-  placeholder="Ticket Subject"
->
+      <button
+        class="nav-btn"
+        onclick="window.location.href='chat.html'"
+      >
+        💬 Chat System
+      </button>
 
-<textarea
-  id="message"
-  rows="5"
-  placeholder="Describe your issue..."
-></textarea>
+      <button
+        class="nav-btn"
+        onclick="window.location.href='profile.html'"
+      >
+        👤 Profile
+      </button>
 
-<button id="createTicket">
-Create Ticket
-</button>
+      <button
+        class="nav-btn"
+        onclick="window.location.reload()"
+      >
+        🔄 Refresh Tickets
+      </button>
 
-</div>
+      <div style="margin-top:25px;">
 
-<h3>My Tickets</h3>
+        <h3>Ticket Rules</h3>
 
-<div id="ticketList">
-Loading...
-</div>
+        <p style="color:var(--muted);line-height:1.6;">
+          • One issue per ticket<br>
+          • Do not spam tickets<br>
+          • Include clear details<br>
+          • Staff may close abusive tickets
+        </p>
+
+      </div>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- STATS -->
+      <div class="stats">
+
+        <div class="card">
+          <h4>Total Tickets</h4>
+          <div class="value" id="totalTickets">
+            0
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>Open</h4>
+          <div class="value" id="openTickets">
+            0
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>Pending</h4>
+          <div class="value" id="pendingTickets">
+            0
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>Closed</h4>
+          <div class="value" id="closedTickets">
+            0
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CREATE -->
+      <div class="panel">
+
+        <h2>Create Support Ticket</h2>
+
+        <input
+          id="subject"
+          placeholder="Ticket Subject"
+        >
+
+        <textarea
+          id="message"
+          rows="6"
+          placeholder="Describe your issue in detail..."
+        ></textarea>
+
+        <button
+          class="success"
+          id="createTicket"
+        >
+          Create Ticket
+        </button>
+
+      </div>
+
+      <!-- TICKETS -->
+      <div class="panel">
+
+        <h2>My Tickets</h2>
+
+        <div class="search-box">
+
+          <input
+            id="searchTickets"
+            placeholder="Search your tickets..."
+          >
+
+        </div>
+
+        <div
+          class="ticket-grid"
+          id="ticketList"
+        >
+          Loading tickets...
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
 
 </div>
 
@@ -127,15 +453,13 @@ import { db } from "./js/firebase.js";
 import {
   collection,
   addDoc,
-  getDocs,
   query,
   where,
-  orderBy,
-  serverTimestamp,
   onSnapshot
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* ================= USER ================= */
 const username =
   localStorage.getItem("username");
 
@@ -146,8 +470,34 @@ if(!username){
   location.href = "index.html";
 }
 
-/* CREATE TICKET */
+/* ================= STATE ================= */
+let cachedTickets = [];
 
+/* ================= TOAST ================= */
+function toast(msg,type="info"){
+
+  const container =
+    document.getElementById(
+      "toastContainer"
+    );
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "toast " + type;
+
+  div.textContent =
+    msg;
+
+  container.appendChild(div);
+
+  setTimeout(()=>{
+    div.remove();
+  },3000);
+}
+
+/* ================= CREATE TICKET ================= */
 document
 .getElementById("createTicket")
 .onclick =
@@ -166,52 +516,76 @@ async ()=>{
     .trim();
 
   if(!subject || !message){
-    alert("Fill in all fields.");
+
+    toast(
+      "Fill in all fields",
+      "error"
+    );
+
     return;
   }
 
-  const ticketRef =
+  try{
+
+    const ticketRef =
+      await addDoc(
+        collection(db,"tickets"),
+        {
+          subject,
+          user:username,
+          status:"open",
+          created:Date.now(),
+          lastUpdated:Date.now(),
+          assignedTo:null
+        }
+      );
+
     await addDoc(
-      collection(db,"tickets"),
+      collection(
+        db,
+        "tickets",
+        ticketRef.id,
+        "messages"
+      ),
       {
-        subject,
-        user: username,
-        status:"open",
-        created: Date.now(),
-        lastUpdated: Date.now(),
-        assignedTo:null
+        from:username,
+        role:role,
+        text:message,
+        time:Date.now()
       }
     );
 
-  await addDoc(
-    collection(
-      db,
-      "tickets",
-      ticketRef.id,
-      "messages"
-    ),
-    {
-      from: username,
-      role: role,
-      text: message,
-      time: Date.now()
-    }
-  );
+    toast(
+      "Ticket created",
+      "success"
+    );
 
-  document
-  .getElementById("subject")
-  .value = "";
+    document
+      .getElementById("subject")
+      .value = "";
 
-  document
-  .getElementById("message")
-  .value = "";
+    document
+      .getElementById("message")
+      .value = "";
 
-  location.href =
-    "ticket.html?id=" +
-    ticketRef.id;
+    location.href =
+      "ticket.html?id=" +
+      ticketRef.id;
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Failed to create ticket",
+      "error"
+    );
+  }
 };
 
-/* LOAD TICKETS */
+/* ================= LOAD TICKETS ================= */
+/* USERS ONLY SEE THEIR OWN TICKETS */
+/* EVEN ADMINS/MODS ONLY SEE THEIR OWN */
 
 function loadTickets(){
 
@@ -220,124 +594,206 @@ function loadTickets(){
       "ticketList"
     );
 
-  let q;
+  const q =
+    query(
+      collection(db,"tickets"),
+      where(
+        "user",
+        "==",
+        username
+      )
+    );
 
-  if(
-    role === "admin" ||
-    role === "mod"
-  ){
+  onSnapshot(q,(snap)=>{
 
-    q =
-      collection(
-        db,
-        "tickets"
-      );
+    cachedTickets = [];
 
-  }else{
+    snap.forEach(docSnap=>{
 
-    q =
-      query(
-        collection(
-          db,
-          "tickets"
-        ),
-        where(
-          "user",
-          "==",
-          username
-        )
-      );
-
-  }
-
-  onSnapshot(
-    q,
-    snap=>{
-
-      ticketList.innerHTML = "";
-
-      if(snap.empty){
-
-        ticketList.innerHTML =
-          "<i>No tickets found.</i>";
-
-        return;
-      }
-
-      const docs = [];
-
-      snap.forEach(docSnap=>{
-        docs.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        });
+      cachedTickets.push({
+        id:docSnap.id,
+        ...docSnap.data()
       });
 
-      docs.sort(
-        (a,b)=>
-          (b.lastUpdated||0) -
-          (a.lastUpdated||0)
-      );
+    });
 
-      docs.forEach(ticket=>{
+    cachedTickets.sort(
+      (a,b)=>
+        (b.lastUpdated || 0) -
+        (a.lastUpdated || 0)
+    );
 
-        const div =
-          document.createElement(
-            "div"
-          );
+    updateStats();
+    renderTickets();
 
-        div.className =
-          "ticket";
-
-        const statusClass =
-          ticket.status || "open";
-
-        div.innerHTML = `
-        <div class="ticket-title">
-          ${ticket.subject}
-        </div>
-
-        <div class="meta">
-          User:
-          ${ticket.user}
-        </div>
-
-        <div class="meta">
-          Created:
-          ${
-            new Date(
-              ticket.created
-            ).toLocaleString()
-          }
-        </div>
-
-        <div class="status ${statusClass}">
-          ${
-            ticket.status ||
-            "open"
-          }
-        </div>
-
-        <br><br>
-
-        <button
-          onclick="
-          location.href=
-          'ticket.html?id=${ticket.id}'
-          ">
-          Open Ticket
-        </button>
-        `;
-
-        ticketList.appendChild(div);
-
-      });
-
-    }
-  );
+  });
 
 }
 
+/* ================= RENDER ================= */
+function renderTickets(){
+
+  const ticketList =
+    document.getElementById(
+      "ticketList"
+    );
+
+  const search =
+    document
+      .getElementById("searchTickets")
+      .value
+      .toLowerCase();
+
+  ticketList.innerHTML = "";
+
+  const filtered =
+    cachedTickets.filter(ticket=>{
+
+      return (
+        (ticket.subject || "")
+        .toLowerCase()
+        .includes(search)
+      );
+
+    });
+
+  if(filtered.length === 0){
+
+    ticketList.innerHTML = `
+      <div class="empty">
+        No tickets found.
+      </div>
+    `;
+
+    return;
+  }
+
+  filtered.forEach(ticket=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "ticket";
+
+    const status =
+      ticket.status || "open";
+
+    div.innerHTML = `
+
+      <div class="ticket-title">
+        ${escapeHtml(ticket.subject)}
+      </div>
+
+      <div class="meta">
+        Ticket ID:
+        ${ticket.id}
+      </div>
+
+      <div class="meta">
+        Created:
+        ${
+          formatDate(ticket.created)
+        }
+      </div>
+
+      <div class="meta">
+        Last Updated:
+        ${
+          formatDate(
+            ticket.lastUpdated
+          )
+        }
+      </div>
+
+      <div class="
+        status-badge
+        status-${status}
+      ">
+        ${status}
+      </div>
+
+      <div class="ticket-actions">
+
+        <button
+          class="primary"
+          onclick="
+            location.href=
+            'ticket.html?id=${ticket.id}'
+          "
+        >
+          Open Ticket
+        </button>
+
+      </div>
+    `;
+
+    ticketList.appendChild(div);
+
+  });
+
+}
+
+/* ================= STATS ================= */
+function updateStats(){
+
+  document.getElementById(
+    "totalTickets"
+  ).textContent =
+    cachedTickets.length;
+
+  document.getElementById(
+    "openTickets"
+  ).textContent =
+    cachedTickets.filter(
+      t=>t.status==="open"
+    ).length;
+
+  document.getElementById(
+    "pendingTickets"
+  ).textContent =
+    cachedTickets.filter(
+      t=>t.status==="pending"
+    ).length;
+
+  document.getElementById(
+    "closedTickets"
+  ).textContent =
+    cachedTickets.filter(
+      t=>t.status==="closed"
+    ).length;
+}
+
+/* ================= HELPERS ================= */
+function formatDate(timestamp){
+
+  if(!timestamp){
+    return "Unknown";
+  }
+
+  return new Date(timestamp)
+    .toLocaleString();
+}
+
+function escapeHtml(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+/* ================= SEARCH ================= */
+document
+.getElementById("searchTickets")
+.addEventListener(
+  "input",
+  renderTickets
+);
+
+/* ================= INIT ================= */
 loadTickets();
 
 </script>
