@@ -1,112 +1,366 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticket</title>
 
+<script type="module" src="./js/session.js"></script>
+
 <style>
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
+}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
-  font-family:Arial;
-  background:#f4f4f4;
   margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.header{
+  background:#111827;
+  padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.header h1{
+  margin:0;
+  color:#4ade80;
+}
+
+.header .status{
+  color:var(--muted);
+  font-size:14px;
 }
 
 .container{
-  max-width:900px;
+  max-width:1100px;
   margin:auto;
   padding:20px;
 }
 
-.top{
-  background:white;
-  padding:15px;
+.top-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.ticket-subject{
+  margin:0 0 12px;
+  font-size:28px;
+}
+
+.ticket-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:15px;
+  margin-bottom:15px;
+}
+
+.meta-box{
+  background:#111827;
+  border:1px solid var(--border);
   border-radius:10px;
-  margin-bottom:10px;
+  padding:10px 14px;
+  font-size:14px;
+}
+
+.status-badge{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.status-open{
+  background:rgba(74,222,128,0.15);
+  color:#4ade80;
+}
+
+.status-closed{
+  background:rgba(239,68,68,0.15);
+  color:#ef4444;
+}
+
+.status-pending{
+  background:rgba(245,158,11,0.15);
+  color:#f59e0b;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+button{
+  padding:10px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
+  color:white;
+  font-weight:bold;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.btn-primary{
+  background:var(--info);
+}
+
+.btn-danger{
+  background:var(--danger);
+}
+
+.btn-success{
+  background:var(--primary);
+  color:black;
 }
 
 .messages{
-  background:white;
-  height:500px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  height:520px;
   overflow-y:auto;
-  border-radius:10px;
-  padding:15px;
-  margin-bottom:10px;
 }
 
 .message{
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:8px;
+  margin-bottom:15px;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  max-width:85%;
 }
 
 .mine{
-  background:#dff7df;
+  background:rgba(74,222,128,0.12);
+  margin-left:auto;
 }
 
 .other{
-  background:#eee;
+  background:#111827;
 }
 
-.meta{
+.message-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.message-user{
+  font-weight:bold;
+}
+
+.message-role{
   font-size:12px;
-  color:#666;
-  margin-bottom:5px;
+  color:var(--muted);
 }
 
-.bottom{
+.message-time{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.message-text{
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+}
+
+.reply-box{
+  margin-top:20px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+}
+
+.reply-flex{
   display:flex;
   gap:10px;
 }
 
-.bottom input{
+.reply-flex input{
   flex:1;
-  padding:10px;
 }
 
-button{
-  padding:10px;
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+  outline:none;
+}
+
+input:focus{
+  border-color:var(--info);
+}
+
+.empty{
+  text-align:center;
+  color:var(--muted);
+  margin-top:40px;
+}
+
+#toastContainer{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 16px;
+  border-radius:10px;
+  color:white;
+  margin-bottom:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.toast.success{
+  background:#16a34a;
+}
+
+.toast.error{
+  background:#dc2626;
+}
+
+.toast.info{
+  background:#2563eb;
+}
+
+@media(max-width:800px){
+
+  .reply-flex{
+    flex-direction:column;
+  }
+
+  .message{
+    max-width:100%;
+  }
+
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">
+  <h1>Ticket Support</h1>
+
+  <div class="status">
+    Live Support Ticket
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
 <div class="container">
 
-<div class="top">
-  <h2 id="subject">Loading...</h2>
+  <div class="top-card">
 
-  <div>
-    Status:
-    <span id="status">Loading...</span>
+    <h2 class="ticket-subject" id="subject">
+      Loading...
+    </h2>
+
+    <div class="ticket-meta">
+
+      <div class="meta-box">
+        Ticket ID:
+        <span id="ticketId"></span>
+      </div>
+
+      <div class="meta-box">
+        Status:
+        <span id="statusBadge"></span>
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        class="btn-danger"
+        id="closeBtn">
+        Close Ticket
+      </button>
+
+      <button
+        class="btn-success"
+        id="reopenBtn">
+        Reopen Ticket
+      </button>
+
+      <button
+        class="btn-primary"
+        onclick="location.href='tickets.html'">
+        Back to Tickets
+      </button>
+
+    </div>
+
   </div>
 
-  <br>
+  <div
+    class="messages"
+    id="messages">
 
-  <button id="closeBtn">
-    Close Ticket
-  </button>
+    <div class="empty">
+      Loading messages...
+    </div>
 
-  <button id="reopenBtn">
-    Reopen Ticket
-  </button>
-</div>
+  </div>
 
-<div
-  class="messages"
-  id="messages">
-</div>
+  <div class="reply-box">
 
-<div class="bottom">
-  <input
-    id="msgInput"
-    placeholder="Reply..."
-  >
+    <div class="reply-flex">
 
-  <button id="sendBtn">
-    Send
-  </button>
-</div>
+      <input
+        id="msgInput"
+        placeholder="Type your reply..."
+      >
+
+      <button
+        class="btn-primary"
+        id="sendBtn">
+        Send
+      </button>
+
+    </div>
+
+  </div>
 
 </div>
 
@@ -126,11 +380,19 @@ import {
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* ================= USER ================= */
+
 const username =
   localStorage.getItem("username");
 
 const role =
   localStorage.getItem("role") || "user";
+
+if(!username){
+  location.href = "index.html";
+}
+
+/* ================= PARAMS ================= */
 
 const params =
   new URLSearchParams(location.search);
@@ -140,11 +402,44 @@ const ticketId =
 
 if(!ticketId){
   alert("Ticket ID missing");
-  location.href="tickets.html";
+  location.href = "tickets.html";
 }
+
+document.getElementById(
+  "ticketId"
+).innerText = ticketId;
+
+/* ================= REFS ================= */
 
 const ticketRef =
   doc(db,"tickets",ticketId);
+
+/* ================= TOAST ================= */
+
+function toast(msg,type="info"){
+
+  const container =
+    document.getElementById(
+      "toastContainer"
+    );
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "toast " + type;
+
+  div.textContent = msg;
+
+  container.appendChild(div);
+
+  setTimeout(()=>{
+    div.remove();
+  },3000);
+
+}
+
+/* ================= LOAD TICKET ================= */
 
 async function loadTicket(){
 
@@ -152,24 +447,56 @@ async function loadTicket(){
     await getDoc(ticketRef);
 
   if(!snap.exists()){
+
     alert("Ticket not found");
+
+    location.href =
+      "tickets.html";
+
     return;
   }
 
   const data =
     snap.data();
 
+  /* SECURITY CHECK */
+
+  if(
+    data.user !== username &&
+    role !== "admin" &&
+    role !== "mod"
+  ){
+
+    alert("Access denied");
+
+    location.href =
+      "tickets.html";
+
+    return;
+  }
+
   document.getElementById(
     "subject"
   ).innerText =
-    data.subject;
+    data.subject || "Untitled Ticket";
 
-  document.getElementById(
-    "status"
-  ).innerText =
-    data.status;
+  const status =
+    data.status || "open";
+
+  const badge =
+    document.getElementById(
+      "statusBadge"
+    );
+
+  badge.className =
+    "status-badge status-" + status;
+
+  badge.innerText =
+    status.toUpperCase();
 
 }
+
+/* ================= CLOSE ================= */
 
 document
 .getElementById("closeBtn")
@@ -177,18 +504,49 @@ document
 async ()=>{
 
   if(
-    role!=="admin" &&
-    role!=="mod"
-  ) return;
+    role !== "admin" &&
+    role !== "mod"
+  ){
 
-  await updateDoc(
-    ticketRef,
-    {
-      status:"closed"
-    }
-  );
+    toast(
+      "Moderator access required",
+      "error"
+    );
+
+    return;
+  }
+
+  try{
+
+    await updateDoc(
+      ticketRef,
+      {
+        status:"closed",
+        lastUpdated:Date.now()
+      }
+    );
+
+    toast(
+      "Ticket closed",
+      "success"
+    );
+
+    loadTicket();
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Failed to close ticket",
+      "error"
+    );
+
+  }
 
 };
+
+/* ================= REOPEN ================= */
 
 document
 .getElementById("reopenBtn")
@@ -196,64 +554,107 @@ document
 async ()=>{
 
   if(
-    role!=="admin" &&
-    role!=="mod"
-  ) return;
+    role !== "admin" &&
+    role !== "mod"
+  ){
 
-  await updateDoc(
-    ticketRef,
-    {
-      status:"open"
-    }
-  );
+    toast(
+      "Moderator access required",
+      "error"
+    );
+
+    return;
+  }
+
+  try{
+
+    await updateDoc(
+      ticketRef,
+      {
+        status:"open",
+        lastUpdated:Date.now()
+      }
+    );
+
+    toast(
+      "Ticket reopened",
+      "success"
+    );
+
+    loadTicket();
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Failed to reopen ticket",
+      "error"
+    );
+
+  }
 
 };
+
+/* ================= SEND MESSAGE ================= */
 
 document
 .getElementById("sendBtn")
 .onclick =
 async ()=>{
 
-  const text =
-    document
-    .getElementById(
+  const input =
+    document.getElementById(
       "msgInput"
-    )
-    .value
-    .trim();
+    );
 
-  if(!text) return;
+  const text =
+    input.value.trim();
 
-  await addDoc(
-    collection(
-      db,
-      "tickets",
-      ticketId,
-      "messages"
-    ),
-    {
-      from: username,
-      role: role,
-      text,
-      time: Date.now()
-    }
-  );
+  if(!text){
+    return;
+  }
 
-  await updateDoc(
-    ticketRef,
-    {
-      lastUpdated:
-        Date.now()
-    }
-  );
+  try{
 
-  document
-  .getElementById(
-    "msgInput"
-  )
-  .value="";
+    await addDoc(
+      collection(
+        db,
+        "tickets",
+        ticketId,
+        "messages"
+      ),
+      {
+        from:username,
+        role:role,
+        text,
+        time:Date.now()
+      }
+    );
+
+    await updateDoc(
+      ticketRef,
+      {
+        lastUpdated:Date.now()
+      }
+    );
+
+    input.value = "";
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Failed to send message",
+      "error"
+    );
+
+  }
 
 };
+
+/* ================= MESSAGE LISTENER ================= */
 
 const messagesRef =
   query(
@@ -275,7 +676,18 @@ onSnapshot(
         "messages"
       );
 
-    box.innerHTML="";
+    box.innerHTML = "";
+
+    if(snap.empty){
+
+      box.innerHTML = `
+        <div class="empty">
+          No messages yet.
+        </div>
+      `;
+
+      return;
+    }
 
     snap.forEach(docSnap=>{
 
@@ -290,20 +702,39 @@ onSnapshot(
       div.className =
         "message " +
         (
-          m.from===username
+          m.from === username
           ? "mine"
           : "other"
         );
 
       div.innerHTML = `
-      <div class="meta">
-        <b>${m.from}</b>
-        (${m.role})
-        •
-        ${new Date(m.time).toLocaleString()}
-      </div>
+        <div class="message-header">
 
-      <div>${m.text}</div>
+          <div>
+
+            <div class="message-user">
+              ${escapeHtml(m.from)}
+            </div>
+
+            <div class="message-role">
+              ${escapeHtml(m.role || "user")}
+            </div>
+
+          </div>
+
+          <div class="message-time">
+            ${
+              new Date(
+                m.time
+              ).toLocaleString()
+            }
+          </div>
+
+        </div>
+
+        <div class="message-text">
+          ${escapeHtml(m.text)}
+        </div>
       `;
 
       box.appendChild(div);
@@ -315,6 +746,21 @@ onSnapshot(
 
   }
 );
+
+/* ================= HELPERS ================= */
+
+function escapeHtml(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+/* ================= INIT ================= */
 
 loadTicket();
 
