@@ -1,6 +1,3 @@
-# admin-logs.html
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -456,43 +453,3 @@ severityFilter.addEventListener("change",renderLogs);
 
 </body>
 </html>
-```
-
-# Recommended Firestore Structure
-
-```text
-adminLogs/
-  autoId/
-    type: "ban"
-    severity: "high"
-    adminUser: "Owner"
-    targetUser: "User123"
-    details: "Spam links"
-    timestamp: 1779155048841
-```
-
-# Recommended Firestore Rules
-
-```js
-match /adminLogs/{logId} {
-  allow read: if request.auth != null &&
-    request.auth.token.admin == true;
-
-  allow write: if request.auth != null &&
-    request.auth.token.owner == true;
-}
-```
-
-# Features Included
-
-* Real-time live logs
-* Search system
-* Severity filtering
-* Action filtering
-* Admin tracking
-* Responsive design
-* Firebase integration
-* XSS-safe rendering
-* Stats dashboard
-* Live Firestore updates
-* Security-ready structure
