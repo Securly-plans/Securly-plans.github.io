@@ -5,55 +5,90 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Emerald</title>
+<title>Emerald Login</title>
 
 <style>
+:root{
+    --primary:#c40000;
+    --primary-hover:#a30000;
+    --bg:#f4f4f4;
+    --card:#ffffff;
+    --text:#222;
+    --muted:#666;
+}
+
+/* PAGE CENTER */
 body {
   margin: 0;
-  font-family: Arial;
-  background: #f4f4f4;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
+/* LOGIN CARD (ADMIN STYLE) */
 .box {
-  width: 320px;
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  width: 340px;
+  background: var(--card);
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+  border-top: 5px solid var(--primary);
+  text-align: center;
 }
 
+.box h2 {
+  margin: 0 0 15px 0;
+  color: var(--primary);
+}
+
+/* INPUTS */
 input {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
   box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
 }
 
+input:focus{
+  border-color: var(--primary);
+}
+
+/* BUTTONS */
 button {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
   cursor: pointer;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  border: none;
+  transition: .2s;
 }
 
 .login {
-  background: #4caf50;
+  background: var(--primary);
   color: white;
-  border: none;
+}
+
+.login:hover {
+  background: var(--primary-hover);
 }
 
 .signup {
-  background: #2196f3;
-  color: white;
-  border: none;
+  background: #eee;
+  color: #444;
+  cursor: not-allowed;
 }
 
-/* ================= TOAST SYSTEM ================= */
-
+/* TOAST SYSTEM */
 #toastContainer {
   position: fixed;
   top: 20px;
@@ -73,9 +108,9 @@ button {
   animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
 }
 
-.toast.success { background: #4caf50; }
-.toast.error { background: #f44336; }
-.toast.info { background: #2196f3; }
+.toast.success { background: #2e7d32; }
+.toast.error { background: #c62828; }
+.toast.info { background: var(--primary); }
 
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
@@ -84,6 +119,13 @@ button {
 
 @keyframes fadeOut {
   to { opacity: 0; transform: translateX(100%); }
+}
+
+/* SMALL FOOTNOTE */
+.note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
 }
 </style>
 
@@ -104,15 +146,19 @@ button {
   <button class="login" id="loginBtn">Login</button>
 
   <button class="signup" id="signupBtn" disabled>
-    This site is invite only. If you don't have an account, or need support with one please contact an admin.
+    Invite only system
   </button>
+
+  <div class="note">
+    Need access? Contact an admin.
+  </div>
 
 </div>
 
 <!-- AUTH -->
 <script type="module" src="js/auth.js"></script>
 
-<!-- ================= FIREBASE AUTO REDIRECT ================= -->
+<!-- FIREBASE AUTO REDIRECT -->
 <script type="module">
 
 import { db } from "./js/firebase.js";
@@ -123,7 +169,7 @@ const settingsRef = doc(db, "settings", "appConfig");
 
 let redirected = false;
 
-/* ================= TOAST SYSTEM ================= */
+/* TOAST */
 function showToast(message, type = "info") {
   const container = document.getElementById("toastContainer");
 
@@ -133,13 +179,10 @@ function showToast(message, type = "info") {
 
   container.appendChild(toast);
 
-  setTimeout(() => {
-    toast.remove();
-  }, 3500);
+  setTimeout(() => toast.remove(), 3500);
 }
 
-/* ================= REDIRECT ================= */
-
+/* REDIRECT */
 function redirectHome() {
   if (!redirected) {
     redirected = true;
@@ -162,14 +205,12 @@ try {
 
     if (redirected) return;
 
-    // CASE 1: Admin force redirect
     if (autoRedirect) {
       showToast("Admin redirect enabled", "info");
       redirectHome();
       return;
     }
 
-    // CASE 2: Normal login redirect
     if (isLoggedIn()) {
       showToast("Welcome back!", "success");
       redirectHome();
@@ -177,25 +218,19 @@ try {
 
   }, (error) => {
 
-    console.error("Firestore listener error:", error);
-
+    console.error(error);
     showToast("Connection issue (offline mode)", "error");
 
-    if (isLoggedIn()) {
-      redirectHome();
-    }
+    if (isLoggedIn()) redirectHome();
 
   });
 
 } catch (e) {
 
-  console.error("Fatal Firebase error:", e);
-
+  console.error(e);
   showToast("Fatal error loading app", "error");
 
-  if (isLoggedIn()) {
-    redirectHome();
-  }
+  if (isLoggedIn()) redirectHome();
 }
 
 </script>
