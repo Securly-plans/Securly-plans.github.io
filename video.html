@@ -1,209 +1,777 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Video Chat</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Iridium Video Chat</title>
+
+<script type="module" src="./js/session.js"></script>
 
 <style>
-body {
-  font-family: Arial;
-  background:#111;
-  color:white;
-  text-align:center;
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
 }
 
-video {
-  width:45%;
-  margin:10px;
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+
+.header{
+  background:#111827;
+  padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.header h1{
+  margin:0;
+  color:var(--danger);
+}
+
+.status{
+  color:var(--primary);
+  font-size:14px;
+}
+
+.container{
+  max-width:1400px;
+  margin:auto;
+  padding:20px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:20px;
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+}
+
+.panel h2{
+  margin-top:0;
+}
+
+.sidebar-btn{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
   border-radius:10px;
-  background:black;
+  background:var(--panel2);
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+  text-align:left;
 }
 
-button {
-  padding:10px;
-  margin:5px;
+.sidebar-btn:hover{
+  opacity:0.9;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  margin-bottom:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:white;
+}
+
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
+  margin-top:5px;
+  margin-right:5px;
+  font-weight:bold;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.primary{
+  background:var(--info);
+  color:white;
+}
+
+.success{
+  background:var(--primary);
+  color:black;
+}
+
+.danger{
+  background:var(--danger);
+  color:white;
+}
+
+.warning{
+  background:var(--warning);
+  color:black;
+}
+
+.video-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.video-box{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+}
+
+.video-header{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+video{
+  width:100%;
+  height:420px;
+  background:black;
+  object-fit:cover;
+}
+
+.info-box{
+  background:#111827;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:15px;
+  margin-top:15px;
+}
+
+.badge{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  background:#1f2937;
+}
+
+#toastContainer{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+}
+
+.toast{
+  padding:12px 16px;
+  border-radius:10px;
+  margin-bottom:10px;
+  color:white;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.toast.success{
+  background:#16a34a;
+}
+
+.toast.error{
+  background:#dc2626;
+}
+
+.toast.info{
+  background:#2563eb;
+}
+
+.call-id-box{
+  margin-top:15px;
+  padding:12px;
+  border-radius:10px;
+  background:#111827;
+  border:1px solid var(--border);
+  word-break:break-all;
+}
+
+@media(max-width:1000px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .video-grid{
+    grid-template-columns:1fr;
+  }
+
+  video{
+    height:260px;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<h2>Video Chat</h2>
+<div class="header">
+  <h1>Iridium Video Chat</h1>
 
-<video id="localVideo" autoplay muted></video>
-<video id="remoteVideo" autoplay></video>
+  <div class="status">
+    ● Secure Peer Connection Ready
+  </div>
+</div>
 
-<br>
+<div id="toastContainer"></div>
 
-<button onclick="startCall()">Start Call</button>
-<button onclick="joinCall()">Join Call</button>
+<div class="container">
+
+  <div class="grid">
+
+    <!-- SIDEBAR -->
+    <div class="panel">
+
+      <h2>Video Controls</h2>
+
+      <button class="sidebar-btn" onclick="window.location.href='chat.html'">
+        💬 Return to Chat
+      </button>
+
+      <button class="sidebar-btn" onclick="window.location.href='admin.html'">
+        🛡️ Admin Panel
+      </button>
+
+      <button class="sidebar-btn" onclick="toggleMic()">
+        🎤 Toggle Microphone
+      </button>
+
+      <button class="sidebar-btn" onclick="toggleCamera()">
+        📷 Toggle Camera
+      </button>
+
+      <button class="sidebar-btn danger" onclick="endCall()">
+        ❌ End Call
+      </button>
+
+      <div class="info-box">
+        <h3>Create Call</h3>
+
+        <button class="success" onclick="startCall()">
+          Start New Call
+        </button>
+
+        <div id="callIdBox" class="call-id-box" style="display:none;">
+          <b>Call ID:</b><br>
+          <span id="callIdText"></span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <h3>Join Existing Call</h3>
+
+        <input
+          id="joinCallId"
+          placeholder="Enter Call ID"
+        >
+
+        <button class="primary" onclick="joinCall()">
+          Join Call
+        </button>
+      </div>
+
+      <div class="info-box">
+        <h3>Connection Status</h3>
+
+        <span class="badge" id="connectionStatus">
+          Disconnected
+        </span>
+      </div>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="panel">
+
+      <h2>Live Video Session</h2>
+
+      <div class="video-grid">
+
+        <div class="video-box">
+
+          <div class="video-header">
+            <span>Local Camera</span>
+            <span class="badge">You</span>
+          </div>
+
+          <video
+            id="localVideo"
+            autoplay
+            muted
+            playsinline
+          ></video>
+
+        </div>
+
+        <div class="video-box">
+
+          <div class="video-header">
+            <span>Remote Camera</span>
+            <span class="badge">
+              Connected User
+            </span>
+          </div>
+
+          <video
+            id="remoteVideo"
+            autoplay
+            playsinline
+          ></video>
+
+        </div>
+
+      </div>
+
+      <div class="info-box">
+
+        <h3>How It Works</h3>
+
+        <p style="color:var(--muted);line-height:1.6;">
+          Start a call to generate a secure call ID.
+          Send that ID to another user so they can join.
+          Your video and audio are connected directly using WebRTC.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
 <script type="module">
 
 import { db } from "./js/firebase.js";
 
 import {
-doc,
-setDoc,
-getDoc,
-updateDoc,
-collection,
-addDoc,
-onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================= DEBUG ================= */
-console.log("Video page loaded");
-
-/* ================= WEBRTC SETUP ================= */
+/* ================= STATE ================= */
 const servers = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" }
+  iceServers:[
+    {
+      urls:"stun:stun.l.google.com:19302"
+    }
   ]
 };
 
-let pc;
-let localStream;
+let pc = null;
+let localStream = null;
+let currentCallId = null;
 
-const localVideo = document.getElementById("localVideo");
-const remoteVideo = document.getElementById("remoteVideo");
+const localVideo =
+  document.getElementById("localVideo");
+
+const remoteVideo =
+  document.getElementById("remoteVideo");
+
+/* ================= TOAST ================= */
+function toast(msg,type="info"){
+
+  const container =
+    document.getElementById("toastContainer");
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "toast " + type;
+
+  div.textContent =
+    msg;
+
+  container.appendChild(div);
+
+  setTimeout(()=>{
+    div.remove();
+  },3000);
+}
+
+/* ================= STATUS ================= */
+function setStatus(text){
+  document.getElementById("connectionStatus")
+    .textContent = text;
+}
 
 /* ================= INIT MEDIA ================= */
-async function initMedia() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
+async function initMedia(){
+
+  try{
+
+    localStream =
+      await navigator.mediaDevices.getUserMedia({
+        video:true,
+        audio:true
+      });
+
+    localVideo.srcObject =
+      localStream;
+
+    pc =
+      new RTCPeerConnection(servers);
+
+    localStream.getTracks().forEach(track=>{
+      pc.addTrack(track,localStream);
     });
 
-    localVideo.srcObject = localStream;
+    pc.ontrack = (event)=>{
+      remoteVideo.srcObject =
+        event.streams[0];
 
-    pc = new RTCPeerConnection(servers);
-
-    localStream.getTracks().forEach(track => {
-      pc.addTrack(track, localStream);
-    });
-
-    pc.ontrack = (event) => {
-      remoteVideo.srcObject = event.streams[0];
+      setStatus("Connected");
     };
 
-    console.log("Media initialized");
-  } catch (err) {
-    console.error("Camera error:", err);
-    alert("Camera/mic error: " + err.message);
+    pc.onconnectionstatechange = ()=>{
+
+      const state =
+        pc.connectionState;
+
+      if(state==="connected"){
+        setStatus("Connected");
+      }
+      else if(
+        state==="disconnected" ||
+        state==="failed"
+      ){
+        setStatus("Disconnected");
+      }
+    };
+
+    toast("Camera and microphone ready","success");
+
+  }catch(err){
+
+    console.error(err);
+
+    toast(
+      "Camera/microphone access denied",
+      "error"
+    );
   }
 }
 
-/* ================= START CALL (CREATOR) ================= */
-window.startCall = async function () {
+/* ================= START CALL ================= */
+window.startCall = async function(){
+
   await initMedia();
 
-  const callRef = doc(collection(db, "calls"));
-  const callId = callRef.id;
+  const callRef =
+    doc(collection(db,"calls"));
 
-  console.log("Call created:", callId);
+  const callId =
+    callRef.id;
 
-  /* ICE CANDIDATES */
-  pc.onicecandidate = async (event) => {
-    if (event.candidate) {
+  currentCallId =
+    callId;
+
+  pc.onicecandidate =
+    async (event)=>{
+
+    if(event.candidate){
+
       await addDoc(
-        collection(db, "calls", callId, "candidates"),
+        collection(
+          db,
+          "calls",
+          callId,
+          "candidates"
+        ),
         event.candidate.toJSON()
       );
     }
   };
 
-  /* CREATE OFFER */
-  const offer = await pc.createOffer();
+  const offer =
+    await pc.createOffer();
+
   await pc.setLocalDescription(offer);
 
-  await setDoc(callRef, {
-    offer: {
-      type: offer.type,
-      sdp: offer.sdp
-    }
+  await setDoc(callRef,{
+    offer:{
+      type:offer.type,
+      sdp:offer.sdp
+    },
+    created:Date.now()
   });
 
-  /* LISTEN FOR ANSWER */
-  onSnapshot(callRef, async (snap) => {
-    const data = snap.data();
-    if (!pc.currentRemoteDescription && data?.answer) {
+  onSnapshot(callRef, async (snap)=>{
+
+    const data =
+      snap.data();
+
+    if(
+      !pc.currentRemoteDescription &&
+      data?.answer
+    ){
+
       await pc.setRemoteDescription(
-        new RTCSessionDescription(data.answer)
+        new RTCSessionDescription(
+          data.answer
+        )
       );
     }
   });
 
-  /* LISTEN FOR ICE FROM JOINER */
-  onSnapshot(collection(db, "calls", callId, "candidates"), (snap) => {
-    snap.docChanges().forEach(async (change) => {
-      if (change.type === "added") {
-        await pc.addIceCandidate(
-          new RTCIceCandidate(change.doc.data())
-        );
-      }
-    });
-  });
+  onSnapshot(
+    collection(
+      db,
+      "calls",
+      callId,
+      "candidates"
+    ),
+    (snap)=>{
 
-  alert("Call ID: " + callId + " (share this)");
+      snap.docChanges().forEach(
+        async (change)=>{
+
+        if(change.type==="added"){
+
+          try{
+
+            await pc.addIceCandidate(
+              new RTCIceCandidate(
+                change.doc.data()
+              )
+            );
+
+          }catch(err){
+            console.error(err);
+          }
+        }
+      });
+    }
+  );
+
+  document.getElementById("callIdBox")
+    .style.display = "block";
+
+  document.getElementById("callIdText")
+    .textContent = callId;
+
+  setStatus("Waiting for user");
+
+  toast("Call created","success");
 };
 
 /* ================= JOIN CALL ================= */
-window.joinCall = async function () {
-  const callId = prompt("Enter Call ID:");
-  if (!callId) return;
+window.joinCall = async function(){
+
+  const callId =
+    document
+      .getElementById("joinCallId")
+      .value
+      .trim();
+
+  if(!callId){
+    return toast(
+      "Enter a call ID",
+      "error"
+    );
+  }
 
   await initMedia();
 
-  const callRef = doc(db, "calls", callId);
+  currentCallId =
+    callId;
 
-  /* ICE CANDIDATES */
-  pc.onicecandidate = async (event) => {
-    if (event.candidate) {
+  const callRef =
+    doc(db,"calls",callId);
+
+  const callData =
+    (await getDoc(callRef)).data();
+
+  if(!callData?.offer){
+
+    toast(
+      "Invalid call ID",
+      "error"
+    );
+
+    return;
+  }
+
+  pc.onicecandidate =
+    async (event)=>{
+
+    if(event.candidate){
+
       await addDoc(
-        collection(db, "calls", callId, "candidates"),
+        collection(
+          db,
+          "calls",
+          callId,
+          "candidates"
+        ),
         event.candidate.toJSON()
       );
     }
   };
 
-  /* GET OFFER */
-  const callData = (await getDoc(callRef)).data();
-
-  if (!callData?.offer) {
-    alert("Invalid call ID");
-    return;
-  }
-
   await pc.setRemoteDescription(
-    new RTCSessionDescription(callData.offer)
+    new RTCSessionDescription(
+      callData.offer
+    )
   );
 
-  /* CREATE ANSWER */
-  const answer = await pc.createAnswer();
+  const answer =
+    await pc.createAnswer();
+
   await pc.setLocalDescription(answer);
 
-  await updateDoc(callRef, {
-    answer: {
-      type: answer.type,
-      sdp: answer.sdp
+  await updateDoc(callRef,{
+    answer:{
+      type:answer.type,
+      sdp:answer.sdp
     }
   });
 
-  /* LISTEN FOR ICE FROM CREATOR */
-  onSnapshot(collection(db, "calls", callId, "candidates"), (snap) => {
-    snap.docChanges().forEach(async (change) => {
-      if (change.type === "added") {
-        await pc.addIceCandidate(
-          new RTCIceCandidate(change.doc.data())
-        );
-      }
-    });
-  });
+  onSnapshot(
+    collection(
+      db,
+      "calls",
+      callId,
+      "candidates"
+    ),
+    (snap)=>{
 
-  console.log("Joined call:", callId);
+      snap.docChanges().forEach(
+        async (change)=>{
+
+        if(change.type==="added"){
+
+          try{
+
+            await pc.addIceCandidate(
+              new RTCIceCandidate(
+                change.doc.data()
+              )
+            );
+
+          }catch(err){
+            console.error(err);
+          }
+        }
+      });
+    }
+  );
+
+  setStatus("Connecting");
+
+  toast("Joined call","success");
 };
+
+/* ================= MIC ================= */
+window.toggleMic = function(){
+
+  if(!localStream) return;
+
+  const enabled =
+    localStream
+      .getAudioTracks()[0]
+      .enabled;
+
+  localStream
+    .getAudioTracks()[0]
+    .enabled = !enabled;
+
+  toast(
+    enabled
+      ? "Microphone muted"
+      : "Microphone enabled",
+    "info"
+  );
+};
+
+/* ================= CAMERA ================= */
+window.toggleCamera = function(){
+
+  if(!localStream) return;
+
+  const enabled =
+    localStream
+      .getVideoTracks()[0]
+      .enabled;
+
+  localStream
+    .getVideoTracks()[0]
+    .enabled = !enabled;
+
+  toast(
+    enabled
+      ? "Camera disabled"
+      : "Camera enabled",
+    "info"
+  );
+};
+
+/* ================= END CALL ================= */
+window.endCall = function(){
+
+  if(pc){
+    pc.close();
+  }
+
+  if(localStream){
+
+    localStream
+      .getTracks()
+      .forEach(track=>{
+        track.stop();
+      });
+  }
+
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+
+  setStatus("Disconnected");
+
+  toast("Call ended","info");
+};
+
+/* ================= INIT ================= */
+setStatus("Disconnected");
 
 </script>
 
