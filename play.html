@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,21 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playing Game - Emerald</title>
     <link rel="stylesheet" href="style.css">
+
     <style>
         .play-container {
             max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .video-wrapper {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            padding-bottom: 56.25%;
             height: 0;
             background: #000;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
         iframe {
             position: absolute;
             top: 0;
@@ -28,12 +32,14 @@
             height: 100%;
             border: none;
         }
+
         .game-info {
             margin-top: 20px;
             background: #2d2d2d;
             padding: 20px;
             border-radius: 8px;
         }
+
         .back-btn {
             display: inline-block;
             margin-bottom: 15px;
@@ -41,22 +47,140 @@
             text-decoration: none;
             font-weight: bold;
         }
+
+        .chat-embed {
+            margin-top: 20px;
+            background: #2d2d2d;
+            border-radius: 12px;
+            overflow: hidden;
+            height: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .chat-embed iframe {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+            border: none;
+        }
     </style>
 </head>
 <body>
+
     <div class="play-container">
-        <a href="home.html" class="back-btn">← Back to Games</a>
-        
+
+        <a href="home.html" class="back-btn">
+            ← Back to Games
+        </a>
+
         <div class="video-wrapper">
             <iframe id="gameFrame" src="" allowfullscreen></iframe>
         </div>
 
         <div class="game-info">
             <h1 id="gameTitle">Loading...</h1>
-            <p id="gameDescription">Select a game to start playing.</p>
+
+            <p id="gameDescription">
+                Select a game to start playing.
+            </p>
         </div>
+
+        <!-- Embedded Chat -->
+        <div class="chat-embed">
+            <iframe src="chat.html"></iframe>
+        </div>
+
     </div>
 
+    <!-- Session / Auth Protection -->
+    <script type="module">
+
+        import {
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        import {
+            auth
+        } from "./js/firebase.js";
+
+        const SESSION_TIMEOUT = 30 * 60 * 1000;
+
+        let inactivityTimer;
+
+        function logoutUser(){
+
+            localStorage.clear();
+
+            alert("You were logged out due to inactivity.");
+
+            window.location.href = "index.html";
+        }
+
+        function resetSessionTimer(){
+
+            clearTimeout(inactivityTimer);
+
+            localStorage.setItem(
+                "lastActivity",
+                Date.now()
+            );
+
+            inactivityTimer = setTimeout(
+                logoutUser,
+                SESSION_TIMEOUT
+            );
+        }
+
+        [
+            "mousemove",
+            "mousedown",
+            "click",
+            "scroll",
+            "keypress",
+            "touchstart"
+        ].forEach(event=>{
+
+            document.addEventListener(
+                event,
+                resetSessionTimer,
+                true
+            );
+        });
+
+        onAuthStateChanged(auth,(user)=>{
+
+            if(!user){
+
+                window.location.href = "index.html";
+
+                return;
+            }
+
+            const lastActivity =
+                Number(
+                    localStorage.getItem(
+                        "lastActivity"
+                    )
+                ) || Date.now();
+
+            if(
+                Date.now() - lastActivity >
+                SESSION_TIMEOUT
+            ){
+
+                logoutUser();
+
+                return;
+            }
+
+            resetSessionTimer();
+        });
+
+    </script>
+
     <script src="play-logic.js"></script>
+
 </body>
 </html>
+```
