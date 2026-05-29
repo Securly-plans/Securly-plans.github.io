@@ -86,4 +86,3 @@ function checkSessionAge(){
 /* ================= INIT ================= */
 
 checkSessionAge();
-```
