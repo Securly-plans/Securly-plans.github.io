@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +38,8 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
 .header h1{
@@ -205,6 +208,15 @@ input,select{
   color:var(--muted);
 }
 
+.type-badge{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:11px;
+  background:#1f2937;
+  margin-left:10px;
+}
+
 @media(max-width:900px){
   .container{
     grid-template-columns:1fr;
@@ -228,13 +240,25 @@ input,select{
   <div class="sidebar">
     <h2>Navigation</h2>
 
-    <button class="nav-btn">Dashboard</button>
-    <button class="nav-btn">Users</button>
-    <button class="nav-btn">Chat Logs</button>
-    <button class="nav-btn">Reports</button>
-    <button class="nav-btn">Security</button>
-    <button class="nav-btn">Sessions</button>
-    <button class="nav-btn">Admin Logs</button>
+    <button class="nav-btn" onclick="window.location.href='admin.html'">
+      Dashboard
+    </button>
+
+    <button class="nav-btn" onclick="window.location.href='admin-logs.html'">
+      Admin Logs
+    </button>
+
+    <button class="nav-btn" onclick="window.location.href='chatmod.html'">
+      Chat Moderation
+    </button>
+
+    <button class="nav-btn">
+      Incident Reports
+    </button>
+
+    <button class="nav-btn">
+      Security Events
+    </button>
   </div>
 
   <div class="main">
@@ -242,7 +266,7 @@ input,select{
     <div class="stats">
 
       <div class="card">
-        <h3>Total Logs</h3>
+        <h3>Total Events</h3>
         <div class="value" id="totalLogs">0</div>
       </div>
 
@@ -261,9 +285,15 @@ input,select{
         <div class="value" id="criticalCount">0</div>
       </div>
 
+      <div class="card">
+        <h3>Incident Reports</h3>
+        <div class="value" id="incidentCount">0</div>
+      </div>
+
     </div>
 
     <div class="filters">
+
       <input type="text" id="searchInput" placeholder="Search by user, action, admin...">
 
       <select id="typeFilter">
@@ -271,8 +301,10 @@ input,select{
         <option value="ban">Ban</option>
         <option value="mute">Mute</option>
         <option value="warning">Warning</option>
-        <option value="delete">Delete</option>
-        <option value="security">Security</option>
+        <option value="delete-user">Delete User</option>
+        <option value="incident-report">Incident Reports</option>
+        <option value="lock">Lock</option>
+        <option value="unlock">Unlock</option>
       </select>
 
       <select id="severityFilter">
@@ -281,6 +313,7 @@ input,select{
         <option value="medium">Medium</option>
         <option value="high">High</option>
       </select>
+
     </div>
 
     <div class="logs" id="logsContainer">
@@ -292,7 +325,7 @@ input,select{
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
 import {
   getFirestore,
   collection,
@@ -302,7 +335,13 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import { app } from "./js/firebase.js";
+
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -312,17 +351,26 @@ const typeFilter = document.getElementById("typeFilter");
 const severityFilter = document.getElementById("severityFilter");
 
 let allLogs = [];
+let allIncidents = [];
+
+if(localStorage.getItem("role") !== "admin"){
+  alert("Access denied");
+  location.href = "index.html";
+}
 
 onAuthStateChanged(auth, async(user) => {
+
   if(!user){
     location.href = "login.html";
     return;
   }
 
   loadLogs();
+  loadIncidentReports();
 });
 
 function loadLogs(){
+
   const q = query(
     collection(db,"adminLogs"),
     orderBy("timestamp","desc"),
@@ -330,11 +378,13 @@ function loadLogs(){
   );
 
   onSnapshot(q,(snapshot)=>{
+
     allLogs = [];
 
     snapshot.forEach(doc=>{
       allLogs.push({
         id:doc.id,
+        source:"log",
         ...doc.data()
       });
     });
@@ -344,33 +394,76 @@ function loadLogs(){
   });
 }
 
+function loadIncidentReports(){
+
+  const q = query(
+    collection(db,"incidentReports"),
+    orderBy("timestamp","desc"),
+    limit(100)
+  );
+
+  onSnapshot(q,(snapshot)=>{
+
+    allIncidents = [];
+
+    snapshot.forEach(doc=>{
+      allIncidents.push({
+        id:doc.id,
+        source:"incident",
+        type:"incident-report",
+        adminUser:doc.data().createdBy || "Unknown",
+        targetUser:doc.data().target || "System",
+        details:doc.data().details || "",
+        severity:doc.data().severity || "low",
+        timestamp:doc.data().timestamp,
+        title:doc.data().title || "Incident Report"
+      });
+    });
+
+    renderLogs();
+    updateStats();
+  });
+}
+
 function updateStats(){
-  document.getElementById("totalLogs").textContent = allLogs.length;
+
+  const combined = [...allLogs, ...allIncidents];
+
+  document.getElementById("totalLogs").textContent =
+    combined.length;
 
   document.getElementById("warningCount").textContent =
-    allLogs.filter(l=>l.type === "warning").length;
+    combined.filter(l=>l.type === "warning").length;
 
   document.getElementById("banCount").textContent =
-    allLogs.filter(l=>l.type === "ban").length;
+    combined.filter(l=>l.type === "ban").length;
 
   document.getElementById("criticalCount").textContent =
-    allLogs.filter(l=>l.severity === "high").length;
+    combined.filter(l=>l.severity === "high").length;
+
+  document.getElementById("incidentCount").textContent =
+    allIncidents.length;
 }
 
 function renderLogs(){
+
   logsContainer.innerHTML = "";
 
   const search = searchInput.value.toLowerCase();
   const type = typeFilter.value;
   const severity = severityFilter.value;
 
-  const filtered = allLogs.filter(log=>{
+  const combined = [...allLogs, ...allIncidents]
+    .sort((a,b)=>(b.timestamp || 0) - (a.timestamp || 0));
+
+  const filtered = combined.filter(log=>{
 
     const matchesSearch =
       (log.targetUser || "").toLowerCase().includes(search) ||
       (log.adminUser || "").toLowerCase().includes(search) ||
       (log.type || "").toLowerCase().includes(search) ||
-      (log.details || "").toLowerCase().includes(search);
+      (log.details || "").toLowerCase().includes(search) ||
+      (log.title || "").toLowerCase().includes(search);
 
     const matchesType =
       type === "all" || log.type === type;
@@ -382,38 +475,63 @@ function renderLogs(){
   });
 
   if(filtered.length === 0){
+
     logsContainer.innerHTML = `
       <div class="empty">No logs found.</div>
     `;
+
     return;
   }
 
   filtered.forEach(log=>{
 
     const div = document.createElement("div");
+
     div.className = `log ${log.severity || "low"}`;
 
     div.innerHTML = `
       <div class="log-top">
+
         <div>
+
           <div class="log-type">
+
             ${capitalize(log.type || "Unknown")}
+
+            ${log.source === "incident"
+              ? `<span class="type-badge">INCIDENT</span>`
+              : `<span class="type-badge">LOG</span>`
+            }
+
           </div>
 
           <div class="timestamp">
             ${formatDate(log.timestamp)}
           </div>
+
         </div>
 
         <div>
-          Admin: <b>${escapeHtml(log.adminUser || "Unknown")}</b>
+          Admin:
+          <b>${escapeHtml(log.adminUser || "Unknown")}</b>
         </div>
+
       </div>
 
       <div class="details">
-        <b>Target:</b> ${escapeHtml(log.targetUser || "Unknown")}
+
+        ${log.title
+          ? `<b>Title:</b> ${escapeHtml(log.title)}<br><br>`
+          : ""
+        }
+
+        <b>Target:</b>
+        ${escapeHtml(log.targetUser || "Unknown")}
+
         <br><br>
+
         ${escapeHtml(log.details || "No details provided")}
+
       </div>
 
       <div class="tag ${log.severity || "low"}">
@@ -426,6 +544,7 @@ function renderLogs(){
 }
 
 function formatDate(timestamp){
+
   if(!timestamp) return "Unknown Date";
 
   const date = new Date(timestamp);
@@ -434,11 +553,13 @@ function formatDate(timestamp){
 }
 
 function capitalize(text){
+
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function escapeHtml(str){
-  return str
+
+  return String(str)
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
@@ -449,7 +570,9 @@ function escapeHtml(str){
 searchInput.addEventListener("input",renderLogs);
 typeFilter.addEventListener("change",renderLogs);
 severityFilter.addEventListener("change",renderLogs);
+
 </script>
 
 </body>
 </html>
+```
