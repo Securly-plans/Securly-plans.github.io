@@ -2,7 +2,8 @@
 import {
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  saveLocalStorage
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
