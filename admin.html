@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -242,6 +243,54 @@ button.success{
   margin-bottom:10px;
 }
 
+.incident-box{
+  margin-top:20px;
+}
+
+.severity-tag{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  margin-top:10px;
+}
+
+.severity-low{
+  background:rgba(74,222,128,0.15);
+  color:#86efac;
+}
+
+.severity-medium{
+  background:rgba(245,158,11,0.15);
+  color:#fcd34d;
+}
+
+.severity-high{
+  background:rgba(239,68,68,0.15);
+  color:#fca5a5;
+}
+
+.report{
+  background:#111827;
+  border:1px solid var(--border);
+  border-left:5px solid var(--info);
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:15px;
+}
+
+.report.high{
+  border-left-color:var(--danger);
+}
+
+.report.medium{
+  border-left-color:var(--warning);
+}
+
+.report.low{
+  border-left-color:var(--primary);
+}
+
 @media(max-width:900px){
   .container{
     grid-template-columns:1fr;
@@ -312,6 +361,16 @@ button.success{
         <div class="value" id="chatCount">0</div>
       </div>
 
+      <div class="card">
+        <h4>Incident Reports</h4>
+        <div class="value" id="incidentCount">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Critical Incidents</h4>
+        <div class="value" id="criticalIncidentCount">0</div>
+      </div>
+
     </div>
 
     <div class="grid">
@@ -341,6 +400,26 @@ button.success{
       </div>
 
       <div class="box">
+        <h3>Create Incident Report</h3>
+
+        <input id="incidentTitle" placeholder="Incident title">
+
+        <input id="incidentTarget" placeholder="Target user/system">
+
+        <select id="incidentSeverity">
+          <option value="low">Low Severity</option>
+          <option value="medium">Medium Severity</option>
+          <option value="high">High Severity</option>
+        </select>
+
+        <textarea id="incidentDetails" rows="5" placeholder="Incident details..."></textarea>
+
+        <button class="danger" onclick="createIncidentReport()">
+          Submit Incident
+        </button>
+      </div>
+
+      <div class="box">
         <h3>System Settings</h3>
 
         <button id="redirectToggleBtn">
@@ -354,6 +433,14 @@ button.success{
         <input id="userSearch" placeholder="Search username or ID...">
       </div>
 
+    </div>
+
+    <div class="box incident-box">
+      <h3>Recent Incident Reports</h3>
+
+      <div id="incidentReports">
+        Loading incident reports...
+      </div>
     </div>
 
     <div class="box" style="margin-top:20px;">
@@ -384,7 +471,10 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-  getDoc
+  getDoc,
+  query,
+  orderBy,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -392,6 +482,7 @@ import { db } from "./js/firebase.js";
 /* ================= STATE ================= */
 let chatMonitorOpen = false;
 let cachedUsers = [];
+let cachedIncidents = [];
 
 /* ================= TOAST ================= */
 function toast(msg,type="info"){
@@ -424,6 +515,158 @@ async function logAction(type,details,target="System",severity="low"){
   }catch(err){
     console.error("Failed to write admin log:",err);
   }
+}
+
+/* ================= INCIDENT REPORTS ================= */
+window.createIncidentReport = async ()=>{
+  const title = document.getElementById("incidentTitle").value.trim();
+  const target = document.getElementById("incidentTarget").value.trim();
+  const severity = document.getElementById("incidentSeverity").value;
+  const details = document.getElementById("incidentDetails").value.trim();
+
+  if(!title || !details){
+    return toast("Missing incident information","error");
+  }
+
+  try{
+
+    await addDoc(collection(db,"incidentReports"),{
+      title,
+      target,
+      severity,
+      details,
+      createdBy:localStorage.getItem("username") || "Unknown",
+      timestamp:Date.now(),
+      status:"open"
+    });
+
+    await logAction(
+      "incident-report",
+      `${title}: ${details}`,
+      target || "System",
+      severity
+    );
+
+    document.getElementById("incidentTitle").value = "";
+    document.getElementById("incidentTarget").value = "";
+    document.getElementById("incidentDetails").value = "";
+    document.getElementById("incidentSeverity").value = "low";
+
+    toast("Incident report submitted","success");
+
+    loadIncidentReports();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to create incident report","error");
+  }
+};
+
+async function loadIncidentReports(){
+
+  const container = document.getElementById("incidentReports");
+
+  container.innerHTML = "Loading incident reports...";
+
+  try{
+
+    const q = query(
+      collection(db,"incidentReports"),
+      orderBy("timestamp","desc"),
+      limit(25)
+    );
+
+    const snap = await getDocs(q);
+
+    cachedIncidents = [];
+
+    snap.forEach(docSnap=>{
+      cachedIncidents.push({
+        id:docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    renderIncidentReports();
+    updateIncidentStats();
+
+  }catch(err){
+    console.error(err);
+
+    container.innerHTML = `
+      <div class="report high">
+        Failed to load incident reports.
+      </div>
+    `;
+  }
+}
+
+function renderIncidentReports(){
+
+  const container = document.getElementById("incidentReports");
+
+  container.innerHTML = "";
+
+  if(cachedIncidents.length === 0){
+
+    container.innerHTML = `
+      <div class="report low">
+        No incident reports found.
+      </div>
+    `;
+
+    return;
+  }
+
+  cachedIncidents.forEach(report=>{
+
+    const div = document.createElement("div");
+
+    div.className = `report ${report.severity || "low"}`;
+
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <b>${escapeHtml(report.title || "Untitled Incident")}</b>
+          <br>
+          <span style="color:var(--muted);font-size:13px;">
+            ${formatDate(report.timestamp)}
+          </span>
+        </div>
+
+        <div>
+          Reported By:
+          <b>${escapeHtml(report.createdBy || "Unknown")}</b>
+        </div>
+      </div>
+
+      <br>
+
+      <b>Target:</b>
+      ${escapeHtml(report.target || "System")}
+
+      <br><br>
+
+      ${escapeHtml(report.details || "No details")}
+
+      <br>
+
+      <div class="severity-tag severity-${report.severity || "low"}">
+        ${(report.severity || "low").toUpperCase()} SEVERITY
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function updateIncidentStats(){
+
+  document.getElementById("incidentCount").textContent =
+    cachedIncidents.length;
+
+  document.getElementById("criticalIncidentCount").textContent =
+    cachedIncidents.filter(i=>i.severity === "high").length;
 }
 
 /* ================= HASH ================= */
@@ -785,7 +1028,9 @@ function escapeHtml(str){
 
 /* ================= INIT ================= */
 window.addEventListener("DOMContentLoaded",()=>{
+
   loadUsers();
+  loadIncidentReports();
 
   document
     .getElementById("userSearch")
@@ -796,3 +1041,4 @@ window.addEventListener("DOMContentLoaded",()=>{
 
 </body>
 </html>
+```
