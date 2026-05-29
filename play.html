@@ -74,6 +74,119 @@
         }
 
     </style>
+
+    <!-- LOCAL STORAGE AUTH + SESSION -->
+
+    <script>
+
+        (function(){
+
+            const isLoggedIn =
+                localStorage.getItem(
+                    "loggedIn"
+                ) === "true";
+
+            if(!isLoggedIn){
+
+                window.location.replace(
+                    "index.html"
+                );
+
+                return;
+            }
+
+            const SESSION_TIMEOUT =
+                30 * 60 * 1000;
+
+            const lastActivity =
+                Number(
+                    localStorage.getItem(
+                        "lastActivity"
+                    )
+                ) || Date.now();
+
+            /* ================= SESSION CHECK ================= */
+
+            if(
+                Date.now() - lastActivity >
+                SESSION_TIMEOUT
+            ){
+
+                localStorage.clear();
+
+                alert(
+                    "You were logged out due to inactivity."
+                );
+
+                window.location.replace(
+                    "index.html"
+                );
+
+                return;
+            }
+
+            /* ================= UPDATE TIMER ================= */
+
+            function updateActivity(){
+
+                localStorage.setItem(
+                    "lastActivity",
+                    Date.now()
+                );
+            }
+
+            [
+                "mousemove",
+                "mousedown",
+                "click",
+                "scroll",
+                "keypress",
+                "touchstart"
+            ].forEach(event=>{
+
+                document.addEventListener(
+                    event,
+                    updateActivity,
+                    true
+                );
+
+            });
+
+            /* ================= AUTO LOGOUT ================= */
+
+            setInterval(()=>{
+
+                const last =
+                    Number(
+                        localStorage.getItem(
+                            "lastActivity"
+                        )
+                    ) || 0;
+
+                if(
+                    Date.now() - last >
+                    SESSION_TIMEOUT
+                ){
+
+                    localStorage.clear();
+
+                    alert(
+                        "You were logged out due to inactivity."
+                    );
+
+                    window.location.replace(
+                        "index.html"
+                    );
+                }
+
+            },10000);
+
+            updateActivity();
+
+        })();
+
+    </script>
+
 </head>
 
 <body>
@@ -109,7 +222,7 @@
 
         </div>
 
-        <!-- Embedded Chat -->
+        <!-- EMBEDDED CHAT -->
 
         <div class="chat-embed">
 
@@ -120,133 +233,6 @@
         </div>
 
     </div>
-
-    <!-- Session / Auth Protection -->
-
-    <script type="module">
-
-        import {
-            onAuthStateChanged
-        }
-        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-        import {
-            auth
-        }
-        from "./js/firebase.js";
-
-        /* ================= CONFIG ================= */
-
-        const SESSION_TIMEOUT =
-            30 * 60 * 1000;
-
-        let inactivityTimer;
-
-        /* ================= LOGOUT ================= */
-
-        function logoutUser(message){
-
-            localStorage.clear();
-
-            alert(message);
-
-            window.location.replace(
-                "index.html"
-            );
-        }
-
-        /* ================= RESET TIMER ================= */
-
-        function resetSessionTimer(){
-
-            clearTimeout(
-                inactivityTimer
-            );
-
-            localStorage.setItem(
-                "lastActivity",
-                Date.now()
-            );
-
-            inactivityTimer =
-                setTimeout(()=>{
-
-                    logoutUser(
-                        "You were logged out due to inactivity."
-                    );
-
-                },SESSION_TIMEOUT);
-        }
-
-        /* ================= ACTIVITY EVENTS ================= */
-
-        [
-            "mousemove",
-            "mousedown",
-            "click",
-            "scroll",
-            "keypress",
-            "touchstart"
-        ].forEach(event=>{
-
-            document.addEventListener(
-                event,
-                resetSessionTimer,
-                true
-            );
-
-        });
-
-        /* ================= AUTH ================= */
-
-        let authLoaded = false;
-
-        onAuthStateChanged(
-            auth,
-            (user)=>{
-
-                if(
-                    authLoaded &&
-                    !user
-                ){
-
-                    window.location.replace(
-                        "index.html"
-                    );
-
-                    return;
-                }
-
-                authLoaded = true;
-
-                if(!user){
-                    return;
-                }
-
-                const lastActivity =
-                    Number(
-                        localStorage.getItem(
-                            "lastActivity"
-                        )
-                    ) || Date.now();
-
-                if(
-                    Date.now() - lastActivity >
-                    SESSION_TIMEOUT
-                ){
-
-                    logoutUser(
-                        "Session expired."
-                    );
-
-                    return;
-                }
-
-                resetSessionTimer();
-            }
-        );
-
-    </script>
 
     <script src="play-logic.js"></script>
 
