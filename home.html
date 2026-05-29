@@ -100,6 +100,13 @@ body{
   color:var(--muted);
 }
 
+/* NEW SAVE BUTTON STYLE (matches navbar exactly) */
+.save-btn{
+  background:rgba(59,130,246,0.15);
+  color:#60a5fa;
+  border-color:#3b82f6;
+}
+
 /* HEADER */
 header{
   padding:20px;
@@ -152,6 +159,9 @@ main{
     <span id="usernameDisplay" class="username-badge"></span>
 
     <a href="chat.html" class="chat-link">Chat</a>
+
+    <!-- ✅ NEW BUTTON ADDED -->
+    <button id="saveStorageBtn" class="save-btn">Save Data</button>
 
     <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
     <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
@@ -213,10 +223,21 @@ main{
   Emerald Games - Beta 1.0
 </p>
 
+<!-- ================= SAVE STORAGE INTEGRATION ================= -->
+<script type="module">
+import { saveLocalStorage } from "./save-storage.js";
+
+document.getElementById("saveStorageBtn").addEventListener("click", async () => {
+  await saveLocalStorage();
+  alert("Data saved to server.");
+});
+</script>
+
 <script type="module">
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
+/* (unchanged notification system) */
 const me = localStorage.getItem("username");
 let notified = new Set();
 
