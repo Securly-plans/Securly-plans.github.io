@@ -1,99 +1,137 @@
-```javascript
 import {
   doc,
   getDoc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { db } from "./js/firebase.js";
+import { db } from "./firebase.js";
 
 /* ================= CONFIG ================= */
 
 const COLLECTION = "userStorage";
 
 /* ================= GET USER ID ================= */
-/* You MUST set this when logging in */
 
-function getUserId(){
+function getUserId() {
   return localStorage.getItem("userId") || null;
 }
 
 /* ================= SAVE LOCALSTORAGE ================= */
 
-export async function saveLocalStorage(){
+export async function saveLocalStorage() {
 
   const userId = getUserId();
-  if(!userId) return;
+
+  if (!userId) {
+    console.warn("No userId found in localStorage.");
+    return;
+  }
 
   const data = {};
 
-  for(let i = 0; i < localStorage.length; i++){
+  for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     data[key] = localStorage.getItem(key);
   }
 
-  try{
+  try {
 
-    await setDoc(doc(db, COLLECTION, userId), {
-      data,
-      updatedAt: Date.now()
-    });
+    await setDoc(
+      doc(db, COLLECTION, userId),
+      {
+        data,
+        updatedAt: Date.now()
+      }
+    );
 
-  }catch(err){
-    console.error("Failed to save localStorage:", err);
+    console.log("localStorage saved.");
+
+  } catch (err) {
+
+    console.error(
+      "Failed to save localStorage:",
+      err
+    );
   }
 }
 
 /* ================= LOAD LOCALSTORAGE ================= */
 
-export async function loadLocalStorage(){
+export async function loadLocalStorage() {
 
   const userId = getUserId();
-  if(!userId) return;
 
-  try{
+  if (!userId) {
+    return;
+  }
 
-    const snap = await getDoc(doc(db, COLLECTION, userId));
+  try {
 
-    if(!snap.exists()) return;
+    const snap = await getDoc(
+      doc(db, COLLECTION, userId)
+    );
+
+    if (!snap.exists()) {
+      return;
+    }
 
     const data = snap.data().data;
 
-    if(!data) return;
+    if (!data) {
+      return;
+    }
 
-    Object.entries(data).forEach(([key, value])=>{
-      localStorage.setItem(key, value);
-    });
+    Object.entries(data).forEach(
+      ([key, value]) => {
 
-  }catch(err){
-    console.error("Failed to load localStorage:", err);
+        localStorage.setItem(
+          key,
+          String(value)
+        );
+      }
+    );
+
+    console.log("localStorage restored.");
+
+  } catch (err) {
+
+    console.error(
+      "Failed to load localStorage:",
+      err
+    );
   }
 }
 
-/* ================= AUTO SYNC (OPTIONAL) ================= */
-/* Saves every 15 seconds if anything changes */
+/* ================= AUTO SYNC ================= */
 
 let lastSnapshot = "";
 
-function snapshotStorage(){
+function snapshotStorage() {
+
   const obj = {};
 
-  for(let i = 0; i < localStorage.length; i++){
+  for (let i = 0; i < localStorage.length; i++) {
+
     const key = localStorage.key(i);
+
     obj[key] = localStorage.getItem(key);
   }
 
   return JSON.stringify(obj);
 }
 
-export function startStorageSync(){
+export function startStorageSync() {
 
-  setInterval(async ()=>{
+  lastSnapshot = snapshotStorage();
+
+  setInterval(async () => {
 
     const current = snapshotStorage();
 
-    if(current !== lastSnapshot){
+    if (current !== lastSnapshot) {
+
       lastSnapshot = current;
+
       await saveLocalStorage();
     }
 
@@ -102,8 +140,10 @@ export function startStorageSync(){
 
 /* ================= AUTO INIT ================= */
 
-if(getUserId()){
-  loadLocalStorage();
-  startStorageSync();
+if (getUserId()) {
+
+  loadLocalStorage()
+    .then(() => {
+      startStorageSync();
+    });
 }
-```
