@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Results</title>
+<style>
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{max-width:500px;margin:auto;background:white;padding:20px;border-radius:12px}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Your Results</h2>
+<p id="data"></p>
+</div>
+
+<script>
+document.getElementById("data").innerText =
+  localStorage.getItem("lastScore") || "No results yet";
+</script>
+
+</body>
+</html>
