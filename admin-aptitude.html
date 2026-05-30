@@ -53,14 +53,14 @@ body{
   color:var(--muted);
 }
 
-/* CENTER QUIZ */
+/* CENTER */
 main{
   display:flex;
   justify-content:center;
   padding:30px 15px;
 }
 
-/* QUIZ CARD */
+/* CARD */
 .quiz-box{
   width:100%;
   max-width:700px;
@@ -115,17 +115,11 @@ button:hover{
   font-weight:bold;
   color:var(--primary);
 }
-
-/* HIDDEN (FOR Q4 PART 2) */
-.hidden{
-  display:none !important;
-}
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
   <div>
     <a href="home.html">Home</a>
@@ -145,7 +139,7 @@ button:hover{
 
 <!-- Q1 -->
 <div class="question">
-<p>1. PROHIBITED username change?</p>
+<p>1. What is a PROHIBITED username change for "BestOfMen"?</p>
 <label><input type="checkbox" name="q1" value="A"> BestOfWomen</label>
 <label><input type="checkbox" name="q1" value="B"> Mr.Mr</label>
 <label><input type="checkbox" name="q1" value="C"> EpIsland</label>
@@ -154,7 +148,7 @@ button:hover{
 
 <!-- Q2 -->
 <div class="question">
-<p>2. Appropriate password?</p>
+<p>2. Appropriate password change?</p>
 <label><input type="radio" name="q2" value="A"> MensBest</label>
 <label><input type="radio" name="q2" value="B"> Mr.Cock</label>
 <label><input type="radio" name="q2" value="C"> TropicalParadise</label>
@@ -163,47 +157,20 @@ button:hover{
 
 <!-- Q3 -->
 <div class="question">
-<p>3. Prohibited chat message?</p>
-<label><input type="radio" name="q3" value="A"> Option A</label>
-<label><input type="radio" name="q3" value="B"> Option B</label>
-<label><input type="radio" name="q3" value="C"> Option C</label>
-<label><input type="radio" name="q3" value="D"> Option D</label>
+<p>3. Which is a prohibited chat message?</p>
+<label><input type="radio" name="q3" value="A"> I Like Big Balls and butts</label>
+<label><input type="radio" name="q3" value="B"> Curry and Rice is delicious</label>
+<label><input type="radio" name="q3" value="C"> I Like Kirbies</label>
+<label><input type="radio" name="q3" value="D"> Part Four is the Best</label>
 </div>
 
-<!-- Q4 -->
+<!-- Q4 (ONLY PART 1 NOW) -->
 <div class="question">
-<p>4. Report worthy event?</p>
+<p>4. Report worthy event? (multi-select)</p>
 <label><input type="checkbox" name="q4" value="A"> Admin abusing authority</label>
 <label><input type="checkbox" name="q4" value="B"> Minor violation</label>
 <label><input type="checkbox" name="q4" value="C"> Mod editing without cause</label>
 <label><input type="checkbox" name="q4" value="D"> Admin ignoring violation</label>
-</div>
-
-<!-- Q4 PART 2 (LOCKED) -->
-<div id="q4part2" class="question hidden">
-
-<p><b>4 Part 2: Severity Levels</b></p>
-
-<p>Admin abusing authority</p>
-<label><input type="radio" name="q4p2_1" value="High"> High</label>
-<label><input type="radio" name="q4p2_1" value="Medium"> Medium</label>
-<label><input type="radio" name="q4p2_1" value="Low"> Low</label>
-
-<p>Minor violation</p>
-<label><input type="radio" name="q4p2_2" value="High"> High</label>
-<label><input type="radio" name="q4p2_2" value="Medium"> Medium</label>
-<label><input type="radio" name="q4p2_2" value="Low"> Low</label>
-
-<p>Mod editing without cause</p>
-<label><input type="radio" name="q4p2_3" value="High"> High</label>
-<label><input type="radio" name="q4p2_3" value="Medium"> Medium</label>
-<label><input type="radio" name="q4p2_3" value="Low"> Low</label>
-
-<p>Admin ignoring violation</p>
-<label><input type="radio" name="q4p2_4" value="High"> High</label>
-<label><input type="radio" name="q4p2_4" value="Medium"> Medium</label>
-<label><input type="radio" name="q4p2_4" value="Low"> Low</label>
-
 </div>
 
 <button id="submitBtn">Submit Quiz</button>
@@ -216,11 +183,6 @@ button:hover{
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
-
-  const q4part2 = document.getElementById("q4part2");
-
-  // FORCE HIDDEN ON LOAD (critical fix)
-  q4part2.classList.add("hidden");
 
   document.getElementById("logoutBtn").onclick = () => {
     localStorage.clear();
@@ -237,48 +199,32 @@ window.addEventListener("DOMContentLoaded", () => {
   function gradeQuiz() {
 
     let score = 0;
-    let total = 8;
+    let total = 4;
     let review = [];
 
+    // Q1
     let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
       .map(e => e.value).sort().join("");
 
     if (q1 === "ABC") score++;
-    else review.push("Q1 incorrect");
+    else review.push("Q1 incorrect (A,B,C)");
 
+    // Q2
     let q2 = document.querySelector('input[name="q2"]:checked');
     if (q2 && q2.value === "C") score++;
-    else review.push("Q2 incorrect");
+    else review.push("Q2 incorrect (C)");
 
+    // Q3
     let q3 = document.querySelector('input[name="q3"]:checked');
     if (q3 && q3.value === "A") score++;
-    else review.push("Q3 incorrect");
+    else review.push("Q3 incorrect (A)");
 
-    let q4Selected = [...document.querySelectorAll('input[name="q4"]:checked')]
-      .map(e => e.value);
-
-    let q4 = q4Selected.sort().join("");
+    // Q4
+    let q4 = [...document.querySelectorAll('input[name="q4"]:checked')]
+      .map(e => e.value).sort().join("");
 
     if (q4 === "ACD") score++;
-    else review.push("Q4 incorrect");
-
-    // ONLY SHOW AFTER SUBMIT + ANSWERED
-    if (q4Selected.length > 0) {
-      q4part2.classList.remove("hidden");
-    }
-
-    const answers = {
-      q4p2_1:"High",
-      q4p2_2:"Low",
-      q4p2_3:"Medium",
-      q4p2_4:"High"
-    };
-
-    for (let k in answers){
-      let sel = document.querySelector(`input[name="${k}"]:checked`);
-      if (sel && sel.value === answers[k]) score++;
-      else review.push(k + " incorrect");
-    }
+    else review.push("Q4 incorrect (A,C,D)");
 
     let percent = Math.round((score / total) * 100);
 
