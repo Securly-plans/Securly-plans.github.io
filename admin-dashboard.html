@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{max-width:500px;margin:auto;background:white;padding:20px;border-radius:12px}
+button{width:100%;padding:12px;margin-top:10px;background:#c40000;color:white;border:none;border-radius:8px}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+<h2>Admin Panel</h2>
+
+<button onclick="location.href='quiz-builder.html'">Quiz Builder</button>
+<button onclick="location.href='quiz.html'">Take Quiz</button>
+</div>
+
+<script>
+if (localStorage.getItem("role") !== "admin") {
+  window.location.href = "quiz.html";
+}
+</script>
+
+</body>
+</html>
