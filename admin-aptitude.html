@@ -1,142 +1,300 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Auto Graded Quiz</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emerald Quiz</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script>
+(function () {
+  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+  if (!isLoggedIn) {
+    window.location.replace("index.html");
+  }
+})();
+</script>
+
+<style>
+:root{
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --panel2:#222630;
+  --border:#2e3440;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --primary:#4ade80;
+  --danger:#ef4444;
+  --info:#3b82f6;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* NAVBAR (same as your site) */
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:16px 20px;
+  background:#111827;
+  border-bottom:1px solid var(--border);
+}
+
+.navbar a,
+.navbar button{
+  color:var(--text);
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  cursor:pointer;
+  font-size:14px;
+}
+
+.navbar a:hover,
+.navbar button:hover{
+  border-color:var(--info);
+}
+
+.logout-btn{
+  background:rgba(239,68,68,0.15);
+  border-color:var(--danger);
+}
+
+.username-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  color:var(--muted);
+}
+
+/* QUIZ UI */
+main{
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+}
+
+.quiz-box{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:20px;
+  margin-top:20px;
+}
+
+.question{
+  margin-bottom:20px;
+  padding:12px;
+  background:var(--panel2);
+  border-radius:12px;
+  border:1px solid var(--border);
+}
+
+.question p{
+  margin:0 0 10px;
+  color:#93c5fd;
+  font-weight:bold;
+}
+
+label{
+  display:block;
+  margin:4px 0;
+  cursor:pointer;
+  color:var(--text);
+}
+
+button{
+  margin-top:15px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--primary);
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:hover{
+  filter:brightness(1.1);
+}
+
+#result{
+  margin-top:15px;
+  font-size:18px;
+  color:#4ade80;
+}
+
+.hidden{
+  display:none;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Rule & Moderation Quiz</h2>
+<!-- NAVBAR -->
+<div class="navbar">
+  <div>
+    <a href="home.html">Home</a>
+  </div>
 
-<!-- QUESTION 1 (MULTI ANSWER) -->
-<p>1. What is a PROHIBITED username change for user "BestOfMen"?</p>
+  <div>
+    <span id="usernameDisplay" class="username-badge"></span>
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+  </div>
+</div>
 
-<label><input type="checkbox" name="q1" value="A"> A. BestOfWomen</label><br>
-<label><input type="checkbox" name="q1" value="B"> B. Mr.Mr</label><br>
-<label><input type="checkbox" name="q1" value="C"> C. EpIsland</label><br>
-<label><input type="checkbox" name="q1" value="D"> D. Forty-FiveMen</label><br>
+<!-- QUIZ -->
+<main>
+
+<h2 style="color:#4ade80;">Moderation Quiz</h2>
+
+<div class="quiz-box">
+
+<!-- Q1 -->
+<div class="question">
+<p>1. What is a PROHIBITED username change for "BestOfMen"?</p>
+<label><input type="checkbox" name="q1" value="A"> BestOfWomen</label>
+<label><input type="checkbox" name="q1" value="B"> Mr.Mr</label>
+<label><input type="checkbox" name="q1" value="C"> EpIsland</label>
+<label><input type="checkbox" name="q1" value="D"> Forty-FiveMen</label>
+</div>
+
+<!-- Q2 -->
+<div class="question">
+<p>2. Appropriate password change?</p>
+<label><input type="radio" name="q2" value="A"> MensBest</label>
+<label><input type="radio" name="q2" value="B"> Mr.Cock</label>
+<label><input type="radio" name="q2" value="C"> TropicalParadise</label>
+<label><input type="radio" name="q2" value="D"> BestOfMen</label>
+</div>
+
+<!-- Q3 -->
+<div class="question">
+<p>3. Prohibited chat message?</p>
+<label><input type="radio" name="q3" value="A"> Option A</label>
+<label><input type="radio" name="q3" value="B"> Option B</label>
+<label><input type="radio" name="q3" value="C"> Option C</label>
+<label><input type="radio" name="q3" value="D"> Option D</label>
+</div>
+
+<!-- Q4 -->
+<div class="question">
+<p>4. Report worthy event? (multi-select)</p>
+<label><input type="checkbox" name="q4" value="A"> Admin abusing authority</label>
+<label><input type="checkbox" name="q4" value="B"> Minor violation</label>
+<label><input type="checkbox" name="q4" value="C"> Mod editing without cause</label>
+<label><input type="checkbox" name="q4" value="D"> Admin ignoring violation</label>
+</div>
+
+<!-- Q4 PART 2 -->
+<div id="q4part2" class="question hidden">
+
+<p><b>4 Part 2: Severity Levels</b></p>
+
+<p>Admin abusing authority</p>
+<label><input type="radio" name="q4p2_1" value="High"> High</label>
+<label><input type="radio" name="q4p2_1" value="Medium"> Medium</label>
+<label><input type="radio" name="q4p2_1" value="Low"> Low</label>
 
 <br>
 
-<!-- QUESTION 2 -->
-<p>2. What is an appropriate password change for user "BestOfMen"?</p>
-
-<label><input type="radio" name="q2" value="A"> A. MensBest</label><br>
-<label><input type="radio" name="q2" value="B"> B. Mr.Cock</label><br>
-<label><input type="radio" name="q2" value="C"> C. TropicalParadise</label><br>
-<label><input type="radio" name="q2" value="D"> D. BestOfMen</label><br>
+<p>Minor violation</p>
+<label><input type="radio" name="q4p2_2" value="High"> High</label>
+<label><input type="radio" name="q4p2_2" value="Medium"> Medium</label>
+<label><input type="radio" name="q4p2_2" value="Low"> Low</label>
 
 <br>
 
-<!-- QUESTION 3 -->
-<p>3. Which is a prohibited chat message?</p>
-
-<label><input type="radio" name="q3" value="A"> A. I Like Big Balls and butts</label><br>
-<label><input type="radio" name="q3" value="B"> B. Curry and Rice is delicious</label><br>
-<label><input type="radio" name="q3" value="C"> C. I Like Kirbies</label><br>
-<label><input type="radio" name="q3" value="D"> D. Part Four is the Best</label><br>
+<p>Mod editing without cause</p>
+<label><input type="radio" name="q4p2_3" value="High"> High</label>
+<label><input type="radio" name="q4p2_3" value="Medium"> Medium</label>
+<label><input type="radio" name="q4p2_3" value="Low"> Low</label>
 
 <br>
 
-<!-- QUESTION 4 PART 1 -->
-<p>4. Which is a "Report" worthy event?</p>
-
-<label><input type="radio" name="q4" value="A"> A. Admin abusing authority</label><br>
-<label><input type="radio" name="q4" value="B"> B. Minor violation of Chat Rules</label><br>
-<label><input type="radio" name="q4" value="C"> C. Mod accidentally editing chat message without cause</label><br>
-<label><input type="radio" name="q4" value="D"> D. Admin misses violation and does not take action</label><br>
-
-<br>
-
-<!-- QUESTION 4 PART 2 (HIDDEN INITIALLY) -->
-<div id="q4part2" style="display:none;">
-
-  <p>4 Part 2: What would all incidents' Severity be?</p>
-
-  <p>Admin abusing authority</p>
-  <label><input type="radio" name="q4p2_1" value="High"> High</label>
-  <label><input type="radio" name="q4p2_1" value="Medium"> Medium</label>
-  <label><input type="radio" name="q4p2_1" value="Low"> Low</label>
-
-  <br><br>
-
-  <p>Minor violation of Chat Rules</p>
-  <label><input type="radio" name="q4p2_2" value="High"> High</label>
-  <label><input type="radio" name="q4p2_2" value="Medium"> Medium</label>
-  <label><input type="radio" name="q4p2_2" value="Low"> Low</label>
-
-  <br><br>
-
-  <p>Mod accidentally editing chat message without cause</p>
-  <label><input type="radio" name="q4p2_3" value="High"> High</label>
-  <label><input type="radio" name="q4p2_3" value="Medium"> Medium</label>
-  <label><input type="radio" name="q4p2_3" value="Low"> Low</label>
-
-  <br><br>
-
-  <p>Admin misses violation and does not take action</p>
-  <label><input type="radio" name="q4p2_4" value="High"> High</label>
-  <label><input type="radio" name="q4p2_4" value="Medium"> Medium</label>
-  <label><input type="radio" name="q4p2_4" value="Low"> Low</label>
+<p>Admin ignoring violation</p>
+<label><input type="radio" name="q4p2_4" value="High"> High</label>
+<label><input type="radio" name="q4p2_4" value="Medium"> Medium</label>
+<label><input type="radio" name="q4p2_4" value="Low"> Low</label>
 
 </div>
 
-<br>
+<button onclick="gradeQuiz()">Submit</button>
 
-<button onclick="gradeQuiz()">Submit Quiz</button>
+<div id="result"></div>
 
-<h3 id="result"></h3>
+</div>
+</main>
 
 <script>
 function gradeQuiz() {
 
-    let score = 0;
-    let total = 8; // 4 main + 4 severity questions
+  let score = 0;
+  let total = 8;
 
-    // Q1 (multi answer: A B C)
-    let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
-        .map(e => e.value)
-        .sort()
-        .join("");
+  // Q1
+  let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
+    .map(e => e.value).sort().join("");
+  if (q1 === "ABC") score++;
 
-    if (q1 === "ABC") score++;
+  // Q2
+  let q2 = document.querySelector('input[name="q2"]:checked');
+  if (q2 && q2.value === "C") score++;
 
-    // Q2
-    let q2 = document.querySelector('input[name="q2"]:checked');
-    if (q2 && q2.value === "C") score++;
+  // Q3 (placeholder correct answer B)
+  let q3 = document.querySelector('input[name="q3"]:checked');
+  if (q3 && q3.value === "B") score++;
 
-    // Q3
-    let q3 = document.querySelector('input[name="q3"]:checked');
-    if (q3 && q3.value === "B") score++; // assumed correct = B (you can change later)
+  // Q4
+  let q4 = [...document.querySelectorAll('input[name="q4"]:checked')]
+    .map(e => e.value).sort().join("");
+  if (q4 === "ACD") score++;
 
-    // Q4 Part 1
-    let q4 = document.querySelector('input[name="q4"]:checked');
-    if (q4 && q4.value === "A") score++;
+  // show part 2
+  if (q4.length > 0) {
+    document.getElementById("q4part2").classList.remove("hidden");
+  }
 
-    // Show Part 2 if Q4 answered
-    if (q4) {
-        document.getElementById("q4part2").style.display = "block";
-    }
+  // Q4 part 2
+  const answers = {
+    q4p2_1:"High",
+    q4p2_2:"Low",
+    q4p2_3:"Medium",
+    q4p2_4:"High"
+  };
 
-    // Q4 Part 2 answers
-    let answers = {
-        q4p2_1: "High",
-        q4p2_2: "Low",
-        q4p2_3: "Medium",
-        q4p2_4: "High"
-    };
+  for (let k in answers){
+    let sel = document.querySelector(`input[name="${k}"]:checked`);
+    if (sel && sel.value === answers[k]) score++;
+  }
 
-    for (let key in answers) {
-        let selected = document.querySelector(`input[name="${key}"]:checked`);
-        if (selected && selected.value === answers[key]) {
-            score++;
-        }
-    }
+  let percent = Math.round((score/total)*100);
 
-    // Percentage
-    let percent = Math.round((score / total) * 100);
+  document.getElementById("result").innerHTML =
+    `Score: ${score}/${total}<br>Percentage: ${percent}%`;
+}
 
-    document.getElementById("result").innerHTML =
-        `Score: ${score} / ${total} <br> Percentage: ${percent}%`;
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location.href = "index.html";
+};
+
+const username = localStorage.getItem("username");
+if (username) {
+  document.getElementById("usernameDisplay").textContent = "👤 " + username;
 }
 </script>
 
