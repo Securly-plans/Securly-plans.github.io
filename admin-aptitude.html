@@ -223,8 +223,8 @@ window.addEventListener("DOMContentLoaded", () => {
     let q4 = [...document.querySelectorAll('input[name="q4"]:checked')]
       .map(e => e.value).sort().join("");
 
-    if (q4 === "ACD") score++;
-    else review.push("Q4 incorrect (A,C,D)");
+    if (q4 === "ABCD") score++;
+    else review.push("Q4 incorrect (A,B,C,D)");
 
     let percent = Math.round((score / total) * 100);
 
