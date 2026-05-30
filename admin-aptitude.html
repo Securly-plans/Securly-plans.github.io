@@ -16,130 +16,6 @@
 })();
 </script>
 
-<style>
-:root{
-  --bg:#0f1115;
-  --panel:#1a1d24;
-  --panel2:#222630;
-  --border:#2e3440;
-  --text:#f3f4f6;
-  --muted:#9ca3af;
-  --primary:#4ade80;
-  --danger:#ef4444;
-  --info:#3b82f6;
-}
-
-*{ box-sizing:border-box; }
-
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-
-/* NAVBAR (same as your site) */
-.navbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:10px;
-  padding:16px 20px;
-  background:#111827;
-  border-bottom:1px solid var(--border);
-}
-
-.navbar a,
-.navbar button{
-  color:var(--text);
-  text-decoration:none;
-  padding:8px 12px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:var(--panel);
-  cursor:pointer;
-  font-size:14px;
-}
-
-.navbar a:hover,
-.navbar button:hover{
-  border-color:var(--info);
-}
-
-.logout-btn{
-  background:rgba(239,68,68,0.15);
-  border-color:var(--danger);
-}
-
-.username-badge{
-  padding:6px 10px;
-  border-radius:999px;
-  background:var(--panel);
-  border:1px solid var(--border);
-  color:var(--muted);
-}
-
-/* QUIZ UI */
-main{
-  padding:20px;
-  max-width:900px;
-  margin:auto;
-}
-
-.quiz-box{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:20px;
-  margin-top:20px;
-}
-
-.question{
-  margin-bottom:20px;
-  padding:12px;
-  background:var(--panel2);
-  border-radius:12px;
-  border:1px solid var(--border);
-}
-
-.question p{
-  margin:0 0 10px;
-  color:#93c5fd;
-  font-weight:bold;
-}
-
-label{
-  display:block;
-  margin:4px 0;
-  cursor:pointer;
-  color:var(--text);
-}
-
-button{
-  margin-top:15px;
-  padding:10px 14px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:var(--primary);
-  cursor:pointer;
-  font-weight:bold;
-}
-
-button:hover{
-  filter:brightness(1.1);
-}
-
-#result{
-  margin-top:15px;
-  font-size:18px;
-  color:#4ade80;
-}
-
-.hidden{
-  display:none;
-}
-</style>
 </head>
 
 <body>
@@ -156,10 +32,9 @@ button:hover{
   </div>
 </div>
 
-<!-- QUIZ -->
 <main>
 
-<h2 style="color:#4ade80;">Moderation Quiz</h2>
+<h2>Moderation Quiz</h2>
 
 <div class="quiz-box">
 
@@ -181,13 +56,13 @@ button:hover{
 <label><input type="radio" name="q2" value="D"> BestOfMen</label>
 </div>
 
-<!-- Q3 -->
+<!-- Q3 FIXED -->
 <div class="question">
-<p>3. Prohibited chat message?</p>
-<label><input type="radio" name="q3" value="A"> Option A</label>
-<label><input type="radio" name="q3" value="B"> Option B</label>
-<label><input type="radio" name="q3" value="C"> Option C</label>
-<label><input type="radio" name="q3" value="D"> Option D</label>
+<p>3. Which is a prohibited chat message?</p>
+<label><input type="radio" name="q3" value="A"> I Like Big Balls and butts</label>
+<label><input type="radio" name="q3" value="B"> Curry and Rice is delicious</label>
+<label><input type="radio" name="q3" value="C"> I Like Kirbies</label>
+<label><input type="radio" name="q3" value="D"> Part Four is the Best</label>
 </div>
 
 <!-- Q4 -->
@@ -232,7 +107,7 @@ button:hover{
 
 </div>
 
-<button onclick="gradeQuiz()">Submit</button>
+<button id="submitBtn">Submit Quiz</button>
 
 <div id="result"></div>
 
@@ -240,62 +115,110 @@ button:hover{
 </main>
 
 <script>
-function gradeQuiz() {
+window.addEventListener("DOMContentLoaded", () => {
 
-  let score = 0;
-  let total = 8;
+  const logoutBtn = document.getElementById("logoutBtn");
+  const usernameDisplay = document.getElementById("usernameDisplay");
 
-  // Q1
-  let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
-    .map(e => e.value).sort().join("");
-  if (q1 === "ABC") score++;
-
-  // Q2
-  let q2 = document.querySelector('input[name="q2"]:checked');
-  if (q2 && q2.value === "C") score++;
-
-  // Q3 (placeholder correct answer B)
-  let q3 = document.querySelector('input[name="q3"]:checked');
-  if (q3 && q3.value === "B") score++;
-
-  // Q4
-  let q4 = [...document.querySelectorAll('input[name="q4"]:checked')]
-    .map(e => e.value).sort().join("");
-  if (q4 === "ACD") score++;
-
-  // show part 2
-  if (q4.length > 0) {
-    document.getElementById("q4part2").classList.remove("hidden");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
   }
 
-  // Q4 part 2
-  const answers = {
-    q4p2_1:"High",
-    q4p2_2:"Low",
-    q4p2_3:"Medium",
-    q4p2_4:"High"
-  };
-
-  for (let k in answers){
-    let sel = document.querySelector(`input[name="${k}"]:checked`);
-    if (sel && sel.value === answers[k]) score++;
+  const username = localStorage.getItem("username");
+  if (username && usernameDisplay) {
+    usernameDisplay.textContent = "👤 " + username;
   }
 
-  let percent = Math.round((score/total)*100);
+  document.getElementById("submitBtn").addEventListener("click", gradeQuiz);
 
-  document.getElementById("result").innerHTML =
-    `Score: ${score}/${total}<br>Percentage: ${percent}%`;
-}
+  function gradeQuiz() {
 
-document.getElementById("logoutBtn").onclick = () => {
-  localStorage.clear();
-  window.location.href = "index.html";
-};
+    let score = 0;
+    let total = 8;
+    let review = [];
 
-const username = localStorage.getItem("username");
-if (username) {
-  document.getElementById("usernameDisplay").textContent = "👤 " + username;
-}
+    // Q1
+    let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
+      .map(e => e.value).sort().join("");
+    if (q1 === "ABC") {
+      score++;
+    } else {
+      review.push("Q1 incorrect (Correct: A, B, C)");
+    }
+
+    // Q2
+    let q2 = document.querySelector('input[name="q2"]:checked');
+    if (q2 && q2.value === "C") {
+      score++;
+    } else {
+      review.push("Q2 incorrect (Correct: C - TropicalParadise)");
+    }
+
+    // Q3
+    let q3 = document.querySelector('input[name="q3"]:checked');
+    if (q3 && q3.value === "A") {
+      score++;
+    } else {
+      review.push("Q3 incorrect (Correct: A)");
+    }
+
+    // Q4
+    let q4Selected = [...document.querySelectorAll('input[name="q4"]:checked')]
+      .map(e => e.value);
+
+    let q4 = q4Selected.sort().join("");
+
+    if (q4 === "ACD") {
+      score++;
+    } else {
+      review.push("Q4 incorrect (Correct: A, C, D)");
+    }
+
+    // show part 2
+    if (q4Selected.length > 0) {
+      document.getElementById("q4part2").classList.remove("hidden");
+    }
+
+    // Q4 Part 2
+    const answers = {
+      q4p2_1:"High",
+      q4p2_2:"Low",
+      q4p2_3:"Medium",
+      q4p2_4:"High"
+    };
+
+    for (let k in answers){
+      let sel = document.querySelector(`input[name="${k}"]:checked`);
+      if (sel && sel.value === answers[k]) {
+        score++;
+      } else {
+        review.push(`${k} incorrect`);
+      }
+    }
+
+    let percent = Math.round((score / total) * 100);
+
+    let html = `
+      Score: ${score}/${total}<br>
+      Percentage: ${percent}%<br><br>
+    `;
+
+    if (review.length > 0) {
+      html += "<b>Review:</b><br>";
+      review.forEach(r => {
+        html += "❌ " + r + "<br>";
+      });
+    } else {
+      html += "🎉 Perfect score!";
+    }
+
+    document.getElementById("result").innerHTML = html;
+  }
+
+});
 </script>
 
 </body>
