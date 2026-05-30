@@ -7,22 +7,120 @@
 
 <link rel="stylesheet" href="style.css">
 
-<script>
-(function () {
-  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-  if (!isLoggedIn) {
-    window.location.replace("index.html");
-  }
-})();
-</script>
-
 <style>
-/* SAFETY OVERRIDE (prevents Q4 P2 showing early if CSS fails) */
+:root{
+  --primary:#c40000;
+  --primary-hover:#a30000;
+  --bg:#f4f4f4;
+  --card:#ffffff;
+  --text:#222;
+  --muted:#666;
+}
+
+/* PAGE */
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* NAVBAR */
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 20px;
+  background:#fff;
+  border-bottom:1px solid #ddd;
+}
+
+.navbar a,
+.navbar button{
+  text-decoration:none;
+  color:var(--text);
+  padding:8px 12px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  background:#fff;
+  cursor:pointer;
+}
+
+.username-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid #ddd;
+  color:var(--muted);
+}
+
+/* CENTER QUIZ */
+main{
+  display:flex;
+  justify-content:center;
+  padding:30px 15px;
+}
+
+/* QUIZ CARD */
+.quiz-box{
+  width:100%;
+  max-width:700px;
+  background:var(--card);
+  padding:25px;
+  border-radius:14px;
+  box-shadow:0 2px 15px rgba(0,0,0,0.08);
+  border-top:5px solid var(--primary);
+}
+
+/* QUESTIONS */
+.question{
+  margin-bottom:18px;
+  padding:14px;
+  border:1px solid #eee;
+  border-radius:10px;
+  background:#fafafa;
+}
+
+.question p{
+  font-weight:bold;
+  color:var(--primary);
+  margin-bottom:10px;
+}
+
+/* INPUTS */
+label{
+  display:block;
+  margin:5px 0;
+  cursor:pointer;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{
+  background:var(--primary-hover);
+}
+
+/* RESULT */
+#result{
+  margin-top:15px;
+  font-weight:bold;
+  color:var(--primary);
+}
+
+/* HIDDEN (FOR Q4 PART 2) */
 .hidden{
   display:none !important;
 }
 </style>
-
 </head>
 
 <body>
@@ -35,19 +133,19 @@
 
   <div>
     <span id="usernameDisplay" class="username-badge"></span>
-    <button id="logoutBtn" class="logout-btn">Logout</button>
+    <button id="logoutBtn">Logout</button>
   </div>
 </div>
 
 <main>
 
-<h2>Moderation Quiz</h2>
-
 <div class="quiz-box">
+
+<h2>Moderation Quiz</h2>
 
 <!-- Q1 -->
 <div class="question">
-<p>1. What is a PROHIBITED username change for "BestOfMen"?</p>
+<p>1. PROHIBITED username change?</p>
 <label><input type="checkbox" name="q1" value="A"> BestOfWomen</label>
 <label><input type="checkbox" name="q1" value="B"> Mr.Mr</label>
 <label><input type="checkbox" name="q1" value="C"> EpIsland</label>
@@ -56,7 +154,7 @@
 
 <!-- Q2 -->
 <div class="question">
-<p>2. Appropriate password change?</p>
+<p>2. Appropriate password?</p>
 <label><input type="radio" name="q2" value="A"> MensBest</label>
 <label><input type="radio" name="q2" value="B"> Mr.Cock</label>
 <label><input type="radio" name="q2" value="C"> TropicalParadise</label>
@@ -65,24 +163,24 @@
 
 <!-- Q3 -->
 <div class="question">
-<p>3. Which is a prohibited chat message?</p>
-<label><input type="radio" name="q3" value="A"> I Like Big Balls and butts</label>
-<label><input type="radio" name="q3" value="B"> Curry and Rice is delicious</label>
-<label><input type="radio" name="q3" value="C"> I Like Kirbies</label>
-<label><input type="radio" name="q3" value="D"> Part Four is the Best</label>
+<p>3. Prohibited chat message?</p>
+<label><input type="radio" name="q3" value="A"> Option A</label>
+<label><input type="radio" name="q3" value="B"> Option B</label>
+<label><input type="radio" name="q3" value="C"> Option C</label>
+<label><input type="radio" name="q3" value="D"> Option D</label>
 </div>
 
 <!-- Q4 -->
 <div class="question">
-<p>4. Report worthy event? (multi-select)</p>
+<p>4. Report worthy event?</p>
 <label><input type="checkbox" name="q4" value="A"> Admin abusing authority</label>
 <label><input type="checkbox" name="q4" value="B"> Minor violation</label>
 <label><input type="checkbox" name="q4" value="C"> Mod editing without cause</label>
 <label><input type="checkbox" name="q4" value="D"> Admin ignoring violation</label>
 </div>
 
-<!-- Q4 PART 2 (FORCED HIDDEN ON LOAD) -->
-<div id="q4part2" class="question hidden" style="display:none;">
+<!-- Q4 PART 2 (LOCKED) -->
+<div id="q4part2" class="question hidden">
 
 <p><b>4 Part 2: Severity Levels</b></p>
 
@@ -91,21 +189,15 @@
 <label><input type="radio" name="q4p2_1" value="Medium"> Medium</label>
 <label><input type="radio" name="q4p2_1" value="Low"> Low</label>
 
-<br>
-
 <p>Minor violation</p>
 <label><input type="radio" name="q4p2_2" value="High"> High</label>
 <label><input type="radio" name="q4p2_2" value="Medium"> Medium</label>
 <label><input type="radio" name="q4p2_2" value="Low"> Low</label>
 
-<br>
-
 <p>Mod editing without cause</p>
 <label><input type="radio" name="q4p2_3" value="High"> High</label>
 <label><input type="radio" name="q4p2_3" value="Medium"> Medium</label>
 <label><input type="radio" name="q4p2_3" value="Low"> Low</label>
-
-<br>
 
 <p>Admin ignoring violation</p>
 <label><input type="radio" name="q4p2_4" value="High"> High</label>
@@ -119,29 +211,26 @@
 <div id="result"></div>
 
 </div>
+
 </main>
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
 
-  // logout
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.clear();
-      window.location.href = "index.html";
-    });
-  }
+  const q4part2 = document.getElementById("q4part2");
 
-  // username
+  // FORCE HIDDEN ON LOAD (critical fix)
+  q4part2.classList.add("hidden");
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
+    window.location.href = "index.html";
+  };
+
   const username = localStorage.getItem("username");
   if (username) {
     document.getElementById("usernameDisplay").textContent = "👤 " + username;
   }
-
-  // ensure Q4 P2 is ALWAYS hidden on load
-  const q4part2 = document.getElementById("q4part2");
-  q4part2.style.display = "none";
 
   document.getElementById("submitBtn").addEventListener("click", gradeQuiz);
 
@@ -151,40 +240,33 @@ window.addEventListener("DOMContentLoaded", () => {
     let total = 8;
     let review = [];
 
-    // Q1
     let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
       .map(e => e.value).sort().join("");
 
     if (q1 === "ABC") score++;
-    else review.push("Q1 incorrect (A,B,C)");
+    else review.push("Q1 incorrect");
 
-    // Q2
     let q2 = document.querySelector('input[name="q2"]:checked');
     if (q2 && q2.value === "C") score++;
-    else review.push("Q2 incorrect (C)");
+    else review.push("Q2 incorrect");
 
-    // Q3
     let q3 = document.querySelector('input[name="q3"]:checked');
     if (q3 && q3.value === "A") score++;
-    else review.push("Q3 incorrect (A)");
+    else review.push("Q3 incorrect");
 
-    // Q4
     let q4Selected = [...document.querySelectorAll('input[name="q4"]:checked')]
       .map(e => e.value);
 
     let q4 = q4Selected.sort().join("");
 
     if (q4 === "ACD") score++;
-    else review.push("Q4 incorrect (A,C,D)");
+    else review.push("Q4 incorrect");
 
-    // ONLY SHOW Q4 PART 2 AFTER Q4 IS ANSWERED
+    // ONLY SHOW AFTER SUBMIT + ANSWERED
     if (q4Selected.length > 0) {
-      q4part2.style.display = "block";
-    } else {
-      q4part2.style.display = "none";
+      q4part2.classList.remove("hidden");
     }
 
-    // Q4 Part 2 scoring
     const answers = {
       q4p2_1:"High",
       q4p2_2:"Low",
@@ -195,7 +277,7 @@ window.addEventListener("DOMContentLoaded", () => {
     for (let k in answers){
       let sel = document.querySelector(`input[name="${k}"]:checked`);
       if (sel && sel.value === answers[k]) score++;
-      else review.push(`${k} incorrect`);
+      else review.push(k + " incorrect");
     }
 
     let percent = Math.round((score / total) * 100);
