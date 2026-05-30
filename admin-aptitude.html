@@ -16,6 +16,13 @@
 })();
 </script>
 
+<style>
+/* SAFETY OVERRIDE (prevents Q4 P2 showing early if CSS fails) */
+.hidden{
+  display:none !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -74,8 +81,8 @@
 <label><input type="checkbox" name="q4" value="D"> Admin ignoring violation</label>
 </div>
 
-<!-- Q4 PART 2 (STAYS HIDDEN UNTIL AFTER SUBMIT) -->
-<div id="q4part2" class="question hidden">
+<!-- Q4 PART 2 (FORCED HIDDEN ON LOAD) -->
+<div id="q4part2" class="question hidden" style="display:none;">
 
 <p><b>4 Part 2: Severity Levels</b></p>
 
@@ -118,15 +125,23 @@
 window.addEventListener("DOMContentLoaded", () => {
 
   // logout
-  document.getElementById("logoutBtn").onclick = () => {
-    localStorage.clear();
-    window.location.href = "index.html";
-  };
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
+  }
 
+  // username
   const username = localStorage.getItem("username");
   if (username) {
     document.getElementById("usernameDisplay").textContent = "👤 " + username;
   }
+
+  // ensure Q4 P2 is ALWAYS hidden on load
+  const q4part2 = document.getElementById("q4part2");
+  q4part2.style.display = "none";
 
   document.getElementById("submitBtn").addEventListener("click", gradeQuiz);
 
@@ -162,9 +177,11 @@ window.addEventListener("DOMContentLoaded", () => {
     if (q4 === "ACD") score++;
     else review.push("Q4 incorrect (A,C,D)");
 
-    // 🔥 ONLY SHOW Q4 PART 2 AFTER Q4 IS ANSWERED + SUBMIT
+    // ONLY SHOW Q4 PART 2 AFTER Q4 IS ANSWERED
     if (q4Selected.length > 0) {
-      document.getElementById("q4part2").classList.remove("hidden");
+      q4part2.style.display = "block";
+    } else {
+      q4part2.style.display = "none";
     }
 
     // Q4 Part 2 scoring
