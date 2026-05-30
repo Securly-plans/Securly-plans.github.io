@@ -56,7 +56,7 @@
 <label><input type="radio" name="q2" value="D"> BestOfMen</label>
 </div>
 
-<!-- Q3 FIXED -->
+<!-- Q3 -->
 <div class="question">
 <p>3. Which is a prohibited chat message?</p>
 <label><input type="radio" name="q3" value="A"> I Like Big Balls and butts</label>
@@ -74,7 +74,7 @@
 <label><input type="checkbox" name="q4" value="D"> Admin ignoring violation</label>
 </div>
 
-<!-- Q4 PART 2 -->
+<!-- Q4 PART 2 (STAYS HIDDEN UNTIL AFTER SUBMIT) -->
 <div id="q4part2" class="question hidden">
 
 <p><b>4 Part 2: Severity Levels</b></p>
@@ -117,19 +117,15 @@
 <script>
 window.addEventListener("DOMContentLoaded", () => {
 
-  const logoutBtn = document.getElementById("logoutBtn");
-  const usernameDisplay = document.getElementById("usernameDisplay");
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.clear();
-      window.location.href = "index.html";
-    });
-  }
+  // logout
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
+    window.location.href = "index.html";
+  };
 
   const username = localStorage.getItem("username");
-  if (username && usernameDisplay) {
-    usernameDisplay.textContent = "👤 " + username;
+  if (username) {
+    document.getElementById("usernameDisplay").textContent = "👤 " + username;
   }
 
   document.getElementById("submitBtn").addEventListener("click", gradeQuiz);
@@ -143,27 +139,19 @@ window.addEventListener("DOMContentLoaded", () => {
     // Q1
     let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
       .map(e => e.value).sort().join("");
-    if (q1 === "ABC") {
-      score++;
-    } else {
-      review.push("Q1 incorrect (Correct: A, B, C)");
-    }
+
+    if (q1 === "ABC") score++;
+    else review.push("Q1 incorrect (A,B,C)");
 
     // Q2
     let q2 = document.querySelector('input[name="q2"]:checked');
-    if (q2 && q2.value === "C") {
-      score++;
-    } else {
-      review.push("Q2 incorrect (Correct: C - TropicalParadise)");
-    }
+    if (q2 && q2.value === "C") score++;
+    else review.push("Q2 incorrect (C)");
 
     // Q3
     let q3 = document.querySelector('input[name="q3"]:checked');
-    if (q3 && q3.value === "A") {
-      score++;
-    } else {
-      review.push("Q3 incorrect (Correct: A)");
-    }
+    if (q3 && q3.value === "A") score++;
+    else review.push("Q3 incorrect (A)");
 
     // Q4
     let q4Selected = [...document.querySelectorAll('input[name="q4"]:checked')]
@@ -171,18 +159,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
     let q4 = q4Selected.sort().join("");
 
-    if (q4 === "ACD") {
-      score++;
-    } else {
-      review.push("Q4 incorrect (Correct: A, C, D)");
-    }
+    if (q4 === "ACD") score++;
+    else review.push("Q4 incorrect (A,C,D)");
 
-    // show part 2
+    // 🔥 ONLY SHOW Q4 PART 2 AFTER Q4 IS ANSWERED + SUBMIT
     if (q4Selected.length > 0) {
       document.getElementById("q4part2").classList.remove("hidden");
     }
 
-    // Q4 Part 2
+    // Q4 Part 2 scoring
     const answers = {
       q4p2_1:"High",
       q4p2_2:"Low",
@@ -192,11 +177,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     for (let k in answers){
       let sel = document.querySelector(`input[name="${k}"]:checked`);
-      if (sel && sel.value === answers[k]) {
-        score++;
-      } else {
-        review.push(`${k} incorrect`);
-      }
+      if (sel && sel.value === answers[k]) score++;
+      else review.push(`${k} incorrect`);
     }
 
     let percent = Math.round((score / total) * 100);
@@ -208,9 +190,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (review.length > 0) {
       html += "<b>Review:</b><br>";
-      review.forEach(r => {
-        html += "❌ " + r + "<br>";
-      });
+      review.forEach(r => html += "❌ " + r + "<br>");
     } else {
       html += "🎉 Perfect score!";
     }
