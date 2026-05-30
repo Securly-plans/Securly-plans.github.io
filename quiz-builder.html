@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quiz Builder</title>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{max-width:700px;margin:auto;background:white;padding:20px;border-radius:12px}
+input,select{width:100%;padding:10px;margin:6px 0}
+button{width:100%;padding:12px;background:#c40000;color:white;border:none;border-radius:8px}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Create Quiz</h2>
+
+<input id="title" placeholder="Quiz Title">
+
+<hr>
+
+<h3>Question</h3>
+
+<input id="qText" placeholder="Question">
+
+<input id="A" placeholder="Option A">
+<input id="B" placeholder="Option B">
+<input id="C" placeholder="Option C">
+<input id="D" placeholder="Option D">
+
+<select id="type">
+  <option value="single">Single Answer</option>
+  <option value="multi">Multi Answer</option>
+</select>
+
+<input id="correct" placeholder="Correct (A or A,B,C)">
+
+<button onclick="addQ()">Add Question</button>
+<button onclick="publish()">Publish Quiz</button>
+
+</div>
+
+<script type="module">
+import { db } from "./js/firebase.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let quiz = [];
+
+window.addQ = () => {
+  quiz.push({
+    text: qText.value,
+    options: {
+      A:A.value,
+      B:B.value,
+      C:C.value,
+      D:D.value
+    },
+    type: type.value,
+    correct: correct.value.split(",").map(x=>x.trim())
+  });
+
+  alert("Question added");
+};
+
+window.publish = async () => {
+  await addDoc(collection(db,"quizzes"), {
+    title: title.value,
+    questions: quiz
+  });
+
+  alert("Quiz published!");
+  quiz = [];
+};
+</script>
+
+</body>
+</html>
