@@ -30,9 +30,7 @@
   --info:#3b82f6;
 }
 
-*{
-  box-sizing:border-box;
-}
+*{ box-sizing:border-box; }
 
 body{
   margin:0;
@@ -53,8 +51,7 @@ body{
   border-bottom:1px solid var(--border);
 }
 
-.nav-left,
-.nav-right{
+.nav-left,.nav-right{
   display:flex;
   gap:10px;
   align-items:center;
@@ -78,7 +75,6 @@ body{
   border-color:var(--info);
 }
 
-/* BADGES */
 .admin-link{
   background:rgba(59,130,246,0.15);
   color:#60a5fa !important;
@@ -166,13 +162,8 @@ main{
       Save Data
     </button>
 
-    <a href="tickets.html" id="ticketslink" style="display:none;">
-      Support
-    </a>
-
-    <a href="profile.html" id="profileLink" style="display:none;">
-      Profile
-    </a>
+    <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
+    <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
     <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">
       Resp. Support
@@ -200,11 +191,7 @@ main{
 <header>
   <h1>Home</h1>
 
-  <input
-    type="text"
-    id="searchBar"
-    placeholder="Search games..."
-  >
+  <input type="text" id="searchBar" placeholder="Search games...">
 </header>
 
 <h2>Games</h2>
@@ -222,14 +209,8 @@ main{
 
 <p style="color:#a78bfa; text-align:center;">
   Links:
-
-  <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
-    Securly-plans.github.io
-  </a>
-
-  <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
-    Test Site
-  </a>
+  <a href="https://securly-plans.github.io/" style="color:#60a5fa;">Securly-plans.github.io</a>
+  <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">Test Site</a>
 </p>
 
 <p style="color:#facc15; text-align:center;">
@@ -240,30 +221,36 @@ main{
   Emerald Games - Beta 1.0
 </p>
 
-<!-- ================= STORAGE SAVE BUTTON ================= -->
+<!-- ================= SAVE BUTTON ================= -->
 <script type="module">
-import { saveLocalStorage } from "./js/save-storage.js";
+import { saveAllData } from "./js/save-data.js";
 
-document
-  .getElementById("saveStorageBtn")
-  .addEventListener("click", async ()=>{
-
-    try{
-
-      await saveLocalStorage();
-
-      alert("Data saved successfully.");
-
-    }catch(err){
-
-      console.error(err);
-
-      alert("Failed to save data.");
-    }
-  });
+document.getElementById("saveStorageBtn").addEventListener("click", async () => {
+  try {
+    await saveAllData();
+    alert("Data saved successfully.");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save data.");
+  }
+});
 </script>
 
-<!-- ================= USER ROLE SYNC ================= -->
+<!-- ================= LOAD DATA ON OPEN ================= -->
+<script type="module">
+import { loadAllData } from "./js/save-data.js";
+
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await loadAllData();
+    console.log("Home data restored.");
+  } catch (err) {
+    console.error("Load failed:", err);
+  }
+});
+</script>
+
+<!-- ================= ROLE + CHAT NOTIFICATIONS ================= -->
 <script type="module">
 import {
   doc,
@@ -277,30 +264,19 @@ import { db } from "./js/firebase.js";
 const username = localStorage.getItem("username");
 
 if(username){
-
   try{
+    const snap = await getDoc(doc(db,"users",username));
 
-    const usersSnap = await getDoc(doc(db,"users",username));
+    if(snap.exists()){
+      const data = snap.data();
 
-    if(usersSnap.exists()){
-
-      const userData = usersSnap.data();
-
-      if(userData.role){
-        localStorage.setItem("role", userData.role);
-      }
-
-      if(userData.username){
-        localStorage.setItem("username", userData.username);
-      }
+      if(data.role) localStorage.setItem("role", data.role);
+      if(data.username) localStorage.setItem("username", data.username);
     }
-
   }catch(err){
-    console.error("Failed to sync role:", err);
+    console.error(err);
   }
 }
-
-/* ================= CHAT NOTIFICATIONS ================= */
 
 const me = localStorage.getItem("username");
 let notified = new Set();
@@ -309,127 +285,80 @@ if("Notification" in window && Notification.permission !== "granted"){
   Notification.requestPermission();
 }
 
-onSnapshot(collection(db, "chats"), (snapshot)=>{
+onSnapshot(collection(db,"chats"), (snapshot)=>{
 
   snapshot.docChanges().forEach(change=>{
 
     if(change.type !== "modified") return;
 
     const data = change.doc.data();
-    const chatId = change.doc.id;
-
     if(data.type !== "private") return;
-
     if(!data.participants?.includes(me)) return;
 
     const messages = data.messages || [];
-
     const last = messages[messages.length - 1];
 
     if(!last || last.from === me) return;
 
-    const key = chatId + "_" + last.time;
-
+    const key = change.doc.id + "_" + last.time;
     if(notified.has(key)) return;
 
     notified.add(key);
 
-    showNotification(last.from, last.text);
+    if(Notification.permission === "granted"){
+      new Notification("💬 New message from " + last.from, {
+        body: last.text?.slice(0,60),
+        icon:"https://cdn-icons-png.flaticon.com/512/733/733585.png"
+      });
+    }
   });
 });
-
-function showNotification(sender, text){
-
-  if(Notification.permission !== "granted") return;
-
-  new Notification("💬 New message from " + sender, {
-    body:text.length > 60
-      ? text.slice(0, 60) + "..."
-      : text,
-
-    icon:"https://cdn-icons-png.flaticon.com/512/733/733585.png"
-  });
-}
 </script>
 
+<!-- ================= UI LOGIC ================= -->
 <script>
-/* ================= LOGOUT ================= */
-
-document
-  .getElementById("logoutBtn")
-  .addEventListener("click", ()=>{
-
-    localStorage.clear();
-
-    window.location.replace("index.html");
-  });
-
-/* ================= USER INFO ================= */
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  localStorage.clear();
+  window.location.replace("index.html");
+});
 
 const role = localStorage.getItem("role");
 const username = localStorage.getItem("username");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-const usernameDisplay =
-  document.getElementById("usernameDisplay");
+const display = document.getElementById("usernameDisplay");
 
 if(username && isLoggedIn){
-
-  usernameDisplay.textContent =
-    (role === "admin" ? "🛡 " : "👤 ") + username;
+  display.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
 }
 
-/* ================= NAV VISIBILITY ================= */
-
 if(isLoggedIn){
-
-  document.getElementById("ticketslink").style.display = "inline-block";
-
-  document.getElementById("profileLink").style.display = "inline-block";
-
-  document.getElementById("viewUsersLink").style.display = "inline-block";
+  document.getElementById("ticketslink").style.display="inline-block";
+  document.getElementById("profileLink").style.display="inline-block";
+  document.getElementById("viewUsersLink").style.display="inline-block";
 }
 
 if(role === "admin" || role === "mod"){
-
-  document.getElementById("adminticketslink").style.display = "inline-block";
-
-  document.getElementById("modChatLink").style.display = "inline-block";
+  document.getElementById("adminticketslink").style.display="inline-block";
+  document.getElementById("modChatLink").style.display="inline-block";
 }
 
 if(role === "admin"){
-
-  document.getElementById("adminLink").style.display = "inline-block";
+  document.getElementById("adminLink").style.display="inline-block";
 }
-
-/* ================= SEARCH LOGIC ================= */
 
 const searchBar = document.getElementById("searchBar");
 const gameGrid = document.getElementById("gameGrid");
 const videoGrid = document.getElementById("videoGrid");
 
-function filterItems(){
+searchBar.addEventListener("input", ()=>{
+  const q = searchBar.value.toLowerCase();
 
-  const query = searchBar.value.toLowerCase().trim();
-
-  const allItems = [
-    ...gameGrid.children,
-    ...videoGrid.children
-  ];
-
-  allItems.forEach(item=>{
-
-    const text = item.textContent.toLowerCase();
-
-    if(!query || text.includes(query)){
-      item.style.display = "";
-    }else{
-      item.style.display = "none";
-    }
+  [...gameGrid.children, ...videoGrid.children].forEach(item=>{
+    item.style.display =
+      item.textContent.toLowerCase().includes(q) ? "" : "none";
   });
-}
-
-searchBar.addEventListener("input", filterItems);
+});
 </script>
 
 <script src="script.js"></script>
