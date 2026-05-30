@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Auto Graded Quiz</title>
+</head>
+<body>
+
+<h2>Rule & Moderation Quiz</h2>
+
+<!-- QUESTION 1 (MULTI ANSWER) -->
+<p>1. What is a PROHIBITED username change for user "BestOfMen"?</p>
+
+<label><input type="checkbox" name="q1" value="A"> A. BestOfWomen</label><br>
+<label><input type="checkbox" name="q1" value="B"> B. Mr.Mr</label><br>
+<label><input type="checkbox" name="q1" value="C"> C. EpIsland</label><br>
+<label><input type="checkbox" name="q1" value="D"> D. Forty-FiveMen</label><br>
+
+<br>
+
+<!-- QUESTION 2 -->
+<p>2. What is an appropriate password change for user "BestOfMen"?</p>
+
+<label><input type="radio" name="q2" value="A"> A. MensBest</label><br>
+<label><input type="radio" name="q2" value="B"> B. Mr.Cock</label><br>
+<label><input type="radio" name="q2" value="C"> C. TropicalParadise</label><br>
+<label><input type="radio" name="q2" value="D"> D. BestOfMen</label><br>
+
+<br>
+
+<!-- QUESTION 3 -->
+<p>3. Which is a prohibited chat message?</p>
+
+<label><input type="radio" name="q3" value="A"> A. I Like Big Balls and butts</label><br>
+<label><input type="radio" name="q3" value="B"> B. Curry and Rice is delicious</label><br>
+<label><input type="radio" name="q3" value="C"> C. I Like Kirbies</label><br>
+<label><input type="radio" name="q3" value="D"> D. Part Four is the Best</label><br>
+
+<br>
+
+<!-- QUESTION 4 PART 1 -->
+<p>4. Which is a "Report" worthy event?</p>
+
+<label><input type="radio" name="q4" value="A"> A. Admin abusing authority</label><br>
+<label><input type="radio" name="q4" value="B"> B. Minor violation of Chat Rules</label><br>
+<label><input type="radio" name="q4" value="C"> C. Mod accidentally editing chat message without cause</label><br>
+<label><input type="radio" name="q4" value="D"> D. Admin misses violation and does not take action</label><br>
+
+<br>
+
+<!-- QUESTION 4 PART 2 (HIDDEN INITIALLY) -->
+<div id="q4part2" style="display:none;">
+
+  <p>4 Part 2: What would all incidents' Severity be?</p>
+
+  <p>Admin abusing authority</p>
+  <label><input type="radio" name="q4p2_1" value="High"> High</label>
+  <label><input type="radio" name="q4p2_1" value="Medium"> Medium</label>
+  <label><input type="radio" name="q4p2_1" value="Low"> Low</label>
+
+  <br><br>
+
+  <p>Minor violation of Chat Rules</p>
+  <label><input type="radio" name="q4p2_2" value="High"> High</label>
+  <label><input type="radio" name="q4p2_2" value="Medium"> Medium</label>
+  <label><input type="radio" name="q4p2_2" value="Low"> Low</label>
+
+  <br><br>
+
+  <p>Mod accidentally editing chat message without cause</p>
+  <label><input type="radio" name="q4p2_3" value="High"> High</label>
+  <label><input type="radio" name="q4p2_3" value="Medium"> Medium</label>
+  <label><input type="radio" name="q4p2_3" value="Low"> Low</label>
+
+  <br><br>
+
+  <p>Admin misses violation and does not take action</p>
+  <label><input type="radio" name="q4p2_4" value="High"> High</label>
+  <label><input type="radio" name="q4p2_4" value="Medium"> Medium</label>
+  <label><input type="radio" name="q4p2_4" value="Low"> Low</label>
+
+</div>
+
+<br>
+
+<button onclick="gradeQuiz()">Submit Quiz</button>
+
+<h3 id="result"></h3>
+
+<script>
+function gradeQuiz() {
+
+    let score = 0;
+    let total = 8; // 4 main + 4 severity questions
+
+    // Q1 (multi answer: A B C)
+    let q1 = [...document.querySelectorAll('input[name="q1"]:checked')]
+        .map(e => e.value)
+        .sort()
+        .join("");
+
+    if (q1 === "ABC") score++;
+
+    // Q2
+    let q2 = document.querySelector('input[name="q2"]:checked');
+    if (q2 && q2.value === "C") score++;
+
+    // Q3
+    let q3 = document.querySelector('input[name="q3"]:checked');
+    if (q3 && q3.value === "B") score++; // assumed correct = B (you can change later)
+
+    // Q4 Part 1
+    let q4 = document.querySelector('input[name="q4"]:checked');
+    if (q4 && q4.value === "A") score++;
+
+    // Show Part 2 if Q4 answered
+    if (q4) {
+        document.getElementById("q4part2").style.display = "block";
+    }
+
+    // Q4 Part 2 answers
+    let answers = {
+        q4p2_1: "High",
+        q4p2_2: "Low",
+        q4p2_3: "Medium",
+        q4p2_4: "High"
+    };
+
+    for (let key in answers) {
+        let selected = document.querySelector(`input[name="${key}"]:checked`);
+        if (selected && selected.value === answers[key]) {
+            score++;
+        }
+    }
+
+    // Percentage
+    let percent = Math.round((score / total) * 100);
+
+    document.getElementById("result").innerHTML =
+        `Score: ${score} / ${total} <br> Percentage: ${percent}%`;
+}
+</script>
+
+</body>
+</html>
