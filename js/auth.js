@@ -6,24 +6,34 @@ import {
   getDocs,
   updateDoc,
   doc,
-  getDoc   // ✅ ADDED
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
 
-/* ---------------- SYSTEM LOGIN LOCK ---------------- */
+/* ================= SYSTEM LOCK CHECK ================= */
 
-async function isLoginDisabled() {
+async function getSystemConfig() {
   try {
     const snap = await getDoc(doc(db, "system", "config"));
 
-    if (!snap.exists()) return false;
+    if (!snap.exists()) {
+      return {
+        loginDisabled: false,
+        globalLock: false
+      };
+    }
 
-    return snap.data().loginDisabled === true;
+    return snap.data();
 
   } catch (err) {
-    console.error("Login lock check failed:", err);
-    return false; // fail open
+    console.error("System config fetch failed:", err);
+
+    // fail open (safer for uptime)
+    return {
+      loginDisabled: false,
+      globalLock: false
+    };
   }
 }
 
@@ -41,6 +51,18 @@ async function signup(username, password) {
   if (!username || !password) return alert("Fill in both fields");
 
   try {
+    const config = await getSystemConfig();
+
+    // 🚫 GLOBAL LOCK BLOCK (highest priority)
+    if (config.globalLock === true) {
+      return alert("System is currently locked by administrators");
+    }
+
+    // 🚫 LOGIN DISABLED BLOCK
+    if (config.loginDisabled === true) {
+      return alert("Login is currently disabled");
+    }
+
     const passwordHash = await hashPassword(password);
 
     await addDoc(collection(db, "users"), {
@@ -70,8 +92,15 @@ async function login(username, password) {
 
   try {
 
-    // 🔒 GLOBAL LOGIN BLOCK (NEW)
-    if (await isLoginDisabled()) {
+    const config = await getSystemConfig();
+
+    // 🔴 GLOBAL LOCK OVERRIDE
+    if (config.globalLock === true) {
+      return alert("System locked by administrators");
+    }
+
+    // 🔒 LOGIN DISABLED CHECK
+    if (config.loginDisabled === true) {
       return alert("Login is currently disabled by administrators");
     }
 
@@ -108,7 +137,7 @@ async function login(username, password) {
   }
 }
 
-/* ---------------- CHAT HELPERS (NEW ONLY) ---------------- */
+/* ---------------- CHAT HELPERS ---------------- */
 
 // Create or get DM chat
 export async function getOrCreateDM(otherUser) {
