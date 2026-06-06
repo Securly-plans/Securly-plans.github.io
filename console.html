@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin OS Console (Crash-Proof)</title>
+<title>Admin OS Console Beta</title>
 
 <style>
 body {
@@ -59,7 +59,7 @@ body {
 <body>
 
 <div id="wrap">
-  <div id="header">ADMIN OS CONSOLE — crash-proof mode</div>
+  <div id="header">ADMIN OS CONSOLE — Firebase v9 (Crash-Proof)</div>
   <div id="console"></div>
 
   <div id="inputBar">
@@ -68,13 +68,24 @@ body {
   </div>
 </div>
 
-<!-- Firebase (you already have firebase.js setting window.db) -->
-<script src="js/firebase.js"></script>
+<script type="module">
 
-<script>
-/* =========================
-   SAFE CORE LAYER
-========================= */
+/* ================= FIREBASE (V9 MODULAR) ================= */
+import { db } from "./js/firebase.js";
+
+import {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= CORE ================= */
 
 const consoleEl = document.getElementById("console");
 const input = document.getElementById("cmdInput");
@@ -87,28 +98,7 @@ function print(msg, type="line") {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-/* SAFE FIREBASE ACCESS */
-function getDB() {
-  if (!window.db) {
-    throw new Error("Firestore (db) not initialized. Check firebase.js");
-  }
-  return window.db;
-}
-
-/* SAFE WRAPPER */
-async function fb(fn) {
-  try {
-    const db = getDB();
-    return await fn(db);
-  } catch (err) {
-    print("Firebase error: " + (err?.message || err), "error");
-    console.error(err);
-  }
-}
-
-/* =========================
-   COMMAND SYSTEM
-========================= */
+/* ================= SAFE RUNNER ================= */
 
 const commands = {};
 
@@ -135,13 +125,10 @@ async function run(inputStr) {
     await fn(parts);
   } catch (e) {
     print("ERROR: " + (e?.message || e), "error");
-    console.error(e);
   }
 }
 
-/* =========================
-   HISTORY
-========================= */
+/* ================= HISTORY ================= */
 
 let history = [];
 let hIndex = -1;
@@ -164,122 +151,80 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-/* =========================
-   HELP (DYNAMIC)
-========================= */
+/* ================= HELP ================= */
 
-register("help", async () => {
-  print("=== ADMIN OS COMMANDS ===", "info");
-
-  const grouped = {};
-
-  Object.keys(commands).forEach(cmd => {
-    const group = cmd.includes(".") ? cmd.split(".")[0] : "general";
-    if (!grouped[group]) grouped[group] = [];
-    grouped[group].push(cmd);
-  });
-
-  Object.keys(grouped).forEach(group => {
-    print(`\n[${group}]`, "info");
-    grouped[group].sort().forEach(c => print(" - " + c));
-  });
+register("help", () => {
+  print("=== COMMANDS ===", "info");
+  Object.keys(commands).forEach(c => print(" - " + c));
 });
 
-/* =========================
-   SYSTEM
-========================= */
+/* ================= SYSTEM ================= */
 
-register("clear", async () => {
+register("clear", () => {
   consoleEl.innerHTML = "";
 });
 
-register("status", async () => {
-  print("=== SYSTEM STATUS ===", "info");
-  print("Firebase DB: " + (window.db ? "OK" : "NOT INITIALIZED"),
-    window.db ? "success" : "error"
-  );
+register("status", () => {
+  print("Firebase: " + (db ? "OK" : "NOT LOADED"), db ? "success" : "error");
 });
 
-/* =========================
-   USERS
-========================= */
+/* ================= USERS ================= */
 
 register("user.list", async () => {
-  await fb(async (db) => {
-    const snap = await db.collection("users").get();
+  const snap = await getDocs(collection(db, "users"));
 
-    snap.forEach(d => {
-      const u = d.data();
-      print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
-    });
+  snap.forEach(d => {
+    const u = d.data();
+    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
   });
 });
 
 register("user.delete", async (a) => {
-  const id = a[0];
-  if (!id) return print("Usage: user.delete <id>", "error");
-
-  await fb(async (db) => {
-    await db.collection("users").doc(id).delete();
-  });
-
+  await deleteDoc(doc(db, "users", a[0]));
   print("User deleted", "success");
 });
 
 register("user.role", async (a) => {
-  const id = a[0];
-  const role = a[1];
-
-  if (!id || !role) return print("Usage: user.role <id> <role>", "error");
-
-  await fb(async (db) => {
-    await db.collection("users").doc(id).update({ role });
+  await updateDoc(doc(db, "users", a[0]), {
+    role: a[1]
   });
 
   print("Role updated", "success");
 });
 
 register("user.lock", async (a) => {
-  const id = a[0];
   const reason = a.slice(1).join(" ");
 
-  await fb(async (db) => {
-    await db.collection("users").doc(id).update({
-      locked: true,
-      lockReason: reason
-    });
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: true,
+    lockReason: reason
   });
 
   print("User locked", "error");
 });
 
 register("user.unlock", async (a) => {
-  const id = a[0];
-
-  await fb(async (db) => {
-    await db.collection("users").doc(id).update({
-      locked: false,
-      lockReason: ""
-    });
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: false,
+    lockReason: ""
   });
 
   print("User unlocked", "success");
 });
 
-/* =========================
-   INCIDENTS
-========================= */
+/* ================= INCIDENTS ================= */
 
 register("incident.list", async () => {
-  await fb(async (db) => {
-    const snap = await db.collection("incidentReports")
-      .orderBy("timestamp", "desc")
-      .get();
+  const q = query(
+    collection(db, "incidentReports"),
+    orderBy("timestamp", "desc")
+  );
 
-    snap.forEach(d => {
-      const i = d.data();
-      print(`${d.id} | ${i.title} | ${i.severity}`);
-    });
+  const snap = await getDocs(q);
+
+  snap.forEach(d => {
+    const i = d.data();
+    print(`${d.id} | ${i.title} | ${i.severity}`);
   });
 });
 
@@ -287,77 +232,50 @@ register("incident.create", async (a) => {
   const raw = a.join(" ");
   const [title, target, severity, details] = raw.split("|");
 
-  await fb(async (db) => {
-    await db.collection("incidentReports").add({
-      title,
-      target,
-      severity,
-      details,
-      timestamp: Date.now(),
-      status: "open"
-    });
+  await addDoc(collection(db, "incidentReports"), {
+    title,
+    target,
+    severity,
+    details,
+    timestamp: Date.now(),
+    status: "open"
   });
 
   print("Incident created", "success");
 });
 
-/* =========================
-   CHATS
-========================= */
+/* ================= CHATS ================= */
 
 register("chat.list", async () => {
-  await fb(async (db) => {
-    const snap = await db.collection("chats").get();
+  const snap = await getDocs(collection(db, "chats"));
 
-    snap.forEach(d => {
-      const c = d.data();
-      print(`${d.id} | ${c.lastMessage || "no message"}`);
-    });
+  snap.forEach(d => {
+    const c = d.data();
+    print(`${d.id} | ${c.lastMessage || "no message"}`);
   });
 });
 
-/* =========================
-   LOGS
-========================= */
+/* ================= LOGS ================= */
 
 register("logs.list", async () => {
-  await fb(async (db) => {
-    const snap = await db.collection("adminLogs")
-      .orderBy("timestamp", "desc")
-      .limit(30)
-      .get();
+  const q = query(
+    collection(db, "adminLogs"),
+    orderBy("timestamp", "desc"),
+    limit(30)
+  );
 
-    snap.forEach(d => {
-      const l = d.data();
-      print(`${l.type} | ${l.targetUser} | ${l.details}`);
-    });
+  const snap = await getDocs(q);
+
+  snap.forEach(d => {
+    const l = d.data();
+    print(`${l.type} | ${l.targetUser} | ${l.details}`);
   });
 });
 
-/* =========================
-   STATS
-========================= */
+/* ================= INIT ================= */
 
-register("stats", async () => {
-  await fb(async (db) => {
-    const users = await db.collection("users").get();
-    const incidents = await db.collection("incidentReports").get();
-    const chats = await db.collection("chats").get();
+print("Admin OS ready (v9). Type 'help'.", "success");
 
-    const locked = users.docs.filter(d => d.data().locked).length;
-
-    print(`Users: ${users.size}`, "info");
-    print(`Locked: ${locked}`, "info");
-    print(`Incidents: ${incidents.size}`, "info");
-    print(`Chats: ${chats.size}`, "info");
-  });
-});
-
-/* =========================
-   INIT
-========================= */
-
-print("Admin OS loaded. Type 'help'.", "success");
 </script>
 
 </body>
