@@ -145,6 +145,7 @@ main{
 
 <body>
 
+<!-- ✅ UPDATED NAVBAR ONLY -->
 <div class="navbar">
 
   <div class="nav-left">
@@ -165,16 +166,16 @@ main{
       Resp. Support
     </a>
 
-    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
-      Admin
-    </a>
-
     <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
       Chat Mod
     </a>
 
     <a href="view-users.html" id="viewUsersLink" style="display:none;">
       Users
+    </a>
+
+    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+      Admin
     </a>
 
     <button id="logoutBtn" class="logout-btn">Logout</button>
@@ -227,7 +228,7 @@ const username = localStorage.getItem("username");
 const saveRef = doc(db, "users", username);
 
 /* =========================
-   GLOBAL VIP CHECK (NEW)
+   GLOBAL VIP CHECK
 ========================= */
 let isVIP = false;
 
@@ -236,18 +237,13 @@ async function loadVIP() {
     const snap = await getDoc(saveRef);
 
     const data = snap.exists() ? snap.data() : {};
-
     const role = data.role || localStorage.getItem("role");
 
-    // VIP OR admin OR mod all get access
     if (data.vip === true || role === "admin" || role === "mod") {
       isVIP = true;
     }
 
   } catch (e) {
-    console.warn("VIP check failed:", e);
-
-    // fallback to role-only access if Firebase fails
     const role = localStorage.getItem("role");
     if (role === "admin" || role === "mod") {
       isVIP = true;
@@ -260,7 +256,7 @@ async function loadVIP() {
 loadVIP();
 
 /* =========================
-   FULL INDEXEDDB BACKUP
+   INDEXEDDB BACKUP SYSTEM
 ========================= */
 class IDBBackup {
   constructor(name) {
@@ -312,22 +308,16 @@ class IDBBackup {
 const backup = new IDBBackup("EmeraldDB");
 
 /* =========================
-   LOAD CLOUD SAVE ON START
+   LOAD SAVE
 ========================= */
 (async () => {
   try {
     const snap = await getDoc(saveRef);
 
     if (snap.exists() && snap.data().save) {
-      console.log("Restoring cloud save...");
-
       await backup.importAll(snap.data().save);
-
-      console.log("Restore complete.");
     }
-  } catch (e) {
-    console.warn("Restore failed:", e);
-  }
+  } catch (e) {}
 })();
 
 /* =========================
@@ -339,11 +329,44 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   await setDoc(saveRef, {
     save: data,
     time: Date.now(),
-    vip: isVIP // optional tracking
+    vip: isVIP
   });
 
   alert("Saved to cloud!");
 });
+</script>
+
+<script>
+/* =========================
+   ROLE-BASED NAVBAR LOGIC
+========================= */
+(function () {
+  const role = localStorage.getItem("role");
+  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
+  if (!isLoggedIn) return;
+
+  const tickets = document.getElementById("ticketslink");
+  const profile = document.getElementById("profileLink");
+  const users = document.getElementById("viewUsersLink");
+
+  if (tickets) tickets.style.display = "inline-block";
+  if (profile) profile.style.display = "inline-block";
+  if (users) users.style.display = "inline-block";
+
+  if (role === "mod" || role === "admin") {
+    const modLinks = [
+      document.getElementById("adminticketslink"),
+      document.getElementById("modChatLink")
+    ];
+    modLinks.forEach(el => el && (el.style.display = "inline-block"));
+  }
+
+  if (role === "admin") {
+    const adminLink = document.getElementById("adminLink");
+    if (adminLink) adminLink.style.display = "inline-block";
+  }
+})();
 </script>
 
 <script src="script.js"></script>
