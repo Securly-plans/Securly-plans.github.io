@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin OS Console Beta</title>
+<title>Admin OS Console Alpha</title>
 
 <style>
 body {
@@ -108,6 +108,26 @@ function register(name, fn, description = "No description") {
   helpData[name] = description;
 }
 
+/* ================= CONFIG CACHE ================= */
+
+let systemConfig = {
+  loginDisabled: false,
+  globalLock: false
+};
+
+async function loadConfig() {
+  try {
+    const snap = await getDocs(collection(db, "system"));
+    snap.forEach(d => {
+      if (d.id === "config") {
+        systemConfig = { ...systemConfig, ...d.data() };
+      }
+    });
+  } catch (e) {
+    print("Config load failed", "error");
+  }
+}
+
 /* ================= COMMAND SEARCH ================= */
 
 const suggestionBox = document.createElement("div");
@@ -141,7 +161,10 @@ function updateSuggestions(value) {
     return;
   }
 
-  suggestionBox.innerHTML = matches.map(m => `› ${m}`).join("<br>");
+  suggestionBox.innerHTML = matches
+    .map(m => `<div>› ${m}</div>`)
+    .join("");
+
   suggestionBox.style.display = "block";
 }
 
@@ -149,6 +172,8 @@ function updateSuggestions(value) {
 
 async function run(inputStr) {
   if (!inputStr.trim()) return;
+
+  await loadConfig();
 
   print("> " + inputStr, "warn");
 
@@ -203,38 +228,68 @@ register("help", () => {
   print("=== ADMIN OS COMMANDS ===", "info");
 
   Object.keys(helpData).forEach(cmd => {
-    print(`${cmd}`);
-    print(" → " + helpData[cmd]);
+    print(`\n${cmd}`);
+    print("  → " + helpData[cmd]);
   });
-});
+}, "Shows all commands");
 
 /* ================= SYSTEM ================= */
 
 register("clear", () => {
   consoleEl.innerHTML = "";
-}, "Clears console output");
+}, "Clears console");
 
 register("status", () => {
-  print("Firebase: " + (db ? "OK" : "NOT LOADED"), db ? "success" : "error");
-}, "Checks Firebase connection");
+  print("Login Lock: " + systemConfig.loginDisabled);
+  print("Global Lock: " + systemConfig.globalLock);
+}, "Shows system lock status");
 
-/* ================= GLOBAL LOGIN LOCK ================= */
+/* ================= LOCK SYSTEM ================= */
 
+/* LOGIN LOCK (only login system) */
 register("system.loginlock.enable", async () => {
+  await loadConfig();
+
+  if (systemConfig.globalLock) {
+    print("Blocked: Global Lock is active", "error");
+    return;
+  }
+
   await updateDoc(doc(db, "system", "config"), {
     loginDisabled: true
   });
 
-  print("LOGIN LOCK ENABLED", "error");
-}, "Disables all logins globally");
+  print("Login LOCK ENABLED", "error");
+}, "Disables login only");
 
+/* LOGIN UNLOCK */
 register("system.loginlock.disable", async () => {
   await updateDoc(doc(db, "system", "config"), {
     loginDisabled: false
   });
 
-  print("LOGIN LOCK DISABLED", "success");
-}, "Enables all logins globally");
+  print("Login LOCK DISABLED", "success");
+}, "Enables login");
+
+/* GLOBAL LOCK (everything) */
+register("system.globallock.enable", async () => {
+  await updateDoc(doc(db, "system", "config"), {
+    globalLock: true,
+    loginDisabled: true
+  });
+
+  print("GLOBAL LOCK ACTIVATED — ALL SYSTEMS DISABLED", "error");
+}, "Disables EVERYTHING");
+
+/* GLOBAL UNLOCK */
+register("system.globallock.disable", async () => {
+  await updateDoc(doc(db, "system", "config"), {
+    globalLock: false,
+    loginDisabled: false
+  });
+
+  print("GLOBAL LOCK DISABLED", "success");
+}, "Restores full system access");
 
 /* ================= USERS ================= */
 
@@ -258,7 +313,7 @@ register("user.role", async (a) => {
   });
 
   print("Role updated", "success");
-}, "Changes user role");
+}, "Changes role");
 
 register("user.lock", async (a) => {
   const reason = a.slice(1).join(" ");
@@ -283,7 +338,11 @@ register("user.unlock", async (a) => {
 /* ================= INCIDENTS ================= */
 
 register("incident.list", async () => {
-  const q = query(collection(db, "incidentReports"), orderBy("timestamp", "desc"));
+  const q = query(
+    collection(db, "incidentReports"),
+    orderBy("timestamp", "desc")
+  );
+
   const snap = await getDocs(q);
 
   snap.forEach(d => {
@@ -293,10 +352,14 @@ register("incident.list", async () => {
 }, "Lists incidents");
 
 register("incident.create", async (a) => {
-  const [title, target, severity, details] = a.join(" ").split("|");
+  const raw = a.join(" ");
+  const [title, target, severity, details] = raw.split("|");
 
   await addDoc(collection(db, "incidentReports"), {
-    title, target, severity, details,
+    title,
+    target,
+    severity,
+    details,
     timestamp: Date.now(),
     status: "open"
   });
@@ -318,14 +381,19 @@ register("chat.list", async () => {
 /* ================= LOGS ================= */
 
 register("logs.list", async () => {
-  const q = query(collection(db, "adminLogs"), orderBy("timestamp", "desc"), limit(30));
+  const q = query(
+    collection(db, "adminLogs"),
+    orderBy("timestamp", "desc"),
+    limit(30)
+  );
+
   const snap = await getDocs(q);
 
   snap.forEach(d => {
     const l = d.data();
     print(`${l.type} | ${l.targetUser} | ${l.details}`);
   });
-}, "Shows admin logs");
+}, "Shows logs");
 
 /* ================= INIT ================= */
 
