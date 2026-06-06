@@ -145,8 +145,6 @@ main{
 
   <div class="nav-left">
     <a href="home.html">Home</a>
-
-    <!-- ✅ ONLY ADDITION: SAVE BUTTON -->
     <button id="saveBtn">Save</button>
   </div>
 
@@ -216,7 +214,7 @@ main{
   Emerald Games - Beta 1.0
 </p>
 
-<!-- ONLY NEW LOGIC ADDED -->
+<!-- ✅ ONLY NEW LOGIC -->
 <script type="module">
 import { db } from "./js/firebase.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -224,6 +222,9 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/
 const username = localStorage.getItem("username");
 const saveRef = doc(db, "users", username);
 
+/* =========================
+   FULL INDEXEDDB BACKUP
+========================= */
 class IDBBackup {
   constructor(name) {
     this.name = name;
@@ -253,21 +254,44 @@ class IDBBackup {
     db.close();
     return out;
   }
+
+  async importAll(data) {
+    const db = await this.open();
+
+    for (const store in data.stores) {
+      if (!db.objectStoreNames.contains(store)) continue;
+
+      const tx = db.transaction(store, "readwrite");
+      const os = tx.objectStore(store);
+
+      os.clear();
+      data.stores[store].forEach(v => os.put(v));
+    }
+
+    db.close();
+  }
 }
 
 const backup = new IDBBackup("EmeraldDB");
 
-/* LOAD FROM FIREBASE (optional restore) */
+/* =========================
+   LOAD CLOUD SAVE ON START
+========================= */
 (async () => {
   const snap = await getDoc(saveRef);
 
   if (snap.exists() && snap.data().save) {
-    console.log("Save found in Firebase");
-    // NOTE: restore logic not added here to avoid UI disruption
+    console.log("Restoring cloud save...");
+
+    await backup.importAll(snap.data().save);
+
+    console.log("Restore complete.");
   }
 })();
 
-/* SAVE BUTTON ONLY */
+/* =========================
+   SAVE BUTTON
+========================= */
 document.getElementById("saveBtn").addEventListener("click", async () => {
   const data = await backup.exportAll();
 
@@ -276,7 +300,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     time: Date.now()
   });
 
-  alert("Saved!");
+  alert("Saved to cloud!");
 });
 </script>
 
@@ -316,19 +340,15 @@ const searchBar = document.getElementById("searchBar");
 const gameGrid = document.getElementById("gameGrid");
 const videoGrid = document.getElementById("videoGrid");
 
-function filterItems() {
+searchBar.addEventListener("input", () => {
   const query = searchBar.value.toLowerCase().trim();
 
-  const allItems = [...gameGrid.children, ...videoGrid.children];
-
-  allItems.forEach(item => {
-    const text = item.textContent.toLowerCase();
-
-    item.style.display = (!query || text.includes(query)) ? "" : "none";
+  [...gameGrid.children, ...videoGrid.children].forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(query)
+      ? ""
+      : "none";
   });
-}
-
-searchBar.addEventListener("input", filterItems);
+});
 </script>
 
 <script src="script.js"></script>
