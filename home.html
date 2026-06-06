@@ -230,14 +230,26 @@ let isVIP = false;
 async function loadVIP() {
   try {
     const snap = await getDoc(saveRef);
-    if (snap.exists() && snap.data().vip === true) {
+
+    const data = snap.exists() ? snap.data() : {};
+
+    const role = data.role || localStorage.getItem("role");
+
+    // VIP OR admin OR mod all get access
+    if (data.vip === true || role === "admin" || role === "mod") {
       isVIP = true;
     }
+
   } catch (e) {
     console.warn("VIP check failed:", e);
+
+    // fallback to role-only access if Firebase fails
+    const role = localStorage.getItem("role");
+    if (role === "admin" || role === "mod") {
+      isVIP = true;
+    }
   }
 
-  // expose globally so script.js can use it
   window.isVIP = isVIP;
 }
 
