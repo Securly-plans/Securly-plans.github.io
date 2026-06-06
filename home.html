@@ -223,6 +223,27 @@ const username = localStorage.getItem("username");
 const saveRef = doc(db, "users", username);
 
 /* =========================
+   GLOBAL VIP CHECK (NEW)
+========================= */
+let isVIP = false;
+
+async function loadVIP() {
+  try {
+    const snap = await getDoc(saveRef);
+    if (snap.exists() && snap.data().vip === true) {
+      isVIP = true;
+    }
+  } catch (e) {
+    console.warn("VIP check failed:", e);
+  }
+
+  // expose globally so script.js can use it
+  window.isVIP = isVIP;
+}
+
+loadVIP();
+
+/* =========================
    FULL INDEXEDDB BACKUP
 ========================= */
 class IDBBackup {
@@ -278,14 +299,18 @@ const backup = new IDBBackup("EmeraldDB");
    LOAD CLOUD SAVE ON START
 ========================= */
 (async () => {
-  const snap = await getDoc(saveRef);
+  try {
+    const snap = await getDoc(saveRef);
 
-  if (snap.exists() && snap.data().save) {
-    console.log("Restoring cloud save...");
+    if (snap.exists() && snap.data().save) {
+      console.log("Restoring cloud save...");
 
-    await backup.importAll(snap.data().save);
+      await backup.importAll(snap.data().save);
 
-    console.log("Restore complete.");
+      console.log("Restore complete.");
+    }
+  } catch (e) {
+    console.warn("Restore failed:", e);
   }
 })();
 
@@ -297,57 +322,11 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
   await setDoc(saveRef, {
     save: data,
-    time: Date.now()
+    time: Date.now(),
+    vip: isVIP // optional tracking
   });
 
   alert("Saved to cloud!");
-});
-</script>
-
-<script>
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.replace("index.html");
-});
-
-const role = localStorage.getItem("role");
-const username = localStorage.getItem("username");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-const usernameDisplay = document.getElementById("usernameDisplay");
-
-if (username && isLoggedIn) {
-  usernameDisplay.textContent = (role === "admin" ? "🛡 " : "👤 ") + username;
-}
-
-if (isLoggedIn) {
-  document.getElementById("ticketslink").style.display = "inline-block";
-  document.getElementById("profileLink").style.display = "inline-block";
-  document.getElementById("viewUsersLink").style.display = "inline-block";
-}
-
-if (role === "admin" || role === "mod") {
-  document.getElementById("adminticketslink").style.display = "inline-block";
-  document.getElementById("modChatLink").style.display = "inline-block";
-}
-
-if (role === "admin") {
-  document.getElementById("adminLink").style.display = "inline-block";
-}
-
-/* SEARCH LOGIC */
-const searchBar = document.getElementById("searchBar");
-const gameGrid = document.getElementById("gameGrid");
-const videoGrid = document.getElementById("videoGrid");
-
-searchBar.addEventListener("input", () => {
-  const query = searchBar.value.toLowerCase().trim();
-
-  [...gameGrid.children, ...videoGrid.children].forEach(item => {
-    item.style.display = item.textContent.toLowerCase().includes(query)
-      ? ""
-      : "none";
-  });
 });
 </script>
 
