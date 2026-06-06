@@ -70,7 +70,7 @@ body {
 
 <script type="module">
 
-/* ================= FIREBASE (V9 MODULAR) ================= */
+/* ================= FIREBASE ================= */
 import { db } from "./js/firebase.js";
 
 import {
@@ -108,7 +108,7 @@ function register(name, fn, description = "No description") {
   helpData[name] = description;
 }
 
-/* ================= COMMAND SEARCH (NEW) ================= */
+/* ================= COMMAND SEARCH ================= */
 
 const suggestionBox = document.createElement("div");
 suggestionBox.style.position = "absolute";
@@ -141,10 +141,7 @@ function updateSuggestions(value) {
     return;
   }
 
-  suggestionBox.innerHTML = matches
-    .map(m => `<div>› ${m}</div>`)
-    .join("");
-
+  suggestionBox.innerHTML = matches.map(m => `› ${m}`).join("<br>");
   suggestionBox.style.display = "block";
 }
 
@@ -196,7 +193,6 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-/* LIVE COMMAND SEARCH */
 input.addEventListener("input", (e) => {
   updateSuggestions(e.target.value);
 });
@@ -207,8 +203,8 @@ register("help", () => {
   print("=== ADMIN OS COMMANDS ===", "info");
 
   Object.keys(helpData).forEach(cmd => {
-    print(`\n${cmd}`);
-    print("  → " + helpData[cmd]);
+    print(`${cmd}`);
+    print(" → " + helpData[cmd]);
   });
 });
 
@@ -216,31 +212,29 @@ register("help", () => {
 
 register("clear", () => {
   consoleEl.innerHTML = "";
-}, "Clears the console output");
+}, "Clears console output");
 
 register("status", () => {
-  print("Firebase: " + (db ? "OK" : "NOT LOADED"),
-    db ? "success" : "error"
-  );
-}, "Checks Firebase connection status");
+  print("Firebase: " + (db ? "OK" : "NOT LOADED"), db ? "success" : "error");
+}, "Checks Firebase connection");
 
-/* ================= LOGIN LOCK (ENHANCED) ================= */
+/* ================= GLOBAL LOGIN LOCK ================= */
 
 register("system.loginlock.enable", async () => {
   await updateDoc(doc(db, "system", "config"), {
     loginDisabled: true
   });
 
-  print("🚫 Login DISABLED globally", "error");
-}, "Disables ALL logins globally");
+  print("LOGIN LOCK ENABLED", "error");
+}, "Disables all logins globally");
 
 register("system.loginlock.disable", async () => {
   await updateDoc(doc(db, "system", "config"), {
     loginDisabled: false
   });
 
-  print("✅ Login ENABLED globally", "success");
-}, "Enables ALL logins globally");
+  print("LOGIN LOCK DISABLED", "success");
+}, "Enables all logins globally");
 
 /* ================= USERS ================= */
 
@@ -251,12 +245,12 @@ register("user.list", async () => {
     const u = d.data();
     print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
   });
-}, "Lists all users");
+}, "Lists users");
 
 register("user.delete", async (a) => {
   await deleteDoc(doc(db, "users", a[0]));
   print("User deleted", "success");
-}, "Deletes a user by ID");
+}, "Deletes user");
 
 register("user.role", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -264,7 +258,7 @@ register("user.role", async (a) => {
   });
 
   print("Role updated", "success");
-}, "Changes a user's role");
+}, "Changes user role");
 
 register("user.lock", async (a) => {
   const reason = a.slice(1).join(" ");
@@ -275,7 +269,7 @@ register("user.lock", async (a) => {
   });
 
   print("User locked", "error");
-}, "Locks a user account");
+}, "Locks user");
 
 register("user.unlock", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -284,39 +278,31 @@ register("user.unlock", async (a) => {
   });
 
   print("User unlocked", "success");
-}, "Unlocks a user account");
+}, "Unlocks user");
 
 /* ================= INCIDENTS ================= */
 
 register("incident.list", async () => {
-  const q = query(
-    collection(db, "incidentReports"),
-    orderBy("timestamp", "desc")
-  );
-
+  const q = query(collection(db, "incidentReports"), orderBy("timestamp", "desc"));
   const snap = await getDocs(q);
 
   snap.forEach(d => {
     const i = d.data();
     print(`${d.id} | ${i.title} | ${i.severity}`);
   });
-}, "Lists incident reports");
+}, "Lists incidents");
 
 register("incident.create", async (a) => {
-  const raw = a.join(" ");
-  const [title, target, severity, details] = raw.split("|");
+  const [title, target, severity, details] = a.join(" ").split("|");
 
   await addDoc(collection(db, "incidentReports"), {
-    title,
-    target,
-    severity,
-    details,
+    title, target, severity, details,
     timestamp: Date.now(),
     status: "open"
   });
 
   print("Incident created", "success");
-}, "Creates an incident report");
+}, "Creates incident");
 
 /* ================= CHATS ================= */
 
@@ -327,24 +313,19 @@ register("chat.list", async () => {
     const c = d.data();
     print(`${d.id} | ${c.lastMessage || "no message"}`);
   });
-}, "Lists chat sessions");
+}, "Lists chats");
 
 /* ================= LOGS ================= */
 
 register("logs.list", async () => {
-  const q = query(
-    collection(db, "adminLogs"),
-    orderBy("timestamp", "desc"),
-    limit(30)
-  );
-
+  const q = query(collection(db, "adminLogs"), orderBy("timestamp", "desc"), limit(30));
   const snap = await getDocs(q);
 
   snap.forEach(d => {
     const l = d.data();
     print(`${l.type} | ${l.targetUser} | ${l.details}`);
   });
-}, "Shows latest admin logs");
+}, "Shows admin logs");
 
 /* ================= INIT ================= */
 
