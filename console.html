@@ -98,12 +98,14 @@ function print(msg, type="line") {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-/* ================= SAFE RUNNER ================= */
+/* ================= COMMAND SYSTEM ================= */
 
 const commands = {};
+const helpData = {};
 
-function register(name, fn) {
+function register(name, fn, description = "No description") {
   commands[name] = fn;
+  helpData[name] = description;
 }
 
 async function run(inputStr) {
@@ -151,22 +153,40 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-/* ================= HELP ================= */
+/* ================= HELP (NOW DOCUMENTED) ================= */
 
 register("help", () => {
-  print("=== COMMANDS ===", "info");
-  Object.keys(commands).forEach(c => print(" - " + c));
+  print("=== ADMIN OS COMMANDS ===", "info");
+
+  Object.keys(helpData).forEach(cmd => {
+    print(`\n${cmd}`);
+    print("  → " + helpData[cmd]);
+  });
 });
 
 /* ================= SYSTEM ================= */
 
 register("clear", () => {
   consoleEl.innerHTML = "";
-});
+}, "Clears the console output");
 
 register("status", () => {
-  print("Firebase: " + (db ? "OK" : "NOT LOADED"), db ? "success" : "error");
-});
+  print("Firebase: " + (db ? "OK" : "NOT LOADED"),
+    db ? "success" : "error"
+  );
+}, "Checks Firebase connection status");
+
+/* ================= LOGIN LOCK (NEW FEATURE) ================= */
+
+register("system.loginlock", async (a) => {
+  const value = a[0] === "true";
+
+  await updateDoc(doc(db, "system", "config"), {
+    loginDisabled: value
+  });
+
+  print("Login lock set to: " + value, "success");
+}, "Enables/disables global login access");
 
 /* ================= USERS ================= */
 
@@ -177,12 +197,12 @@ register("user.list", async () => {
     const u = d.data();
     print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
   });
-});
+}, "Lists all users");
 
 register("user.delete", async (a) => {
   await deleteDoc(doc(db, "users", a[0]));
   print("User deleted", "success");
-});
+}, "Deletes a user by ID");
 
 register("user.role", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -190,7 +210,7 @@ register("user.role", async (a) => {
   });
 
   print("Role updated", "success");
-});
+}, "Changes a user's role");
 
 register("user.lock", async (a) => {
   const reason = a.slice(1).join(" ");
@@ -201,7 +221,7 @@ register("user.lock", async (a) => {
   });
 
   print("User locked", "error");
-});
+}, "Locks a user account");
 
 register("user.unlock", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -210,7 +230,7 @@ register("user.unlock", async (a) => {
   });
 
   print("User unlocked", "success");
-});
+}, "Unlocks a user account");
 
 /* ================= INCIDENTS ================= */
 
@@ -226,7 +246,7 @@ register("incident.list", async () => {
     const i = d.data();
     print(`${d.id} | ${i.title} | ${i.severity}`);
   });
-});
+}, "Lists incident reports");
 
 register("incident.create", async (a) => {
   const raw = a.join(" ");
@@ -242,7 +262,7 @@ register("incident.create", async (a) => {
   });
 
   print("Incident created", "success");
-});
+}, "Creates an incident report");
 
 /* ================= CHATS ================= */
 
@@ -253,7 +273,7 @@ register("chat.list", async () => {
     const c = d.data();
     print(`${d.id} | ${c.lastMessage || "no message"}`);
   });
-});
+}, "Lists chat sessions");
 
 /* ================= LOGS ================= */
 
@@ -270,7 +290,7 @@ register("logs.list", async () => {
     const l = d.data();
     print(`${l.type} | ${l.targetUser} | ${l.details}`);
   });
-});
+}, "Shows latest admin logs");
 
 /* ================= INIT ================= */
 
