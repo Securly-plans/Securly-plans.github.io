@@ -74,7 +74,7 @@ function checkSessionAge(){
 
       alert("Session expired.");
 
-      window.location.href = "login.html";
+      window.location.href = "home.html";
     });
 
     return;
