@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -134,10 +134,6 @@ h2{
 main{
   padding:0 20px;
 }
-
-#usernameDisplay:empty {
-  display: none;
-}
 </style>
 </head>
 
@@ -145,12 +141,10 @@ main{
 
 <body>
 
-<!-- ✅ UPDATED NAVBAR ONLY -->
 <div class="navbar">
 
   <div class="nav-left">
     <a href="home.html">Home</a>
-    <button id="saveBtn">Save</button>
   </div>
 
   <div class="nav-right">
@@ -166,16 +160,16 @@ main{
       Resp. Support
     </a>
 
+    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+      Admin
+    </a>
+
     <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
       Chat Mod
     </a>
 
     <a href="view-users.html" id="viewUsersLink" style="display:none;">
       Users
-    </a>
-
-    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
-      Admin
     </a>
 
     <button id="logoutBtn" class="logout-btn">Logout</button>
@@ -206,7 +200,7 @@ main{
   <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
     Securly-plans.github.io
   </a>
-  <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
+    <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
     Test Site
   </a>
 </p>
@@ -221,152 +215,116 @@ main{
 
 <!-- ✅ ONLY NEW LOGIC -->
 <script type="module">
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const username = localStorage.getItem("username");
-const saveRef = doc(db, "users", username);
+const me = localStorage.getItem("username");
+let notified = new Set();
 
-/* =========================
-   GLOBAL VIP CHECK
-========================= */
-let isVIP = false;
-
-async function loadVIP() {
-  try {
-    const snap = await getDoc(saveRef);
-
-    const data = snap.exists() ? snap.data() : {};
-    const role = data.role || localStorage.getItem("role");
-
-    if (data.vip === true || role === "admin" || role === "mod") {
-      isVIP = true;
-    }
-
-  } catch (e) {
-    const role = localStorage.getItem("role");
-    if (role === "admin" || role === "mod") {
-      isVIP = true;
-    }
-  }
-
-  window.isVIP = isVIP;
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
 }
 
-loadVIP();
+onSnapshot(collection(db, "chats"), (snapshot) => {
+  snapshot.docChanges().forEach(change => {
+    if (change.type !== "modified") return;
 
-/* =========================
-   INDEXEDDB BACKUP SYSTEM
-========================= */
-class IDBBackup {
-  constructor(name) {
-    this.name = name;
-  }
+    const data = change.doc.data();
+    const chatId = change.doc.id;
 
-  async open() {
-    return new Promise((res, rej) => {
-      const req = indexedDB.open(this.name);
-      req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error);
-    });
-  }
+    if (data.type !== "private") return;
+    if (!data.participants?.includes(me)) return;
 
-  async exportAll() {
-    const db = await this.open();
-    const out = { stores: {} };
+    const messages = data.messages || [];
+    const last = messages[messages.length - 1];
 
-    for (const store of db.objectStoreNames) {
-      out.stores[store] = await new Promise((res, rej) => {
-        const tx = db.transaction(store, "readonly");
-        const req = tx.objectStore(store).getAll();
-        req.onsuccess = () => res(req.result);
-        req.onerror = () => rej(req.error);
-      });
-    }
+    if (!last || last.from === me) return;
 
-    db.close();
-    return out;
-  }
+    const key = chatId + "_" + last.time;
+    if (notified.has(key)) return;
 
-  async importAll(data) {
-    const db = await this.open();
-
-    for (const store in data.stores) {
-      if (!db.objectStoreNames.contains(store)) continue;
-
-      const tx = db.transaction(store, "readwrite");
-      const os = tx.objectStore(store);
-
-      os.clear();
-      data.stores[store].forEach(v => os.put(v));
-    }
-
-    db.close();
-  }
-}
-
-const backup = new IDBBackup("EmeraldDB");
-
-/* =========================
-   LOAD SAVE
-========================= */
-(async () => {
-  try {
-    const snap = await getDoc(saveRef);
-
-    if (snap.exists() && snap.data().save) {
-      await backup.importAll(snap.data().save);
-    }
-  } catch (e) {}
-})();
-
-/* =========================
-   SAVE BUTTON
-========================= */
-document.getElementById("saveBtn").addEventListener("click", async () => {
-  const data = await backup.exportAll();
-
-  await setDoc(saveRef, {
-    save: data,
-    time: Date.now(),
-    vip: isVIP
+    notified.add(key);
+    showNotification(last.from, last.text);
   });
-
-  alert("Saved to cloud!");
 });
+
+function showNotification(sender, text) {
+  if (Notification.permission !== "granted") return;
+
+  new Notification("💬 New message from " + sender, {
+    body: text.length > 60 ? text.slice(0, 60) + "..." : text,
+    icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+  });
+}
 </script>
 
 <script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.replace("index.html");
+});
+
+const role = localStorage.getItem("role");
+const username = localStorage.getItem("username");
+const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+
 /* =========================
-   ROLE-BASED NAVBAR LOGIC
+   VIP SUPPORT (ADDED ONLY)
 ========================= */
-(function () {
-  const role = localStorage.getItem("role");
-  const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+const isVIP = localStorage.getItem("vip") === "true";
 
-  if (!isLoggedIn) return;
+/* username display */
+const usernameDisplay = document.getElementById("usernameDisplay");
 
-  const tickets = document.getElementById("ticketslink");
-  const profile = document.getElementById("profileLink");
-  const users = document.getElementById("viewUsersLink");
+if (username && isLoggedIn) {
+  usernameDisplay.textContent =
+    (role === "admin" ? "🛡 " : isVIP ? "⭐ " : "👤 ") + username;
+}
 
-  if (tickets) tickets.style.display = "inline-block";
-  if (profile) profile.style.display = "inline-block";
-  if (users) users.style.display = "inline-block";
+/* base links */
+if (isLoggedIn) {
+  document.getElementById("ticketslink").style.display = "inline-block";
+  document.getElementById("profileLink").style.display = "inline-block";
+  document.getElementById("viewUsersLink").style.display = "inline-block";
+}
 
-  if (role === "mod" || role === "admin") {
-    const modLinks = [
-      document.getElementById("adminticketslink"),
-      document.getElementById("modChatLink")
-    ];
-    modLinks.forEach(el => el && (el.style.display = "inline-block"));
-  }
+/* mod/admin + VIP influence */
+if (role === "admin" || role === "mod" || isVIP) {
+  document.getElementById("adminticketslink").style.display = "inline-block";
+  document.getElementById("modChatLink").style.display = "inline-block";
+}
 
-  if (role === "admin") {
-    const adminLink = document.getElementById("adminLink");
-    if (adminLink) adminLink.style.display = "inline-block";
-  }
-})();
+/* admin only */
+if (role === "admin") {
+  document.getElementById("adminLink").style.display = "inline-block";
+}
+
+/* ================= SEARCH LOGIC ================= */
+
+const searchBar = document.getElementById("searchBar");
+const gameGrid = document.getElementById("gameGrid");
+const videoGrid = document.getElementById("videoGrid");
+
+function filterItems() {
+  const query = searchBar.value.toLowerCase().trim();
+
+  const allItems = [
+    ...gameGrid.children,
+    ...videoGrid.children
+  ];
+
+  allItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+
+    if (!query || text.includes(query)) {
+      item.style.display = "";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
+searchBar.addEventListener("input", filterItems);
 </script>
 
 <script src="script.js"></script>
