@@ -5,32 +5,71 @@ import {
 
 import { app } from "./firebase.js";
 
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./firebase.js";
+
 const auth = getAuth(app);
 
 /* ================= CONFIG ================= */
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const CONFIG_CHECK_INTERVAL = 10 * 1000; // check system lock every 10s
 
 /* ================= STATE ================= */
 
 let inactivityTimer;
+let lockCheckTimer;
+
+/* ================= SYSTEM LOCK CHECK ================= */
+
+async function checkGlobalLock() {
+  try {
+    const snap = await getDoc(doc(db, "system", "config"));
+
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    // GLOBAL LOCK = immediate force logout
+    if (data.globalLock === true) {
+      await signOut(auth);
+      localStorage.clear();
+
+      alert("SYSTEM LOCKED — You have been logged out.");
+
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Optional: if login disabled, only block new sessions (not active ones)
+    if (data.loginDisabled === true) {
+      localStorage.setItem("loginDisabled", "true");
+    } else {
+      localStorage.removeItem("loginDisabled");
+    }
+
+  } catch (err) {
+    console.error("Lock check failed:", err);
+  }
+}
 
 /* ================= RESET TIMER ================= */
 
-function resetSessionTimer(){
+function resetSessionTimer() {
 
   clearTimeout(inactivityTimer);
 
   localStorage.setItem("lastActivity", Date.now());
 
-  inactivityTimer = setTimeout(async ()=>{
+  inactivityTimer = setTimeout(async () => {
 
-    try{
-
+    try {
       await signOut(auth);
-
-    }catch(err){
-
+    } catch (err) {
       console.error("Logout failed:", err);
     }
 
@@ -52,31 +91,31 @@ function resetSessionTimer(){
   "scroll",
   "keypress",
   "touchstart"
-].forEach(event=>{
-
+].forEach(event => {
   document.addEventListener(event, resetSessionTimer, true);
 });
 
 /* ================= CHECK EXISTING SESSION ================= */
 
-function checkSessionAge(){
+async function checkSessionAge() {
 
   const lastActivity =
     Number(localStorage.getItem("lastActivity")) || Date.now();
 
   const now = Date.now();
 
-  if(now - lastActivity > SESSION_TIMEOUT){
+  // quick global lock check before session restore
+  await checkGlobalLock();
 
-    signOut(auth).finally(()=>{
+  if (now - lastActivity > SESSION_TIMEOUT) {
 
-      localStorage.clear();
+    await signOut(auth);
 
-      alert("Session expired.");
+    localStorage.clear();
 
-      window.location.href = "home.html";
-    });
+    alert("Session expired.");
 
+    window.location.href = "home.html";
     return;
   }
 
@@ -86,3 +125,9 @@ function checkSessionAge(){
 /* ================= INIT ================= */
 
 checkSessionAge();
+
+/* ================= LIVE LOCK WATCHER ================= */
+
+lockCheckTimer = setInterval(() => {
+  checkGlobalLock();
+}, CONFIG_CHECK_INTERVAL);
