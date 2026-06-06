@@ -5,10 +5,27 @@ import {
   where,
   getDocs,
   updateDoc,
-  doc
+  doc,
+  getDoc   // ✅ ADDED
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./firebase.js";
+
+/* ---------------- SYSTEM LOGIN LOCK ---------------- */
+
+async function isLoginDisabled() {
+  try {
+    const snap = await getDoc(doc(db, "system", "config"));
+
+    if (!snap.exists()) return false;
+
+    return snap.data().loginDisabled === true;
+
+  } catch (err) {
+    console.error("Login lock check failed:", err);
+    return false; // fail open
+  }
+}
 
 /* ---------------- PASSWORD HASH ---------------- */
 async function hashPassword(password) {
@@ -52,6 +69,12 @@ async function login(username, password) {
   if (!username || !password) return alert("Fill in both fields");
 
   try {
+
+    // 🔒 GLOBAL LOGIN BLOCK (NEW)
+    if (await isLoginDisabled()) {
+      return alert("Login is currently disabled by administrators");
+    }
+
     const passwordHash = await hashPassword(password);
 
     const q = query(
