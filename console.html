@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin OS Console Alpha</title>
+<title>AdminOS Console Beta</title>
 
 <style>
 body {
@@ -70,9 +70,7 @@ body {
 
 <script type="module">
 
-/* ================= FIREBASE ================= */
 import { db } from "./js/firebase.js";
-
 import {
   collection,
   getDocs,
@@ -82,7 +80,8 @@ import {
   doc,
   query,
   orderBy,
-  limit
+  limit,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================= CORE ================= */
@@ -98,6 +97,19 @@ function print(msg, type="line") {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
+/* ================= CLEAR + UI RESET ================= */
+
+function clearConsole() {
+  consoleEl.innerHTML = "";
+}
+
+/* ================= FIRESTORE CONFIG ================= */
+
+async function getConfig() {
+  const snap = await getDoc(doc(db, "system", "config"));
+  return snap.exists() ? snap.data() : {};
+}
+
 /* ================= COMMAND SYSTEM ================= */
 
 const commands = {};
@@ -108,296 +120,180 @@ function register(name, fn, description = "No description") {
   helpData[name] = description;
 }
 
-/* ================= CONFIG CACHE ================= */
+/* ================= INPUT LOCK ================= */
 
-let systemConfig = {
-  loginDisabled: false,
-  globalLock: false
-};
+function lockInput() {
+  input.disabled = true;
+}
 
-async function loadConfig() {
-  try {
-    const snap = await getDocs(collection(db, "system"));
-    snap.forEach(d => {
-      if (d.id === "config") {
-        systemConfig = { ...systemConfig, ...d.data() };
+function unlockInput() {
+  input.disabled = false;
+  input.focus();
+}
+
+/* ================= GLOBAL LOCK FLOW ENGINE ================= */
+
+async function globalLockFlow(action) {
+
+  const config = await getConfig();
+  const correctPassword = config.globalLockPassword;
+
+  print("-------------------------------------------");
+  print("Enter verification password:");
+  print("-------------------------------------------");
+
+  lockInput();
+
+  input.value = "";
+  input.type = "password";
+
+  const password = await new Promise(resolve => {
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        const val = input.value;
+        input.value = "";
+        input.type = "text";
+        input.onkeydown = null;
+        resolve(val);
       }
+    };
+  });
+
+  if (password !== correctPassword) {
+    print("Verification Failure, Closing Console.", "error");
+
+    setTimeout(() => {
+      document.body.innerHTML = "";
+      window.close();
+    }, 1200);
+
+    return;
+  }
+
+  print("-------------------------------------------");
+  print("Verification Confirmed. Are you sure? Y/N");
+
+  const confirm1 = await new Promise(resolve => {
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        const val = input.value.trim().toUpperCase();
+        input.value = "";
+        input.onkeydown = null;
+        resolve(val);
+      }
+    };
+  });
+
+  if (confirm1 !== "Y") {
+    print("Command Canceled.");
+    clearConsole();
+    unlockInput();
+    return;
+  }
+
+  print("-------------------------------------------");
+  print('Intent Confirmed. Enter "Exe" or "Execute" or "Cancel".');
+
+  const confirm2 = await new Promise(resolve => {
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        const val = input.value.trim();
+        input.value = "";
+        input.onkeydown = null;
+        resolve(val);
+      }
+    };
+  });
+
+  if (confirm2.toLowerCase() === "cancel") {
+    print("Command Canceled.");
+    clearConsole();
+    unlockInput();
+    return;
+  }
+
+  if (confirm2.toLowerCase() !== "exe" && confirm2.toLowerCase() !== "execute") {
+    print("Command Canceled.");
+    clearConsole();
+    unlockInput();
+    return;
+  }
+
+  print("Executing Command...");
+
+  await action();
+
+  print("Command has been executed.");
+
+  clearConsole();
+  unlockInput();
+}
+
+/* ================= COMMANDS ================= */
+
+register("system.globallock.enable", async () => {
+
+  await globalLockFlow(async () => {
+    await updateDoc(doc(db, "system", "config"), {
+      globalLock: true
     });
-  } catch (e) {
-    print("Config load failed", "error");
-  }
-}
+  });
 
-/* ================= COMMAND SEARCH ================= */
+}, "Enables global system lock");
 
-const suggestionBox = document.createElement("div");
-suggestionBox.style.position = "absolute";
-suggestionBox.style.bottom = "60px";
-suggestionBox.style.left = "10px";
-suggestionBox.style.background = "#111";
-suggestionBox.style.border = "1px solid #00ff88";
-suggestionBox.style.color = "#00ff88";
-suggestionBox.style.fontFamily = "monospace";
-suggestionBox.style.padding = "5px";
-suggestionBox.style.display = "none";
-suggestionBox.style.maxWidth = "300px";
-suggestionBox.style.zIndex = "9999";
-document.body.appendChild(suggestionBox);
+register("system.globallock.disable", async () => {
 
-function updateSuggestions(value) {
-  const val = value.toLowerCase().trim();
+  await globalLockFlow(async () => {
+    await updateDoc(doc(db, "system", "config"), {
+      globalLock: false
+    });
+  });
 
-  if (!val) {
-    suggestionBox.style.display = "none";
-    return;
-  }
+}, "Disables global system lock");
 
-  const matches = Object.keys(commands)
-    .filter(c => c.startsWith(val))
-    .slice(0, 5);
+/* ================= BASIC COMMANDS ================= */
 
-  if (matches.length === 0) {
-    suggestionBox.style.display = "none";
-    return;
-  }
+register("clear", () => clearConsole(), "Clears console");
 
-  suggestionBox.innerHTML = matches
-    .map(m => `<div>› ${m}</div>`)
-    .join("");
-
-  suggestionBox.style.display = "block";
-}
+register("help", () => {
+  print("=== COMMANDS ===", "info");
+  Object.keys(helpData).forEach(c => {
+    print(c + " → " + helpData[c]);
+  });
+}, "Shows help");
 
 /* ================= RUNNER ================= */
 
 async function run(inputStr) {
   if (!inputStr.trim()) return;
 
-  await loadConfig();
-
   print("> " + inputStr, "warn");
 
   const parts = inputStr.split(" ");
   const cmd = parts.shift().toLowerCase();
 
-  const fn = commands[cmd];
-
-  if (!fn) {
-    print("Unknown command: " + cmd, "error");
+  if (!commands[cmd]) {
+    print("Unknown command", "error");
     return;
   }
 
   try {
-    await fn(parts);
+    await commands[cmd](parts);
   } catch (e) {
-    print("ERROR: " + (e?.message || e), "error");
+    print("ERROR: " + e.message, "error");
   }
 }
 
-/* ================= HISTORY ================= */
-
-let history = [];
-let hIndex = -1;
+/* ================= INPUT ================= */
 
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
-    history.push(input.value);
-    hIndex = history.length;
     run(input.value);
     input.value = "";
-    suggestionBox.style.display = "none";
-  }
-
-  if (e.key === "ArrowUp") {
-    if (hIndex > 0) input.value = history[--hIndex];
-  }
-
-  if (e.key === "ArrowDown") {
-    if (hIndex < history.length - 1) input.value = history[++hIndex] || "";
-    else input.value = "";
   }
 });
 
-input.addEventListener("input", (e) => {
-  updateSuggestions(e.target.value);
-});
-
-/* ================= HELP ================= */
-
-register("help", () => {
-  print("=== ADMIN OS COMMANDS ===", "info");
-
-  Object.keys(helpData).forEach(cmd => {
-    print(`\n${cmd}`);
-    print("  → " + helpData[cmd]);
-  });
-}, "Shows all commands");
-
-/* ================= SYSTEM ================= */
-
-register("clear", () => {
-  consoleEl.innerHTML = "";
-}, "Clears console");
-
-register("status", () => {
-  print("Login Lock: " + systemConfig.loginDisabled);
-  print("Global Lock: " + systemConfig.globalLock);
-}, "Shows system lock status");
-
-/* ================= LOCK SYSTEM ================= */
-
-/* LOGIN LOCK (only login system) */
-register("system.loginlock.enable", async () => {
-  await loadConfig();
-
-  if (systemConfig.globalLock) {
-    print("Blocked: Global Lock is active", "error");
-    return;
-  }
-
-  await updateDoc(doc(db, "system", "config"), {
-    loginDisabled: true
-  });
-
-  print("Login LOCK ENABLED", "error");
-}, "Disables login only");
-
-/* LOGIN UNLOCK */
-register("system.loginlock.disable", async () => {
-  await updateDoc(doc(db, "system", "config"), {
-    loginDisabled: false
-  });
-
-  print("Login LOCK DISABLED", "success");
-}, "Enables login");
-
-/* GLOBAL LOCK (everything) */
-register("system.globallock.enable", async () => {
-  await updateDoc(doc(db, "system", "config"), {
-    globalLock: true,
-    loginDisabled: true
-  });
-
-  print("GLOBAL LOCK ACTIVATED — ALL SYSTEMS DISABLED", "error");
-}, "Disables EVERYTHING");
-
-/* GLOBAL UNLOCK */
-register("system.globallock.disable", async () => {
-  await updateDoc(doc(db, "system", "config"), {
-    globalLock: false,
-    loginDisabled: false
-  });
-
-  print("GLOBAL LOCK DISABLED", "success");
-}, "Restores full system access");
-
-/* ================= USERS ================= */
-
-register("user.list", async () => {
-  const snap = await getDocs(collection(db, "users"));
-
-  snap.forEach(d => {
-    const u = d.data();
-    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
-  });
-}, "Lists users");
-
-register("user.delete", async (a) => {
-  await deleteDoc(doc(db, "users", a[0]));
-  print("User deleted", "success");
-}, "Deletes user");
-
-register("user.role", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
-    role: a[1]
-  });
-
-  print("Role updated", "success");
-}, "Changes role");
-
-register("user.lock", async (a) => {
-  const reason = a.slice(1).join(" ");
-
-  await updateDoc(doc(db, "users", a[0]), {
-    locked: true,
-    lockReason: reason
-  });
-
-  print("User locked", "error");
-}, "Locks user");
-
-register("user.unlock", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
-    locked: false,
-    lockReason: ""
-  });
-
-  print("User unlocked", "success");
-}, "Unlocks user");
-
-/* ================= INCIDENTS ================= */
-
-register("incident.list", async () => {
-  const q = query(
-    collection(db, "incidentReports"),
-    orderBy("timestamp", "desc")
-  );
-
-  const snap = await getDocs(q);
-
-  snap.forEach(d => {
-    const i = d.data();
-    print(`${d.id} | ${i.title} | ${i.severity}`);
-  });
-}, "Lists incidents");
-
-register("incident.create", async (a) => {
-  const raw = a.join(" ");
-  const [title, target, severity, details] = raw.split("|");
-
-  await addDoc(collection(db, "incidentReports"), {
-    title,
-    target,
-    severity,
-    details,
-    timestamp: Date.now(),
-    status: "open"
-  });
-
-  print("Incident created", "success");
-}, "Creates incident");
-
-/* ================= CHATS ================= */
-
-register("chat.list", async () => {
-  const snap = await getDocs(collection(db, "chats"));
-
-  snap.forEach(d => {
-    const c = d.data();
-    print(`${d.id} | ${c.lastMessage || "no message"}`);
-  });
-}, "Lists chats");
-
-/* ================= LOGS ================= */
-
-register("logs.list", async () => {
-  const q = query(
-    collection(db, "adminLogs"),
-    orderBy("timestamp", "desc"),
-    limit(30)
-  );
-
-  const snap = await getDocs(q);
-
-  snap.forEach(d => {
-    const l = d.data();
-    print(`${l.type} | ${l.targetUser} | ${l.details}`);
-  });
-}, "Shows logs");
-
-/* ================= INIT ================= */
-
-print("Admin OS ready (v9). Type 'help'.", "success");
+print("Admin OS Ready. Type help.", "success");
 
 </script>
 
