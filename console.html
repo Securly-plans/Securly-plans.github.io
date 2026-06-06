@@ -70,6 +70,8 @@ body {
 
 <script type="module">
 
+<script type="module">
+
 /* ================= FIREBASE (V9 MODULAR) ================= */
 import { db } from "./js/firebase.js";
 
@@ -108,6 +110,48 @@ function register(name, fn, description = "No description") {
   helpData[name] = description;
 }
 
+/* ================= COMMAND SEARCH (NEW) ================= */
+
+const suggestionBox = document.createElement("div");
+suggestionBox.style.position = "absolute";
+suggestionBox.style.bottom = "60px";
+suggestionBox.style.left = "10px";
+suggestionBox.style.background = "#111";
+suggestionBox.style.border = "1px solid #00ff88";
+suggestionBox.style.color = "#00ff88";
+suggestionBox.style.fontFamily = "monospace";
+suggestionBox.style.padding = "5px";
+suggestionBox.style.display = "none";
+suggestionBox.style.maxWidth = "300px";
+suggestionBox.style.zIndex = "9999";
+document.body.appendChild(suggestionBox);
+
+function updateSuggestions(value) {
+  const val = value.toLowerCase().trim();
+
+  if (!val) {
+    suggestionBox.style.display = "none";
+    return;
+  }
+
+  const matches = Object.keys(commands)
+    .filter(c => c.startsWith(val))
+    .slice(0, 5);
+
+  if (matches.length === 0) {
+    suggestionBox.style.display = "none";
+    return;
+  }
+
+  suggestionBox.innerHTML = matches
+    .map(m => `<div>› ${m}</div>`)
+    .join("");
+
+  suggestionBox.style.display = "block";
+}
+
+/* ================= RUNNER ================= */
+
 async function run(inputStr) {
   if (!inputStr.trim()) return;
 
@@ -141,6 +185,7 @@ input.addEventListener("keydown", (e) => {
     hIndex = history.length;
     run(input.value);
     input.value = "";
+    suggestionBox.style.display = "none";
   }
 
   if (e.key === "ArrowUp") {
@@ -153,7 +198,12 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-/* ================= HELP (NOW DOCUMENTED) ================= */
+/* LIVE COMMAND SEARCH */
+input.addEventListener("input", (e) => {
+  updateSuggestions(e.target.value);
+});
+
+/* ================= HELP ================= */
 
 register("help", () => {
   print("=== ADMIN OS COMMANDS ===", "info");
@@ -176,17 +226,23 @@ register("status", () => {
   );
 }, "Checks Firebase connection status");
 
-/* ================= LOGIN LOCK (NEW FEATURE) ================= */
+/* ================= LOGIN LOCK (ENHANCED) ================= */
 
-register("system.loginlock", async (a) => {
-  const value = a[0] === "true";
-
+register("system.loginlock.enable", async () => {
   await updateDoc(doc(db, "system", "config"), {
-    loginDisabled: value
+    loginDisabled: true
   });
 
-  print("Login lock set to: " + value, "success");
-}, "Enables/disables global login access");
+  print("🚫 Login DISABLED globally", "error");
+}, "Disables ALL logins globally");
+
+register("system.loginlock.disable", async () => {
+  await updateDoc(doc(db, "system", "config"), {
+    loginDisabled: false
+  });
+
+  print("✅ Login ENABLED globally", "success");
+}, "Enables ALL logins globally");
 
 /* ================= USERS ================= */
 
@@ -295,6 +351,8 @@ register("logs.list", async () => {
 /* ================= INIT ================= */
 
 print("Admin OS ready (v9). Type 'help'.", "success");
+
+</script>
 
 </script>
 
