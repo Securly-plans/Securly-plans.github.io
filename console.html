@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin OS Console</title>
+<title>Admin OS Console (Crash-Proof)</title>
 
 <style>
 body {
@@ -59,7 +59,7 @@ body {
 <body>
 
 <div id="wrap">
-  <div id="header">ADMIN OS CONSOLE — type "help"</div>
+  <div id="header">ADMIN OS CONSOLE — crash-proof mode</div>
   <div id="console"></div>
 
   <div id="inputBar">
@@ -68,35 +68,55 @@ body {
   </div>
 </div>
 
+<!-- Firebase (you already have firebase.js setting window.db) -->
 <script src="js/firebase.js"></script>
 
 <script>
-const db = window.db;
+/* =========================
+   SAFE CORE LAYER
+========================= */
 
 const consoleEl = document.getElementById("console");
 const input = document.getElementById("cmdInput");
 
-/* =========================
-   OUTPUT
-========================= */
 function print(msg, type="line") {
   const div = document.createElement("div");
   div.className = "line " + type;
-  div.textContent = msg;
+  div.textContent = String(msg);
   consoleEl.appendChild(div);
   consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+/* SAFE FIREBASE ACCESS */
+function getDB() {
+  if (!window.db) {
+    throw new Error("Firestore (db) not initialized. Check firebase.js");
+  }
+  return window.db;
+}
+
+/* SAFE WRAPPER */
+async function fb(fn) {
+  try {
+    const db = getDB();
+    return await fn(db);
+  } catch (err) {
+    print("Firebase error: " + (err?.message || err), "error");
+    console.error(err);
+  }
 }
 
 /* =========================
    COMMAND SYSTEM
 ========================= */
+
 const commands = {};
 
 function register(name, fn) {
   commands[name] = fn;
 }
 
-function run(inputStr) {
+async function run(inputStr) {
   if (!inputStr.trim()) return;
 
   print("> " + inputStr, "warn");
@@ -104,21 +124,25 @@ function run(inputStr) {
   const parts = inputStr.split(" ");
   const cmd = parts.shift().toLowerCase();
 
-  if (!commands[cmd]) {
+  const fn = commands[cmd];
+
+  if (!fn) {
     print("Unknown command: " + cmd, "error");
     return;
   }
 
   try {
-    commands[cmd](parts);
+    await fn(parts);
   } catch (e) {
-    print(e.message, "error");
+    print("ERROR: " + (e?.message || e), "error");
+    console.error(e);
   }
 }
 
 /* =========================
    HISTORY
 ========================= */
+
 let history = [];
 let hIndex = -1;
 
@@ -141,69 +165,64 @@ input.addEventListener("keydown", (e) => {
 });
 
 /* =========================
-   HELP
+   HELP (DYNAMIC)
 ========================= */
-register("help", () => {
+
+register("help", async () => {
   print("=== ADMIN OS COMMANDS ===", "info");
 
-  print("USERS:");
-  print(" user.create <name> <pass>");
-  print(" user.delete <id>");
-  print(" user.role <id> <role>");
-  print(" user.lock <id> <reason>");
-  print(" user.unlock <id>");
-  print(" user.list");
-  print(" user.search <text>");
+  const grouped = {};
 
-  print("\nINCIDENTS:");
-  print(" incident.create <title>|<target>|<severity>|<details>");
-  print(" incident.list");
+  Object.keys(commands).forEach(cmd => {
+    const group = cmd.includes(".") ? cmd.split(".")[0] : "general";
+    if (!grouped[group]) grouped[group] = [];
+    grouped[group].push(cmd);
+  });
 
-  print("\nCHATS:");
-  print(" chat.list");
-
-  print("\nLOGS:");
-  print(" logs.list");
-
-  print("\nSTATS:");
-  print(" stats");
+  Object.keys(grouped).forEach(group => {
+    print(`\n[${group}]`, "info");
+    grouped[group].sort().forEach(c => print(" - " + c));
+  });
 });
 
-register("clear", () => consoleEl.innerHTML = "");
-
 /* =========================
-   HELPERS
+   SYSTEM
 ========================= */
-function hash(str) {
-  return btoa(unescape(encodeURIComponent(str)));
-}
+
+register("clear", async () => {
+  consoleEl.innerHTML = "";
+});
+
+register("status", async () => {
+  print("=== SYSTEM STATUS ===", "info");
+  print("Firebase DB: " + (window.db ? "OK" : "NOT INITIALIZED"),
+    window.db ? "success" : "error"
+  );
+});
 
 /* =========================
    USERS
 ========================= */
 
-register("user.create", async (a) => {
-  const name = a[0];
-  const pass = a[1];
+register("user.list", async () => {
+  await fb(async (db) => {
+    const snap = await db.collection("users").get();
 
-  if (!name || !pass) return print("Usage: user.create <name> <pass>", "error");
-
-  await db.collection("users").add({
-    username: name,
-    passwordHash: hash(pass),
-    role: "user",
-    locked: false,
-    created: Date.now()
+    snap.forEach(d => {
+      const u = d.data();
+      print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
+    });
   });
-
-  print("User created", "success");
 });
 
 register("user.delete", async (a) => {
   const id = a[0];
   if (!id) return print("Usage: user.delete <id>", "error");
 
-  await db.collection("users").doc(id).delete();
+  await fb(async (db) => {
+    await db.collection("users").doc(id).delete();
+  });
+
   print("User deleted", "success");
 });
 
@@ -211,7 +230,12 @@ register("user.role", async (a) => {
   const id = a[0];
   const role = a[1];
 
-  await db.collection("users").doc(id).update({ role });
+  if (!id || !role) return print("Usage: user.role <id> <role>", "error");
+
+  await fb(async (db) => {
+    await db.collection("users").doc(id).update({ role });
+  });
+
   print("Role updated", "success");
 });
 
@@ -219,9 +243,11 @@ register("user.lock", async (a) => {
   const id = a[0];
   const reason = a.slice(1).join(" ");
 
-  await db.collection("users").doc(id).update({
-    locked: true,
-    lockReason: reason
+  await fb(async (db) => {
+    await db.collection("users").doc(id).update({
+      locked: true,
+      lockReason: reason
+    });
   });
 
   print("User locked", "error");
@@ -230,63 +256,49 @@ register("user.lock", async (a) => {
 register("user.unlock", async (a) => {
   const id = a[0];
 
-  await db.collection("users").doc(id).update({
-    locked: false,
-    lockReason: ""
+  await fb(async (db) => {
+    await db.collection("users").doc(id).update({
+      locked: false,
+      lockReason: ""
+    });
   });
 
   print("User unlocked", "success");
-});
-
-register("user.list", async () => {
-  const snap = await db.collection("users").get();
-
-  snap.forEach(d => {
-    const u = d.data();
-    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
-  });
-});
-
-register("user.search", async (a) => {
-  const term = a.join(" ").toLowerCase();
-
-  const snap = await db.collection("users").get();
-
-  snap.forEach(d => {
-    const u = d.data();
-    if ((u.username || "").toLowerCase().includes(term)) {
-      print(`${d.id} | ${u.username}`);
-    }
-  });
 });
 
 /* =========================
    INCIDENTS
 ========================= */
 
+register("incident.list", async () => {
+  await fb(async (db) => {
+    const snap = await db.collection("incidentReports")
+      .orderBy("timestamp", "desc")
+      .get();
+
+    snap.forEach(d => {
+      const i = d.data();
+      print(`${d.id} | ${i.title} | ${i.severity}`);
+    });
+  });
+});
+
 register("incident.create", async (a) => {
   const raw = a.join(" ");
   const [title, target, severity, details] = raw.split("|");
 
-  await db.collection("incidentReports").add({
-    title,
-    target,
-    severity,
-    details,
-    timestamp: Date.now(),
-    status: "open"
+  await fb(async (db) => {
+    await db.collection("incidentReports").add({
+      title,
+      target,
+      severity,
+      details,
+      timestamp: Date.now(),
+      status: "open"
+    });
   });
 
   print("Incident created", "success");
-});
-
-register("incident.list", async () => {
-  const snap = await db.collection("incidentReports").orderBy("timestamp","desc").get();
-
-  snap.forEach(d => {
-    const i = d.data();
-    print(`${d.id} | ${i.title} | ${i.severity}`);
-  });
 });
 
 /* =========================
@@ -294,11 +306,13 @@ register("incident.list", async () => {
 ========================= */
 
 register("chat.list", async () => {
-  const snap = await db.collection("chats").get();
+  await fb(async (db) => {
+    const snap = await db.collection("chats").get();
 
-  snap.forEach(d => {
-    const c = d.data();
-    print(`${d.id} | ${c.lastMessage || "no message"}`);
+    snap.forEach(d => {
+      const c = d.data();
+      print(`${d.id} | ${c.lastMessage || "no message"}`);
+    });
   });
 });
 
@@ -307,14 +321,16 @@ register("chat.list", async () => {
 ========================= */
 
 register("logs.list", async () => {
-  const snap = await db.collection("adminLogs")
-    .orderBy("timestamp","desc")
-    .limit(30)
-    .get();
+  await fb(async (db) => {
+    const snap = await db.collection("adminLogs")
+      .orderBy("timestamp", "desc")
+      .limit(30)
+      .get();
 
-  snap.forEach(d => {
-    const l = d.data();
-    print(`${l.type} | ${l.targetUser} | ${l.details}`);
+    snap.forEach(d => {
+      const l = d.data();
+      print(`${l.type} | ${l.targetUser} | ${l.details}`);
+    });
   });
 });
 
@@ -323,27 +339,25 @@ register("logs.list", async () => {
 ========================= */
 
 register("stats", async () => {
-  const users = await db.collection("users").get();
-  const incidents = await db.collection("incidentReports").get();
-  const chats = await db.collection("chats").get();
+  await fb(async (db) => {
+    const users = await db.collection("users").get();
+    const incidents = await db.collection("incidentReports").get();
+    const chats = await db.collection("chats").get();
 
-  const locked = users.docs.filter(d => d.data().locked).length;
+    const locked = users.docs.filter(d => d.data().locked).length;
 
-  print(`Users: ${users.size}`, "info");
-  print(`Locked: ${locked}`, "info");
-  print(`Incidents: ${incidents.size}`, "info");
-  print(`Chats: ${chats.size}`, "info");
+    print(`Users: ${users.size}`, "info");
+    print(`Locked: ${locked}`, "info");
+    print(`Incidents: ${incidents.size}`, "info");
+    print(`Chats: ${chats.size}`, "info");
+  });
 });
 
 /* =========================
-   RUNNER
+   INIT
 ========================= */
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    run(input.value);
-    input.value = "";
-  }
-});
+
+print("Admin OS loaded. Type 'help'.", "success");
 </script>
 
 </body>
