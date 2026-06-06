@@ -41,7 +41,7 @@ async function checkGlobalLock() {
 
       alert("SYSTEM LOCKED — You have been logged out.");
 
-      window.location.href = "login.html";
+      window.location.href = "index.html";
       return;
     }
 
