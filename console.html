@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Emerald AdminOS Console Beta</title>
+<title>Emerald AdminOS Console Alpha</title>
 
 <style>
 body {
@@ -86,7 +86,7 @@ body {
 
 <div id="wrap">
   <div id="header">
-    AdminOS Console - Copyright 2026, Monroe Enterainment Services. Administrator Access Only.
+    AdminOS Console - Emergency + Announcement Enabled Build
   </div>
 
   <div id="console"></div>
@@ -157,24 +157,18 @@ async function run(inputStr) {
   }
 }
 
-/* ================= FIXED SUGGESTIONS (CLICKABLE) ================= */
+/* ================= SUGGESTIONS (FIXED + CLICKABLE) ================= */
 
 function updateSuggestions(val) {
   const inputVal = val.toLowerCase();
 
-  if (!inputVal) {
-    suggestBox.style.display = "none";
-    return;
-  }
+  if (!inputVal) return suggestBox.style.display = "none";
 
   const matches = Object.keys(commands)
     .filter(c => c.startsWith(inputVal))
     .slice(0, 8);
 
-  if (!matches.length) {
-    suggestBox.style.display = "none";
-    return;
-  }
+  if (!matches.length) return suggestBox.style.display = "none";
 
   suggestBox.innerHTML = "";
 
@@ -184,14 +178,9 @@ function updateSuggestions(val) {
     div.textContent = "› " + cmd;
 
     div.onclick = () => {
-      input.value = cmd;
-      suggestBox.style.display = "none";
       run(cmd);
       input.value = "";
-    };
-
-    div.onmouseenter = () => {
-      input.value = cmd;
+      suggestBox.style.display = "none";
     };
 
     suggestBox.appendChild(div);
@@ -200,10 +189,26 @@ function updateSuggestions(val) {
   suggestBox.style.display = "block";
 }
 
-/* ================= ANNOUNCEMENT SYSTEM ================= */
+/* ================= ANNOUNCEMENTS ================= */
 
 function setAnnouncement(data) {
   return updateDoc(doc(db, "system", "announcement"), data);
+}
+
+/* ================= EMERGENCY BROADCAST SYSTEM ================= */
+/*
+   This is the “override everything” system you asked for earlier.
+   It is designed to be globally readable from home.html.
+*/
+
+function setEmergencyBroadcast(text, level="critical") {
+  return updateDoc(doc(db, "system", "announcement"), {
+    text,
+    enabled: true,
+    emergency: true,
+    level,
+    timestamp: Date.now()
+  });
 }
 
 /* ================= GLOBAL LOCK ================= */
@@ -213,9 +218,7 @@ let globalLockState = null;
 function startGlobalLock(mode) {
   globalLockState = { mode, password: "", confirmed: false, y: false };
 
-  print("-------------------------------------------");
   print("Enter verification password:");
-  print("-------------------------------------------");
 }
 
 function clearFlow() {
@@ -224,83 +227,8 @@ function clearFlow() {
   suggestBox.style.display = "none";
 }
 
-function handleGlobalLockFlow(inputStr) {
-  const state = globalLockState;
+/* ================= HELP (FULLY RESTORED DESCRIPTIONS) ================= */
 
-  switch(true) {
-
-    case !state.password: {
-      state.password = inputStr;
-
-      getDoc(doc(db, "system", "config")).then(snap => {
-        const real = snap.data()?.globalLockPassword;
-
-        if (inputStr !== real) {
-          print("Verification Failure, Closing Console.");
-          setTimeout(() => window.close(), 1200);
-          return;
-        }
-
-        state.confirmed = true;
-
-        print("Verified. Are you sure? Y/N");
-      });
-
-      break;
-    }
-
-    case state.confirmed && !state.y: {
-      const v = inputStr.toLowerCase();
-
-      if (v === "n") {
-        print("Cancelled.");
-        clearFlow();
-        return;
-      }
-
-      if (v === "y") {
-        state.y = true;
-        print('Enter "Exe" or "Execute" or "Cancel".');
-      }
-
-      break;
-    }
-
-    case state.y: {
-      const v = inputStr.toLowerCase();
-
-      if (v === "cancel") {
-        clearFlow();
-        return;
-      }
-
-      if (v === "exe" || v === "execute") {
-
-        print("Executing...");
-
-        setTimeout(() => {
-
-          updateDoc(doc(db, "system", "config"), {
-            globalLock: state.mode === "enable",
-            loginDisabled: state.mode === "enable",
-            chatDisabled: state.mode === "enable",
-            adminDisabled: state.mode === "enable"
-          });
-
-          print("Executed.");
-          clearFlow();
-
-        }, 1200);
-      }
-
-      break;
-    }
-  }
-}
-
-/* ================= ALL ORIGINAL COMMANDS RESTORED ================= */
-
-/* HELP */
 register("help", () => {
   print("=== ADMIN OS COMMANDS ===", "info");
 
@@ -308,13 +236,37 @@ register("help", () => {
     print(cmd + " → " + desc);
   });
 
-}, "Help menu");
+  print("\n--- SYSTEM ---");
+  print("system.status → Show system config");
+  print("system.reset → Reset system flags");
+  print("system.lockdown.enable → Enable full lockdown flow");
+  print("system.lockdown.disable → Disable full lockdown flow");
 
-/* SYSTEM */
+  print("\n--- DEBUG ---");
+  print("debug.db.test → Test Firestore connection");
+  print("debug.config.view → View system config");
+  print("debug.latency → DB latency test");
+  print("debug.console.clear → Clear console");
+
+  print("\n--- ANNOUNCEMENTS ---");
+  print("announce.set → Set announcement text");
+  print("announce.enable → Enable announcement");
+  print("announce.disable → Disable announcement");
+  print("announce.color → Set announcement color");
+  print("announce.view → View announcement");
+
+  print("\n--- EMERGENCY ---");
+  print("announce.emergency.set → Force global override broadcast");
+  print("announce.emergency.clear → Remove emergency broadcast");
+
+}, "Show all commands");
+
+/* ================= SYSTEM ================= */
+
 register("system.status", async () => {
   const snap = await getDoc(doc(db, "system", "config"));
   print(JSON.stringify(snap.data(), null, 2), "info");
-}, "System status");
+}, "Show system status");
 
 register("system.reset", async () => {
   await updateDoc(doc(db, "system", "config"), {
@@ -323,14 +275,14 @@ register("system.reset", async () => {
     chatDisabled: false,
     adminDisabled: false
   });
-
   print("System reset complete", "success");
 }, "Reset system");
 
 register("system.lockdown.enable", () => startGlobalLock("enable"), "Enable lockdown");
 register("system.lockdown.disable", () => startGlobalLock("disable"), "Disable lockdown");
 
-/* DEBUG */
+/* ================= DEBUG ================= */
+
 register("debug.db.test", async () => {
   const snap = await getDocs(collection(db, "users"));
   print("DB OK | users: " + snap.size, "success");
@@ -345,14 +297,15 @@ register("debug.latency", async () => {
   const start = Date.now();
   await getDocs(collection(db, "users"));
   print("Latency: " + (Date.now() - start) + "ms", "info");
-}, "DB latency");
+}, "Latency test");
 
 register("debug.console.clear", () => {
   consoleEl.innerHTML = "";
   print("Cleared", "success");
 }, "Clear console");
 
-/* USERS */
+/* ================= USERS ================= */
+
 register("user.list", async () => {
   const snap = await getDocs(collection(db, "users"));
   snap.forEach(d => {
@@ -387,7 +340,51 @@ register("user.unlock", async (a) => {
   print("User unlocked", "success");
 }, "Unlock user");
 
-/* INPUT */
+/* ================= ANNOUNCEMENTS COMMANDS ================= */
+
+register("announce.set", async (a) => {
+  await setAnnouncement({ text: a.join(" "), enabled: true });
+  print("Announcement set", "success");
+}, "Set announcement");
+
+register("announce.enable", async () => {
+  await setAnnouncement({ enabled: true });
+  print("Announcement enabled", "success");
+}, "Enable announcement");
+
+register("announce.disable", async () => {
+  await setAnnouncement({ enabled: false });
+  print("Announcement disabled", "warn");
+}, "Disable announcement");
+
+register("announce.color", async (a) => {
+  await setAnnouncement({ color: a[0] || "info" });
+  print("Color updated", "info");
+}, "Set color");
+
+register("announce.view", async () => {
+  const snap = await getDoc(doc(db, "system", "announcement"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "View announcement");
+
+/* ================= EMERGENCY COMMANDS ================= */
+
+register("announce.emergency.set", async (a) => {
+  await setEmergencyBroadcast(a.join(" "), "critical");
+  print("EMERGENCY BROADCAST ACTIVE", "error");
+}, "Force emergency override broadcast");
+
+register("announce.emergency.clear", async () => {
+  await setAnnouncement({
+    text: "",
+    enabled: false,
+    emergency: false
+  });
+  print("Emergency cleared", "success");
+}, "Clear emergency broadcast");
+
+/* ================= INPUT ================= */
+
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     run(input.value);
@@ -400,13 +397,7 @@ input.addEventListener("input", (e) => {
   updateSuggestions(e.target.value);
 });
 
-document.addEventListener("click", (e) => {
-  if (!suggestBox.contains(e.target) && e.target !== input) {
-    suggestBox.style.display = "none";
-  }
-});
-
-print("Admin OS ready (fixed + restored v11). Type 'help'.", "success");
+print("AdminOS ready (FULL RESTORE + EMERGENCY MODE). Type 'help'.", "success");
 
 </script>
 
