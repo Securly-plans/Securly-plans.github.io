@@ -137,7 +137,6 @@ main{
 
 /* =========================
    FIXED GAME GRID SIZE
-   (restores proper box sizing)
 ========================= */
 .game-grid, .video-grid{
   display:grid;
@@ -355,6 +354,73 @@ searchBar.addEventListener("input", filterItems);
 </script>
 
 <script src="script.js"></script>
+
+<!-- ================= PUSH NOTIFICATIONS (ADDED - NO CHANGES ABOVE) ================= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getMessaging, getToken, onMessage } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+import { db } from "./js/firebase.js";
+
+/* ⚠️ IMPORTANT: replace with your Firebase config if needed */
+const app = initializeApp({});
+
+/* INIT MESSAGING */
+let messaging;
+try {
+  messaging = getMessaging(app);
+} catch (e) {
+  console.warn("Messaging not supported:", e);
+}
+
+/* REQUEST PERMISSION */
+async function initPush() {
+  try {
+    if (!messaging) return;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.log("Notification permission denied");
+      return;
+    }
+
+    /* TODO: replace with your VAPID key */
+    const token = await getToken(messaging, {
+      vapidKey: "YOUR_PUBLIC_VAPID_KEY_HERE"
+    });
+
+    if (token) {
+      console.log("FCM Token:", token);
+      localStorage.setItem("fcmToken", token);
+    }
+
+  } catch (err) {
+    console.error("Push init error:", err);
+  }
+}
+
+/* FOREGROUND NOTIFICATIONS */
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    console.log("Push received:", payload);
+
+    const title = payload?.notification?.title || "Notification";
+    const body = payload?.notification?.body || "";
+
+    alert(`${title}\n\n${body}`);
+  });
+}
+
+/* SERVICE WORKER */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/firebase-messaging-sw.js")
+    .then(() => console.log("Service Worker registered"))
+    .catch(err => console.error("SW error:", err));
+}
+
+/* START */
+initPush();
+</script>
 
 </body>
 </html>
