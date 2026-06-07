@@ -1,23 +1,36 @@
 // js/converter.js
 
+import { db } from "./firebase.js";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/**
+ * Main resolver:
+ * input → user object { id, ...data }
+ */
 export async function resolveUser(input) {
   if (!input) return null;
 
   const cleaned = input.toString().trim().replace("@", "");
 
-  // 1. If it's already a UID (fast path)
-  if (isLikelyUserId(cleaned)) {
-    const user = await getUserById(cleaned);
-    return user;
-  }
+  // 1. Try UID first (FASTEST PATH)
+  const byId = await getUserById(cleaned);
+  if (byId) return byId;
 
-  // 2. Try username lookup
-  const userByName = await getUserByUsername(cleaned);
-  if (userByName) return userByName;
+  // 2. Try username exact match
+  const byUsername = await getUserByUsername(cleaned);
+  if (byUsername) return byUsername;
 
-  // 3. Try partial match (optional but powerful)
-  const userByPartial = await getUserByPartialName(cleaned);
-  if (userByPartial) return userByPartial;
+  // 3. Optional fallback: partial match
+  const byPartial = await getUserByPartialUsername(cleaned);
+  if (byPartial) return byPartial;
 
   return null;
 }
