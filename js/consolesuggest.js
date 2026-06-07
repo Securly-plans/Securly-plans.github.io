@@ -1,11 +1,8 @@
-// js/consolesuggest.js
-
-const API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-
-// ⚠️ TEMP ONLY (move to backend later for security)
-const API_KEY = "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";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "./firebase.js";
 
 let smartSuggestEnabled = false;
+let cachedKey = null;
 
 /* ================= TOGGLE ================= */
 
@@ -17,17 +14,50 @@ export function isSmartSuggestEnabled() {
   return smartSuggestEnabled;
 }
 
+/* ================= LOAD API KEY (FIRESTORE) ================= */
+
+async function getAPIKey() {
+
+  if (cachedKey) return cachedKey;
+
+  try {
+    const snap = await getDoc(doc(db, "system", "consoleAutoSuggest"));
+
+    if (!snap.exists()) {
+      console.error("consoleAutoSuggest doc missing");
+      return null;
+    }
+
+    cachedKey = snap.data()?.API || null;
+
+    return cachedKey;
+
+  } catch (err) {
+    console.error("Failed to load API key:", err);
+    return null;
+  }
+}
+
 /* ================= AI PARSER ================= */
 
 export async function aiParse(input) {
+
   if (!smartSuggestEnabled) return null;
 
+  const key = await getAPIKey();
+
+  if (!key) {
+    console.error("AI key not found in Firestore");
+    return null;
+  }
+
   try {
-    const res = await fetch(API_ENDPOINT, {
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        "Authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
@@ -35,29 +65,20 @@ export async function aiParse(input) {
           {
             role: "system",
             content: `
-You are an admin console command mapper.
+You are an admin console command parser.
 
-Return ONLY valid JSON.
+Return ONLY JSON.
 
-Available commands:
-- user.ban { userId }
-- user.banInactive { days }
-- page.redirect { url }
-- chat.send { message }
-- system.status
-- announce.set { text }
+Allowed format:
+{
+  "cmd": "command.name",
+  "args": []
+}
 
 Rules:
-- Output ONLY JSON
-- No markdown
-- No explanation
-- If unsure, return null
-
-Example:
-{
-  "cmd": "user.banInactive",
-  "args": [30]
-}
+- ONLY JSON
+- NO explanation
+- If unsure return null
 `
           },
           {
@@ -69,7 +90,13 @@ Example:
       })
     });
 
+    if (!res.ok) {
+      console.error("OpenAI error:", await res.text());
+      return null;
+    }
+
     const data = await res.json();
+
     const raw = data?.choices?.[0]?.message?.content;
 
     if (!raw) return null;
@@ -77,7 +104,7 @@ Example:
     return JSON.parse(raw);
 
   } catch (err) {
-    console.error("AI parse error:", err);
+    console.error("AI parse failed:", err);
     return null;
   }
 }
