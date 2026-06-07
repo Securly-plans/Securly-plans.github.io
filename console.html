@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Emerald AdminOS Console Alpha+</title>
+<title>AdminOS Console Alpha+</title>
 
 <style>
 body {
@@ -107,8 +107,10 @@ import {
   doc,
   query,
   orderBy,
-  limit
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  limit,
+  setDoc
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
@@ -187,6 +189,8 @@ function updateSuggestions(val) {
 /* ================= STATE ================= */
 
 let globalLockState = null;
+let currentChatId = null;
+let currentChatMessages = [];
 
 /* ================= RUNNER ================= */
 
@@ -208,6 +212,7 @@ async function run(inputStr) {
 
   try {
     await fn(parts);
+
   } catch (e) {
     print("ERROR: " + (e?.message || e), "error");
   }
@@ -450,6 +455,8 @@ register("help", () => {
   print("debug.config.view");
   print("debug.latency");
   print("debug.console.clear");
+  print("debug.log");
+  print("debug.log.clear");
 
   print("\n--- ANNOUNCEMENTS ---");
   print("announce.set");
@@ -457,6 +464,14 @@ register("help", () => {
   print("announce.disable");
   print("announce.color");
   print("announce.view");
+
+  print("\n--- CHAT ---");
+  print("chat.list");
+  print("chat.view");
+  print("chat.delete");
+  print("chat.clear");
+  print("chat.export");
+  print("chat.server");
 
   print("\n--- EMERGENCY ---");
   print("announce.emergency.set");
@@ -556,7 +571,440 @@ register("user.unlock", async (a) => {
   print("User unlocked", "success");
 }, "Unlock user");
 
-/* ================= INPUT ================= */
+/* ================= CHAT COMMANDS ================= */
+
+/* LIST CHATS */
+
+register("chat.list", async () => {
+
+  const snap = await getDocs(
+    collection(db, "chats")
+  );
+
+  print("=== CHATS ===", "info");
+
+  if (snap.empty) {
+    print("No chats found", "warn");
+    return;
+  }
+
+  snap.forEach(chat => {
+    print(chat.id);
+  });
+
+  await writeDebugLog(
+    "chat.list",
+    "Viewed chat list"
+  );
+
+}, "List all chats");
+
+/* OPEN CHAT */
+
+register("chat.view", async (a) => {
+
+  const chatId = a.join(" ");
+
+  if (!chatId) {
+    print(
+      "Usage: chat.view [chatId]",
+      "error"
+    );
+    return;
+  }
+
+  const snap = await getDoc(
+    doc(db, "chats", chatId)
+  );
+
+  if (!snap.exists()) {
+    print(
+      "Chat not found",
+      "error"
+    );
+    return;
+  }
+
+  currentChatId = chatId;
+
+  currentChatMessages =
+    snap.data().messages || [];
+
+  print(
+    "=== CHAT: " + chatId + " ===",
+    "info"
+  );
+
+  if (!currentChatMessages.length) {
+    print(
+      "No messages",
+      "warn"
+    );
+  }
+
+  currentChatMessages.forEach(
+    (msg, index) => {
+
+      print(
+        "[" + index + "] "
+        + (msg.from || "Unknown")
+        + ": "
+        + (msg.text || "")
+      );
+
+    }
+  );
+
+  await writeDebugLog(
+    "chat.view",
+    chatId
+  );
+
+}, "Open chat");
+
+/* DELETE MESSAGE */
+
+register("chat.delete", async (a) => {
+
+  if (!currentChatId) {
+    print(
+      "Open a chat first",
+      "error"
+    );
+    return;
+  }
+
+  const index =
+    parseInt(a[0]);
+
+  if (
+    isNaN(index) ||
+    !currentChatMessages[index]
+  ) {
+    print(
+      "Invalid message number",
+      "error"
+    );
+    return;
+  }
+
+  const removed =
+    currentChatMessages[index];
+
+  currentChatMessages.splice(
+    index,
+    1
+  );
+
+  await updateDoc(
+    doc(db, "chats", currentChatId),
+    {
+      messages:
+        currentChatMessages
+    }
+  );
+
+  await writeDebugLog(
+    "chat.delete",
+    currentChatId +
+    " #" +
+    index +
+    " " +
+    (removed.text || "")
+  );
+
+  print(
+    "Message deleted",
+    "success"
+  );
+
+}, "Delete message");
+
+/* CLEAR CHAT */
+
+register("chat.clear", async () => {
+
+  if (!currentChatId) {
+    print(
+      "Open a chat first",
+      "error"
+    );
+    return;
+  }
+
+  await updateDoc(
+    doc(db, "chats", currentChatId),
+    {
+      messages: []
+    }
+  );
+
+  currentChatMessages = [];
+
+  await writeDebugLog(
+    "chat.clear",
+    currentChatId
+  );
+
+  print(
+    "Chat cleared",
+    "success"
+  );
+
+}, "Clear chat");
+
+/* EXPORT CHAT */
+
+register("chat.export", async () => {
+
+  if (!currentChatId) {
+    print(
+      "Open a chat first",
+      "error"
+    );
+    return;
+  }
+
+  const blob = new Blob(
+    [
+      JSON.stringify(
+        currentChatMessages,
+        null,
+        2
+      )
+    ],
+    {
+      type:
+      "application/json"
+    }
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+
+  link.download =
+    currentChatId +
+    ".json";
+
+  link.click();
+
+  await writeDebugLog(
+    "chat.export",
+    currentChatId
+  );
+
+  print(
+    "Export complete",
+    "success"
+  );
+
+}, "Export chat");
+
+/* SERVER MESSAGE */
+
+register("chat.server", async (a) => {
+
+  if (!currentChatId) {
+    print(
+      "Open a chat first",
+      "error"
+    );
+    return;
+  }
+
+  const text =
+    a.join(" ");
+
+  if (!text) {
+    print(
+      "Usage: chat.server [message]",
+      "error"
+    );
+    return;
+  }
+
+  currentChatMessages.push({
+
+    from: "Server",
+    text: text,
+    time: Date.now(),
+
+    media: null,
+    mediaType: null
+
+  });
+
+  await updateDoc(
+    doc(db, "chats", currentChatId),
+    {
+      messages:
+        currentChatMessages
+    }
+  );
+
+  await writeDebugLog(
+    "chat.server",
+    currentChatId +
+    " | " +
+    text
+  );
+
+  print(
+    "Server message sent",
+    "success"
+  );
+
+}, "Send server message");
+
+/* ================= DEBUG LOG ================= */
+
+async function writeDebugLog(action, details = "") {
+
+  try {
+
+    await addDoc(
+      collection(db, "debugLogs"),
+      {
+        action,
+        details,
+        admin:
+          localStorage.getItem("username")
+          || "Unknown",
+        timestamp: Date.now()
+      }
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Debug Log Error:",
+      err
+    );
+
+  }
+
+}
+
+/* VIEW LOGS */
+
+register(
+  "debug.log",
+  async () => {
+
+    const q = query(
+      collection(
+        db,
+        "debugLogs"
+      ),
+      orderBy(
+        "timestamp",
+        "desc"
+      ),
+      limit(50)
+    );
+
+    const snap =
+      await getDocs(q);
+
+    if (snap.empty) {
+
+      print(
+        "No logs found",
+        "warn"
+      );
+
+      return;
+    }
+
+    print(
+      "=== LAST 50 LOGS ===",
+      "info"
+    );
+
+    snap.forEach(docSnap => {
+
+      const log =
+        docSnap.data();
+
+      print(
+        "[" +
+        new Date(
+          log.timestamp
+        ).toLocaleString() +
+        "] "
+        +
+        log.admin +
+        " -> " +
+        log.action +
+        (
+          log.details
+            ? " | " +
+              log.details
+            : ""
+        )
+      );
+
+    });
+
+  },
+  "View debug logs"
+);
+
+/* CLEAR LOGS */
+
+register(
+  "debug.log.clear",
+  async () => {
+
+    const snap =
+      await getDocs(
+        collection(
+          db,
+          "debugLogs"
+        )
+      );
+
+    if (snap.empty) {
+
+      print(
+        "No logs found",
+        "warn"
+      );
+
+      return;
+    }
+
+    let count = 0;
+
+    for (const d of snap.docs) {
+
+      await deleteDoc(
+        doc(
+          db,
+          "debugLogs",
+          d.id
+        )
+      );
+
+      count++;
+
+    }
+
+    print(
+      "Deleted " +
+      count +
+      " logs",
+      "success"
+    );
+
+  },
+  "Clear debug logs"
+);
 
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -570,7 +1018,7 @@ input.addEventListener("input", (e) => {
   updateSuggestions(e.target.value);
 });
 
-print("AdminOS Console Edition Ready...    Enter 'help' for commands...     Waiting...");
+print("AdminOS Console Edition Ready...");
 
 </script>
 
