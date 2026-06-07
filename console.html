@@ -192,30 +192,139 @@ let globalLockState = null;
 let currentChatId = null;
 let currentChatMessages = [];
 
+let consoleAuthenticated = false;
+let awaitingConsolePassword = true;
+
+async function authenticateConsole(password) {
+
+  try {
+
+    const snap = await getDoc(
+      doc(db, "system", "consoleLogin")
+    );
+
+    if (!snap.exists()) {
+
+      print(
+        "Console login configuration missing.",
+        "error"
+      );
+
+      return false;
+
+    }
+
+    const realPassword =
+      snap.data()?.consolePassword;
+
+    if (password === realPassword) {
+
+      consoleAuthenticated = true;
+      awaitingConsolePassword = false;
+
+      print("--------------------------------");
+      print(
+        "Console Authentication Successful",
+        "success"
+      );
+      print("--------------------------------");
+
+      return true;
+
+    }
+
+    print(
+      "Invalid console password.",
+      "error"
+    );
+
+    return false;
+
+  } catch (err) {
+
+    print(
+      "Authentication error: " +
+      err.message,
+      "error"
+    );
+
+    return false;
+
+  }
+
+}
+
+/* ================= RUNNER ================= */
+
 /* ================= RUNNER ================= */
 
 async function run(inputStr) {
+
   if (!inputStr.trim()) return;
 
-  print("> " + (globalLockState ? "****" : inputStr), "warn");
+  /* LOGIN GATE */
 
-  if (globalLockState) {
-    return handleGlobalLockFlow(inputStr);
+  if (!consoleAuthenticated) {
+
+    print("> ****", "warn");
+
+    await authenticateConsole(
+      inputStr
+    );
+
+    return;
+
   }
 
-  const parts = inputStr.split(" ");
-  const cmd = parts.shift().toLowerCase();
+  print(
+    "> " +
+    (globalLockState
+      ? "****"
+      : inputStr),
+    "warn"
+  );
 
-  const fn = commands[cmd];
+  if (globalLockState) {
 
-  if (!fn) return print("Unknown command: " + cmd, "error");
+    return handleGlobalLockFlow(
+      inputStr
+    );
+
+  }
+
+  const parts =
+    inputStr.split(" ");
+
+  const cmd =
+    parts.shift().toLowerCase();
+
+  const fn =
+    commands[cmd];
+
+  if (!fn) {
+
+    return print(
+      "Unknown command: " +
+      cmd,
+      "error"
+    );
+
+  }
 
   try {
+
     await fn(parts);
 
   } catch (e) {
-    print("ERROR: " + (e?.message || e), "error");
+
+    print(
+      "ERROR: " +
+      (e?.message || e),
+      "error"
+    );
+
   }
+
 }
 
 /* ================= ANNOUNCEMENT COMMANDS (ADDED ONLY) ================= */
@@ -1018,7 +1127,10 @@ input.addEventListener("input", (e) => {
   updateSuggestions(e.target.value);
 });
 
-print("AdminOS Console Edition Ready...");
+print("--------------------------------");
+print("AdminOS Console Alpha+");
+print("Enter Console Password:");
+print("--------------------------------");
 
 </script>
 
