@@ -136,7 +136,7 @@ main{
 }
 
 /* =========================
-   📢 ANNOUNCEMENT BAR (ADDED)
+   📢 NORMAL ANNOUNCEMENT BAR
 ========================= */
 #announcementBar {
   position: fixed;
@@ -151,6 +151,24 @@ main{
   display: none;
   z-index: 99999;
   border-top: 1px solid var(--border);
+}
+
+/* =========================
+   🚨 EMERGENCY OVERRIDE BAR (ADDED)
+========================= */
+#emergencyBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 14px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+  background: #ef4444;
+  color: white;
+  display: none;
+  z-index: 100000;
 }
 </style>
 </head>
@@ -218,7 +236,7 @@ main{
   <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
     Securly-plans.github.io
   </a>
-    <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
+  <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
     Test Site
   </a>
 </p>
@@ -231,21 +249,23 @@ main{
   Emerald Games - Beta 1.0
 </p>
 
-<!-- 📢 ANNOUNCEMENT BAR (ADDED) -->
+<!-- 📢 ANNOUNCEMENT BAR -->
 <div id="announcementBar"></div>
 
-<!-- 📢 FIRESTORE ANNOUNCEMENT LOGIC (ADDED ONLY) -->
+<!-- 🚨 EMERGENCY OVERRIDE BAR (ADDED) -->
+<div id="emergencyBar"></div>
+
+<!-- 📢 ANNOUNCEMENT SYSTEM -->
 <script type="module">
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
 const bar = document.getElementById("announcementBar");
+const emergencyBar = document.getElementById("emergencyBar");
 
+/* NORMAL ANNOUNCEMENT */
 onSnapshot(doc(db, "system", "announcement"), (snap) => {
-  if (!snap.exists()) {
-    bar.style.display = "none";
-    return;
-  }
+  if (!snap.exists()) return bar.style.display = "none";
 
   const data = snap.data();
 
@@ -261,9 +281,27 @@ onSnapshot(doc(db, "system", "announcement"), (snap) => {
     bar.style.display = "none";
   }
 });
+
+/* 🚨 EMERGENCY OVERRIDE (NEW) */
+onSnapshot(doc(db, "system", "emergency"), (snap) => {
+  if (!snap.exists()) {
+    emergencyBar.style.display = "none";
+    return;
+  }
+
+  const data = snap.data();
+
+  if (data.enabled) {
+    emergencyBar.style.display = "block";
+    emergencyBar.textContent =
+      data.message || "EMERGENCY MODE ACTIVE - SITE STATUS ALERT";
+  } else {
+    emergencyBar.style.display = "none";
+  }
+});
 </script>
 
-<!-- ✅ ONLY NEW LOGIC -->
+<!-- NOTIFICATIONS (UNCHANGED) -->
 <script type="module">
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
@@ -318,12 +356,8 @@ const role = localStorage.getItem("role");
 const username = localStorage.getItem("username");
 const isLoggedIn = localStorage.getItem("loggedIn") === "true";
 
-/* =========================
-   VIP SUPPORT (ADDED ONLY)
-========================= */
 const isVIP = localStorage.getItem("vip") === "true";
 
-/* username display */
 const usernameDisplay = document.getElementById("usernameDisplay");
 
 if (username && isLoggedIn) {
@@ -331,26 +365,22 @@ if (username && isLoggedIn) {
     (role === "admin" ? "🛡 " : isVIP ? "⭐ " : "👤 ") + username;
 }
 
-/* base links */
 if (isLoggedIn) {
   document.getElementById("ticketslink").style.display = "inline-block";
   document.getElementById("profileLink").style.display = "inline-block";
   document.getElementById("viewUsersLink").style.display = "inline-block";
 }
 
-/* mod/admin + VIP influence */
 if (role === "admin" || role === "mod" || isVIP) {
   document.getElementById("adminticketslink").style.display = "inline-block";
   document.getElementById("modChatLink").style.display = "inline-block";
 }
 
-/* admin only */
 if (role === "admin") {
   document.getElementById("adminLink").style.display = "inline-block";
 }
 
-/* ================= SEARCH LOGIC ================= */
-
+/* SEARCH */
 const searchBar = document.getElementById("searchBar");
 const gameGrid = document.getElementById("gameGrid");
 const videoGrid = document.getElementById("videoGrid");
@@ -358,19 +388,12 @@ const videoGrid = document.getElementById("videoGrid");
 function filterItems() {
   const query = searchBar.value.toLowerCase().trim();
 
-  const allItems = [
-    ...gameGrid.children,
-    ...videoGrid.children
-  ];
+  const allItems = [...gameGrid.children, ...videoGrid.children];
 
   allItems.forEach(item => {
     const text = item.textContent.toLowerCase();
 
-    if (!query || text.includes(query)) {
-      item.style.display = "";
-    } else {
-      item.style.display = "none";
-    }
+    item.style.display = (!query || text.includes(query)) ? "" : "none";
   });
 }
 
