@@ -59,7 +59,7 @@ body {
 <body>
 
 <div id="wrap">
-  <div id="header">ADMIN OS CONSOLE — Firebase v9 (Crash-Proof)</div>
+  <div id="header">AdminOS Console - Copyright 2026, Monroe Enterainment Services</div>
   <div id="console"></div>
 
   <div id="inputBar">
@@ -80,8 +80,7 @@ import {
   doc,
   query,
   orderBy,
-  limit,
-  getDoc
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================= CORE ================= */
@@ -97,192 +96,242 @@ function print(msg, type="line") {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-/* ================= CLEAR + UI RESET ================= */
-
-function clearConsole() {
-  consoleEl.innerHTML = "";
-}
-
-/* ================= FIRESTORE CONFIG ================= */
-
-async function getConfig() {
-  const snap = await getDoc(doc(db, "system", "config"));
-  return snap.exists() ? snap.data() : {};
-}
-
 /* ================= COMMAND SYSTEM ================= */
 
 const commands = {};
 const helpData = {};
 
-function register(name, fn, description = "No description") {
+function register(name, fn, description="No description") {
   commands[name] = fn;
   helpData[name] = description;
 }
 
-/* ================= INPUT LOCK ================= */
+/* ================= STATE MACHINE (GLOBAL LOCK FLOW) ================= */
 
-function lockInput() {
-  input.disabled = true;
-}
+let globalLockState = null;
+let tempInput = "";
 
-function unlockInput() {
-  input.disabled = false;
-  input.focus();
-}
-
-/* ================= GLOBAL LOCK FLOW ENGINE ================= */
-
-async function globalLockFlow(action) {
-
-  const config = await getConfig();
-  const correctPassword = config.globalLockPassword;
-
-  print("-------------------------------------------");
-  print("Enter verification password:");
-  print("-------------------------------------------");
-
-  lockInput();
-
-  input.value = "";
-  input.type = "password";
-
-  const password = await new Promise(resolve => {
-    input.onkeydown = (e) => {
-      if (e.key === "Enter") {
-        const val = input.value;
-        input.value = "";
-        input.type = "text";
-        input.onkeydown = null;
-        resolve(val);
-      }
-    };
-  });
-
-  if (password !== correctPassword) {
-    print("Verification Failure, Closing Console.", "error");
-
-    setTimeout(() => {
-      document.body.innerHTML = "";
-      window.close();
-    }, 1200);
-
-    return;
-  }
-
-  print("-------------------------------------------");
-  print("Verification Confirmed. Are you sure? Y/N");
-
-  const confirm1 = await new Promise(resolve => {
-    input.onkeydown = (e) => {
-      if (e.key === "Enter") {
-        const val = input.value.trim().toUpperCase();
-        input.value = "";
-        input.onkeydown = null;
-        resolve(val);
-      }
-    };
-  });
-
-  if (confirm1 !== "Y") {
-    print("Command Canceled.");
-    clearConsole();
-    unlockInput();
-    return;
-  }
-
-  print("-------------------------------------------");
-  print('Intent Confirmed. Enter "Exe" or "Execute" or "Cancel".');
-
-  const confirm2 = await new Promise(resolve => {
-    input.onkeydown = (e) => {
-      if (e.key === "Enter") {
-        const val = input.value.trim();
-        input.value = "";
-        input.onkeydown = null;
-        resolve(val);
-      }
-    };
-  });
-
-  if (confirm2.toLowerCase() === "cancel") {
-    print("Command Canceled.");
-    clearConsole();
-    unlockInput();
-    return;
-  }
-
-  if (confirm2.toLowerCase() !== "exe" && confirm2.toLowerCase() !== "execute") {
-    print("Command Canceled.");
-    clearConsole();
-    unlockInput();
-    return;
-  }
-
-  print("Executing Command...");
-
-  await action();
-
-  print("Command has been executed.");
-
-  clearConsole();
-  unlockInput();
-}
-
-/* ================= COMMANDS ================= */
-
-register("system.globallock.enable", async () => {
-
-  await globalLockFlow(async () => {
-    await updateDoc(doc(db, "system", "config"), {
-      globalLock: true
-    });
-  });
-
-}, "Enables global system lock");
-
-register("system.globallock.disable", async () => {
-
-  await globalLockFlow(async () => {
-    await updateDoc(doc(db, "system", "config"), {
-      globalLock: false
-    });
-  });
-
-}, "Disables global system lock");
-
-/* ================= BASIC COMMANDS ================= */
-
-register("clear", () => clearConsole(), "Clears console");
-
-register("help", () => {
-  print("=== COMMANDS ===", "info");
-  Object.keys(helpData).forEach(c => {
-    print(c + " → " + helpData[c]);
-  });
-}, "Shows help");
+/*
+STATES:
+null
+await_password
+await_confirm
+await_y_n
+await_execute
+*/
 
 /* ================= RUNNER ================= */
 
 async function run(inputStr) {
   if (!inputStr.trim()) return;
 
-  print("> " + inputStr, "warn");
+  print("> " + (globalLockState ? "****" : inputStr), "warn");
+
+  /* GLOBAL LOCK FLOW OVERRIDE */
+  if (globalLockState) {
+    return handleGlobalLockFlow(inputStr);
+  }
 
   const parts = inputStr.split(" ");
   const cmd = parts.shift().toLowerCase();
 
-  if (!commands[cmd]) {
-    print("Unknown command", "error");
-    return;
-  }
+  const fn = commands[cmd];
+
+  if (!fn) return print("Unknown command: " + cmd, "error");
 
   try {
-    await commands[cmd](parts);
+    await fn(parts);
   } catch (e) {
-    print("ERROR: " + e.message, "error");
+    print("ERROR: " + (e?.message || e), "error");
   }
 }
+
+/* ================= GLOBAL LOCK FLOW ================= */
+
+function startGlobalLock(mode) {
+  globalLockState = {
+    mode,
+    password: "",
+    confirmed: false,
+    y: false
+  };
+
+  print("-------------------------------------------");
+  print("Enter verification password:");
+  print("-------------------------------------------");
+}
+
+function clearFlow() {
+  globalLockState = null;
+  tempInput = "";
+  consoleEl.innerHTML = "";
+}
+
+function handleGlobalLockFlow(inputStr) {
+
+  const state = globalLockState;
+
+  switch(true) {
+
+    /* STEP 1 PASSWORD */
+    case !state.password: {
+      state.password = inputStr;
+
+      // fetch password from firestore
+      getDoc(doc(db, "system", "config")).then(snap => {
+
+        const real = snap.data()?.globalLockPassword;
+
+        if (inputStr !== real) {
+          print("-------------------------------------------");
+          print("Verification Failure, Closing Console.");
+          setTimeout(() => window.close(), 1200);
+          return;
+        }
+
+        state.confirmed = true;
+
+        print("-------------------------------------------");
+        print("Verification Confirmed. Are you sure? Y/N");
+        print("-------------------------------------------");
+      });
+
+      break;
+    }
+
+    /* STEP 2 Y/N */
+    case state.confirmed && !state.y: {
+      const v = inputStr.toLowerCase();
+
+      if (v === "n") {
+        print("Command Canceled.");
+        clearFlow();
+        return;
+      }
+
+      if (v === "y") {
+        state.y = true;
+        print("-------------------------------------------");
+        print('Intent Confirmed. Enter "Exe" or "Execute" or "Cancel".');
+        print("-------------------------------------------");
+        print("Waiting...");
+      }
+
+      break;
+    }
+
+    /* STEP 3 EXECUTE */
+    case state.y: {
+      const v = inputStr.toLowerCase();
+
+      if (v === "cancel") {
+        print("Command Canceled.");
+        clearFlow();
+        return;
+      }
+
+      if (v === "exe" || v === "execute") {
+
+        print("-------------------------------------------");
+        print("Executing Command...");
+
+        setTimeout(() => {
+          if (state.mode === "enable") {
+            updateDoc(doc(db, "system", "config"), {
+              globalLock: true,
+              loginDisabled: true,
+              chatDisabled: true,
+              adminDisabled: true
+            });
+          } else {
+            updateDoc(doc(db, "system", "config"), {
+              globalLock: false,
+              loginDisabled: false,
+              chatDisabled: false,
+              adminDisabled: false
+            });
+          }
+
+          print("Command has been executed.");
+          clearFlow();
+
+        }, 1200);
+      }
+
+      break;
+    }
+  }
+}
+
+/* ================= HELP ================= */
+
+register("help", () => {
+  print("=== ADMIN OS COMMANDS ===", "info");
+
+  Object.entries(helpData).forEach(([cmd, desc]) => {
+    print("\n" + cmd);
+    print(" → " + desc);
+  });
+
+  print("\n--- GLOBAL LOCK ---");
+  print("system.globallock.enable");
+  print("system.globallock.disable");
+
+}, "Shows all commands with descriptions");
+
+/* ================= SYSTEM ================= */
+
+register("clear", () => consoleEl.innerHTML = "", "Clears console");
+
+register("status", () => {
+  print("System OK", "success");
+}, "System status check");
+
+/* ================= USERS (RESTORED) ================= */
+
+register("user.list", async () => {
+  const snap = await getDocs(collection(db, "users"));
+  snap.forEach(d => {
+    const u = d.data();
+    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
+  });
+}, "Lists all users");
+
+register("user.delete", async (a) => {
+  await deleteDoc(doc(db, "users", a[0]));
+  print("User deleted", "success");
+}, "Deletes user");
+
+register("user.role", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), { role: a[1] });
+  print("Role updated", "success");
+}, "Changes role");
+
+register("user.lock", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: true,
+    lockReason: a.slice(1).join(" ")
+  });
+  print("User locked", "error");
+}, "Locks user");
+
+register("user.unlock", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: false,
+    lockReason: ""
+  });
+  print("User unlocked", "success");
+}, "Unlocks user");
+
+/* ================= GLOBAL LOCK COMMANDS ================= */
+
+register("system.globallock.enable", () => {
+  startGlobalLock("enable");
+}, "Triggers global lock ENABLE flow");
+
+register("system.globallock.disable", () => {
+  startGlobalLock("disable");
+}, "Triggers global lock DISABLE flow");
 
 /* ================= INPUT ================= */
 
@@ -293,7 +342,7 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-print("Admin OS Ready. Type help.", "success");
+print("Admin OS ready (v9). Type 'help'.", "success");
 
 </script>
 
