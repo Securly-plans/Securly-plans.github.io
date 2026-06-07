@@ -113,8 +113,8 @@ import {
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
-
 import { aiParse, setSmartSuggest } from "./js/consolesuggest.js";
+import { resolveUser } from "./js/converter.js";
 
 /* ================= CORE ================= */
 
@@ -430,22 +430,6 @@ register("announce.emergency.view", async () => {
 
 /* ================= NOTIFICATIONS (ADDED) ================= */
 
-async function findUser(identifier) {
-  const snap = await getDocs(collection(db, "users"));
-
-  let match = null;
-
-  snap.forEach(docSnap => {
-    const data = docSnap.data();
-
-    if (docSnap.id === identifier || data.username === identifier) {
-      match = { id: docSnap.id, ...data };
-    }
-  });
-
-  return match;
-}
-
 register("notify.user.push", async (a) => {
 
   const target = a[0];
@@ -680,42 +664,119 @@ register("debug.console.clear", () => {
   print("Console cleared", "success");
 }, "Clears console");
 
-/* ================= USERS ================= */
+/* ================= USERS (UPDATED RESOLVER SYSTEM) ================= */
 
 register("user.list", async () => {
   const snap = await getDocs(collection(db, "users"));
+
+  if (snap.empty) {
+    return print("No users found", "warn");
+  }
+
   snap.forEach(d => {
     const u = d.data();
-    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
+    print(`${d.id} | ${u.username || "no-username"} | ${u.role || "user"} | locked:${u.locked || false}`);
   });
+
 }, "List users");
 
+
 register("user.delete", async (a) => {
-  await deleteDoc(doc(db, "users", a[0]));
-  print("User deleted", "success");
+
+  const user = await resolveUser(a[0]);
+  if (!user) return print("User not found", "error");
+
+  await deleteDoc(doc(db, "users", user.id));
+
+  print(`User deleted → ${user.username}`, "success");
+
 }, "Delete user");
 
+
 register("user.role", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), { role: a[1] });
-  print("Role updated", "success");
+
+  const user = await resolveUser(a[0]);
+  const role = a[1];
+
+  if (!user) return print("User not found", "error");
+  if (!role) return print("Usage: user.role [user] [role]", "error");
+
+  await updateDoc(doc(db, "users", user.id), {
+    role
+  });
+
+  print(`Role updated → ${user.username} = ${role}`, "success");
+
 }, "Change role");
 
+
 register("user.lock", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
+
+  const user = await resolveUser(a[0]);
+  if (!user) return print("User not found", "error");
+
+  const reason = a.slice(1).join(" ") || "No reason provided";
+
+  await updateDoc(doc(db, "users", user.id), {
     locked: true,
-    lockReason: a.slice(1).join(" ")
+    lockReason: reason
   });
-  print("User locked", "error");
+
+  print(`User locked → ${user.username}`, "error");
+
 }, "Lock user");
 
+
 register("user.unlock", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
+
+  const user = await resolveUser(a[0]);
+  if (!user) return print("User not found", "error");
+
+  await updateDoc(doc(db, "users", user.id), {
     locked: false,
     lockReason: ""
   });
-  print("User unlocked", "success");
+
+  print(`User unlocked → ${user.username}`, "success");
+
 }, "Unlock user");
 
+
+register("user.info", async (a) => {
+
+  const user = await resolveUser(a[0]);
+  if (!user) return print("User not found", "error");
+
+  print("=== USER INFO ===", "info");
+  print("ID: " + user.id);
+  print("Username: " + (user.username || "none"));
+  print("Role: " + (user.role || "user"));
+  print("Locked: " + (user.locked || false));
+  print("Reason: " + (user.lockReason || "none"));
+
+}, "View user info");
+
+
+register("user.notify", async (a) => {
+
+  const user = await resolveUser(a[0]);
+  const message = a.slice(1).join(" ");
+
+  if (!user) return print("User not found", "error");
+  if (!message) return print("Usage: user.notify [user] [message]", "error");
+
+  await addDoc(collection(db, "notifications"), {
+    userId: user.id,
+    username: user.username || null,
+    title: "Admin Message",
+    body: message,
+    read: false,
+    timestamp: Date.now()
+  });
+
+  print(`Notification sent → ${user.username}`, "success");
+
+}, "Send notification to user");
 /* ================= PAGE COMMANDS ================= */
 
 /**
