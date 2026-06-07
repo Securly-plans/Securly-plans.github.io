@@ -134,6 +134,24 @@ h2{
 main{
   padding:0 20px;
 }
+
+/* =========================
+   📢 ANNOUNCEMENT BAR (ADDED)
+========================= */
+#announcementBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+  background: #222;
+  color: white;
+  display: none;
+  z-index: 99999;
+  border-top: 1px solid var(--border);
+}
 </style>
 </head>
 
@@ -212,6 +230,38 @@ main{
 <p style="color:#4ade80; text-align:center;">
   Emerald Games - Beta 1.0
 </p>
+
+<!-- 📢 ANNOUNCEMENT BAR (ADDED) -->
+<div id="announcementBar"></div>
+
+<!-- 📢 FIRESTORE ANNOUNCEMENT LOGIC (ADDED ONLY) -->
+<script type="module">
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "./js/firebase.js";
+
+const bar = document.getElementById("announcementBar");
+
+onSnapshot(doc(db, "system", "announcement"), (snap) => {
+  if (!snap.exists()) {
+    bar.style.display = "none";
+    return;
+  }
+
+  const data = snap.data();
+
+  if (data.enabled && data.text) {
+    bar.style.display = "block";
+    bar.textContent = data.text;
+
+    if (data.color === "danger") bar.style.background = "#ef4444";
+    else if (data.color === "warning") bar.style.background = "#f59e0b";
+    else if (data.color === "success") bar.style.background = "#22c55e";
+    else bar.style.background = "#222";
+  } else {
+    bar.style.display = "none";
+  }
+});
+</script>
 
 <!-- ✅ ONLY NEW LOGIC -->
 <script type="module">
