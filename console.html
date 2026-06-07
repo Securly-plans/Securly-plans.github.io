@@ -126,6 +126,12 @@ function register(name, fn, description="No description") {
   helpData[name] = description;
 }
 
+/* ================= ANNOUNCEMENT SYSTEM (ADDED) ================= */
+
+function setAnnouncement(data) {
+  return updateDoc(doc(db, "system", "announcement"), data);
+}
+
 /* ================= COMMAND SUGGESTIONS ================= */
 
 function updateSuggestions(val) {
@@ -178,6 +184,35 @@ async function run(inputStr) {
   }
 }
 
+/* ================= ANNOUNCEMENT COMMANDS (ADDED ONLY) ================= */
+
+register("announce.set", async (a) => {
+  const text = a.join(" ");
+  await setAnnouncement({ text, enabled: true });
+  print("Announcement updated", "success");
+}, "Set announcement text");
+
+register("announce.enable", async () => {
+  await setAnnouncement({ enabled: true });
+  print("Announcement enabled", "success");
+}, "Enable announcement");
+
+register("announce.disable", async () => {
+  await setAnnouncement({ enabled: false });
+  print("Announcement disabled", "warn");
+}, "Disable announcement");
+
+register("announce.color", async (a) => {
+  const color = a[0] || "info";
+  await setAnnouncement({ color });
+  print("Announcement color set: " + color, "info");
+}, "Set announcement color");
+
+register("announce.view", async () => {
+  const snap = await getDoc(doc(db, "system", "announcement"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "View announcement data");
+
 /* ================= GLOBAL LOCK ================= */
 
 function startGlobalLock(mode) {
@@ -194,7 +229,6 @@ function clearFlow() {
   suggestBox.style.display = "none";
 }
 
-/* FIXED FLOW */
 function handleGlobalLockFlow(inputStr) {
   const state = globalLockState;
 
@@ -297,6 +331,13 @@ register("help", () => {
   print("debug.config.view");
   print("debug.latency");
   print("debug.console.clear");
+
+  print("\n--- ANNOUNCEMENTS ---");
+  print("announce.set");
+  print("announce.enable");
+  print("announce.disable");
+  print("announce.color");
+  print("announce.view");
 
 }, "Help menu");
 
