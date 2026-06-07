@@ -1,44 +1,51 @@
 /* ===========================
-   AdminOS AI Command Layer
+   AdminOS Smart Suggest Module
    consolesuggest.js
    =========================== */
 
-/**
- * Converts natural language → structured command
- * Returns:
- *   { cmd: string, args: array } OR null
- */
+let smartSuggestEnabled = false;
 
+/**
+ * Toggle from console
+ */
+export function setSmartSuggest(state) {
+  smartSuggestEnabled = state;
+}
+
+/**
+ * Check status (optional helper)
+ */
+export function isSmartSuggestEnabled() {
+  return smartSuggestEnabled;
+}
+
+/**
+ * Main AI parser (only works when enabled)
+ */
 export async function aiParse(inputStr) {
+
+  if (!smartSuggestEnabled) return null;
 
   if (!inputStr || typeof inputStr !== "string") return null;
 
   const text = inputStr.toLowerCase().trim();
 
   // =========================
-  // USER MANAGEMENT INTENTS
+  // USER COMMANDS
   // =========================
 
-  if (
-    text.includes("lock user") ||
-    text.includes("ban user") ||
-    text.startsWith("ban ") ||
-    text.startsWith("lock ")
-  ) {
-    const name = extractLastWord(text);
+  if (text.includes("lock user") || text.includes("ban user") || text.startsWith("lock ")) {
+    const name = lastWord(text);
     if (!name) return null;
 
     return {
       cmd: "user.lock",
-      args: [name, "ai-generated lock"]
+      args: [name, "smart-suggest"]
     };
   }
 
-  if (
-    text.includes("unlock user") ||
-    text.includes("unban user")
-  ) {
-    const name = extractLastWord(text);
+  if (text.includes("unlock user") || text.includes("unban user")) {
+    const name = lastWord(text);
     if (!name) return null;
 
     return {
@@ -48,7 +55,7 @@ export async function aiParse(inputStr) {
   }
 
   if (text.includes("delete user")) {
-    const name = extractLastWord(text);
+    const name = lastWord(text);
     if (!name) return null;
 
     return {
@@ -58,25 +65,23 @@ export async function aiParse(inputStr) {
   }
 
   if (text.includes("show users") || text.includes("list users")) {
-    return {
-      cmd: "user.list",
-      args: []
-    };
+    return { cmd: "user.list", args: [] };
   }
 
   // =========================
-  // CHAT INTENTS
+  // CHAT COMMANDS
   // =========================
 
   if (text.includes("show chats") || text.includes("list chats")) {
-    return {
-      cmd: "chat.list",
-      args: []
-    };
+    return { cmd: "chat.list", args: [] };
+  }
+
+  if (text.includes("clear chat")) {
+    return { cmd: "chat.clear", args: [] };
   }
 
   if (text.includes("open chat")) {
-    const id = extractLastWord(text);
+    const id = lastWord(text);
     if (!id) return null;
 
     return {
@@ -85,162 +90,64 @@ export async function aiParse(inputStr) {
     };
   }
 
-  if (text.includes("clear chat")) {
-    return {
-      cmd: "chat.clear",
-      args: []
-    };
-  }
-
   if (text.includes("delete message")) {
-    const index = extractLastNumber(text);
-    if (index === null) return null;
+    const num = lastNumber(text);
+    if (num === null) return null;
 
     return {
       cmd: "chat.delete",
-      args: [index]
+      args: [num]
     };
   }
 
-  if (text.includes("send server message")) {
-    const msg = extractAfter(text, "message");
-    if (!msg) return null;
-
+  if (text.includes("server message")) {
     return {
       cmd: "chat.server",
-      args: [msg]
+      args: [afterKeyword(text, "message")]
     };
   }
 
   // =========================
-  // SYSTEM INTENTS
+  // SYSTEM
   // =========================
 
   if (text.includes("system status")) {
-    return {
-      cmd: "system.status",
-      args: []
-    };
+    return { cmd: "system.status", args: [] };
   }
 
   if (text.includes("reset system")) {
-    return {
-      cmd: "system.reset",
-      args: []
-    };
+    return { cmd: "system.reset", args: [] };
   }
 
   if (text.includes("enable lockdown")) {
-    return {
-      cmd: "system.lockdown.enable",
-      args: []
-    };
+    return { cmd: "system.lockdown.enable", args: [] };
   }
 
   if (text.includes("disable lockdown")) {
-    return {
-      cmd: "system.lockdown.disable",
-      args: []
-    };
+    return { cmd: "system.lockdown.disable", args: [] };
   }
 
   // =========================
-  // ANNOUNCEMENTS
-  // =========================
-
-  if (text.includes("set announcement")) {
-    const msg = extractAfter(text, "announcement");
-    if (!msg) return null;
-
-    return {
-      cmd: "announce.set",
-      args: [msg]
-    };
-  }
-
-  if (text.includes("emergency broadcast")) {
-    const msg = extractAfter(text, "broadcast");
-    if (!msg) return null;
-
-    return {
-      cmd: "announce.emergency.set",
-      args: [msg]
-    };
-  }
-
-  // =========================
-  // PAGE CONTROL
+  // PAGE
   // =========================
 
   if (text.includes("open page")) {
-    const url = extractLastWord(text);
-    if (!url) return null;
-
     return {
       cmd: "page.open",
-      args: [url]
+      args: [lastWord(text)]
     };
   }
 
-  if (text.includes("redirect to")) {
-    const url = extractLastWord(text);
-    if (!url) return null;
-
+  if (text.includes("redirect")) {
     return {
       cmd: "page.redirect",
-      args: [url]
+      args: [lastWord(text)]
     };
   }
 
   if (text.includes("reload page")) {
-    return {
-      cmd: "page.reload",
-      args: []
-    };
+    return { cmd: "page.reload", args: [] };
   }
-
-  if (text.includes("go back")) {
-    return {
-      cmd: "page.back",
-      args: []
-    };
-  }
-
-  if (text.includes("go forward")) {
-    return {
-      cmd: "page.forward",
-      args: []
-    };
-  }
-
-  // =========================
-  // DEBUG INTENTS
-  // =========================
-
-  if (text.includes("show logs")) {
-    return {
-      cmd: "debug.log",
-      args: []
-    };
-  }
-
-  if (text.includes("clear logs")) {
-    return {
-      cmd: "debug.log.clear",
-      args: []
-    };
-  }
-
-  if (text.includes("check database")) {
-    return {
-      cmd: "debug.db.test",
-      args: []
-    };
-  }
-
-  // =========================
-  // NO MATCH
-  // =========================
 
   return null;
 }
@@ -249,19 +156,17 @@ export async function aiParse(inputStr) {
    HELPERS
    =========================== */
 
-function extractLastWord(text) {
-  const parts = text.trim().split(" ");
-  return parts.length ? parts[parts.length - 1] : null;
+function lastWord(text) {
+  const parts = text.split(" ");
+  return parts[parts.length - 1];
 }
 
-function extractLastNumber(text) {
-  const match = text.match(/\d+/g);
-  if (!match) return null;
-  return parseInt(match[match.length - 1]);
+function lastNumber(text) {
+  const m = text.match(/\d+/g);
+  return m ? parseInt(m[m.length - 1]) : null;
 }
 
-function extractAfter(text, keyword) {
-  const index = text.indexOf(keyword);
-  if (index === -1) return null;
-  return text.slice(index + keyword.length).trim();
+function afterKeyword(text, keyword) {
+  const i = text.indexOf(keyword);
+  return i === -1 ? null : text.slice(i + keyword.length).trim();
 }
