@@ -1,3 +1,4 @@
+console.log("consolesuggest.js LOADED");
 /* ===========================
    AdminOS Smart Suggest Module
    consolesuggest.js
