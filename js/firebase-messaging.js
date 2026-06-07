@@ -17,7 +17,7 @@ export async function initPushNotifications() {
     }
 
     const token = await getToken(messaging, {
-      vapidKey: "YOUR_VAPID_KEY_HERE"
+      vapidKey: "BCDlkH0Kp2EWLGF3KA08a-FaGm9bMkPoIGWN9bPz5jdVOHAiyK5xg7Bfz1U236BHvG4l7QOKH2l_UI0DbwwTInI"
     });
 
     if (token) {
