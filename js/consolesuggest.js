@@ -1,173 +1,66 @@
-console.log("consolesuggest.js LOADED");
-/* ===========================
-   AdminOS Smart Suggest Module
-   consolesuggest.js
-   =========================== */
+console.log("js/consolesuggest.js LOADED.");
+const AI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
-let smartSuggestEnabled = false;
+// ⚠️ TEMP ONLY (move to backend later)
+const API_KEY = "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";
 
 /**
- * Toggle from console
+ * Convert natural language → structured admin command
  */
-export function setSmartSuggest(state) {
-  smartSuggestEnabled = state;
+export async function parseConsoleCommand(input) {
+  const response = await fetch(AI_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content: `
+You are an AI command parser for an admin console.
+
+Convert user input into ONLY valid JSON.
+
+Allowed commands:
+- user.ban { userId }
+- user.banInactive { days }
+- page.redirect { url }
+- chat.send { message }
+
+Rules:
+- Output ONLY JSON
+- No markdown
+- No explanations
+- No extra text
+
+Example:
+{
+  "command": "user.banInactive",
+  "args": { "days": 30 }
 }
+`
+        },
+        {
+          role: "user",
+          content: input
+        }
+      ],
+      temperature: 0.2
+    })
+  });
 
-/**
- * Check status (optional helper)
- */
-export function isSmartSuggestEnabled() {
-  return smartSuggestEnabled;
-}
+  const data = await response.json();
 
-/**
- * Main AI parser (only works when enabled)
- */
-export async function aiParse(inputStr) {
+  // AI response text → JSON object
+  const raw = data.choices?.[0]?.message?.content;
 
-  if (!smartSuggestEnabled) return null;
-
-  if (!inputStr || typeof inputStr !== "string") return null;
-
-  const text = inputStr.toLowerCase().trim();
-
-  // =========================
-  // USER COMMANDS
-  // =========================
-
-  if (text.includes("lock user") || text.includes("ban user") || text.startsWith("lock ")) {
-    const name = lastWord(text);
-    if (!name) return null;
-
-    return {
-      cmd: "user.lock",
-      args: [name, "smart-suggest"]
-    };
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error("Failed to parse AI response:", raw);
+    return null;
   }
-
-  if (text.includes("unlock user") || text.includes("unban user")) {
-    const name = lastWord(text);
-    if (!name) return null;
-
-    return {
-      cmd: "user.unlock",
-      args: [name]
-    };
-  }
-
-  if (text.includes("delete user")) {
-    const name = lastWord(text);
-    if (!name) return null;
-
-    return {
-      cmd: "user.delete",
-      args: [name]
-    };
-  }
-
-  if (text.includes("show users") || text.includes("list users")) {
-    return { cmd: "user.list", args: [] };
-  }
-
-  // =========================
-  // CHAT COMMANDS
-  // =========================
-
-  if (text.includes("show chats") || text.includes("list chats")) {
-    return { cmd: "chat.list", args: [] };
-  }
-
-  if (text.includes("clear chat")) {
-    return { cmd: "chat.clear", args: [] };
-  }
-
-  if (text.includes("open chat")) {
-    const id = lastWord(text);
-    if (!id) return null;
-
-    return {
-      cmd: "chat.view",
-      args: [id]
-    };
-  }
-
-  if (text.includes("delete message")) {
-    const num = lastNumber(text);
-    if (num === null) return null;
-
-    return {
-      cmd: "chat.delete",
-      args: [num]
-    };
-  }
-
-  if (text.includes("server message")) {
-    return {
-      cmd: "chat.server",
-      args: [afterKeyword(text, "message")]
-    };
-  }
-
-  // =========================
-  // SYSTEM
-  // =========================
-
-  if (text.includes("system status")) {
-    return { cmd: "system.status", args: [] };
-  }
-
-  if (text.includes("reset system")) {
-    return { cmd: "system.reset", args: [] };
-  }
-
-  if (text.includes("enable lockdown")) {
-    return { cmd: "system.lockdown.enable", args: [] };
-  }
-
-  if (text.includes("disable lockdown")) {
-    return { cmd: "system.lockdown.disable", args: [] };
-  }
-
-  // =========================
-  // PAGE
-  // =========================
-
-  if (text.includes("open page")) {
-    return {
-      cmd: "page.open",
-      args: [lastWord(text)]
-    };
-  }
-
-  if (text.includes("redirect")) {
-    return {
-      cmd: "page.redirect",
-      args: [lastWord(text)]
-    };
-  }
-
-  if (text.includes("reload page")) {
-    return { cmd: "page.reload", args: [] };
-  }
-
-  return null;
-}
-
-/* ===========================
-   HELPERS
-   =========================== */
-
-function lastWord(text) {
-  const parts = text.split(" ");
-  return parts[parts.length - 1];
-}
-
-function lastNumber(text) {
-  const m = text.match(/\d+/g);
-  return m ? parseInt(m[m.length - 1]) : null;
-}
-
-function afterKeyword(text, keyword) {
-  const i = text.indexOf(keyword);
-  return i === -1 ? null : text.slice(i + keyword.length).trim();
 }
