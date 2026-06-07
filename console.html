@@ -114,6 +114,8 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
 
+import { aiParse, setSmartSuggest } from "./js/consolesuggest.js";
+
 /* ================= CORE ================= */
 
 const consoleEl = document.getElementById("console");
@@ -194,6 +196,7 @@ let currentChatMessages = [];
 
 let consoleAuthenticated = false;
 let awaitingConsolePassword = true;
+let smartSuggestEnabled = false;
 
 async function authenticateConsole(password) {
 
@@ -256,75 +259,86 @@ async function authenticateConsole(password) {
 
 /* ================= RUNNER ================= */
 
-/* ================= RUNNER ================= */
-
 async function run(inputStr) {
 
   if (!inputStr.trim()) return;
 
-  /* LOGIN GATE */
+  /* ================= LOGIN GATE ================= */
 
   if (!consoleAuthenticated) {
 
     print("> ****", "warn");
 
-    await authenticateConsole(
-      inputStr
-    );
+    await authenticateConsole(inputStr);
 
     return;
-
   }
+
+  /* ================= OUTPUT INPUT ================= */
 
   print(
     "> " +
-    (globalLockState
-      ? "****"
-      : inputStr),
+    (globalLockState ? "****" : inputStr),
     "warn"
   );
 
+  /* ================= GLOBAL LOCK FLOW ================= */
+
   if (globalLockState) {
-
-    return handleGlobalLockFlow(
-      inputStr
-    );
-
+    return handleGlobalLockFlow(inputStr);
   }
 
-  const parts =
-    inputStr.split(" ");
+  /* ================= PARSE INPUT ================= */
 
-  const cmd =
-    parts.shift().toLowerCase();
+  const parts = inputStr.split(" ");
+  let cmd = parts.shift()?.toLowerCase();
+  let args = parts;
 
-  const fn =
-    commands[cmd];
+  /* ================= SMART-SUGGEST AI LAYER ================= */
+
+  const fnDirect = commands[cmd];
+
+  if (!fnDirect && smartSuggestEnabled) {
+  try {
+    if (typeof aiParse === "function") {
+      const result = await aiParse(inputStr);
+
+      if (result?.cmd && commands[result.cmd]) {
+        print("🧠 Smart-Suggest active", "info");
+        print("→ mapped to: " + result.cmd, "info");
+
+        cmd = result.cmd;
+        args = result.args || [];
+      }
+    }
+  } catch (err) {
+    print("Smart-Suggest error: " + err.message, "error");
+  }
+}
+
+  /* ================= EXECUTION ================= */
+
+  const fn = commands[cmd];
 
   if (!fn) {
-
     return print(
-      "Unknown command: " +
-      cmd,
+      "Unknown command: " + cmd,
       "error"
     );
-
   }
 
   try {
 
-    await fn(parts);
+    await fn(args);
 
   } catch (e) {
 
     print(
-      "ERROR: " +
-      (e?.message || e),
+      "ERROR: " + (e?.message || e),
       "error"
     );
 
   }
-
 }
 
 /* ================= ANNOUNCEMENT COMMANDS (ADDED ONLY) ================= */
@@ -355,6 +369,28 @@ register("announce.view", async () => {
   const snap = await getDoc(doc(db, "system", "announcement"));
   print(JSON.stringify(snap.data(), null, 2), "info");
 }, "View announcement data");
+
+register("smart-suggest", async (a) => {
+
+  const mode = (a[0] || "").toLowerCase();
+
+  if (mode === "on") {
+    smartSuggestEnabled = true;
+    setSmartSuggest(true);
+    print("Smart Suggest ENABLED", "success");
+    return;
+  }
+
+  if (mode === "off") {
+    smartSuggestEnabled = false;
+    setSmartSuggest(false);
+    print("Smart Suggest DISABLED", "warn");
+    return;
+  }
+
+  print("Usage: smart-suggest [on/off]", "error");
+
+}, "Toggle AI smart suggestions");
 
 function setEmergency(data) {
   return updateDoc(doc(db, "system", "emergency"), data);
