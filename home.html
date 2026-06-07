@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald Dashboard</title>
+<title>Emerald</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -38,7 +38,7 @@ body{
   color:var(--text);
 }
 
-/* NAVBAR */
+/* ================= NAVBAR (RESTORED) ================= */
 .navbar{
   display:flex;
   justify-content:space-between;
@@ -70,11 +70,31 @@ body{
   font-size:14px;
 }
 
-/* ================= NORMAL PAGE ================= */
+.navbar a:hover,
+.navbar button:hover{
+  border-color:var(--info);
+}
 
+/* ================= HEADER ================= */
 header{
   padding:20px;
   border-bottom:1px solid var(--border);
+}
+
+header h1{
+  margin:0 0 10px;
+  color:#93c5fd;
+}
+
+header input{
+  width:100%;
+  max-width:400px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#111827;
+  color:var(--text);
+  outline:none;
 }
 
 h2{
@@ -101,46 +121,59 @@ main{
   z-index: 99999;
 }
 
-/* ================= EMERGENCY OVERLAY (FULL SCREEN OVERRIDE) ================= */
+/* ================= EMERGENCY OVERLAY (FIXED) ================= */
 #emergencyOverlay {
   position: fixed;
   inset: 0;
   background: #ef4444;
   color: white;
   display: none;
-  z-index: 999999;
+  z-index: 1000000;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 40px;
+  padding: 30px;
 }
 
 #emergencyOverlay h1 {
-  font-size: 40px;
+  font-size: 42px;
   margin-bottom: 20px;
-  letter-spacing: 2px;
 }
 
 #emergencyOverlay p {
-  font-size: 18px;
-  max-width: 800px;
+  font-size: 20px;
+  max-width: 900px;
 }
 </style>
 </head>
 
 <body>
 
+<!-- ================= NAVBAR (RESTORED) ================= -->
 <div class="navbar">
+
   <div class="nav-left">
     <a href="home.html">Home</a>
   </div>
 
   <div class="nav-right">
-    <span id="usernameDisplay"></span>
+    <span id="usernameDisplay" class="username-badge"></span>
+
+    <a href="chat.html" class="chat-link">Chat</a>
+    <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
+    <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
+
+    <a href="admin-tickets.html" id="adminticketslink" style="display:none;">Support Admin</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+
+    <a href="view-users.html" id="viewUsersLink" style="display:none;">Users</a>
+
+    <button id="logoutBtn">Logout</button>
   </div>
 </div>
 
+<!-- ================= HEADER ================= -->
 <header>
   <h1>Home</h1>
   <input type="text" id="searchBar" placeholder="Search games...">
@@ -151,23 +184,23 @@ main{
 <main id="gameGrid"></main>
 <main id="videoGrid"></main>
 
-<!-- NORMAL ANNOUNCEMENT -->
+<!-- ================= ANNOUNCEMENT ================= -->
 <div id="announcementBar"></div>
 
-<!-- 🚨 EMERGENCY OVERLAY -->
+<!-- ================= EMERGENCY OVERLAY ================= -->
 <div id="emergencyOverlay">
-  <h1>🚨 Emergency Broadcast</h1>
-  <p id="emergencyMessage">System alert active.</p>
+  <h1>Emergency Broadcast</h1>
+  <p id="emergencyText">Loading emergency message...</p>
 </div>
 
-<!-- ================= FIRESTORE LISTENERS ================= -->
+<!-- ================= FIRESTORE SYSTEM ================= -->
 <script type="module">
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
 const announcementBar = document.getElementById("announcementBar");
 const emergencyOverlay = document.getElementById("emergencyOverlay");
-const emergencyMessage = document.getElementById("emergencyMessage");
+const emergencyText = document.getElementById("emergencyText");
 
 /* ================= NORMAL ANNOUNCEMENT ================= */
 onSnapshot(doc(db, "system", "announcement"), (snap) => {
@@ -178,6 +211,7 @@ onSnapshot(doc(db, "system", "announcement"), (snap) => {
   if (data.enabled && data.text) {
     announcementBar.style.display = "block";
     announcementBar.textContent = data.text;
+
     announcementBar.style.background =
       data.color === "danger" ? "#ef4444" :
       data.color === "warning" ? "#f59e0b" :
@@ -188,7 +222,7 @@ onSnapshot(doc(db, "system", "announcement"), (snap) => {
   }
 });
 
-/* ================= EMERGENCY OVERRIDE ================= */
+/* ================= EMERGENCY (FIXED TEXT + FULL OVERRIDE) ================= */
 onSnapshot(doc(db, "system", "emergency"), (snap) => {
   if (!snap.exists()) {
     emergencyOverlay.style.display = "none";
@@ -199,13 +233,69 @@ onSnapshot(doc(db, "system", "emergency"), (snap) => {
 
   if (data.enabled) {
     emergencyOverlay.style.display = "flex";
-    emergencyMessage.textContent =
-      data.message || "System-wide emergency broadcast active.";
+
+    // ✅ FIX: now properly shows Firestore message
+    emergencyText.textContent =
+      data.message || "Emergency broadcast active. Please stand by.";
   } else {
     emergencyOverlay.style.display = "none";
   }
 });
 </script>
+
+<!-- ================= LOGIC (UNCHANGED FUNCTIONALITY) ================= -->
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.replace("index.html");
+});
+
+const role = localStorage.getItem("role");
+const username = localStorage.getItem("username");
+const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+const isVIP = localStorage.getItem("vip") === "true";
+
+const usernameDisplay = document.getElementById("usernameDisplay");
+
+if (username && isLoggedIn) {
+  usernameDisplay.textContent =
+    (role === "admin" ? "🛡 " : isVIP ? "⭐ " : "👤 ") + username;
+}
+
+if (isLoggedIn) {
+  document.getElementById("ticketslink").style.display = "inline-block";
+  document.getElementById("profileLink").style.display = "inline-block";
+  document.getElementById("viewUsersLink").style.display = "inline-block";
+}
+
+if (role === "admin" || role === "mod" || isVIP) {
+  document.getElementById("adminticketslink").style.display = "inline-block";
+}
+
+if (role === "admin") {
+  document.getElementById("adminLink").style.display = "inline-block";
+}
+
+/* SEARCH */
+const searchBar = document.getElementById("searchBar");
+const gameGrid = document.getElementById("gameGrid");
+const videoGrid = document.getElementById("videoGrid");
+
+function filterItems() {
+  const query = searchBar.value.toLowerCase().trim();
+
+  const allItems = [...gameGrid.children, ...videoGrid.children];
+
+  allItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = (!query || text.includes(query)) ? "" : "none";
+  });
+}
+
+searchBar.addEventListener("input", filterItems);
+</script>
+
+<script src="script.js"></script>
 
 </body>
 </html>
