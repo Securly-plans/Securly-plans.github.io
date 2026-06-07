@@ -113,7 +113,7 @@ import {
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
-import { aiParse, setSmartSuggest } from "./js/consolesuggest.js";
+import { aiParse, setSmartSuggest, isSmartSuggestEnabled } from "./js/consolesuggest.js";
 import { resolveUser } from "./js/converter.js";
 
 /* ================= CORE ================= */
@@ -196,7 +196,6 @@ let currentChatMessages = [];
 
 let consoleAuthenticated = false;
 let awaitingConsolePassword = true;
-let smartSuggestEnabled = false;
 
 async function authenticateConsole(password) {
 
@@ -261,24 +260,21 @@ async function authenticateConsole(password) {
 
 async function run(inputStr) {
 
-  if (!inputStr.trim()) return;
+  if (!inputStr || !inputStr.trim()) return;
 
   /* ================= LOGIN GATE ================= */
 
   if (!consoleAuthenticated) {
-
     print("> ****", "warn");
 
     await authenticateConsole(inputStr);
-
     return;
   }
 
   /* ================= OUTPUT INPUT ================= */
 
   print(
-    "> " +
-    (globalLockState ? "****" : inputStr),
+    "> " + (globalLockState ? "****" : inputStr),
     "warn"
   );
 
@@ -290,54 +286,56 @@ async function run(inputStr) {
 
   /* ================= PARSE INPUT ================= */
 
-  const parts = inputStr.split(" ");
-  let cmd = parts.shift()?.toLowerCase();
+  const parts = inputStr.trim().split(" ");
+  let cmd = (parts.shift() || "").toLowerCase();
   let args = parts;
 
-  /* ================= SMART-SUGGEST AI LAYER ================= */
+  /* ================= DIRECT COMMAND CHECK ================= */
 
-  const fnDirect = commands[cmd];
+  let fn = commands[cmd];
 
-  if (!fnDirect && smartSuggestEnabled) {
-  try {
-    if (typeof aiParse === "function") {
+  /* ================= AI SMART-SUGGEST LAYER ================= */
+
+  if (!fn && isSmartSuggestEnabled()) {
+
+    try {
+
       const result = await aiParse(inputStr);
 
       if (result?.cmd && commands[result.cmd]) {
+
         print("🧠 Smart-Suggest active", "info");
         print("→ mapped to: " + result.cmd, "info");
 
+        if (result.args && Array.isArray(result.args)) {
+          args = result.args;
+        }
+
         cmd = result.cmd;
-        args = result.args || [];
+        fn = commands[cmd];
+
+      } else {
+        print("AI could not map command", "warn");
       }
+
+    } catch (err) {
+      print("Smart-Suggest error: " + err.message, "error");
     }
-  } catch (err) {
-    print("Smart-Suggest error: " + err.message, "error");
   }
-}
 
-  /* ================= EXECUTION ================= */
-
-  const fn = commands[cmd];
+  /* ================= EXECUTION SAFETY ================= */
 
   if (!fn) {
-    return print(
-      "Unknown command: " + cmd,
-      "error"
-    );
+    print("Unknown command: " + cmd, "error");
+    return;
   }
 
+  /* ================= EXECUTE COMMAND ================= */
+
   try {
-
     await fn(args);
-
-  } catch (e) {
-
-    print(
-      "ERROR: " + (e?.message || e),
-      "error"
-    );
-
+  } catch (err) {
+    print("ERROR: " + (err?.message || err), "error");
   }
 }
 
@@ -365,24 +363,17 @@ register("announce.color", async (a) => {
   print("Announcement color set: " + color, "info");
 }, "Set announcement color");
 
-register("announce.view", async () => {
-  const snap = await getDoc(doc(db, "system", "announcement"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "View announcement data");
-
 register("smart-suggest", async (a) => {
 
   const mode = (a[0] || "").toLowerCase();
 
   if (mode === "on") {
-    smartSuggestEnabled = true;
     setSmartSuggest(true);
     print("Smart Suggest ENABLED", "success");
     return;
   }
 
   if (mode === "off") {
-    smartSuggestEnabled = false;
     setSmartSuggest(false);
     print("Smart Suggest DISABLED", "warn");
     return;
@@ -391,10 +382,6 @@ register("smart-suggest", async (a) => {
   print("Usage: smart-suggest [on/off]", "error");
 
 }, "Toggle AI smart suggestions");
-
-function setEmergency(data) {
-  return updateDoc(doc(db, "system", "emergency"), data);
-}
 
 register("announce.emergency.set", async (a) => {
 
