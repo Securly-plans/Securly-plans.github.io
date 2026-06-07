@@ -1,4 +1,4 @@
-console.log("js/converter.js LOADED");
+console.log("js/converter.js LOADED.");
 // js/converter.js
 
 import { db } from "./firebase.js";
@@ -19,7 +19,7 @@ import {
 export async function resolveUser(input) {
   if (!input) return null;
 
-  const cleaned = input.toString().trim().replace("@", "").toLowerCase();
+  const cleaned = input.toString().trim().replace("@", "");
 
   // 1. UID lookup (FASTEST PATH)
   const byId = await getUserByIdInternal(cleaned);
