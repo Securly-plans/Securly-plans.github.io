@@ -100,7 +100,6 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ⚠️ FIX: ensure db exists */
 import { db } from "./js/firebase.js";
 
 /* ================= CORE ================= */
@@ -150,7 +149,7 @@ function updateSuggestions(val) {
   suggestBox.style.display = "block";
 }
 
-/* ================= STATE MACHINE ================= */
+/* ================= STATE ================= */
 
 let globalLockState = null;
 
@@ -179,7 +178,7 @@ async function run(inputStr) {
   }
 }
 
-/* ================= GLOBAL LOCK FLOW ================= */
+/* ================= GLOBAL LOCK ================= */
 
 function startGlobalLock(mode) {
   globalLockState = { mode, password: "", confirmed: false, y: false };
@@ -195,7 +194,7 @@ function clearFlow() {
   suggestBox.style.display = "none";
 }
 
-/* FIXED: db scope safe + getDoc safe usage */
+/* FIXED FLOW */
 function handleGlobalLockFlow(inputStr) {
   const state = globalLockState;
 
@@ -287,19 +286,67 @@ register("help", () => {
     print(" → " + desc);
   });
 
-  print("\n--- GLOBAL LOCK ---");
-  print("system.globallock.enable");
-  print("system.globallock.disable");
+  print("\n--- SYSTEM ---");
+  print("system.status");
+  print("system.reset");
+  print("system.lockdown.enable");
+  print("system.lockdown.disable");
 
-}, "Shows all commands with descriptions");
+  print("\n--- DEBUG ---");
+  print("debug.db.test");
+  print("debug.config.view");
+  print("debug.latency");
+  print("debug.console.clear");
 
-/* ================= SYSTEM ================= */
+}, "Help menu");
 
-register("clear", () => consoleEl.innerHTML = "", "Clears console");
+/* ================= SYSTEM COMMANDS ================= */
 
-register("status", () => {
-  print("System OK", "success");
-}, "System status check");
+register("system.status", async () => {
+  const snap = await getDoc(doc(db, "system", "config"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "Shows system config");
+
+register("system.reset", async () => {
+  await updateDoc(doc(db, "system", "config"), {
+    globalLock: false,
+    loginDisabled: false,
+    chatDisabled: false,
+    adminDisabled: false
+  });
+
+  print("System reset complete", "success");
+}, "Resets system flags");
+
+register("system.lockdown.enable", () => startGlobalLock("enable"), "Enable full lockdown");
+register("system.lockdown.disable", () => startGlobalLock("disable"), "Disable full lockdown");
+
+/* ================= DEBUG COMMANDS ================= */
+
+register("debug.db.test", async () => {
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    print("DB OK | users: " + snap.size, "success");
+  } catch (e) {
+    print("DB FAIL: " + e.message, "error");
+  }
+}, "Tests database");
+
+register("debug.config.view", async () => {
+  const snap = await getDoc(doc(db, "system", "config"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "Views system config");
+
+register("debug.latency", async () => {
+  const start = Date.now();
+  await getDocs(collection(db, "users"));
+  print("Latency: " + (Date.now() - start) + "ms", "info");
+}, "Checks DB latency");
+
+register("debug.console.clear", () => {
+  consoleEl.innerHTML = "";
+  print("Console cleared", "success");
+}, "Clears console");
 
 /* ================= USERS ================= */
 
@@ -309,17 +356,17 @@ register("user.list", async () => {
     const u = d.data();
     print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
   });
-}, "Lists all users");
+}, "List users");
 
 register("user.delete", async (a) => {
   await deleteDoc(doc(db, "users", a[0]));
   print("User deleted", "success");
-}, "Deletes user");
+}, "Delete user");
 
 register("user.role", async (a) => {
   await updateDoc(doc(db, "users", a[0]), { role: a[1] });
   print("Role updated", "success");
-}, "Changes role");
+}, "Change role");
 
 register("user.lock", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -327,7 +374,7 @@ register("user.lock", async (a) => {
     lockReason: a.slice(1).join(" ")
   });
   print("User locked", "error");
-}, "Locks user");
+}, "Lock user");
 
 register("user.unlock", async (a) => {
   await updateDoc(doc(db, "users", a[0]), {
@@ -335,12 +382,7 @@ register("user.unlock", async (a) => {
     lockReason: ""
   });
   print("User unlocked", "success");
-}, "Unlocks user");
-
-/* ================= GLOBAL LOCK ================= */
-
-register("system.globallock.enable", () => startGlobalLock("enable"), "Enable global lock system");
-register("system.globallock.disable", () => startGlobalLock("disable"), "Disable global lock system");
+}, "Unlock user");
 
 /* ================= INPUT ================= */
 
