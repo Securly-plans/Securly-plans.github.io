@@ -1,13 +1,13 @@
-console.log("js/consolesuggest.js LOADED."); 
+// js/consolesuggest.js
+
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase.js";
 
-/* ================= STATE ================= */
+/* =========================
+   STATE
+========================= */
 
-let smartSuggestEnabled = false;
-let apiKeyCache = null;
-
-/* ================= SMART TOGGLE ================= */
+let smartSuggestEnabled = true;
 
 export function setSmartSuggest(state) {
   smartSuggestEnabled = !!state;
@@ -17,203 +17,128 @@ export function isSmartSuggestEnabled() {
   return smartSuggestEnabled;
 }
 
-/* ================= COMMAND REGISTRY ================= */
+/* =========================
+   FIRESTORE API KEY (YOUR STRUCTURE)
+========================= */
 
-let commandRegistry = {};
-
-export function setCommandRegistry(cmds) {
-  commandRegistry = cmds || {};
-}
-
-/* ================= ALIASES ================= */
-
-const aliases = {
-  lock: "system.lockdown.enable",
-  unlock: "system.lockdown.disable",
-  restart: "system.reset",
-  clear: "debug.console.clear",
-  users: "user.list",
-  ban: "user.lock",
-  unban: "user.unlock",
-  notify: "user.notify",
-  chat: "chat.list",
-  open: "page.open",
-  redirect: "page.redirect"
-};
-
-/* ================= FUZZY MATCH ================= */
-
-function levenshtein(a, b) {
-  const matrix = [];
-
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  return matrix[b.length][a.length];
-}
-
-function findClosestCommand(input) {
-  let best = null;
-  let bestScore = Infinity;
-
-  Object.keys(commandRegistry).forEach(cmd => {
-    const score = levenshtein(input, cmd);
-    if (score < bestScore) {
-      bestScore = score;
-      best = cmd;
-    }
-  });
-
-  if (bestScore <= 3) {
-    return { cmd: best, score: 0.8 };
-  }
-
-  return null;
-}
-
-/* ================= FIRESTORE KEY ================= */
-
-async function getAPIKey() {
-  if (apiKeyCache) return apiKeyCache;
-
+async function getApiKey() {
   try {
-    const snap = await getDoc(doc(db, "system", "consoleAutoSuggest"));
+    const snap = await getDoc(
+      doc(db, "system", "consoleAutoSuggest")
+    );
 
     if (!snap.exists()) return null;
 
-    apiKeyCache = snap.data()?.API || null;
-    return apiKeyCache;
+    return snap.data()?.API || null;
 
   } catch (err) {
-    console.error("API key fetch failed:", err);
+    console.error("Failed to load API key:", err);
     return null;
   }
 }
 
-/* ================= AI PARSER ================= */
+/* =========================
+   BACKEND AI CALL (REQUIRED FIX)
+========================= */
+/*
+IMPORTANT:
+You CANNOT call OpenAI directly from browser.
+This must be a backend endpoint you control.
+*/
 
-export async function aiParse(input) {
+async function callAI(input) {
+  const res = await fetch("https://YOUR_BACKEND_ENDPOINT/aiParse", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ input })
+  });
 
-  if (!smartSuggestEnabled) return null;
+  if (!res.ok) {
+    throw new Error("AI backend failed: " + res.status);
+  }
 
-  const key = await getAPIKey();
-  if (!key) return null;
-
-  try {
-
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: [
-          {
-            role: "system",
-            content: `
-Return ONLY JSON:
-
-{
-  "cmd": "",
-  "args": []
+  return await res.json();
 }
 
-Only choose from known admin commands.
-No explanation.
-`
-          },
-          {
-            role: "user",
-            content: input
-          }
-        ],
-        temperature: 0.2
-      })
-    });
+/* =========================
+   SMART LOCAL FALLBACK (IMPORTANT)
+========================= */
 
-    if (!res.ok) return null;
+function fallbackMatch(input) {
+  const t = input.toLowerCase();
 
-    const data = await res.json();
-    const raw = data?.choices?.[0]?.message?.content;
+  // direct intent mapping (fast + reliable)
 
-    if (!raw) return null;
-
-    return JSON.parse(raw);
-
-  } catch (err) {
-    console.error("AI parse error:", err);
-    return null;
-  }
-}
-
-/* ================= CORE RESOLVER ================= */
-
-export async function resolveCommand(input) {
-
-  const raw = input.trim().toLowerCase();
-  const parts = raw.split(" ");
-  const base = parts[0];
-
-  let args = parts.slice(1);
-
-  /* 1. EXACT MATCH */
-  if (commandRegistry[base]) {
-    return {
-      cmd: base,
-      args,
-      source: "exact",
-      confidence: 1.0
-    };
+  if (t.includes("lock user") || t === "lock") {
+    return { cmd: "user.lock", args: [] };
   }
 
-  /* 2. ALIAS MATCH */
-  if (aliases[base]) {
-    return {
-      cmd: aliases[base],
-      args,
-      source: "alias",
-      confidence: 0.95
-    };
+  if (t.includes("unlock user")) {
+    return { cmd: "user.unlock", args: [] };
   }
 
-  /* 3. FUZZY MATCH */
-  const fuzzy = findClosestCommand(base);
-  if (fuzzy && commandRegistry[fuzzy.cmd]) {
-    return {
-      cmd: fuzzy.cmd,
-      args,
-      source: "fuzzy",
-      confidence: fuzzy.score
-    };
+  if (t.includes("delete user")) {
+    return { cmd: "user.delete", args: [] };
   }
 
-  /* 4. AI MATCH */
-  const ai = await aiParse(input);
+  if (t.includes("list users") || t === "users") {
+    return { cmd: "user.list", args: [] };
+  }
 
-  if (ai?.cmd && commandRegistry[ai.cmd]) {
-    return {
-      cmd: ai.cmd,
-      args: ai.args || [],
-      source: "ai",
-      confidence: 0.85
-    };
+  if (t.includes("system reset")) {
+    return { cmd: "system.reset", args: [] };
+  }
+
+  if (t.includes("chat")) {
+    return { cmd: "chat.list", args: [] };
   }
 
   return null;
+}
+
+/* =========================
+   MAIN AI PARSER
+========================= */
+
+export async function aiParse(input) {
+  if (!smartSuggestEnabled) return null;
+
+  try {
+    const apiKey = await getApiKey();
+
+    // debug safety check
+    if (apiKey && apiKey.startsWith("sk-")) {
+      console.warn(
+        "⚠ OpenAI key detected in Firestore. Do NOT use in frontend. Use backend proxy."
+      );
+    }
+
+    /**
+     * If no backend exists, immediately fallback
+     * (prevents your current CORS + 401 errors)
+     */
+    if (!apiKey) {
+      return fallbackMatch(input);
+    }
+
+    // SAFE ROUTE: backend only
+    const result = await callAI(input);
+
+    if (!result || !result.cmd) {
+      return fallbackMatch(input);
+    }
+
+    return {
+      cmd: result.cmd,
+      args: Array.isArray(result.args) ? result.args : []
+    };
+
+  } catch (err) {
+    console.error("AI parse error:", err);
+
+    // ALWAYS fallback instead of breaking console
+    return fallbackMatch(input);
+  }
 }
