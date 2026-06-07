@@ -94,10 +94,7 @@ import {
   addDoc,
   deleteDoc,
   updateDoc,
-  doc,
-  query,
-  orderBy,
-  limit
+  doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -126,33 +123,16 @@ function register(name, fn, description="No description") {
   helpData[name] = description;
 }
 
-/* ================= ANNOUNCEMENT SYSTEM (ADDED) ================= */
+/* ================= ANNOUNCEMENT ================= */
 
 function setAnnouncement(data) {
   return updateDoc(doc(db, "system", "announcement"), data);
 }
 
-/* ================= COMMAND SUGGESTIONS ================= */
+/* ================= EMERGENCY ================= */
 
-function updateSuggestions(val) {
-  const inputVal = val.toLowerCase();
-
-  if (!inputVal) {
-    suggestBox.style.display = "none";
-    return;
-  }
-
-  const matches = Object.keys(commands)
-    .filter(c => c.startsWith(inputVal))
-    .slice(0, 6);
-
-  if (!matches.length) {
-    suggestBox.style.display = "none";
-    return;
-  }
-
-  suggestBox.innerHTML = matches.map(m => `› ${m}`).join("<br>");
-  suggestBox.style.display = "block";
+function setEmergency(data) {
+  return updateDoc(doc(db, "system", "emergency"), data);
 }
 
 /* ================= STATE ================= */
@@ -165,10 +145,6 @@ async function run(inputStr) {
   if (!inputStr.trim()) return;
 
   print("> " + (globalLockState ? "****" : inputStr), "warn");
-
-  if (globalLockState) {
-    return handleGlobalLockFlow(inputStr);
-  }
 
   const parts = inputStr.split(" ");
   const cmd = parts.shift().toLowerCase();
@@ -184,249 +160,95 @@ async function run(inputStr) {
   }
 }
 
-/* ================= ANNOUNCEMENT COMMANDS (ADDED ONLY) ================= */
+/* ================= IMPROVEMENT COMMANDS ================= */
 
-register("announce.set", async (a) => {
-  const text = a.join(" ");
-  await setAnnouncement({ text, enabled: true });
-  print("Announcement updated", "success");
-}, "Set announcement text");
-
-register("announce.enable", async () => {
-  await setAnnouncement({ enabled: true });
-  print("Announcement enabled", "success");
-}, "Enable announcement");
-
-register("announce.disable", async () => {
-  await setAnnouncement({ enabled: false });
-  print("Announcement disabled", "warn");
-}, "Disable announcement");
-
-register("announce.color", async (a) => {
-  const color = a[0] || "info";
-  await setAnnouncement({ color });
-  print("Announcement color set: " + color, "info");
-}, "Set announcement color");
-
-register("announce.view", async () => {
-  const snap = await getDoc(doc(db, "system", "announcement"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "View announcement data");
-
-/* ================= GLOBAL LOCK ================= */
-
-function startGlobalLock(mode) {
-  globalLockState = { mode, password: "", confirmed: false, y: false };
-
-  print("-------------------------------------------");
-  print("Enter verification password:");
-  print("-------------------------------------------");
-}
-
-function clearFlow() {
-  globalLockState = null;
-  consoleEl.innerHTML = "";
-  suggestBox.style.display = "none";
-}
-
-function handleGlobalLockFlow(inputStr) {
-  const state = globalLockState;
-
-  switch(true) {
-
-    case !state.password: {
-      state.password = inputStr;
-
-      getDoc(doc(db, "system", "config")).then(snap => {
-        const real = snap.data()?.globalLockPassword;
-
-        if (inputStr !== real) {
-          print("-------------------------------------------");
-          print("Verification Failure, Closing Console.");
-          setTimeout(() => window.close(), 1200);
-          return;
-        }
-
-        state.confirmed = true;
-
-        print("-------------------------------------------");
-        print("Verification Confirmed. Are you sure? Y/N");
-        print("-------------------------------------------");
-      });
-
-      break;
-    }
-
-    case state.confirmed && !state.y: {
-      const v = inputStr.toLowerCase();
-
-      if (v === "n") {
-        print("Command Canceled.");
-        clearFlow();
-        return;
-      }
-
-      if (v === "y") {
-        state.y = true;
-        print("-------------------------------------------");
-        print('Intent Confirmed. Enter "Exe" or "Execute" or "Cancel".');
-        print("-------------------------------------------");
-      }
-
-      break;
-    }
-
-    case state.y: {
-      const v = inputStr.toLowerCase();
-
-      if (v === "cancel") {
-        print("Command Canceled.");
-        clearFlow();
-        return;
-      }
-
-      if (v === "exe" || v === "execute") {
-
-        print("-------------------------------------------");
-        print("Executing Command...");
-
-        setTimeout(() => {
-
-          updateDoc(doc(db, "system", "config"), {
-            globalLock: state.mode === "enable",
-            loginDisabled: state.mode === "enable",
-            chatDisabled: state.mode === "enable",
-            adminDisabled: state.mode === "enable"
-          });
-
-          print("Command has been executed.");
-          clearFlow();
-
-        }, 1200);
-      }
-
-      break;
-    }
-  }
-}
-
-/* ================= HELP ================= */
-
-register("help", () => {
-  print("=== ADMIN OS COMMANDS ===", "info");
-
-  Object.entries(helpData).forEach(([cmd, desc]) => {
-    print("\n" + cmd);
-    print(" → " + desc);
-  });
-
-  print("\n--- SYSTEM ---");
-  print("system.status");
-  print("system.reset");
-  print("system.lockdown.enable");
-  print("system.lockdown.disable");
-
-  print("\n--- DEBUG ---");
-  print("debug.db.test");
-  print("debug.config.view");
-  print("debug.latency");
-  print("debug.console.clear");
-
-  print("\n--- ANNOUNCEMENTS ---");
-  print("announce.set");
-  print("announce.enable");
-  print("announce.disable");
-  print("announce.color");
-  print("announce.view");
-
-}, "Help menu");
-
-/* ================= SYSTEM COMMANDS ================= */
-
-register("system.status", async () => {
+/* SYSTEM HEALTH */
+register("system.health", async () => {
   const snap = await getDoc(doc(db, "system", "config"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "Shows system config");
+  const users = await getDocs(collection(db, "users"));
 
-register("system.reset", async () => {
-  await updateDoc(doc(db, "system", "config"), {
-    globalLock: false,
-    loginDisabled: false,
-    chatDisabled: false,
-    adminDisabled: false
-  });
+  print("=== SYSTEM HEALTH ===", "info");
+  print("Users: " + users.size);
+  print("Config loaded: " + (snap.exists() ? "YES" : "NO"));
+}, "System health check");
 
-  print("System reset complete", "success");
-}, "Resets system flags");
-
-register("system.lockdown.enable", () => startGlobalLock("enable"), "Enable full lockdown");
-register("system.lockdown.disable", () => startGlobalLock("disable"), "Disable full lockdown");
-
-/* ================= DEBUG COMMANDS ================= */
-
-register("debug.db.test", async () => {
-  try {
-    const snap = await getDocs(collection(db, "users"));
-    print("DB OK | users: " + snap.size, "success");
-  } catch (e) {
-    print("DB FAIL: " + e.message, "error");
-  }
-}, "Tests database");
-
-register("debug.config.view", async () => {
-  const snap = await getDoc(doc(db, "system", "config"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "Views system config");
-
-register("debug.latency", async () => {
+register("system.ping", async () => {
   const start = Date.now();
   await getDocs(collection(db, "users"));
-  print("Latency: " + (Date.now() - start) + "ms", "info");
-}, "Checks DB latency");
+  print("Ping: " + (Date.now() - start) + "ms", "info");
+}, "DB latency test");
 
-register("debug.console.clear", () => {
-  consoleEl.innerHTML = "";
-  print("Console cleared", "success");
-}, "Clears console");
+register("system.snapshot", async () => {
+  const config = await getDoc(doc(db, "system", "config"));
+  const ann = await getDoc(doc(db, "system", "announcement"));
+  const em = await getDoc(doc(db, "system", "emergency"));
 
-/* ================= USERS ================= */
+  print(JSON.stringify({
+    config: config.data(),
+    announcement: ann.data(),
+    emergency: em.data()
+  }, null, 2), "info");
+}, "Full system snapshot");
 
-register("user.list", async () => {
-  const snap = await getDocs(collection(db, "users"));
-  snap.forEach(d => {
-    const u = d.data();
-    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
-  });
-}, "List users");
+/* SAFE MODE SIMULATION */
+register("safe.mode.enable", async () => {
+  await updateDoc(doc(db, "system", "config"), { safeMode: true });
+  print("Safe Mode ENABLED", "warn");
+}, "Enable safe mode");
 
-register("user.delete", async (a) => {
-  await deleteDoc(doc(db, "users", a[0]));
-  print("User deleted", "success");
-}, "Delete user");
+register("safe.mode.disable", async () => {
+  await updateDoc(doc(db, "system", "config"), { safeMode: false });
+  print("Safe Mode DISABLED", "success");
+}, "Disable safe mode");
 
-register("user.role", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), { role: a[1] });
-  print("Role updated", "success");
-}, "Change role");
+register("safe.mode.status", async () => {
+  const snap = await getDoc(doc(db, "system", "config"));
+  print("Safe Mode: " + (snap.data()?.safeMode ? "ON" : "OFF"), "info");
+}, "Check safe mode");
 
-register("user.lock", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
-    locked: true,
-    lockReason: a.slice(1).join(" ")
-  });
-  print("User locked", "error");
-}, "Lock user");
+/* ANNOUNCEMENTS IMPROVED */
+register("announce.clear", async () => {
+  await setAnnouncement({ text: "", enabled: false });
+  print("Announcement cleared", "success");
+}, "Clear announcement");
 
-register("user.unlock", async (a) => {
-  await updateDoc(doc(db, "users", a[0]), {
-    locked: false,
-    lockReason: ""
-  });
-  print("User unlocked", "success");
-}, "Unlock user");
+register("announce.reset", async () => {
+  await setAnnouncement({ text: "", enabled: false, color: "info" });
+  print("Announcement reset", "success");
+}, "Reset announcement");
 
-/* ================= INPUT ================= */
+register("announce.status", async () => {
+  const snap = await getDoc(doc(db, "system", "announcement"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "Announcement status");
 
+/* EMERGENCY BROADCAST */
+register("emergency.enable", async (a) => {
+  const msg = a.join(" ") || "EMERGENCY MODE ACTIVE";
+  await setEmergency({ enabled: true, message: msg, level: "critical" });
+  print("EMERGENCY ENABLED", "error");
+}, "Enable emergency broadcast");
+
+register("emergency.disable", async () => {
+  await setEmergency({ enabled: false, message: "", level: "none" });
+  print("EMERGENCY DISABLED", "success");
+}, "Disable emergency broadcast");
+
+register("emergency.status", async () => {
+  const snap = await getDoc(doc(db, "system", "emergency"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "Emergency status");
+
+/* DEBUG */
+register("debug.snapshot.full", async () => {
+  const users = await getDocs(collection(db, "users"));
+  const config = await getDoc(doc(db, "system", "config"));
+
+  print("Users: " + users.size);
+  print(JSON.stringify(config.data(), null, 2));
+}, "Full debug snapshot");
+
+/* INPUT */
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     run(input.value);
@@ -435,11 +257,7 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-input.addEventListener("input", (e) => {
-  updateSuggestions(e.target.value);
-});
-
-print("Admin OS ready (v9). Type 'help'.", "success");
+print("Admin OS ready (Alpha+). Type 'help'.", "success");
 
 </script>
 
