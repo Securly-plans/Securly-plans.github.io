@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald</title>
+<title>Emerald Dashboard</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -70,60 +70,11 @@ body{
   font-size:14px;
 }
 
-.navbar a:hover,
-.navbar button:hover{
-  border-color:var(--info);
-}
+/* ================= NORMAL PAGE ================= */
 
-/* BADGES */
-.admin-link{
-  background:rgba(59,130,246,0.15);
-  color:#60a5fa !important;
-  border-color:#3b82f6;
-}
-
-.logout-btn{
-  background:rgba(239,68,68,0.15);
-  border-color:var(--danger);
-}
-
-.chat-link{
-  background:rgba(74,222,128,0.10);
-  border-color:var(--primary);
-}
-
-.username-badge{
-  padding:6px 10px;
-  border-radius:999px;
-  background:var(--panel);
-  border:1px solid var(--border);
-  color:var(--muted);
-}
-
-/* HEADER */
 header{
   padding:20px;
   border-bottom:1px solid var(--border);
-}
-
-header h1{
-  margin:0 0 10px;
-  color:#93c5fd;
-}
-
-header input{
-  width:100%;
-  max-width:400px;
-  padding:12px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#111827;
-  color:var(--text);
-  outline:none;
-}
-
-header input:focus{
-  border-color:var(--info);
 }
 
 h2{
@@ -135,9 +86,7 @@ main{
   padding:0 20px;
 }
 
-/* =========================
-   📢 NORMAL ANNOUNCEMENT BAR
-========================= */
+/* ================= NORMAL ANNOUNCEMENT ================= */
 #announcementBar {
   position: fixed;
   bottom: 0;
@@ -150,66 +99,45 @@ main{
   color: white;
   display: none;
   z-index: 99999;
-  border-top: 1px solid var(--border);
 }
 
-/* =========================
-   🚨 EMERGENCY OVERRIDE BAR (ADDED)
-========================= */
-#emergencyBar {
+/* ================= EMERGENCY OVERLAY (FULL SCREEN OVERRIDE) ================= */
+#emergencyOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 14px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: bold;
+  inset: 0;
   background: #ef4444;
   color: white;
   display: none;
-  z-index: 100000;
+  z-index: 999999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+}
+
+#emergencyOverlay h1 {
+  font-size: 40px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+#emergencyOverlay p {
+  font-size: 18px;
+  max-width: 800px;
 }
 </style>
 </head>
 
-<script type="module" src="./js/session.js"></script>
-
 <body>
 
 <div class="navbar">
-
   <div class="nav-left">
     <a href="home.html">Home</a>
   </div>
 
   <div class="nav-right">
-
-    <span id="usernameDisplay" class="username-badge"></span>
-
-    <a href="chat.html" class="chat-link">Chat</a>
-
-    <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
-    <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
-
-    <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">
-      Resp. Support
-    </a>
-
-    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
-      Admin
-    </a>
-
-    <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
-      Chat Mod
-    </a>
-
-    <a href="view-users.html" id="viewUsersLink" style="display:none;">
-      Users
-    </a>
-
-    <button id="logoutBtn" class="logout-btn">Logout</button>
-
+    <span id="usernameDisplay"></span>
   </div>
 </div>
 
@@ -220,187 +148,64 @@ main{
 
 <h2>Games</h2>
 
-<main id="gameGrid" class="game-grid"></main>
-<main id="videoGrid" class="video-grid"></main>
+<main id="gameGrid"></main>
+<main id="videoGrid"></main>
 
-<h1 style="color:#a78bfa; text-align:center; margin-top:40px;">
-  NEW LINKS IN PROGRESS
-</h1>
-
-<p style="color:#4ade80; text-align:center;">
-  I am making new links if this gets blocked, just for you guys!
-</p>
-
-<p style="color:#a78bfa; text-align:center;">
-  Links:
-  <a href="https://securly-plans.github.io/" style="color:#60a5fa;">
-    Securly-plans.github.io
-  </a>
-  <a href="https://wyattmonroe2013hash.github.io/securly-plans.github.io/" style="color:#60a5fa;">
-    Test Site
-  </a>
-</p>
-
-<p style="color:#facc15; text-align:center;">
-  Copyright 2026, Seth Flueter, Wyatt Monroe, Bohdi Domonell
-</p>
-
-<p style="color:#4ade80; text-align:center;">
-  Emerald Games - Beta 1.0
-</p>
-
-<!-- 📢 ANNOUNCEMENT BAR -->
+<!-- NORMAL ANNOUNCEMENT -->
 <div id="announcementBar"></div>
 
-<!-- 🚨 EMERGENCY OVERRIDE BAR (ADDED) -->
-<div id="emergencyBar"></div>
+<!-- 🚨 EMERGENCY OVERLAY -->
+<div id="emergencyOverlay">
+  <h1>🚨 Emergency Broadcast</h1>
+  <p id="emergencyMessage">System alert active.</p>
+</div>
 
-<!-- 📢 ANNOUNCEMENT SYSTEM -->
+<!-- ================= FIRESTORE LISTENERS ================= -->
 <script type="module">
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
-const bar = document.getElementById("announcementBar");
-const emergencyBar = document.getElementById("emergencyBar");
+const announcementBar = document.getElementById("announcementBar");
+const emergencyOverlay = document.getElementById("emergencyOverlay");
+const emergencyMessage = document.getElementById("emergencyMessage");
 
-/* NORMAL ANNOUNCEMENT */
+/* ================= NORMAL ANNOUNCEMENT ================= */
 onSnapshot(doc(db, "system", "announcement"), (snap) => {
-  if (!snap.exists()) return bar.style.display = "none";
+  if (!snap.exists()) return;
 
   const data = snap.data();
 
   if (data.enabled && data.text) {
-    bar.style.display = "block";
-    bar.textContent = data.text;
-
-    if (data.color === "danger") bar.style.background = "#ef4444";
-    else if (data.color === "warning") bar.style.background = "#f59e0b";
-    else if (data.color === "success") bar.style.background = "#22c55e";
-    else bar.style.background = "#222";
+    announcementBar.style.display = "block";
+    announcementBar.textContent = data.text;
+    announcementBar.style.background =
+      data.color === "danger" ? "#ef4444" :
+      data.color === "warning" ? "#f59e0b" :
+      data.color === "success" ? "#22c55e" :
+      "#222";
   } else {
-    bar.style.display = "none";
+    announcementBar.style.display = "none";
   }
 });
 
-/* 🚨 EMERGENCY OVERRIDE (NEW) */
+/* ================= EMERGENCY OVERRIDE ================= */
 onSnapshot(doc(db, "system", "emergency"), (snap) => {
   if (!snap.exists()) {
-    emergencyBar.style.display = "none";
+    emergencyOverlay.style.display = "none";
     return;
   }
 
   const data = snap.data();
 
   if (data.enabled) {
-    emergencyBar.style.display = "block";
-    emergencyBar.textContent =
-      data.message || "EMERGENCY MODE ACTIVE - SITE STATUS ALERT";
+    emergencyOverlay.style.display = "flex";
+    emergencyMessage.textContent =
+      data.message || "System-wide emergency broadcast active.";
   } else {
-    emergencyBar.style.display = "none";
+    emergencyOverlay.style.display = "none";
   }
 });
 </script>
-
-<!-- NOTIFICATIONS (UNCHANGED) -->
-<script type="module">
-import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./js/firebase.js";
-
-const me = localStorage.getItem("username");
-let notified = new Set();
-
-if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-onSnapshot(collection(db, "chats"), (snapshot) => {
-  snapshot.docChanges().forEach(change => {
-    if (change.type !== "modified") return;
-
-    const data = change.doc.data();
-    const chatId = change.doc.id;
-
-    if (data.type !== "private") return;
-    if (!data.participants?.includes(me)) return;
-
-    const messages = data.messages || [];
-    const last = messages[messages.length - 1];
-
-    if (!last || last.from === me) return;
-
-    const key = chatId + "_" + last.time;
-    if (notified.has(key)) return;
-
-    notified.add(key);
-    showNotification(last.from, last.text);
-  });
-});
-
-function showNotification(sender, text) {
-  if (Notification.permission !== "granted") return;
-
-  new Notification("💬 New message from " + sender, {
-    body: text.length > 60 ? text.slice(0, 60) + "..." : text,
-    icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
-  });
-}
-</script>
-
-<script>
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.replace("index.html");
-});
-
-const role = localStorage.getItem("role");
-const username = localStorage.getItem("username");
-const isLoggedIn = localStorage.getItem("loggedIn") === "true";
-
-const isVIP = localStorage.getItem("vip") === "true";
-
-const usernameDisplay = document.getElementById("usernameDisplay");
-
-if (username && isLoggedIn) {
-  usernameDisplay.textContent =
-    (role === "admin" ? "🛡 " : isVIP ? "⭐ " : "👤 ") + username;
-}
-
-if (isLoggedIn) {
-  document.getElementById("ticketslink").style.display = "inline-block";
-  document.getElementById("profileLink").style.display = "inline-block";
-  document.getElementById("viewUsersLink").style.display = "inline-block";
-}
-
-if (role === "admin" || role === "mod" || isVIP) {
-  document.getElementById("adminticketslink").style.display = "inline-block";
-  document.getElementById("modChatLink").style.display = "inline-block";
-}
-
-if (role === "admin") {
-  document.getElementById("adminLink").style.display = "inline-block";
-}
-
-/* SEARCH */
-const searchBar = document.getElementById("searchBar");
-const gameGrid = document.getElementById("gameGrid");
-const videoGrid = document.getElementById("videoGrid");
-
-function filterItems() {
-  const query = searchBar.value.toLowerCase().trim();
-
-  const allItems = [...gameGrid.children, ...videoGrid.children];
-
-  allItems.forEach(item => {
-    const text = item.textContent.toLowerCase();
-
-    item.style.display = (!query || text.includes(query)) ? "" : "none";
-  });
-}
-
-searchBar.addEventListener("input", filterItems);
-</script>
-
-<script src="script.js"></script>
 
 </body>
 </html>
