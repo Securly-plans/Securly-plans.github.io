@@ -1,3 +1,4 @@
+console.log("js/converter.js LOADED");
 // js/converter.js
 
 import { db } from "./firebase.js";
@@ -11,36 +12,103 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/**
- * Main resolver:
- * input → user object { id, ...data }
- */
+/* ================================
+   PUBLIC RESOLVER (USE THIS ONLY)
+================================ */
+
 export async function resolveUser(input) {
   if (!input) return null;
 
-  const cleaned = input.toString().trim().replace("@", "");
+  const cleaned = input.toString().trim().replace("@", "").toLowerCase();
 
-  // 1. Try UID first (FASTEST PATH)
-  const byId = await getUserById(cleaned);
+  // 1. UID lookup (FASTEST PATH)
+  const byId = await getUserByIdInternal(cleaned);
   if (byId) return byId;
 
-  // 2. Try username exact match
-  const byUsername = await getUserByUsername(cleaned);
+  // 2. Exact username match
+  const byUsername = await getUserByUsernameInternal(cleaned);
   if (byUsername) return byUsername;
 
-  // 3. Optional fallback: partial match
-  const byPartial = await getUserByPartialUsername(cleaned);
+  // 3. Partial username match (optional fallback)
+  const byPartial = await getUserByPartialUsernameInternal(cleaned);
   if (byPartial) return byPartial;
 
   return null;
 }
 
-export async function getUserById(uid) {
-  const user = await resolveUser(uid);
-  return user;
+/* ================================
+   INTERNAL: UID LOOKUP
+================================ */
+
+async function getUserByIdInternal(uid) {
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+
+    if (!snap.exists()) return null;
+
+    return {
+      id: snap.id,
+      ...snap.data()
+    };
+  } catch (err) {
+    console.error("getUserByIdInternal error:", err);
+    return null;
+  }
 }
 
-export async function getUserByUsername(name) {
-  const user = await resolveUser(name);
-  return user;
+/* ================================
+   INTERNAL: USERNAME LOOKUP
+================================ */
+
+async function getUserByUsernameInternal(username) {
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("username", "==", username),
+      limit(1)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) return null;
+
+    const docSnap = snap.docs[0];
+
+    return {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  } catch (err) {
+    console.error("getUserByUsernameInternal error:", err);
+    return null;
+  }
+}
+
+/* ================================
+   INTERNAL: PARTIAL MATCH
+================================ */
+
+async function getUserByPartialUsernameInternal(text) {
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("username", ">=", text),
+      where("username", "<=", text + "\uf8ff"),
+      limit(1)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) return null;
+
+    const docSnap = snap.docs[0];
+
+    return {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  } catch (err) {
+    console.error("getUserByPartialUsernameInternal error:", err);
+    return null;
+  }
 }
