@@ -202,7 +202,7 @@ function setAnnouncement(data) {
 */
 
 function setEmergencyBroadcast(text, level="critical") {
-  return updateDoc(doc(db, "system", "announcement"), {
+  return updateDoc(doc(db, "system", "emergency"), {
     text,
     enabled: true,
     emergency: true,
