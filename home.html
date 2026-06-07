@@ -296,7 +296,7 @@ onSnapshot(doc(db, "system", "emergency"), (snap) => {
   if (data.enabled) {
     overlay.style.display = "flex";
     emergencyText.textContent =
-      data.message || "System emergency active. Please wait for updates.";
+      data.text || "System emergency active. Please wait for updates.";
   } else {
     overlay.style.display = "none";
   }
