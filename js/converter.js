@@ -34,3 +34,13 @@ export async function resolveUser(input) {
 
   return null;
 }
+
+export async function getUserById(uid) {
+  const user = await resolveUser(uid);
+  return user;
+}
+
+export async function getUserByUsername(name) {
+  const user = await resolveUser(name);
+  return user;
+}
