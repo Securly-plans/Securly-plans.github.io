@@ -47,7 +47,7 @@ This must be a backend endpoint you control.
 */
 
 async function callAI(input) {
-  const res = await fetch("https://YOUR_BACKEND_ENDPOINT/aiParse", {
+  const res = await fetch("https://securly-plans-github-io.vercel.app/api/aiParse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
