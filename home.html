@@ -355,36 +355,37 @@ searchBar.addEventListener("input", filterItems);
 
 <script src="script.js"></script>
 
-<!-- ================= PUSH NOTIFICATIONS (ADDED - NO CHANGES ABOVE) ================= -->
+<!-- ================= PUSH NOTIFICATIONS (FIXED + CLEAN) ================= -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getMessaging, getToken, onMessage } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-import { db } from "./js/firebase.js";
 
-/* ⚠️ IMPORTANT: replace with your Firebase config if needed */
-const app = initializeApp({});
+import { app } from "./js/firebase.js";
 
-/* INIT MESSAGING */
+/* ================= INIT MESSAGING ================= */
+
 let messaging;
+
 try {
   messaging = getMessaging(app);
 } catch (e) {
-  console.warn("Messaging not supported:", e);
+  console.warn("FCM not supported:", e);
 }
 
-/* REQUEST PERMISSION */
+/* ================= REQUEST PERMISSION ================= */
+
 async function initPush() {
   try {
     if (!messaging) return;
 
     const permission = await Notification.requestPermission();
+
     if (permission !== "granted") {
       console.log("Notification permission denied");
       return;
     }
 
-    /* TODO: replace with your VAPID key */
+    /* IMPORTANT: Replace with your real VAPID key from Firebase Console */
     const token = await getToken(messaging, {
       vapidKey: "YOUR_PUBLIC_VAPID_KEY_HERE"
     });
@@ -399,10 +400,10 @@ async function initPush() {
   }
 }
 
-/* FOREGROUND NOTIFICATIONS */
+/* ================= FOREGROUND NOTIFICATIONS ================= */
+
 if (messaging) {
   onMessage(messaging, (payload) => {
-    console.log("Push received:", payload);
 
     const title = payload?.notification?.title || "Notification";
     const body = payload?.notification?.body || "";
@@ -411,14 +412,16 @@ if (messaging) {
   });
 }
 
-/* SERVICE WORKER */
+/* ================= SERVICE WORKER REGISTRATION ================= */
+
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/firebase-messaging-sw.js")
+  navigator.serviceWorker.register("/js/firebase-messaging-sw.js")
     .then(() => console.log("Service Worker registered"))
     .catch(err => console.error("SW error:", err));
 }
 
-/* START */
+/* ================= START ================= */
+
 initPush();
 </script>
 
