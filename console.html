@@ -68,13 +68,26 @@ body {
   overflow-y: auto;
   min-width: 260px;
 }
+
+.suggest-item {
+  padding: 4px;
+  cursor: pointer;
+}
+
+.suggest-item:hover {
+  background: #00ff88;
+  color: black;
+}
 </style>
 </head>
 
 <body>
 
 <div id="wrap">
-  <div id="header">AdminOS Console - Copyright 2026, Monroe Enterainment Services. Administrator Access Only. Violators will be prosecuted.</div>
+  <div id="header">
+    AdminOS Console - Copyright 2026, Monroe Enterainment Services.
+  </div>
+
   <div id="console"></div>
 
   <div id="inputBar">
@@ -123,28 +136,12 @@ function register(name, fn, description="No description") {
   helpData[name] = description;
 }
 
-/* ================= ANNOUNCEMENT ================= */
-
-function setAnnouncement(data) {
-  return updateDoc(doc(db, "system", "announcement"), data);
-}
-
-/* ================= EMERGENCY ================= */
-
-function setEmergency(data) {
-  return updateDoc(doc(db, "system", "emergency"), data);
-}
-
-/* ================= STATE ================= */
-
-let globalLockState = null;
-
 /* ================= RUNNER ================= */
 
 async function run(inputStr) {
   if (!inputStr.trim()) return;
 
-  print("> " + (globalLockState ? "****" : inputStr), "warn");
+  print("> " + inputStr, "warn");
 
   const parts = inputStr.split(" ");
   const cmd = parts.shift().toLowerCase();
@@ -160,95 +157,74 @@ async function run(inputStr) {
   }
 }
 
-/* ================= IMPROVEMENT COMMANDS ================= */
+/* ================= SUGGESTIONS (FIXED + CLICKABLE) ================= */
 
-/* SYSTEM HEALTH */
-register("system.health", async () => {
+function updateSuggestions(val) {
+  const inputVal = val.toLowerCase();
+
+  if (!inputVal) {
+    suggestBox.style.display = "none";
+    return;
+  }
+
+  const matches = Object.keys(commands)
+    .filter(c => c.startsWith(inputVal))
+    .slice(0, 8);
+
+  if (!matches.length) {
+    suggestBox.style.display = "none";
+    return;
+  }
+
+  suggestBox.innerHTML = "";
+
+  matches.forEach(cmd => {
+    const div = document.createElement("div");
+    div.className = "suggest-item";
+    div.textContent = "› " + cmd;
+
+    div.onclick = () => {
+      input.value = cmd;
+      suggestBox.style.display = "none";
+      run(cmd); // 🔥 CLICK RUNS COMMAND
+      input.value = "";
+    };
+
+    div.onmouseenter = () => {
+      input.value = cmd;
+    };
+
+    suggestBox.appendChild(div);
+  });
+
+  suggestBox.style.display = "block";
+}
+
+/* ================= HELP (FIXED) ================= */
+
+register("help", () => {
+  print("=== ADMIN OS COMMANDS ===", "info");
+
+  Object.entries(helpData).forEach(([cmd, desc]) => {
+    print(cmd + " → " + desc);
+  });
+
+}, "Help menu");
+
+/* ================= SYSTEM (MINIMAL SAFE SET) ================= */
+
+register("system.status", async () => {
   const snap = await getDoc(doc(db, "system", "config"));
-  const users = await getDocs(collection(db, "users"));
-
-  print("=== SYSTEM HEALTH ===", "info");
-  print("Users: " + users.size);
-  print("Config loaded: " + (snap.exists() ? "YES" : "NO"));
-}, "System health check");
-
-register("system.ping", async () => {
-  const start = Date.now();
-  await getDocs(collection(db, "users"));
-  print("Ping: " + (Date.now() - start) + "ms", "info");
-}, "DB latency test");
-
-register("system.snapshot", async () => {
-  const config = await getDoc(doc(db, "system", "config"));
-  const ann = await getDoc(doc(db, "system", "announcement"));
-  const em = await getDoc(doc(db, "system", "emergency"));
-
-  print(JSON.stringify({
-    config: config.data(),
-    announcement: ann.data(),
-    emergency: em.data()
-  }, null, 2), "info");
-}, "Full system snapshot");
-
-/* SAFE MODE SIMULATION */
-register("safe.mode.enable", async () => {
-  await updateDoc(doc(db, "system", "config"), { safeMode: true });
-  print("Safe Mode ENABLED", "warn");
-}, "Enable safe mode");
-
-register("safe.mode.disable", async () => {
-  await updateDoc(doc(db, "system", "config"), { safeMode: false });
-  print("Safe Mode DISABLED", "success");
-}, "Disable safe mode");
-
-register("safe.mode.status", async () => {
-  const snap = await getDoc(doc(db, "system", "config"));
-  print("Safe Mode: " + (snap.data()?.safeMode ? "ON" : "OFF"), "info");
-}, "Check safe mode");
-
-/* ANNOUNCEMENTS IMPROVED */
-register("announce.clear", async () => {
-  await setAnnouncement({ text: "", enabled: false });
-  print("Announcement cleared", "success");
-}, "Clear announcement");
-
-register("announce.reset", async () => {
-  await setAnnouncement({ text: "", enabled: false, color: "info" });
-  print("Announcement reset", "success");
-}, "Reset announcement");
-
-register("announce.status", async () => {
-  const snap = await getDoc(doc(db, "system", "announcement"));
   print(JSON.stringify(snap.data(), null, 2), "info");
-}, "Announcement status");
+}, "System status");
 
-/* EMERGENCY BROADCAST */
-register("emergency.enable", async (a) => {
-  const msg = a.join(" ") || "EMERGENCY MODE ACTIVE";
-  await setEmergency({ enabled: true, message: msg, level: "critical" });
-  print("EMERGENCY ENABLED", "error");
-}, "Enable emergency broadcast");
+register("debug.console.clear", () => {
+  consoleEl.innerHTML = "";
+  print("Console cleared", "success");
+}, "Clear console");
 
-register("emergency.disable", async () => {
-  await setEmergency({ enabled: false, message: "", level: "none" });
-  print("EMERGENCY DISABLED", "success");
-}, "Disable emergency broadcast");
+/* ================= INPUT ================= */
 
-register("emergency.status", async () => {
-  const snap = await getDoc(doc(db, "system", "emergency"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "Emergency status");
-
-/* DEBUG */
-register("debug.snapshot.full", async () => {
-  const users = await getDocs(collection(db, "users"));
-  const config = await getDoc(doc(db, "system", "config"));
-
-  print("Users: " + users.size);
-  print(JSON.stringify(config.data(), null, 2));
-}, "Full debug snapshot");
-
-/* INPUT */
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     run(input.value);
@@ -257,7 +233,17 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-print("Admin OS ready (Alpha+). Type 'help'.", "success");
+input.addEventListener("input", (e) => {
+  updateSuggestions(e.target.value);
+});
+
+document.addEventListener("click", (e) => {
+  if (!suggestBox.contains(e.target) && e.target !== input) {
+    suggestBox.style.display = "none";
+  }
+});
+
+print("Admin OS ready (fixed v10). Type 'help'.", "success");
 
 </script>
 
