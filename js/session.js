@@ -17,12 +17,50 @@ const auth = getAuth(app);
 /* ================= CONFIG ================= */
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const CONFIG_CHECK_INTERVAL = 10 * 1000; // check system lock every 10s
+const CONFIG_CHECK_INTERVAL = 10 * 1000;
 
 /* ================= STATE ================= */
 
 let inactivityTimer;
 let lockCheckTimer;
+
+let cachedConfig = {};
+
+/* ================= CURRENT PAGE ================= */
+
+function getPage() {
+  const path = window.location.pathname.toLowerCase();
+
+  if (path.includes("chat")) return "chat";
+  if (path.includes("video")) return "video";
+  if (path.includes("admin") || path.includes("console")) return "admin";
+
+  return "other";
+}
+
+/* ================= PAGE RESTRICTIONS ================= */
+
+function checkPageRestrictions(config) {
+  const page = getPage();
+
+  // CHAT LOCK
+  if (page === "chat" && config.chatDisabled === true) {
+    window.location.href = "home.html";
+    return;
+  }
+
+  // VIDEO LOCK
+  if (page === "video" && config.videoDisabled === true) {
+    window.location.href = "home.html";
+    return;
+  }
+
+  // ADMIN LOCK
+  if (page === "admin" && config.adminDisabled === true) {
+    window.location.href = "home.html";
+    return;
+  }
+}
 
 /* ================= SYSTEM LOCK CHECK ================= */
 
@@ -33,24 +71,27 @@ async function checkGlobalLock() {
     if (!snap.exists()) return;
 
     const data = snap.data();
+    cachedConfig = data;
 
-    // GLOBAL LOCK = immediate force logout
+    // GLOBAL LOCK = force logout
     if (data.globalLock === true) {
       await signOut(auth);
       localStorage.clear();
 
       alert("SYSTEM LOCKED — You have been logged out.");
-
       window.location.href = "index.html";
       return;
     }
 
-    // Optional: if login disabled, only block new sessions (not active ones)
+    // loginDisabled flag
     if (data.loginDisabled === true) {
       localStorage.setItem("loginDisabled", "true");
     } else {
       localStorage.removeItem("loginDisabled");
     }
+
+    // 🔥 NEW: enforce page restrictions
+    checkPageRestrictions(data);
 
   } catch (err) {
     console.error("Lock check failed:", err);
@@ -76,7 +117,6 @@ function resetSessionTimer() {
     localStorage.clear();
 
     alert("You were logged out due to inactivity.");
-
     window.location.href = "login.html";
 
   }, SESSION_TIMEOUT);
@@ -95,7 +135,7 @@ function resetSessionTimer() {
   document.addEventListener(event, resetSessionTimer, true);
 });
 
-/* ================= CHECK EXISTING SESSION ================= */
+/* ================= CHECK SESSION ================= */
 
 async function checkSessionAge() {
 
@@ -104,7 +144,6 @@ async function checkSessionAge() {
 
   const now = Date.now();
 
-  // quick global lock check before session restore
   await checkGlobalLock();
 
   if (now - lastActivity > SESSION_TIMEOUT) {
@@ -126,7 +165,7 @@ async function checkSessionAge() {
 
 checkSessionAge();
 
-/* ================= LIVE LOCK WATCHER ================= */
+/* ================= LIVE WATCHER ================= */
 
 lockCheckTimer = setInterval(() => {
   checkGlobalLock();
