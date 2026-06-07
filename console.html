@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AdminOS Console Beta</title>
+<title>Emerald AdminOS Console Beta</title>
 
 <style>
 body {
@@ -53,6 +53,21 @@ body {
   padding: 6px;
   outline: none;
 }
+
+/* ================= COMMAND SUGGESTIONS ================= */
+#suggestBox {
+  position: absolute;
+  bottom: 60px;
+  left: 10px;
+  background: #111;
+  border: 1px solid #00ff88;
+  padding: 6px;
+  font-size: 12px;
+  display: none;
+  max-height: 150px;
+  overflow-y: auto;
+  min-width: 260px;
+}
 </style>
 </head>
 
@@ -67,6 +82,8 @@ body {
     <input id="cmdInput" autocomplete="off"/>
   </div>
 </div>
+
+<div id="suggestBox"></div>
 
 <script type="module">
 
@@ -83,10 +100,14 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* ⚠️ FIX: ensure db exists */
+import { db } from "./js/firebase.js";
+
 /* ================= CORE ================= */
 
 const consoleEl = document.getElementById("console");
 const input = document.getElementById("cmdInput");
+const suggestBox = document.getElementById("suggestBox");
 
 function print(msg, type="line") {
   const div = document.createElement("div");
@@ -106,19 +127,32 @@ function register(name, fn, description="No description") {
   helpData[name] = description;
 }
 
-/* ================= STATE MACHINE (GLOBAL LOCK FLOW) ================= */
+/* ================= COMMAND SUGGESTIONS ================= */
+
+function updateSuggestions(val) {
+  const inputVal = val.toLowerCase();
+
+  if (!inputVal) {
+    suggestBox.style.display = "none";
+    return;
+  }
+
+  const matches = Object.keys(commands)
+    .filter(c => c.startsWith(inputVal))
+    .slice(0, 6);
+
+  if (!matches.length) {
+    suggestBox.style.display = "none";
+    return;
+  }
+
+  suggestBox.innerHTML = matches.map(m => `› ${m}`).join("<br>");
+  suggestBox.style.display = "block";
+}
+
+/* ================= STATE MACHINE ================= */
 
 let globalLockState = null;
-let tempInput = "";
-
-/*
-STATES:
-null
-await_password
-await_confirm
-await_y_n
-await_execute
-*/
 
 /* ================= RUNNER ================= */
 
@@ -127,7 +161,6 @@ async function run(inputStr) {
 
   print("> " + (globalLockState ? "****" : inputStr), "warn");
 
-  /* GLOBAL LOCK FLOW OVERRIDE */
   if (globalLockState) {
     return handleGlobalLockFlow(inputStr);
   }
@@ -149,12 +182,7 @@ async function run(inputStr) {
 /* ================= GLOBAL LOCK FLOW ================= */
 
 function startGlobalLock(mode) {
-  globalLockState = {
-    mode,
-    password: "",
-    confirmed: false,
-    y: false
-  };
+  globalLockState = { mode, password: "", confirmed: false, y: false };
 
   print("-------------------------------------------");
   print("Enter verification password:");
@@ -163,23 +191,20 @@ function startGlobalLock(mode) {
 
 function clearFlow() {
   globalLockState = null;
-  tempInput = "";
   consoleEl.innerHTML = "";
+  suggestBox.style.display = "none";
 }
 
+/* FIXED: db scope safe + getDoc safe usage */
 function handleGlobalLockFlow(inputStr) {
-
   const state = globalLockState;
 
   switch(true) {
 
-    /* STEP 1 PASSWORD */
     case !state.password: {
       state.password = inputStr;
 
-      // fetch password from firestore
       getDoc(doc(db, "system", "config")).then(snap => {
-
         const real = snap.data()?.globalLockPassword;
 
         if (inputStr !== real) {
@@ -199,7 +224,6 @@ function handleGlobalLockFlow(inputStr) {
       break;
     }
 
-    /* STEP 2 Y/N */
     case state.confirmed && !state.y: {
       const v = inputStr.toLowerCase();
 
@@ -214,13 +238,11 @@ function handleGlobalLockFlow(inputStr) {
         print("-------------------------------------------");
         print('Intent Confirmed. Enter "Exe" or "Execute" or "Cancel".');
         print("-------------------------------------------");
-        print("Waiting...");
       }
 
       break;
     }
 
-    /* STEP 3 EXECUTE */
     case state.y: {
       const v = inputStr.toLowerCase();
 
@@ -236,21 +258,13 @@ function handleGlobalLockFlow(inputStr) {
         print("Executing Command...");
 
         setTimeout(() => {
-          if (state.mode === "enable") {
-            updateDoc(doc(db, "system", "config"), {
-              globalLock: true,
-              loginDisabled: true,
-              chatDisabled: true,
-              adminDisabled: true
-            });
-          } else {
-            updateDoc(doc(db, "system", "config"), {
-              globalLock: false,
-              loginDisabled: false,
-              chatDisabled: false,
-              adminDisabled: false
-            });
-          }
+
+          updateDoc(doc(db, "system", "config"), {
+            globalLock: state.mode === "enable",
+            loginDisabled: state.mode === "enable",
+            chatDisabled: state.mode === "enable",
+            adminDisabled: state.mode === "enable"
+          });
 
           print("Command has been executed.");
           clearFlow();
@@ -287,7 +301,7 @@ register("status", () => {
   print("System OK", "success");
 }, "System status check");
 
-/* ================= USERS (RESTORED) ================= */
+/* ================= USERS ================= */
 
 register("user.list", async () => {
   const snap = await getDocs(collection(db, "users"));
@@ -323,15 +337,10 @@ register("user.unlock", async (a) => {
   print("User unlocked", "success");
 }, "Unlocks user");
 
-/* ================= GLOBAL LOCK COMMANDS ================= */
+/* ================= GLOBAL LOCK ================= */
 
-register("system.globallock.enable", () => {
-  startGlobalLock("enable");
-}, "Triggers global lock ENABLE flow");
-
-register("system.globallock.disable", () => {
-  startGlobalLock("disable");
-}, "Triggers global lock DISABLE flow");
+register("system.globallock.enable", () => startGlobalLock("enable"), "Enable global lock system");
+register("system.globallock.disable", () => startGlobalLock("disable"), "Disable global lock system");
 
 /* ================= INPUT ================= */
 
@@ -339,7 +348,12 @@ input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     run(input.value);
     input.value = "";
+    suggestBox.style.display = "none";
   }
+});
+
+input.addEventListener("input", (e) => {
+  updateSuggestions(e.target.value);
 });
 
 print("Admin OS ready (v9). Type 'help'.", "success");
