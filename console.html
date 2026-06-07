@@ -278,6 +278,52 @@ register("announce.emergency.view", async () => {
 
 }, "View emergency broadcast");
 
+/* ================= NOTIFICATIONS (ADDED) ================= */
+
+async function findUser(identifier) {
+  const snap = await getDocs(collection(db, "users"));
+
+  let match = null;
+
+  snap.forEach(docSnap => {
+    const data = docSnap.data();
+
+    if (docSnap.id === identifier || data.username === identifier) {
+      match = { id: docSnap.id, ...data };
+    }
+  });
+
+  return match;
+}
+
+register("notify.user.push", async (a) => {
+
+  const target = a[0];
+  const message = a.slice(1).join(" ");
+
+  if (!target || !message) {
+    return print("Usage: notify.user.push [userId/username] [message]", "error");
+  }
+
+  const user = await findUser(target);
+
+  if (!user) {
+    return print("User not found: " + target, "error");
+  }
+
+  await addDoc(collection(db, "notifications"), {
+    userId: user.id,
+    username: user.username || null,
+    title: "Admin Notification",
+    body: message,
+    read: false,
+    timestamp: Date.now()
+  });
+
+  print("Notification Sent → " + user.username, "success");
+
+}, "Send push/in-app notification to a user");
+
 /* ================= GLOBAL LOCK ================= */
 
 function startGlobalLock(mode) {
