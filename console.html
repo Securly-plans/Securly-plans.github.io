@@ -680,6 +680,110 @@ register("user.unlock", async (a) => {
   print("User unlocked", "success");
 }, "Unlock user");
 
+/* ================= PAGE COMMANDS ================= */
+
+/**
+ * Safety helper (optional but recommended)
+ * Prevents obvious javascript: / data: injection in redirects
+ */
+function sanitizeUrl(url) {
+  try {
+    const parsed = new URL(url, window.location.origin);
+
+    // block dangerous protocols
+    if (!["http:", "https:", "file:"].includes(parsed.protocol)) {
+      return null;
+    }
+
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+/* PAGE REDIRECT */
+register("page.redirect", async (a) => {
+  const url = a.join(" ").trim();
+
+  if (!url) {
+    return print("Usage: page.redirect [url]", "error");
+  }
+
+  const safe = sanitizeUrl(url);
+
+  if (!safe) {
+    return print("Invalid or unsafe URL blocked", "error");
+  }
+
+  print("Redirecting to: " + safe, "info");
+
+  setTimeout(() => {
+    window.location.href = safe;
+  }, 500);
+
+}, "Redirect browser to a URL");
+
+/* PAGE OPEN (new tab) */
+register("page.open", async (a) => {
+  const url = a.join(" ").trim();
+
+  if (!url) {
+    return print("Usage: page.open [url]", "error");
+  }
+
+  const safe = sanitizeUrl(url);
+
+  if (!safe) {
+    return print("Invalid or unsafe URL blocked", "error");
+  }
+
+  window.open(safe, "_blank", "noopener,noreferrer");
+
+  print("Opened in new tab: " + safe, "success");
+
+}, "Open URL in new tab");
+
+/* PAGE RELOAD */
+register("page.reload", async () => {
+  print("Reloading page...", "warn");
+
+  setTimeout(() => {
+    window.location.reload();
+  }, 400);
+
+}, "Reload current page");
+
+/* PAGE BACK */
+register("page.back", async () => {
+  print("Going back...", "warn");
+
+  setTimeout(() => {
+    window.history.back();
+  }, 400);
+
+}, "Go back in browser history");
+
+/* PAGE FORWARD */
+register("page.forward", async () => {
+  print("Going forward...", "warn");
+
+  setTimeout(() => {
+    window.history.forward();
+  }, 400);
+
+}, "Go forward in browser history");
+
+/* PAGE INFO */
+register("page.info", async () => {
+  print("=== PAGE INFO ===", "info");
+
+  print("URL: " + window.location.href);
+  print("Title: " + document.title);
+  print("Path: " + window.location.pathname);
+  print("Protocol: " + window.location.protocol);
+
+}, "Show current page info");
+
 /* ================= CHAT COMMANDS ================= */
 
 /* LIST CHATS */
