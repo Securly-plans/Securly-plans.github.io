@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emerald</title>
+<title>Emerald Dashboard</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -38,7 +38,7 @@ body{
   color:var(--text);
 }
 
-/* ================= NAVBAR (RESTORED) ================= */
+/* NAVBAR */
 .navbar{
   display:flex;
   justify-content:space-between;
@@ -75,7 +75,32 @@ body{
   border-color:var(--info);
 }
 
-/* ================= HEADER ================= */
+/* 🔵 RESTORED ADMIN BLUE BADGES */
+.admin-link{
+  background:rgba(59,130,246,0.15);
+  color:#60a5fa !important;
+  border-color:#3b82f6;
+}
+
+.logout-btn{
+  background:rgba(239,68,68,0.15);
+  border-color:var(--danger);
+}
+
+.chat-link{
+  background:rgba(74,222,128,0.10);
+  border-color:var(--primary);
+}
+
+.username-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  color:var(--muted);
+}
+
+/* HEADER */
 header{
   padding:20px;
   border-bottom:1px solid var(--border);
@@ -97,6 +122,10 @@ header input{
   outline:none;
 }
 
+header input:focus{
+  border-color:var(--info);
+}
+
 h2{
   margin:20px;
   color:#4ade80;
@@ -106,7 +135,19 @@ main{
   padding:0 20px;
 }
 
-/* ================= NORMAL ANNOUNCEMENT ================= */
+/* =========================
+   FIXED GAME GRID SIZE
+   (restores proper box sizing)
+========================= */
+.game-grid, .video-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:16px;
+}
+
+/* =========================
+   NORMAL ANNOUNCEMENT BAR
+========================= */
 #announcementBar {
   position: fixed;
   bottom: 0;
@@ -119,38 +160,42 @@ main{
   color: white;
   display: none;
   z-index: 99999;
+  border-top: 1px solid var(--border);
 }
 
-/* ================= EMERGENCY OVERLAY (FIXED) ================= */
+/* =========================
+   🚨 EMERGENCY OVERLAY FIXED
+========================= */
 #emergencyOverlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: #ef4444;
   color: white;
+  z-index: 100000;
   display: none;
-  z-index: 1000000;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 30px;
+  font-size: 22px;
+  font-weight: bold;
 }
 
-#emergencyOverlay h1 {
-  font-size: 42px;
+#emergencyTitle {
+  font-size: 30px;
   margin-bottom: 20px;
-}
-
-#emergencyOverlay p {
-  font-size: 20px;
-  max-width: 900px;
 }
 </style>
 </head>
 
+<script type="module" src="./js/session.js"></script>
+
 <body>
 
-<!-- ================= NAVBAR (RESTORED) ================= -->
+<!-- NAVBAR (UNCHANGED STRUCTURE) -->
 <div class="navbar">
 
   <div class="nav-left">
@@ -158,22 +203,35 @@ main{
   </div>
 
   <div class="nav-right">
+
     <span id="usernameDisplay" class="username-badge"></span>
 
     <a href="chat.html" class="chat-link">Chat</a>
+
     <a href="tickets.html" id="ticketslink" style="display:none;">Support</a>
     <a href="profile.html" id="profileLink" style="display:none;">Profile</a>
 
-    <a href="admin-tickets.html" id="adminticketslink" style="display:none;">Support Admin</a>
-    <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+    <a href="admin-tickets.html" id="adminticketslink" class="admin-link" style="display:none;">
+      Resp. Support
+    </a>
 
-    <a href="view-users.html" id="viewUsersLink" style="display:none;">Users</a>
+    <a href="admin.html" id="adminLink" class="admin-link" style="display:none;">
+      Admin
+    </a>
 
-    <button id="logoutBtn">Logout</button>
+    <a href="chatmod.html" id="modChatLink" class="admin-link" style="display:none;">
+      Chat Mod
+    </a>
+
+    <a href="view-users.html" id="viewUsersLink" style="display:none;">
+      Users
+    </a>
+
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+
   </div>
 </div>
 
-<!-- ================= HEADER ================= -->
 <header>
   <h1>Home</h1>
   <input type="text" id="searchBar" placeholder="Search games...">
@@ -181,69 +239,70 @@ main{
 
 <h2>Games</h2>
 
-<main id="gameGrid"></main>
-<main id="videoGrid"></main>
+<main id="gameGrid" class="game-grid"></main>
+<main id="videoGrid" class="video-grid"></main>
 
-<!-- ================= ANNOUNCEMENT ================= -->
+<h1 style="color:#a78bfa; text-align:center; margin-top:40px;">
+  NEW LINKS IN PROGRESS
+</h1>
+
+<p style="color:#4ade80; text-align:center;">
+  I am making new links if this gets blocked, just for you guys!
+</p>
+
+<!-- NORMAL ANNOUNCEMENT -->
 <div id="announcementBar"></div>
 
-<!-- ================= EMERGENCY OVERLAY ================= -->
+<!-- 🚨 EMERGENCY OVERLAY (FIXED TEXT SUPPORT) -->
 <div id="emergencyOverlay">
-  <h1>Emergency Broadcast</h1>
-  <p id="emergencyText">Loading emergency message...</p>
+  <div id="emergencyTitle">EMERGENCY BROADCAST</div>
+  <div id="emergencyText"></div>
 </div>
 
-<!-- ================= FIRESTORE SYSTEM ================= -->
 <script type="module">
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./js/firebase.js";
 
-const announcementBar = document.getElementById("announcementBar");
-const emergencyOverlay = document.getElementById("emergencyOverlay");
+const bar = document.getElementById("announcementBar");
+const overlay = document.getElementById("emergencyOverlay");
 const emergencyText = document.getElementById("emergencyText");
 
-/* ================= NORMAL ANNOUNCEMENT ================= */
+/* NORMAL ANNOUNCEMENT */
 onSnapshot(doc(db, "system", "announcement"), (snap) => {
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    bar.style.display = "none";
+    return;
+  }
 
   const data = snap.data();
 
   if (data.enabled && data.text) {
-    announcementBar.style.display = "block";
-    announcementBar.textContent = data.text;
-
-    announcementBar.style.background =
-      data.color === "danger" ? "#ef4444" :
-      data.color === "warning" ? "#f59e0b" :
-      data.color === "success" ? "#22c55e" :
-      "#222";
+    bar.style.display = "block";
+    bar.textContent = data.text;
   } else {
-    announcementBar.style.display = "none";
+    bar.style.display = "none";
   }
 });
 
-/* ================= EMERGENCY (FIXED TEXT + FULL OVERRIDE) ================= */
+/* 🚨 EMERGENCY BROADCAST (FIXED TEXT) */
 onSnapshot(doc(db, "system", "emergency"), (snap) => {
   if (!snap.exists()) {
-    emergencyOverlay.style.display = "none";
+    overlay.style.display = "none";
     return;
   }
 
   const data = snap.data();
 
   if (data.enabled) {
-    emergencyOverlay.style.display = "flex";
-
-    // ✅ FIX: now properly shows Firestore message
+    overlay.style.display = "flex";
     emergencyText.textContent =
-      data.message || "Emergency broadcast active. Please stand by.";
+      data.message || "System emergency active. Please wait for updates.";
   } else {
-    emergencyOverlay.style.display = "none";
+    overlay.style.display = "none";
   }
 });
 </script>
 
-<!-- ================= LOGIC (UNCHANGED FUNCTIONALITY) ================= -->
 <script>
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.clear();
@@ -270,6 +329,7 @@ if (isLoggedIn) {
 
 if (role === "admin" || role === "mod" || isVIP) {
   document.getElementById("adminticketslink").style.display = "inline-block";
+  document.getElementById("modChatLink").style.display = "inline-block";
 }
 
 if (role === "admin") {
@@ -283,7 +343,6 @@ const videoGrid = document.getElementById("videoGrid");
 
 function filterItems() {
   const query = searchBar.value.toLowerCase().trim();
-
   const allItems = [...gameGrid.children, ...videoGrid.children];
 
   allItems.forEach(item => {
