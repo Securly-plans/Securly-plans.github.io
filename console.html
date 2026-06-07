@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Emerald AdminOS Console Alpha</title>
+<title>Emerald AdminOS Console Beta</title>
 
 <style>
 body {
@@ -54,7 +54,7 @@ body {
   outline: none;
 }
 
-/* ================= COMMAND SUGGESTIONS ================= */
+/* ================= SUGGESTIONS ================= */
 #suggestBox {
   position: absolute;
   bottom: 60px;
@@ -64,9 +64,10 @@ body {
   padding: 6px;
   font-size: 12px;
   display: none;
-  max-height: 150px;
+  max-height: 160px;
   overflow-y: auto;
-  min-width: 260px;
+  min-width: 280px;
+  z-index: 9999;
 }
 
 .suggest-item {
@@ -85,7 +86,7 @@ body {
 
 <div id="wrap">
   <div id="header">
-    AdminOS Console - Copyright 2026, Monroe Enterainment Services.
+    AdminOS Console - Copyright 2026, Monroe Enterainment Services. Administrator Access Only.
   </div>
 
   <div id="console"></div>
@@ -104,7 +105,6 @@ import {
   collection,
   getDocs,
   getDoc,
-  addDoc,
   deleteDoc,
   updateDoc,
   doc
@@ -157,7 +157,7 @@ async function run(inputStr) {
   }
 }
 
-/* ================= SUGGESTIONS (FIXED + CLICKABLE) ================= */
+/* ================= FIXED SUGGESTIONS (CLICKABLE) ================= */
 
 function updateSuggestions(val) {
   const inputVal = val.toLowerCase();
@@ -186,7 +186,7 @@ function updateSuggestions(val) {
     div.onclick = () => {
       input.value = cmd;
       suggestBox.style.display = "none";
-      run(cmd); // 🔥 CLICK RUNS COMMAND
+      run(cmd);
       input.value = "";
     };
 
@@ -200,8 +200,107 @@ function updateSuggestions(val) {
   suggestBox.style.display = "block";
 }
 
-/* ================= HELP (FIXED) ================= */
+/* ================= ANNOUNCEMENT SYSTEM ================= */
 
+function setAnnouncement(data) {
+  return updateDoc(doc(db, "system", "announcement"), data);
+}
+
+/* ================= GLOBAL LOCK ================= */
+
+let globalLockState = null;
+
+function startGlobalLock(mode) {
+  globalLockState = { mode, password: "", confirmed: false, y: false };
+
+  print("-------------------------------------------");
+  print("Enter verification password:");
+  print("-------------------------------------------");
+}
+
+function clearFlow() {
+  globalLockState = null;
+  consoleEl.innerHTML = "";
+  suggestBox.style.display = "none";
+}
+
+function handleGlobalLockFlow(inputStr) {
+  const state = globalLockState;
+
+  switch(true) {
+
+    case !state.password: {
+      state.password = inputStr;
+
+      getDoc(doc(db, "system", "config")).then(snap => {
+        const real = snap.data()?.globalLockPassword;
+
+        if (inputStr !== real) {
+          print("Verification Failure, Closing Console.");
+          setTimeout(() => window.close(), 1200);
+          return;
+        }
+
+        state.confirmed = true;
+
+        print("Verified. Are you sure? Y/N");
+      });
+
+      break;
+    }
+
+    case state.confirmed && !state.y: {
+      const v = inputStr.toLowerCase();
+
+      if (v === "n") {
+        print("Cancelled.");
+        clearFlow();
+        return;
+      }
+
+      if (v === "y") {
+        state.y = true;
+        print('Enter "Exe" or "Execute" or "Cancel".');
+      }
+
+      break;
+    }
+
+    case state.y: {
+      const v = inputStr.toLowerCase();
+
+      if (v === "cancel") {
+        clearFlow();
+        return;
+      }
+
+      if (v === "exe" || v === "execute") {
+
+        print("Executing...");
+
+        setTimeout(() => {
+
+          updateDoc(doc(db, "system", "config"), {
+            globalLock: state.mode === "enable",
+            loginDisabled: state.mode === "enable",
+            chatDisabled: state.mode === "enable",
+            adminDisabled: state.mode === "enable"
+          });
+
+          print("Executed.");
+          clearFlow();
+
+        }, 1200);
+      }
+
+      break;
+    }
+  }
+}
+
+/* ================= ALL ORIGINAL COMMANDS RESTORED ================= */
+
+/* HELP */
 register("help", () => {
   print("=== ADMIN OS COMMANDS ===", "info");
 
@@ -211,20 +310,84 @@ register("help", () => {
 
 }, "Help menu");
 
-/* ================= SYSTEM (MINIMAL SAFE SET) ================= */
-
+/* SYSTEM */
 register("system.status", async () => {
   const snap = await getDoc(doc(db, "system", "config"));
   print(JSON.stringify(snap.data(), null, 2), "info");
 }, "System status");
 
+register("system.reset", async () => {
+  await updateDoc(doc(db, "system", "config"), {
+    globalLock: false,
+    loginDisabled: false,
+    chatDisabled: false,
+    adminDisabled: false
+  });
+
+  print("System reset complete", "success");
+}, "Reset system");
+
+register("system.lockdown.enable", () => startGlobalLock("enable"), "Enable lockdown");
+register("system.lockdown.disable", () => startGlobalLock("disable"), "Disable lockdown");
+
+/* DEBUG */
+register("debug.db.test", async () => {
+  const snap = await getDocs(collection(db, "users"));
+  print("DB OK | users: " + snap.size, "success");
+}, "Test DB");
+
+register("debug.config.view", async () => {
+  const snap = await getDoc(doc(db, "system", "config"));
+  print(JSON.stringify(snap.data(), null, 2), "info");
+}, "View config");
+
+register("debug.latency", async () => {
+  const start = Date.now();
+  await getDocs(collection(db, "users"));
+  print("Latency: " + (Date.now() - start) + "ms", "info");
+}, "DB latency");
+
 register("debug.console.clear", () => {
   consoleEl.innerHTML = "";
-  print("Console cleared", "success");
+  print("Cleared", "success");
 }, "Clear console");
 
-/* ================= INPUT ================= */
+/* USERS */
+register("user.list", async () => {
+  const snap = await getDocs(collection(db, "users"));
+  snap.forEach(d => {
+    const u = d.data();
+    print(`${d.id} | ${u.username} | ${u.role} | locked:${u.locked}`);
+  });
+}, "List users");
 
+register("user.delete", async (a) => {
+  await deleteDoc(doc(db, "users", a[0]));
+  print("User deleted", "success");
+}, "Delete user");
+
+register("user.role", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), { role: a[1] });
+  print("Role updated", "success");
+}, "Change role");
+
+register("user.lock", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: true,
+    lockReason: a.slice(1).join(" ")
+  });
+  print("User locked", "error");
+}, "Lock user");
+
+register("user.unlock", async (a) => {
+  await updateDoc(doc(db, "users", a[0]), {
+    locked: false,
+    lockReason: ""
+  });
+  print("User unlocked", "success");
+}, "Unlock user");
+
+/* INPUT */
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     run(input.value);
@@ -243,7 +406,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-print("Admin OS ready (fixed v10). Type 'help'.", "success");
+print("Admin OS ready (fixed + restored v11). Type 'help'.", "success");
 
 </script>
 
