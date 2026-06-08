@@ -1,3 +1,5 @@
+console.log("js/auth.js LOADED.");
+
 import {
   collection,
   addDoc,
