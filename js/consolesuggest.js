@@ -1,4 +1,5 @@
 // js/consolesuggest.js
+console.log("js/consolesuggest.js LOADED.");
 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase.js";
