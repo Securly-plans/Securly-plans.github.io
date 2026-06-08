@@ -67,9 +67,29 @@ async function callAI(input) {
 ========================= */
 
 function fallbackMatch(input) {
-  const t = input.toLowerCase();
+  const raw = input.trim();
+  const t = raw.toLowerCase();
 
-  // direct intent mapping (fast + reliable)
+  if (t.startsWith("ban ")) {
+    return {
+      cmd: "user.ban",
+      args: [raw.slice(4).trim()]
+    };
+  }
+
+  if (t.startsWith("unban ")) {
+    return {
+      cmd: "user.unban",
+      args: [raw.slice(6).trim()]
+    };
+  }
+
+  if (t.startsWith("kick ")) {
+    return {
+      cmd: "user.kick",
+      args: [raw.slice(5).trim()]
+    };
+  }
 
   if (t.includes("lock user") || t === "lock") {
     return { cmd: "user.lock", args: [] };
@@ -98,47 +118,33 @@ function fallbackMatch(input) {
   return null;
 }
 
-/* =========================
-   MAIN AI PARSER
-========================= */
-
 export async function aiParse(input) {
-  if (!smartSuggestEnabled) return null;
+  if (!smartSuggestEnabled) {
+    return null;
+  }
 
   try {
-    const apiKey = await getApiKey();
-
-    // debug safety check
-    if (apiKey && apiKey.startsWith("sk-")) {
-      console.warn(
-        "⚠ OpenAI key detected in Firestore. Do NOT use in frontend. Use backend proxy."
-      );
-    }
-
-    /**
-     * If no backend exists, immediately fallback
-     * (prevents your current CORS + 401 errors)
-     */
-    if (!apiKey) {
-      return fallbackMatch(input);
-    }
-
-    // SAFE ROUTE: backend only
     const result = await callAI(input);
 
-    if (!result || !result.cmd) {
-      return fallbackMatch(input);
+    console.log("AI RESULT:", result);
+
+    if (
+      result &&
+      typeof result.cmd === "string" &&
+      result.cmd.trim().length > 0
+    ) {
+      return {
+        cmd: result.cmd.trim(),
+        args: Array.isArray(result.args)
+          ? result.args
+          : []
+      };
     }
 
-    return {
-      cmd: result.cmd,
-      args: Array.isArray(result.args) ? result.args : []
-    };
+    return fallbackMatch(input);
 
   } catch (err) {
     console.error("AI parse error:", err);
-
-    // ALWAYS fallback instead of breaking console
     return fallbackMatch(input);
   }
 }
