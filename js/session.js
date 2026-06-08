@@ -1,3 +1,5 @@
+console.log("js/session.js LOADED.");
+
 import {
   getAuth,
   signOut
