@@ -371,26 +371,6 @@ register("announce.color", async (a) => {
   print("Announcement color set: " + color, "info");
 }, "Set announcement color");
 
-register("smart-suggest", async (a) => {
-
-  const mode = (a[0] || "").toLowerCase();
-
-  if (mode === "on") {
-    setSmartSuggest(true);
-    print("Smart Suggest ENABLED", "success");
-    return;
-  }
-
-  if (mode === "off") {
-    setSmartSuggest(false);
-    print("Smart Suggest DISABLED", "warn");
-    return;
-  }
-
-  print("Usage: smart-suggest [on/off]", "error");
-
-}, "Toggle AI smart suggestions");
-
 register("announce.emergency.set", async (a) => {
 
   const text = a.join(" ");
