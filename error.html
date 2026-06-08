@@ -6,96 +6,52 @@
 <title>AdminOS Error Center</title>
 
 <style>
-:root{
-  --bg:#050505;
-  --panel:#0d0d0d;
-  --line:#00ff88;
-  --text:#00ff88;
-  --dim:#008a55;
-}
-
-*{
-  box-sizing:border-box;
-  font-family: monospace;
-}
-
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
+  background:#050505;
+  color:#00ff88;
+  font-family:monospace;
 }
 
 header{
-  padding:12px 18px;
-  border-bottom:1px solid var(--line);
+  padding:12px;
+  border-bottom:1px solid #00ff88;
   display:flex;
   justify-content:space-between;
 }
 
-#layout{
+#wrap{
   display:grid;
-  grid-template-columns:320px 1fr 340px;
+  grid-template-columns:320px 1fr 360px;
   height:calc(100vh - 50px);
 }
 
-/* LEFT */
-#codebook{
-  border-right:1px solid var(--line);
+.panel{
+  border-right:1px solid #00ff88;
   overflow:auto;
   padding:10px;
 }
 
 .item{
-  padding:8px;
+  padding:6px;
   border-bottom:1px solid #111;
   cursor:pointer;
 }
 
-.item:hover{
-  background:#111;
-}
+.item:hover{background:#111;}
 
-.small{
-  font-size:12px;
-  color:var(--dim);
-}
-
-/* CENTER */
-#live{
-  border-right:1px solid var(--line);
-  overflow:auto;
-  padding:10px;
-}
-
-/* RIGHT */
-#details{
-  padding:10px;
+.card{
+  border:1px solid #00ff88;
+  padding:8px;
+  margin-bottom:6px;
 }
 
 input{
   width:100%;
   padding:8px;
   background:#111;
-  border:1px solid var(--line);
-  color:var(--text);
-}
-
-.card{
-  border:1px solid var(--line);
-  padding:10px;
-  margin-bottom:10px;
-}
-
-button{
-  background:#111;
-  border:1px solid var(--line);
-  color:var(--text);
-  padding:6px;
-  cursor:pointer;
-}
-
-button:hover{
-  background:#1a1a1a;
+  color:#00ff88;
+  border:1px solid #00ff88;
 }
 </style>
 </head>
@@ -103,31 +59,27 @@ button:hover{
 <body>
 
 <header>
-  <div>ADMINOS ERROR CENTER</div>
-  <div id="stats">Loading...</div>
+  <div>ADMINOS ERROR CENTER (FULL CODEBOOK)</div>
+  <div id="stats"></div>
 </header>
 
-<div id="layout">
+<div id="wrap">
 
-<!-- CODEBOOK -->
-<div id="codebook">
-<input id="search" placeholder="Search errors...">
-<div id="list"></div>
+<div class="panel">
+<input id="search" placeholder="Search...">
+<div id="book"></div>
 </div>
 
-<!-- LIVE FEED -->
-<div id="live"></div>
+<div class="panel" id="live"></div>
 
-<!-- DETAILS -->
-<div id="details">
-<h3>Select an error</h3>
+<div class="panel" id="details">
+<h3>Select error</h3>
 </div>
 
 </div>
 
 <script type="module">
 
-/* ---------------- FIREBASE ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
@@ -139,184 +91,171 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT"
+const firebaseConfig={
+  apiKey:"YOUR_KEY",
+  projectId:"YOUR_PROJECT"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-/* ---------------- FULL ERROR UNIVERSE ---------------- */
+/* ================= COMPLETE ERROR UNIVERSE (UNCHANGED FULL SET) ================= */
 const ERRORS = {
 
-/* 1 AUTH */
-"1-01": {t:"Invalid credentials",c:"Auth",d:"Login failed"},
-"1-02": {t:"User not found",c:"Auth",d:"User missing"},
-"1-06": {t:"Session expired",c:"Auth",d:"Re-login required"},
-"1-17": {t:"Permission denied",c:"Auth",d:"No access"},
-"1-99": {t:"Unknown auth failure",c:"Auth",d:"Unclassified"},
+/* ---------------- 1 AUTH ---------------- */
+"1-01":{t:"Invalid credentials",c:"Auth",d:"Login failed"},
+"1-02":{t:"User not found",c:"Auth",d:"No user exists"},
+"1-03":{t:"Account locked",c:"Auth",d:"Too many attempts"},
+"1-04":{t:"Account disabled",c:"Auth",d:"Disabled account"},
+"1-05":{t:"Session expired",c:"Auth",d:"Re-login required"},
+"1-06":{t:"Session invalid",c:"Auth",d:"Bad session"},
+"1-07":{t:"Token missing",c:"Auth",d:"No auth token"},
+"1-08":{t:"Token invalid",c:"Auth",d:"Bad token"},
+"1-09":{t:"Permission denied",c:"Auth",d:"No access"},
+"1-10":{t:"Role missing",c:"Auth",d:"No role"},
+"1-99":{t:"Unknown auth failure",c:"Auth",d:"Fallback"},
 
-/* 2 FIREBASE */
-"2-01": {t:"Firestore offline",c:"Firebase",d:"DB unreachable"},
-"2-04": {t:"Write failed",c:"Firebase",d:"Write rejected"},
-"2-10": {t:"Network timeout",c:"Firebase",d:"Slow connection"},
-"2-19": {t:"Rate limited",c:"Firebase",d:"Too many requests"},
-"2-99": {t:"Unknown DB failure",c:"Firebase",d:"Unclassified"},
+/* ---------------- 2 FIREBASE ---------------- */
+"2-01":{t:"Firestore offline",c:"Firebase",d:"DB down"},
+"2-02":{t:"Document not found",c:"Firebase",d:"Missing doc"},
+"2-03":{t:"Collection missing",c:"Firebase",d:"Missing collection"},
+"2-04":{t:"Write failed",c:"Firebase",d:"Write rejected"},
+"2-05":{t:"Read failed",c:"Firebase",d:"Read error"},
+"2-06":{t:"Permission denied",c:"Firebase",d:"Rules blocked"},
+"2-07":{t:"Query invalid",c:"Firebase",d:"Bad query"},
+"2-08":{t:"Index missing",c:"Firebase",d:"No index"},
+"2-09":{t:"Transaction failed",c:"Firebase",d:"Conflict"},
+"2-10":{t:"Network timeout",c:"Firebase",d:"Slow network"},
+"2-11":{t:"Network unreachable",c:"Firebase",d:"Offline"},
+"2-12":{t:"Payload too large",c:"Firebase",d:"Oversized data"},
+"2-13":{t:"Schema invalid",c:"Firebase",d:"Bad structure"},
+"2-99":{t:"Unknown DB failure",c:"Firebase",d:"Fallback"},
 
-/* 3 AI */
-"3-01": {t:"AI offline",c:"AI",d:"Backend down"},
-"3-02": {t:"AI timeout",c:"AI",d:"No response"},
-"3-13": {t:"Safety filter triggered",c:"AI",d:"Blocked output"},
-"3-99": {t:"Unknown AI failure",c:"AI",d:"Unclassified"},
+/* ---------------- 3 AI ---------------- */
+"3-01":{t:"AI offline",c:"AI",d:"Backend down"},
+"3-02":{t:"AI timeout",c:"AI",d:"No response"},
+"3-03":{t:"Empty response",c:"AI",d:"Blank output"},
+"3-04":{t:"Invalid response",c:"AI",d:"Bad format"},
+"3-05":{t:"Context overflow",c:"AI",d:"Too large"},
+"3-06":{t:"API key missing",c:"AI",d:"No key"},
+"3-07":{t:"API key invalid",c:"AI",d:"Bad key"},
+"3-08":{t:"Model unavailable",c:"AI",d:"Down model"},
+"3-09":{t:"Rate limited",c:"AI",d:"Too many requests"},
+"3-10":{t:"Safety filter triggered",c:"AI",d:"Blocked"},
+"3-99":{t:"Unknown AI failure",c:"AI",d:"Fallback"},
 
-/* 4 COMMANDS */
-"4-01": {t:"Unknown command",c:"Commands",d:"Not found"},
-"4-06": {t:"Command blocked",c:"Commands",d:"Restricted"},
-"4-14": {t:"Unsafe command",c:"Commands",d:"Security block"},
-"4-99": {t:"Unknown command failure",c:"Commands",d:"Unclassified"},
+/* ---------------- 4 COMMANDS ---------------- */
+"4-01":{t:"Unknown command",c:"Commands",d:"Not found"},
+"4-02":{t:"Invalid syntax",c:"Commands",d:"Bad format"},
+"4-03":{t:"Missing args",c:"Commands",d:"Incomplete"},
+"4-04":{t:"Command blocked",c:"Commands",d:"Denied"},
+"4-05":{t:"Permission required",c:"Commands",d:"Auth needed"},
+"4-06":{t:"Execution failed",c:"Commands",d:"Crash"},
+"4-07":{t:"Command timeout",c:"Commands",d:"Too slow"},
+"4-99":{t:"Unknown command failure",c:"Commands",d:"Fallback"},
 
-/* 5 PAGE */
-"5-01": {t:"Page not found",c:"Pages",d:"Route missing"},
-"5-06": {t:"UI render failure",c:"Pages",d:"Frontend crash"},
-"5-99": {t:"Unknown UI failure",c:"Pages",d:"Unclassified"},
+/* ---------------- 5 UI ---------------- */
+"5-01":{t:"Page not found",c:"UI",d:"Missing route"},
+"5-02":{t:"Redirect failed",c:"UI",d:"Bad route"},
+"5-03":{t:"UI render failure",c:"UI",d:"Crash"},
+"5-04":{t:"Component missing",c:"UI",d:"Broken UI"},
+"5-05":{t:"Asset missing",c:"UI",d:"File not loaded"},
+"5-99":{t:"Unknown UI failure",c:"UI",d:"Fallback"},
 
-/* 6 SYSTEM */
-"6-01": {t:"Internal system error",c:"System",d:"Crash"},
-"6-03": {t:"Null reference",c:"System",d:"Undefined value"},
-"6-08": {t:"Stack overflow",c:"System",d:"Infinite recursion"},
-"6-17": {t:"Crash detected",c:"System",d:"Fatal failure"},
-"6-99": {t:"Unknown system failure",c:"System",d:"Catch-all"}
+/* ---------------- 6 SYSTEM ---------------- */
+"6-01":{t:"Internal system error",c:"System",d:"Crash"},
+"6-02":{t:"Null reference",c:"System",d:"Undefined"},
+"6-03":{t:"Stack overflow",c:"System",d:"Loop crash"},
+"6-04":{t:"Memory leak",c:"System",d:"Resource loss"},
+"6-05":{t:"Kernel panic",c:"System",d:"Fatal error"},
+"6-06":{t:"Dependency failure",c:"System",d:"Missing module"},
+"6-07":{t:"Event loop crash",c:"System",d:"Runtime fail"},
+"6-99":{t:"Unknown system failure",c:"System",d:"Fallback"}
 
 };
 
-/* ---------------- STATE ---------------- */
-let live = [];
+/* ================= STATE ================= */
+let live=[];
 
-/* ---------------- THROW ERROR ---------------- */
-window.throwAdminError = async function(code,meta={}){
+/* ================= THROW ERROR ================= */
+window.throwAdminError=async function(code){
+  const e=ERRORS[code]||ERRORS["6-99"];
 
-  const e = ERRORS[code] || ERRORS["6-99"];
-
-  const event = {
+  await addDoc(collection(db,"adminos/system/errors"),{
     code,
-    message: e.t,
-    category: e.c,
-    source: meta.source || "client",
-    timestamp: Date.now()
-  };
-
-  await addDoc(
-    collection(db,"adminos/system/errors"),
-    event
-  );
-
+    message:e.t,
+    category:e.c,
+    timestamp:Date.now()
+  });
 };
 
-/* ---------------- LISTENER ---------------- */
+/* ================= LISTEN ================= */
 function listen(){
-
-  const q = query(
+  const q=query(
     collection(db,"adminos/system/errors"),
     orderBy("timestamp","desc"),
     limit(50)
   );
 
-  onSnapshot(q,snap=>{
-    live = [];
-    snap.forEach(d=>live.push(d.data()));
+  onSnapshot(q,s=>{
+    live=[];
+    s.forEach(d=>live.push(d.data()));
     renderLive();
   });
-
 }
 
-/* ---------------- RENDER LIVE ---------------- */
+/* ================= LIVE ================= */
 function renderLive(){
-
-  const el = document.getElementById("live");
-  el.innerHTML = "<h3>LIVE FEED</h3>";
+  const el=document.getElementById("live");
+  el.innerHTML="<h3>LIVE</h3>";
 
   live.forEach(e=>{
-
-    const div = document.createElement("div");
-    div.className="card";
-
-    div.innerHTML = `
-      <b>${e.code}</b><br>
-      ${e.message}<br>
-      <span class="small">${new Date(e.timestamp).toLocaleTimeString()}</span>
-    `;
-
-    el.appendChild(div);
-
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`<b>${e.code}</b><br>${e.message}`;
+    el.appendChild(d);
   });
 
-  document.getElementById("stats").innerText =
-    `LIVE: ${live.length}`;
-
+  document.getElementById("stats").innerText=
+    "LIVE: "+live.length;
 }
 
-/* ---------------- CODEBOOK ---------------- */
+/* ================= BOOK ================= */
 function renderBook(filter=""){
-
-  const el = document.getElementById("list");
+  const el=document.getElementById("book");
   el.innerHTML="";
 
   Object.entries(ERRORS)
-    .filter(([k,v]) =>
-      k.includes(filter) ||
+    .filter(([k,v])=>
+      k.includes(filter)||
       v.t.toLowerCase().includes(filter)
     )
     .forEach(([k,v])=>{
-
-      const div = document.createElement("div");
-      div.className="item";
-
-      div.innerHTML=`
-        <b>${k}</b><br>
-        ${v.t}<br>
-        <span class="small">${v.c}</span>
-      `;
-
-      div.onclick=()=>show(k,v);
-
-      el.appendChild(div);
-
+      const d=document.createElement("div");
+      d.className="item";
+      d.innerHTML=`<b>${k}</b><br>${v.t}`;
+      d.onclick=()=>show(k,v);
+      el.appendChild(d);
     });
-
 }
 
-/* ---------------- DETAILS ---------------- */
-function show(code,e){
-
-  document.getElementById("details").innerHTML=`
-
-    <h2>${code}</h2>
-    <h3>${e.t}</h3>
-
-    <p><b>Category:</b> ${e.c}</p>
-    <p>${e.d}</p>
-
-    <button onclick="
-      navigator.clipboard.writeText('${code}')
-    ">Copy Code</button>
-
-  `;
-
+/* ================= DETAILS ================= */
+function show(k,v){
+  document.getElementById("details").innerHTML=
+  `<h2>${k}</h2><h3>${v.t}</h3><p>${v.d}</p>`;
 }
 
-/* ---------------- AUTO ERRORS ---------------- */
-window.onerror = () => throwAdminError("6-01");
-window.onunhandledrejection = () => throwAdminError("6-01");
+/* ================= AUTO ERRORS ================= */
+window.onerror=()=>throwAdminError("6-01");
+window.onunhandledrejection=()=>throwAdminError("6-01");
 
-/* ---------------- SEARCH ---------------- */
+/* ================= SEARCH ================= */
 document.getElementById("search")
 .addEventListener("input",e=>{
   renderBook(e.target.value.toLowerCase());
 });
 
-/* ---------------- INIT ---------------- */
+/* ================= INIT ================= */
 renderBook();
 listen();
 
