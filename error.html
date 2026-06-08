@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdminOS Error Center</title>
+
+<style>
+:root{
+  --bg:#050505;
+  --panel:#0d0d0d;
+  --line:#00ff88;
+  --text:#00ff88;
+  --dim:#008a55;
+}
+
+*{
+  box-sizing:border-box;
+  font-family: monospace;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+}
+
+header{
+  padding:12px 18px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+}
+
+#layout{
+  display:grid;
+  grid-template-columns:320px 1fr 340px;
+  height:calc(100vh - 50px);
+}
+
+/* LEFT */
+#codebook{
+  border-right:1px solid var(--line);
+  overflow:auto;
+  padding:10px;
+}
+
+.item{
+  padding:8px;
+  border-bottom:1px solid #111;
+  cursor:pointer;
+}
+
+.item:hover{
+  background:#111;
+}
+
+.small{
+  font-size:12px;
+  color:var(--dim);
+}
+
+/* CENTER */
+#live{
+  border-right:1px solid var(--line);
+  overflow:auto;
+  padding:10px;
+}
+
+/* RIGHT */
+#details{
+  padding:10px;
+}
+
+input{
+  width:100%;
+  padding:8px;
+  background:#111;
+  border:1px solid var(--line);
+  color:var(--text);
+}
+
+.card{
+  border:1px solid var(--line);
+  padding:10px;
+  margin-bottom:10px;
+}
+
+button{
+  background:#111;
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:6px;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#1a1a1a;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>ADMINOS ERROR CENTER</div>
+  <div id="stats">Loading...</div>
+</header>
+
+<div id="layout">
+
+<!-- CODEBOOK -->
+<div id="codebook">
+<input id="search" placeholder="Search errors...">
+<div id="list"></div>
+</div>
+
+<!-- LIVE FEED -->
+<div id="live"></div>
+
+<!-- DETAILS -->
+<div id="details">
+<h3>Select an error</h3>
+</div>
+
+</div>
+
+<script type="module">
+
+/* ---------------- FIREBASE ---------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ---------------- FULL ERROR UNIVERSE ---------------- */
+const ERRORS = {
+
+/* 1 AUTH */
+"1-01": {t:"Invalid credentials",c:"Auth",d:"Login failed"},
+"1-02": {t:"User not found",c:"Auth",d:"User missing"},
+"1-06": {t:"Session expired",c:"Auth",d:"Re-login required"},
+"1-17": {t:"Permission denied",c:"Auth",d:"No access"},
+"1-99": {t:"Unknown auth failure",c:"Auth",d:"Unclassified"},
+
+/* 2 FIREBASE */
+"2-01": {t:"Firestore offline",c:"Firebase",d:"DB unreachable"},
+"2-04": {t:"Write failed",c:"Firebase",d:"Write rejected"},
+"2-10": {t:"Network timeout",c:"Firebase",d:"Slow connection"},
+"2-19": {t:"Rate limited",c:"Firebase",d:"Too many requests"},
+"2-99": {t:"Unknown DB failure",c:"Firebase",d:"Unclassified"},
+
+/* 3 AI */
+"3-01": {t:"AI offline",c:"AI",d:"Backend down"},
+"3-02": {t:"AI timeout",c:"AI",d:"No response"},
+"3-13": {t:"Safety filter triggered",c:"AI",d:"Blocked output"},
+"3-99": {t:"Unknown AI failure",c:"AI",d:"Unclassified"},
+
+/* 4 COMMANDS */
+"4-01": {t:"Unknown command",c:"Commands",d:"Not found"},
+"4-06": {t:"Command blocked",c:"Commands",d:"Restricted"},
+"4-14": {t:"Unsafe command",c:"Commands",d:"Security block"},
+"4-99": {t:"Unknown command failure",c:"Commands",d:"Unclassified"},
+
+/* 5 PAGE */
+"5-01": {t:"Page not found",c:"Pages",d:"Route missing"},
+"5-06": {t:"UI render failure",c:"Pages",d:"Frontend crash"},
+"5-99": {t:"Unknown UI failure",c:"Pages",d:"Unclassified"},
+
+/* 6 SYSTEM */
+"6-01": {t:"Internal system error",c:"System",d:"Crash"},
+"6-03": {t:"Null reference",c:"System",d:"Undefined value"},
+"6-08": {t:"Stack overflow",c:"System",d:"Infinite recursion"},
+"6-17": {t:"Crash detected",c:"System",d:"Fatal failure"},
+"6-99": {t:"Unknown system failure",c:"System",d:"Catch-all"}
+
+};
+
+/* ---------------- STATE ---------------- */
+let live = [];
+
+/* ---------------- THROW ERROR ---------------- */
+window.throwAdminError = async function(code,meta={}){
+
+  const e = ERRORS[code] || ERRORS["6-99"];
+
+  const event = {
+    code,
+    message: e.t,
+    category: e.c,
+    source: meta.source || "client",
+    timestamp: Date.now()
+  };
+
+  await addDoc(
+    collection(db,"adminos/system/errors"),
+    event
+  );
+
+};
+
+/* ---------------- LISTENER ---------------- */
+function listen(){
+
+  const q = query(
+    collection(db,"adminos/system/errors"),
+    orderBy("timestamp","desc"),
+    limit(50)
+  );
+
+  onSnapshot(q,snap=>{
+    live = [];
+    snap.forEach(d=>live.push(d.data()));
+    renderLive();
+  });
+
+}
+
+/* ---------------- RENDER LIVE ---------------- */
+function renderLive(){
+
+  const el = document.getElementById("live");
+  el.innerHTML = "<h3>LIVE FEED</h3>";
+
+  live.forEach(e=>{
+
+    const div = document.createElement("div");
+    div.className="card";
+
+    div.innerHTML = `
+      <b>${e.code}</b><br>
+      ${e.message}<br>
+      <span class="small">${new Date(e.timestamp).toLocaleTimeString()}</span>
+    `;
+
+    el.appendChild(div);
+
+  });
+
+  document.getElementById("stats").innerText =
+    `LIVE: ${live.length}`;
+
+}
+
+/* ---------------- CODEBOOK ---------------- */
+function renderBook(filter=""){
+
+  const el = document.getElementById("list");
+  el.innerHTML="";
+
+  Object.entries(ERRORS)
+    .filter(([k,v]) =>
+      k.includes(filter) ||
+      v.t.toLowerCase().includes(filter)
+    )
+    .forEach(([k,v])=>{
+
+      const div = document.createElement("div");
+      div.className="item";
+
+      div.innerHTML=`
+        <b>${k}</b><br>
+        ${v.t}<br>
+        <span class="small">${v.c}</span>
+      `;
+
+      div.onclick=()=>show(k,v);
+
+      el.appendChild(div);
+
+    });
+
+}
+
+/* ---------------- DETAILS ---------------- */
+function show(code,e){
+
+  document.getElementById("details").innerHTML=`
+
+    <h2>${code}</h2>
+    <h3>${e.t}</h3>
+
+    <p><b>Category:</b> ${e.c}</p>
+    <p>${e.d}</p>
+
+    <button onclick="
+      navigator.clipboard.writeText('${code}')
+    ">Copy Code</button>
+
+  `;
+
+}
+
+/* ---------------- AUTO ERRORS ---------------- */
+window.onerror = () => throwAdminError("6-01");
+window.onunhandledrejection = () => throwAdminError("6-01");
+
+/* ---------------- SEARCH ---------------- */
+document.getElementById("search")
+.addEventListener("input",e=>{
+  renderBook(e.target.value.toLowerCase());
+});
+
+/* ---------------- INIT ---------------- */
+renderBook();
+listen();
+
+</script>
+
+</body>
+</html>
