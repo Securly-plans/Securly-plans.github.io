@@ -146,6 +146,14 @@ function setAnnouncement(data) {
   return updateDoc(doc(db, "system", "announcement"), data);
 }
 
+function setEmergency(data) {
+  return setDoc(
+    doc(db, "system", "emergency"),
+    data,
+    { merge: true }
+  );
+}
+
 /* ================= COMMAND SUGGESTIONS ================= */
 
 function updateSuggestions(val) {
