@@ -114,7 +114,7 @@
   {
     "id": 15,
     "title": "Super Mario Bros. (works a little",
-    "thumbnail": "assets/images/TBA-thumbnail.bmp",
+    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
     "category": "Platformer",
     "url": "games/mario-gh-pages/mario-gh-pages/index.html",
     "vip": false
@@ -122,7 +122,7 @@
   {
     "id": 16,
     "title": "Melon Sandbox (WIP)",
-    "thumbnail": "assets/images/TBA-thumbnail.bmp",
+    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
     "category": "Action",
     "url": "./games/melon-playground/index.html",
     "vip": false
@@ -130,9 +130,17 @@
   {
     "id": 17,
     "title": "GD temu edition",
-    "thumbnail": "assets/images/TBA-thumbnail.bmp",
+    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
     "category": "Platformer",
     "url": "games/GeometryDashLite-main/index.html",
+    "vip": false
+  },
+  {
+    "id": 18,
+    "title": "FNF (test)",
+    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
+    "category": "Rhythm",
+    "url": "games/FNF/index.html",
     "vip": false
   }
 ]
