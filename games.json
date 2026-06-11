@@ -130,7 +130,7 @@
   {
     "id": 17,
     "title": "GD temu edition",
-    "thumbnail": "assets/images/TBA-thumbnail.bmp",
+    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
     "category": "Action",
     "url": "games/GeometryDashLite-main/index.html",
     "vip": false
