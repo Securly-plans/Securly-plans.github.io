@@ -129,7 +129,7 @@
   },
   {
     "id": 17,
-    "title": "GD temu edition",
+    "title": "GD Lite",
     "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.3J-W1CO_-Y-zz0TgtHw0ugHaJ4?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Platformer",
     "url": "games/GeometryDashLite-main/index.html",
@@ -139,7 +139,7 @@
     "id": 18,
     "title": "FNF (test)",
     "thumbnail": "./assets/images/TBA-thumbnail.bmp",
-    "category": "Rhythm",
+    "category": "Casual",
     "url": "games/FNF/index.html",
     "vip": false
   }
