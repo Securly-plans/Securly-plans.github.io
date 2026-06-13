@@ -38,6 +38,71 @@ body{
   color:var(--text);
 }
 
+/* =========================
+   TERMS / RESOURCES
+========================= */
+
+.resources-section{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin:50px 0 40px;
+  gap:12px;
+}
+
+.tos-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:14px 24px;
+
+  background:linear-gradient(
+    135deg,
+    rgba(167,139,250,.18),
+    rgba(139,92,246,.10)
+  );
+
+  color:#c4b5fd;
+  text-decoration:none;
+  font-weight:600;
+  font-size:16px;
+
+  border:1px solid rgba(167,139,250,.35);
+  border-radius:14px;
+
+  transition:
+    transform .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease,
+    background .15s ease;
+}
+
+.tos-button:hover{
+  transform:translateY(-2px);
+
+  border-color:#a78bfa;
+
+  background:linear-gradient(
+    135deg,
+    rgba(167,139,250,.25),
+    rgba(139,92,246,.15)
+  );
+
+  box-shadow:
+    0 0 20px rgba(167,139,250,.20);
+}
+
+.resources-text{
+  margin:0;
+
+  color:var(--muted);
+
+  font-size:14px;
+  text-align:center;
+}
+
 /* NAVBAR */
 .navbar{
   display:flex;
@@ -241,13 +306,19 @@ main{
 <main id="gameGrid" class="game-grid"></main>
 <main id="videoGrid" class="video-grid"></main>
 
-<h1 style="color:#a78bfa; text-align:center; margin-top:40px;">
-  <a href=TOS.html[you may edit now]>Terms Of Service</a>
-</h1>
+<!-- TERMS / RESOURCES -->
 
-<p style="color:#4ade80; text-align:center;">
-  Additional links not avaliable at the moment, sorry!
-</p>
+<div class="resources-section">
+
+  <a href="TOS.html" class="tos-button">
+    📜 Terms of Service
+  </a>
+
+  <p class="resources-text">
+    Additional links and resources are not available at this time.
+  </p>
+
+</div>
 
 <!-- NORMAL ANNOUNCEMENT -->
 <div id="announcementBar"></div>
