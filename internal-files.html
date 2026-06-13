@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GitHub Internal Docs System</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    display: flex;
+    height: 100vh;
+    background: #0b0f17;
+    color: #e6edf3;
+}
+
+.sidebar {
+    width: 280px;
+    background: #121a2a;
+    border-right: 1px solid #263244;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    padding: 15px;
+    color: #4ade80;
+    border-bottom: 1px solid #263244;
+}
+
+input {
+    margin: 10px;
+    padding: 10px;
+    background: #0f1724;
+    border: 1px solid #263244;
+    color: white;
+    border-radius: 6px;
+}
+
+.doc {
+    padding: 10px;
+    border-bottom: 1px solid #263244;
+    cursor: pointer;
+}
+
+.doc:hover {
+    background: #172033;
+}
+
+.main {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+.card {
+    background: #121a2a;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #263244;
+}
+
+.tag {
+    color: #9aa4b2;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <h2>Internal Docs</h2>
+    <input id="search" placeholder="Search...">
+    <div id="list"></div>
+</div>
+
+<div class="main" id="viewer">
+    <div class="card">Loading documents...</div>
+</div>
+
+<script>
+const OWNER = "Securly-plans";
+const REPO = "Securly-plans";
+const BRANCH = "main";
+
+let docs = [];
+
+async function loadDocs() {
+    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/docs`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    docs = data
+        .filter(f => f.name.endsWith(".html"))
+        .map(f => ({
+            id: f.name.replace(".html", ""),
+            file: f.name,
+            url: f.download_url
+        }));
+
+    render();
+}
+
+function render(filter = "") {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    docs
+    .filter(d =>
+        d.id.toLowerCase().includes(filter.toLowerCase())
+    )
+    .forEach(doc => {
+        const div = document.createElement("div");
+        div.className = "doc";
+        div.innerHTML = `
+            <div><b>${doc.id}</b></div>
+            <div class="tag">${doc.file}</div>
+        `;
+        div.onclick = () => openDoc(doc);
+        list.appendChild(div);
+    });
+}
+
+async function openDoc(doc) {
+    const res = await fetch(doc.url);
+    const html = await res.text();
+
+    document.getElementById("viewer").innerHTML = `
+        <div class="card">
+            <h2>${doc.id}</h2>
+            <div>${html}</div>
+        </div>
+    `;
+}
+
+document.getElementById("search").addEventListener("input", e => {
+    render(e.target.value);
+});
+
+loadDocs();
+</script>
+
+</body>
+</html>
