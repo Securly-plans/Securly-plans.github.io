@@ -586,11 +586,6 @@ register("help", () => {
 
 /* ================= SYSTEM COMMANDS ================= */
 
-register("system.status", async () => {
-  const snap = await getDoc(doc(db, "system", "config"));
-  print(JSON.stringify(snap.data(), null, 2), "info");
-}, "Shows system config");
-
 register("system.reset", async () => {
   await updateDoc(doc(db, "system", "config"), {
     globalLock: false,
