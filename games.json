@@ -113,14 +113,6 @@
   },
   {
     "id": 15,
-    "title": "Super Mario Bros. (works a little",
-    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
-    "category": "Platformer",
-    "url": "games/mario-gh-pages/mario-gh-pages/index.html",
-    "vip": false
-  },
-  {
-    "id": 16,
     "title": "Melon Sandbox (WIP)",
     "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.zvyCdf9ovMm9tJQilYB3xgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Action",
@@ -128,19 +120,11 @@
     "vip": false
   },
   {
-    "id": 17,
+    "id": 16,
     "title": "GD Lite",
     "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.3J-W1CO_-Y-zz0TgtHw0ugHaJ4?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Platformer",
     "url": "games/GeometryDashLite-main/index.html",
     "vip": false
   },
-  {
-    "id": 18,
-    "title": "FNF (test)",
-    "thumbnail": "./assets/images/TBA-thumbnail.bmp",
-    "category": "Casual",
-    "url": "games/FNF/index.html",
-    "vip": false
-  }
 ]
