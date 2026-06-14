@@ -2,39 +2,68 @@
 <html>
 <head>
   <title>Staff Portal</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f1115;
+  color: white;
+}
+
+.header {
+  background: #1a1d24;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.container {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.card {
+  background: #1a1d24;
+  padding: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.card:hover {
+  background: #252a35;
+}
+</style>
+
 </head>
+
 <body>
 
-<h1>Staff Portal</h1>
+<div class="header">
+  <div>Staff Portal</div>
+  <div id="info"></div>
+</div>
 
-<div id="info"></div>
-
-<button onclick="go('files')">File System</button>
-<button onclick="go('users')">Users</button>
-<button onclick="go('chat')">Chat Mod</button>
-<button onclick="logout()">Logout</button>
+<div class="container">
+  <div class="card" onclick="go('files')">File System</div>
+  <div class="card" onclick="go('users')">User Management</div>
+  <div class="card" onclick="go('chatmod')">Chat Moderation</div>
+</div>
 
 <script>
-function requireStaff() {
-  if (localStorage.getItem("staffSession") !== "true") {
-    window.location.href = "login.html";
-  }
+if (localStorage.getItem("staffSession") !== "true") {
+  window.location.href = "login.html";
 }
-requireStaff();
-
-const perms = JSON.parse(localStorage.getItem("staffPermissions"));
 
 document.getElementById("info").innerText =
-  "Staff ID: " + localStorage.getItem("staffId") +
-  " | Role: " + localStorage.getItem("staffRole");
+  localStorage.getItem("staffRole") +
+  " | ID: " +
+  localStorage.getItem("staffId");
 
-function go(page) {
-  window.location.href = page + ".html";
-}
-
-function logout() {
-  localStorage.clear();
-  window.location.href = "login.html";
+function go(p) {
+  window.location.href = p + ".html";
 }
 </script>
 
