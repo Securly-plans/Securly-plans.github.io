@@ -1,85 +1,129 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Register Staff Account</title>
+  <meta charset="UTF-8">
+  <title>Staff Register</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f1115;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 380px;
+      background: #1a1d24;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h2 {
+      margin-top: 0;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: #b5b5b5;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #2a2f3a;
+      background: #0f1115;
+      color: white;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .title-bar {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #9ca3af;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Staff Register (U → S)</h2>
+  <div class="container">
+    <h2>Create Staff Account</h2>
+    <div class="title-bar">
+      Staff ID System: Sequential (001 → 002 → 003)
+    </div>
 
-<input id="username" placeholder="New staff username">
-<input id="password" type="password" placeholder="Password">
-<button onclick="createStaff()">Create Staff Account</button>
+    <div class="input-group">
+      <label>Last Name</label>
+      <input id="lastName" type="text" placeholder="e.g. Monroe">
+    </div>
 
-<script type="module">
-import { db, collection, getDocs, doc, setDoc } from "./firebase.js";
-import { generateStaffId } from "./utils.js";
+    <div class="input-group">
+      <label>First Name</label>
+      <input id="firstName" type="text" placeholder="e.g. Wyatt">
+    </div>
 
-async function hash(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
+    <div class="input-group">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Create password">
+    </div>
 
-function getUAccountRole() {
-  return localStorage.getItem("role"); // from USERS system
-}
+    <button onclick="create()">Create Staff Account</button>
 
-function roleMap(role) {
-  if (role === "admin") {
-    return {
-      role: "admin",
-      permissions: {
-        users: { view: true, edit: true, ban: true },
-        chat: { monitor: true, delete: true },
-        files: { read: true, write: true },
-        system: { logs: true }
-      }
-    };
-  }
+    <div class="note">
+      Only U-role accounts with permission can create staff accounts
+    </div>
+  </div>
 
-  if (role === "mod") {
-    return {
-      role: "mod",
-      permissions: {
-        users: { view: true, edit: false, ban: true },
-        chat: { monitor: true, delete: true },
-        files: { read: true, write: false },
-        system: { logs: false }
-      }
-    };
-  }
+  <script type="module">
+    import { createStaffAccount } from "./register.js";
 
-  return null;
-}
-
-window.createStaff = async function () {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  const role = getUAccountRole();
-  const mapped = roleMap(role);
-
-  if (!mapped) {
-    alert("No permission to create staff account");
-    return;
-  }
-
-  const staffId = await generateStaffId();
-  const passwordHash = await hash(password);
-
-  await setDoc(doc(db, "staffAccounts", staffId), {
-    staffId,
-    username,
-    passwordHash,
-    role: mapped.role,
-    permissions: mapped.permissions,
-    sourceUserId: localStorage.getItem("userId"),
-    createdAt: Date.now()
-  });
-
-  alert("Staff account created: " + staffId);
-};
-</script>
+    // Hook into your JS file
+    window.create = createStaffAccount;
+  </script>
 
 </body>
 </html>
