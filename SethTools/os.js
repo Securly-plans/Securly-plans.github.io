@@ -9,9 +9,88 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// --- App Store Logic ---
+
+// The catalog of apps available to download
+const appCatalog = [
+    { 
+        name: 'Calculator', 
+        icon: '🧮', 
+        content: '<h3>Calculator App</h3><p>Imagine a cool calculator here.</p>' 
+    },
+    { 
+        name: 'Paint', 
+        icon: '🎨', 
+        content: '<h3>Paint App</h3><p>Canvas drawing area goes here.</p>' 
+    }
+];
+
+// Open the App Store window
+function openAppStore() {
+    let storeHTML = '<div style="display: flex; gap: 15px; padding: 10px;">';
+    
+    // Loop through our catalog and create a card for each app
+    appCatalog.forEach((app, index) => {
+        storeHTML += `
+            <div style="border: 2px solid #000; padding: 10px; text-align: center; background: #eee;">
+                <div style="font-size: 30px;">${app.icon}</div>
+                <div style="font-weight: bold; margin-bottom: 5px;">${app.name}</div>
+                <button onclick="installApp(${index})">Install</button>
+            </div>
+        `;
+    });
+    
+    storeHTML += '</div>';
+    openWindow('App Store', storeHTML);
+}
+
+// Function to install the app to the desktop
+function installApp(appIndex) {
+    const app = appCatalog[appIndex];
+    const desktop = document.getElementById('desktop');
+    
+    // Create the new icon element
+    const newIcon = document.createElement('div');
+    newIcon.className = 'icon';
+    newIcon.innerHTML = `${app.icon}<br>${app.name}`;
+    
+    // Attach the click event to open the app
+    newIcon.addEventListener('click', () => {
+        openWindow(app.name, app.content);
+    });
+    
+    // Add it to the desktop
+    desktop.appendChild(newIcon);
+}
+
 // Function to open a new window
 function openWindow(title, contentHTML) {
     const container = document.getElementById('windows-container');
+
+    // --- File System Logic ---
+const FileSystem = {
+    // Save a file to local storage
+    saveFile: function(filename, content) {
+        localStorage.setItem('os_file_' + filename, content);
+        alert(`${filename} has been saved!`);
+    },
+    
+    // Read a file from local storage
+    readFile: function(filename) {
+        return localStorage.getItem('os_file_' + filename) || '';
+    }
+};
+
+// --- Updated Notes App ---
+// Now our notes app can actually save data!
+function openNotes() {
+    const savedText = FileSystem.readFile('my_notes.txt');
+    const notesHTML = `
+        <textarea id="notes-input" style="width:100%; height:80%; resize:none; border:none; outline:none;">${savedText}</textarea>
+        <button onclick="FileSystem.saveFile('my_notes.txt', document.getElementById('notes-input').value)">Save File</button>
+    `;
+    openWindow('Notes', notesHTML);
+}
     
     // Create the main window div
     const win = document.createElement('div');
