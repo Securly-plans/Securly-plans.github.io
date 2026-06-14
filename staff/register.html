@@ -3,16 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <title>Staff Registration</title>
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="staff.css">
+
+<style>
+.page {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.card {
+    width: 420px;
+}
+
+.title {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.warning {
+    font-size: 12px;
+    color: #9fb3c8;
+    margin-bottom: 10px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="page">
 
 <div class="card">
 
-<h2>Staff Registration</h2>
+<div class="title">Create Staff Account</div>
+<div class="warning">Only mod/admin gaming accounts can create staff access</div>
 
 <input id="firstName" placeholder="First Name">
 <input id="lastName" placeholder="Last Name">
@@ -27,32 +52,22 @@
 
 <script type="module">
 import { db } from "../js/firebase.js";
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const username = localStorage.getItem("username");
+const userId = localStorage.getItem("userId");
 const role = localStorage.getItem("role");
 
 if (!username || (role !== "admin" && role !== "mod")) {
   window.location.href = "../home.html";
 }
 
-/* GET USER ID FROM FIRESTORE */
-async function getUserIdFromUsername(username) {
+async function getUserId(username) {
   const snap = await getDoc(doc(db, "users", username));
-
-  if (!snap.exists()) {
-    throw new Error("User not found in Firestore");
-  }
-
+  if (!snap.exists()) throw new Error("User not found");
   return snap.data().userId;
 }
 
-/* STAFF ID GENERATOR */
 async function getNextStaffId() {
   const ref = doc(db, "system", "staffCounter");
 
@@ -80,10 +95,28 @@ document.getElementById("createBtn").onclick = async () => {
   if (!firstName || !lastName) return;
 
   try {
-    const userId = await getUserIdFromUsername(username);
+
+    const linkedUserId = await getUserId(username);
     const staffId = await getNextStaffId();
 
     const displayName = `${lastName}, ${firstName}`;
+
+    const permissions =
+      role === "admin"
+        ? {
+            internalAccess: true,
+            internalFiles: true,
+            internalWriter: true,
+            chatModeration: true,
+            userManagement: true
+          }
+        : {
+            internalAccess: true,
+            internalFiles: true,
+            internalWriter: true,
+            chatModeration: true,
+            userManagement: false
+          };
 
     await setDoc(doc(db, "staffAccounts", staffId), {
       staffId,
@@ -91,19 +124,11 @@ document.getElementById("createBtn").onclick = async () => {
       lastName,
       displayName,
 
-      linkedUserId: userId,
+      linkedUserId,
       linkedGameUsername: username,
 
       staffRole: role,
-
-      permissions: {
-        internalAccess: true,
-        internalFiles: true,
-        internalWriter: true,
-
-        chatModeration: role === "mod" || role === "admin",
-        userManagement: role === "admin"
-      }
+      permissions,
 
       status: "active",
       createdAt: Date.now(),
@@ -111,15 +136,14 @@ document.getElementById("createBtn").onclick = async () => {
     });
 
     document.getElementById("status").textContent =
-      "Staff account created: " + displayName + " (" + staffId + ")";
+      `Created: ${displayName} (${staffId})`;
 
     setTimeout(() => {
       window.location.href = "login.html";
     }, 1200);
 
   } catch (err) {
-    document.getElementById("status").textContent =
-      "Error: " + err.message;
+    document.getElementById("status").textContent = err.message;
   }
 };
 </script>
