@@ -2,16 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>GitHub Internal Docs System</title>
+<title>Internal Files System</title>
 
 <style>
 body {
     margin: 0;
-    font-family: Arial;
     display: flex;
     height: 100vh;
     background: #0b0f17;
-    color: #e6edf3;
+    color: white;
+    font-family: Arial;
 }
 
 .sidebar {
@@ -22,19 +22,12 @@ body {
     flex-direction: column;
 }
 
-.sidebar h2 {
-    padding: 15px;
-    color: #4ade80;
-    border-bottom: 1px solid #263244;
-}
-
-input {
+.sidebar input {
     margin: 10px;
     padding: 10px;
     background: #0f1724;
     border: 1px solid #263244;
     color: white;
-    border-radius: 6px;
 }
 
 .doc {
@@ -59,19 +52,13 @@ input {
     border-radius: 10px;
     border: 1px solid #263244;
 }
-
-.tag {
-    color: #9aa4b2;
-    font-size: 12px;
-}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-    <h2>Internal Docs</h2>
-    <input id="search" placeholder="Search...">
+    <input id="search" placeholder="Search docs...">
     <div id="list"></div>
 </div>
 
@@ -79,26 +66,17 @@ input {
     <div class="card">Loading documents...</div>
 </div>
 
-<script>
-const OWNER = "Securly-plans";
-const REPO = "Securly-plans";
-const BRANCH = "main";
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let docs = [];
 
-async function loadDocs() {
-    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/docs`;
+async function load() {
+    const snap = await getDocs(collection(db, "internalDocs"));
 
-    const res = await fetch(url);
-    const data = await res.json();
-
-    docs = data
-        .filter(f => f.name.endsWith(".html"))
-        .map(f => ({
-            id: f.name.replace(".html", ""),
-            file: f.name,
-            url: f.download_url
-        }));
+    docs = snap.docs.map(d => d.data());
 
     render();
 }
@@ -109,28 +87,29 @@ function render(filter = "") {
 
     docs
     .filter(d =>
-        d.id.toLowerCase().includes(filter.toLowerCase())
+        d.title.toLowerCase().includes(filter.toLowerCase()) ||
+        d.id.toLowerCase().includes(filter.toLowerCase()) ||
+        d.category.toLowerCase().includes(filter.toLowerCase())
     )
     .forEach(doc => {
         const div = document.createElement("div");
         div.className = "doc";
         div.innerHTML = `
-            <div><b>${doc.id}</b></div>
-            <div class="tag">${doc.file}</div>
+            <b>${doc.title}</b><br>
+            <small>${doc.id} • ${doc.category}</small>
         `;
         div.onclick = () => openDoc(doc);
         list.appendChild(div);
     });
 }
 
-async function openDoc(doc) {
-    const res = await fetch(doc.url);
-    const html = await res.text();
-
+function openDoc(doc) {
     document.getElementById("viewer").innerHTML = `
         <div class="card">
-            <h2>${doc.id}</h2>
-            <div>${html}</div>
+            <h2>${doc.title}</h2>
+            <p><b>${doc.id}</b> • ${doc.date} • ${doc.category}</p>
+            <hr>
+            ${doc.content}
         </div>
     `;
 }
@@ -139,7 +118,7 @@ document.getElementById("search").addEventListener("input", e => {
     render(e.target.value);
 });
 
-loadDocs();
+load();
 </script>
 
 </body>
