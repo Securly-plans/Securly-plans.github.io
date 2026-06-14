@@ -62,26 +62,45 @@ document.getElementById("loginBtn").onclick = async () => {
   const lastName = document.getElementById("lastName").value.trim();
   const staffId = document.getElementById("staffId").value.trim();
 
+  const username = localStorage.getItem("username");
+  const userId = localStorage.getItem("userId");
+
+  if (!username || !userId) {
+    return document.getElementById("status").textContent =
+      "You must be logged into a gaming account first.";
+  }
+
   if (!firstName || !lastName || !staffId) {
-    return document.getElementById("status").textContent = "All fields required";
+    return document.getElementById("status").textContent =
+      "All fields required.";
   }
 
   const snap = await getDoc(doc(db, "staffAccounts", staffId));
 
   if (!snap.exists()) {
-    return document.getElementById("status").textContent = "Staff account not found";
+    return document.getElementById("status").textContent =
+      "Staff account not found.";
   }
 
   const data = snap.data();
 
+  /* 🔒 LINK CHECK (IMPORTANT) */
+  if (data.linkedUserId !== userId) {
+    return document.getElementById("status").textContent =
+      "This staff account is not linked to your current gaming session.";
+  }
+
+  /* IDENTITY CHECK */
   if (
     data.firstName !== firstName ||
     data.lastName !== lastName ||
     data.status !== "active"
   ) {
-    return document.getElementById("status").textContent = "Invalid credentials";
+    return document.getElementById("status").textContent =
+      "Invalid credentials.";
   }
 
+  /* SUCCESS */
   localStorage.setItem("isStaff", "true");
   localStorage.setItem("staffId", staffId);
   localStorage.setItem("staffRole", data.staffRole);
@@ -91,6 +110,5 @@ document.getElementById("loginBtn").onclick = async () => {
   window.location.href = "portal.html";
 };
 </script>
-
 </body>
 </html>
