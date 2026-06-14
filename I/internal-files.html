@@ -11,22 +11,20 @@
 
 <div style="display:flex; height:100vh;">
 
-<!-- Sidebar -->
 <div class="sidebar">
 
-    <div class="row" style="margin-bottom:10px;">
-        <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
-        <button onclick="location.href='internal-writer.html'">New</button>
-        <button class="secondary" onclick="location.href='../home.html'">Home</button>
-    </div>
+<div class="row">
+    <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+    <button onclick="location.href='internal-writer.html'">New</button>
+    <button class="secondary" onclick="location.href='../home.html'">Home</button>
+</div>
 
-    <input id="search" placeholder="Search documents">
+<input id="search" placeholder="Search documents">
 
-    <div id="list"></div>
+<div id="list"></div>
 
 </div>
 
-<!-- Viewer -->
 <div class="main" id="viewer">
     <div class="card">Select a document</div>
 </div>
@@ -44,7 +42,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let docs = [];
-let currentDoc = null;
+let current = null;
 
 async function load() {
     const snap = await getDocs(collection(db, "internalDocs"));
@@ -52,31 +50,33 @@ async function load() {
     render();
 }
 
-function render(filter = "") {
+function render(f = "") {
     const list = document.getElementById("list");
     list.innerHTML = "";
 
     docs.filter(d =>
-        d.title.toLowerCase().includes(filter.toLowerCase()) ||
-        d.id.toLowerCase().includes(filter.toLowerCase()) ||
-        d.category.toLowerCase().includes(filter.toLowerCase())
-    ).forEach(doc => {
+        d.title.toLowerCase().includes(f.toLowerCase()) ||
+        d.id.toLowerCase().includes(f.toLowerCase())
+    ).forEach(d => {
         const div = document.createElement("div");
         div.className = "doc";
-        div.innerHTML = `<b>${doc.title}</b><br><small>${doc.id}</small>`;
-        div.onclick = () => openDoc(doc);
+        div.innerHTML = `
+            <b>${d.title}</b><br>
+            <span class="meta">${d.id} • ${d.category}</span>
+        `;
+        div.onclick = () => open(d);
         list.appendChild(div);
     });
 }
 
-async function loadReplies(docId) {
-    const q = query(collection(db, "internalDocReplies"), where("documentId", "==", docId));
+async function loadReplies(id) {
+    const q = query(collection(db, "internalDocReplies"), where("documentId", "==", id));
     const snap = await getDocs(q);
     return snap.docs.map(d => d.data());
 }
 
-async function openDoc(doc) {
-    currentDoc = doc;
+async function open(doc) {
+    current = doc;
 
     const replies = await loadReplies(doc.id);
 
@@ -84,8 +84,7 @@ async function openDoc(doc) {
         <div class="card">
 
             <h2>${doc.title}</h2>
-
-            <small>${doc.id} • ${doc.category}</small>
+            <div class="meta">${doc.id} • ${doc.category}</div>
 
             <hr>
 
@@ -105,34 +104,34 @@ async function openDoc(doc) {
             <h3>Replies</h3>
 
             ${replies.map(r => `
-                <div style="margin-bottom:10px;">
+                <div>
                     <b>${r.author}</b>
-                    <small>(${r.role})</small>
-                    <div>${r.message}</div>
+                    <span class="meta">(${r.role})</span><br>
+                    ${r.message}
                     <hr>
                 </div>
             `).join("")}
 
-            <textarea id="replyText" placeholder="Write reply"></textarea>
-            <button onclick="sendReply()">Post Reply</button>
+            <textarea id="replyText"></textarea>
+            <button onclick="send()">Post Reply</button>
 
         </div>
     `;
 }
 
-window.sendReply = async function () {
+window.send = async function () {
     const text = document.getElementById("replyText").value.trim();
-    if (!text || !currentDoc) return;
+    if (!text || !current) return;
 
     await addDoc(collection(db, "internalDocReplies"), {
-        documentId: currentDoc.id,
+        documentId: current.id,
         author: localStorage.getItem("username"),
         role: localStorage.getItem("role"),
         message: text,
         createdAt: Date.now()
     });
 
-    openDoc(currentDoc);
+    open(current);
 };
 
 document.getElementById("search").addEventListener("input", e => {
