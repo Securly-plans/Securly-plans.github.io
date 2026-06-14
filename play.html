@@ -30,8 +30,6 @@
             box-shadow:0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* ONLY TARGET GAME IFRAME */
-
         .video-wrapper iframe{
             position:absolute;
             top:0;
@@ -56,26 +54,25 @@
             font-weight:bold;
         }
 
-        .chat-embed{
+        .fullscreen-btn{
             margin-top:20px;
-            background:#2d2d2d;
-            border-radius:12px;
-            overflow:hidden;
-            height:600px;
-            box-shadow:0 10px 30px rgba(0,0,0,0.5);
+            padding:12px 20px;
+            border:none;
+            border-radius:8px;
+            background:#00c853;
+            color:white;
+            font-weight:bold;
+            cursor:pointer;
+            transition:opacity .2s;
         }
 
-        .chat-embed iframe{
-            position:relative;
-            width:100%;
-            height:100%;
-            min-height:600px;
-            border:none;
+        .fullscreen-btn:hover{
+            opacity:.9;
         }
 
     </style>
 
-    <!-- LOCAL STORAGE AUTH + SESSION -->
+    <!-- LOGIN CHECK -->
 
     <script>
 
@@ -92,100 +89,18 @@
                     "index.html"
                 );
 
-                return;
             }
-
-            const SESSION_TIMEOUT =
-                30 * 60 * 1000;
-
-            const lastActivity =
-                Number(
-                    localStorage.getItem(
-                        "lastActivity"
-                    )
-                ) || Date.now();
-
-            /* ================= SESSION CHECK ================= */
-
-            if(
-                Date.now() - lastActivity >
-                SESSION_TIMEOUT
-            ){
-
-                localStorage.clear();
-
-                alert(
-                    "You were logged out due to inactivity."
-                );
-
-                window.location.replace(
-                    "index.html"
-                );
-
-                return;
-            }
-
-            /* ================= UPDATE TIMER ================= */
-
-            function updateActivity(){
-
-                localStorage.setItem(
-                    "lastActivity",
-                    Date.now()
-                );
-            }
-
-            [
-                "mousemove",
-                "mousedown",
-                "click",
-                "scroll",
-                "keypress",
-                "touchstart"
-            ].forEach(event=>{
-
-                document.addEventListener(
-                    event,
-                    updateActivity,
-                    true
-                );
-
-            });
-
-            /* ================= AUTO LOGOUT ================= */
-
-            setInterval(()=>{
-
-                const last =
-                    Number(
-                        localStorage.getItem(
-                            "lastActivity"
-                        )
-                    ) || 0;
-
-                if(
-                    Date.now() - last >
-                    SESSION_TIMEOUT
-                ){
-
-                    localStorage.clear();
-
-                    alert(
-                        "You were logged out due to inactivity."
-                    );
-
-                    window.location.replace(
-                        "index.html"
-                    );
-                }
-
-            },10000);
-
-            updateActivity();
 
         })();
 
     </script>
+
+    <!-- SESSION HANDLER -->
+
+    <script
+        type="module"
+        src="js/session.js"
+    ></script>
 
 </head>
 
@@ -210,6 +125,13 @@
 
         </div>
 
+        <button
+            id="fullscreenBtn"
+            class="fullscreen-btn"
+        >
+            Full Screen
+        </button>
+
         <div class="game-info">
 
             <h1 id="gameTitle">
@@ -222,19 +144,62 @@
 
         </div>
 
-        <!-- EMBEDDED CHAT -->
-
-        <div class="chat-embed">
-
-            <iframe
-                src="chat.html"
-            ></iframe>
-
-        </div>
-
     </div>
 
     <script src="play-logic.js"></script>
+
+    <script>
+
+        document
+            .getElementById(
+                "fullscreenBtn"
+            )
+            .addEventListener(
+                "click",
+                async () => {
+
+                    const iframe =
+                        document.getElementById(
+                            "gameFrame"
+                        );
+
+                    try {
+
+                        if(
+                            iframe.requestFullscreen
+                        ){
+
+                            await iframe.requestFullscreen();
+
+                        }
+                        else if(
+                            iframe.webkitRequestFullscreen
+                        ){
+
+                            await iframe.webkitRequestFullscreen();
+
+                        }
+                        else if(
+                            iframe.msRequestFullscreen
+                        ){
+
+                            await iframe.msRequestFullscreen();
+
+                        }
+
+                    } catch(err){
+
+                        console.error(
+                            "Fullscreen failed:",
+                            err
+                        );
+
+                    }
+
+                }
+            );
+
+    </script>
 
 </body>
 </html>
