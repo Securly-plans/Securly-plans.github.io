@@ -16,6 +16,28 @@ import { db } from "./firebase.js";
 
 const auth = getAuth(app);
 
+/* ================= IMMUNE USERS ================= */
+
+const IMMUNE_USERS = [
+  {
+    username: "Securly-plans",
+    userId: "no3iltjq4tByBTz4WRdD"
+  },
+  {
+    username: "Wmonroe01",
+    userId: "M7ab5EUHvvkmERw9ZwvK"
+  }
+];
+
+function isImmuneUser() {
+  const username = localStorage.getItem("username");
+  const userId = localStorage.getItem("userId");
+
+  return IMMUNE_USERS.some(u =>
+    u.username === username && u.userId === userId
+  );
+}
+
 /* ================= CONFIG ================= */
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -43,21 +65,20 @@ function getPage() {
 /* ================= PAGE RESTRICTIONS ================= */
 
 function checkPageRestrictions(config) {
+  if (isImmuneUser()) return;
+
   const page = getPage();
 
-  // CHAT LOCK
   if (page === "chat" && config.chatDisabled === true) {
     window.location.href = "home.html";
     return;
   }
 
-  // VIDEO LOCK
   if (page === "video" && config.videoDisabled === true) {
     window.location.href = "home.html";
     return;
   }
 
-  // ADMIN LOCK
   if (page === "admin" && config.adminDisabled === true) {
     window.location.href = "home.html";
     return;
@@ -67,6 +88,8 @@ function checkPageRestrictions(config) {
 /* ================= SYSTEM LOCK CHECK ================= */
 
 async function checkGlobalLock() {
+  if (isImmuneUser()) return;
+
   try {
     const snap = await getDoc(doc(db, "system", "config"));
 
@@ -75,7 +98,6 @@ async function checkGlobalLock() {
     const data = snap.data();
     cachedConfig = data;
 
-    // GLOBAL LOCK = force logout
     if (data.globalLock === true) {
       await signOut(auth);
       localStorage.clear();
@@ -85,14 +107,12 @@ async function checkGlobalLock() {
       return;
     }
 
-    // loginDisabled flag
     if (data.loginDisabled === true) {
       localStorage.setItem("loginDisabled", "true");
     } else {
       localStorage.removeItem("loginDisabled");
     }
 
-    // 🔥 NEW: enforce page restrictions
     checkPageRestrictions(data);
 
   } catch (err) {
@@ -103,6 +123,8 @@ async function checkGlobalLock() {
 /* ================= RESET TIMER ================= */
 
 function resetSessionTimer() {
+
+  if (isImmuneUser()) return;
 
   clearTimeout(inactivityTimer);
 
@@ -140,6 +162,11 @@ function resetSessionTimer() {
 /* ================= CHECK SESSION ================= */
 
 async function checkSessionAge() {
+
+  if (isImmuneUser()) {
+    resetSessionTimer();
+    return;
+  }
 
   const lastActivity =
     Number(localStorage.getItem("lastActivity")) || Date.now();
