@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff Portal</title>
+</head>
+<body>
+
+<h1>Staff Portal</h1>
+
+<div id="info"></div>
+
+<button onclick="go('files')">File System</button>
+<button onclick="go('users')">Users</button>
+<button onclick="go('chat')">Chat Mod</button>
+<button onclick="logout()">Logout</button>
+
+<script>
+function requireStaff() {
+  if (localStorage.getItem("staffSession") !== "true") {
+    window.location.href = "login.html";
+  }
+}
+requireStaff();
+
+const perms = JSON.parse(localStorage.getItem("staffPermissions"));
+
+document.getElementById("info").innerText =
+  "Staff ID: " + localStorage.getItem("staffId") +
+  " | Role: " + localStorage.getItem("staffRole");
+
+function go(page) {
+  window.location.href = page + ".html";
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
