@@ -8,134 +8,208 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    background: radial-gradient(circle at top, #0b1220, #020617);
     color: white;
+}
+
+.page {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
-.container {
-    width: 420px;
-    background: rgba(255,255,255,0.05);
+.card {
+    width: 430px;
+    padding: 26px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
+.title {
+    font-size: 22px;
+    font-weight: bold;
     color: #60a5fa;
+    margin-bottom: 6px;
+}
+
+.sub {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 15px;
 }
 
 input {
     width: 100%;
     padding: 10px;
-    margin: 8px 0;
+    margin: 6px 0;
+    border-radius: 8px;
     border: none;
-    border-radius: 6px;
     background: rgba(255,255,255,0.08);
     color: white;
+    outline: none;
 }
 
 button {
     width: 100%;
     padding: 10px;
     margin-top: 10px;
-    background: #3b82f6;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
     color: white;
+    font-weight: bold;
     cursor: pointer;
 }
 
 button:hover {
-    background: #2563eb;
+    opacity: 0.9;
 }
 
-small {
-    display: block;
-    margin-top: 10px;
-    color: #94a3b8;
+.status {
+    margin-top: 12px;
+    font-size: 13px;
+    min-height: 18px;
+    color: #f87171;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h1>Staff Registration</h1>
+<div class="page">
+<div class="card">
 
-    <input id="first" placeholder="First Name">
-    <input id="last" placeholder="Last Name">
+<div class="title">Staff Account Setup</div>
+<div class="sub">Link your staff account to an existing gaming account</div>
 
-    <input id="username" placeholder="Game Username (must exist)">
-    <input id="staffKey" placeholder="Staff Invite Key">
-    <input id="password" type="password" placeholder="Password">
+<input id="staffId" placeholder="Staff ID (e.g. 042)">
+<input id="firstName" placeholder="First Name">
+<input id="lastName" placeholder="Last Name">
 
-    <button onclick="registerStaff()">Create Staff Account</button>
+<input id="username" placeholder="Gaming Username (must exist)">
+<input id="staffKey" placeholder="Staff Invite Key">
 
-    <small id="msg"></small>
+<button id="createBtn">Create Staff Account</button>
+
+<div id="status" class="status"></div>
+
+</div>
 </div>
 
 <script type="module">
-import { db } from "../firebase.js";
+import { db } from "../js/firebase.js";
 import { doc, getDoc, setDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-async function registerStaff() {
-    const first = document.getElementById("first").value;
-    const last = document.getElementById("last").value;
-    const username = document.getElementById("username").value;
-    const staffKey = document.getElementById("staffKey").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("msg");
+const status = document.getElementById("status");
+const btn = document.getElementById("createBtn");
 
-    msg.textContent = "";
+btn.onclick = async () => {
 
-    // 1. check invite key (simple protection)
-    if (staffKey !== "EMERALD-STAFF-2026") {
-        msg.textContent = "Invalid staff key.";
-        return;
+    status.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Creating...";
+
+    try {
+        const staffId = document.getElementById("staffId").value.trim();
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const staffKey = document.getElementById("staffKey").value.trim();
+
+        const currentUser = localStorage.getItem("username");
+        const currentUserId = localStorage.getItem("userId");
+
+        // Must be logged into gaming account
+        if (!currentUser || !currentUserId) {
+            status.textContent = "You must be logged into a gaming account first.";
+            return;
+        }
+
+        if (!staffId || !firstName || !lastName || !username) {
+            status.textContent = "All fields are required.";
+            return;
+        }
+
+        // Staff key check
+        if (staffKey !== "EMERALD-STAFF-2026") {
+            status.textContent = "Invalid staff key.";
+            return;
+        }
+
+        // Check gaming account exists
+        const userSnap = await getDoc(doc(db, "users", username));
+
+        if (!userSnap.exists()) {
+            status.textContent = "Gaming account not found.";
+            return;
+        }
+
+        const userData = userSnap.data();
+
+        // Prevent duplicate staff account
+        const staffSnap = await getDoc(doc(db, "staffAccounts", staffId));
+
+        if (staffSnap.exists()) {
+            status.textContent = "Staff ID already exists.";
+            return;
+        }
+
+        // AUTO ROLE FROM GAMING ACCOUNT (NO CHEATING)
+        const role = userData.role || "user";
+
+        // AUTO PERMISSIONS
+        let permissions = {
+            accessFiles: false,
+            accessChat: false,
+            manageUsers: false,
+            accessAdminPanel: false
+        };
+
+        if (role === "mod") {
+            permissions.accessFiles = true;
+            permissions.accessChat = true;
+            permissions.accessAdminPanel = true;
+        }
+
+        if (role === "admin") {
+            permissions.accessFiles = true;
+            permissions.accessChat = true;
+            permissions.manageUsers = true;
+            permissions.accessAdminPanel = true;
+        }
+
+        await setDoc(doc(db, "staffAccounts", staffId), {
+            staffId,
+            firstName,
+            lastName,
+            displayName: `${firstName} ${lastName}`,
+
+            linkedUser: username,
+            linkedUserId: userData.userId || currentUserId,
+
+            staffRole: role,
+            permissions,
+
+            status: "active",
+            created: Date.now()
+        });
+
+        status.style.color = "#4ade80";
+        status.textContent = "Staff account linked successfully.";
+
+    } catch (err) {
+        console.error(err);
+        status.textContent = "Error creating staff account.";
     }
 
-    // 2. check if game user exists (IMPORTANT LINK STEP)
-    const userRef = doc(db, "users", username);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-        msg.textContent = "Game user not found. You must have a valid Emerald account.";
-        return;
-    }
-
-    // 3. create staff account (THIS is the fix)
-    const staffRef = doc(db, "staff", username);
-
-    await setDoc(staffRef, {
-        firstName: first,
-        lastName: last,
-        username: username,
-        passwordHash: await sha256(password),
-        linkedUser: username,
-        role: "staff",
-        created: Date.now()
-    });
-
-    msg.textContent = "Staff account created successfully!";
-}
-
-async function sha256(text) {
-    const enc = new TextEncoder().encode(text);
-    const hash = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
-}
-
-window.registerStaff = registerStaff;
+    btn.disabled = false;
+    btn.textContent = "Create Staff Account";
+};
 </script>
 
 </body>
