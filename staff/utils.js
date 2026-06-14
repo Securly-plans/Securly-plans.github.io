@@ -1,4 +1,4 @@
-import { db, doc, getDoc, setDoc } from "./firebase.js";
+import { db, doc, getDoc, setDoc } from "../js/firebase.js";
 
 export async function generateStaffId() {
   const metaRef = doc(db, "system", "meta");
