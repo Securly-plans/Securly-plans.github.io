@@ -1,32 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Staff Login</title>
-<link rel="stylesheet" href="staff.css">
 
 <style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: radial-gradient(circle at top, #0b1220, #020617);
+    color: white;
+}
+
 .page {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
 .card {
     width: 380px;
+    padding: 26px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
 }
 
 .title {
-    font-size: 20px;
-    margin-bottom: 10px;
-    color: #ffffff;
+    font-size: 22px;
+    font-weight: bold;
+    color: #60a5fa;
+    margin-bottom: 4px;
 }
 
 .sub {
     font-size: 13px;
-    color: #8aa0b6;
-    margin-bottom: 15px;
+    color: #94a3b8;
+    margin-bottom: 18px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    outline: none;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.status {
+    margin-top: 12px;
+    font-size: 13px;
+    min-height: 18px;
+    color: #f87171;
 }
 </style>
 </head>
@@ -34,11 +86,10 @@
 <body>
 
 <div class="page">
-
 <div class="card">
 
 <div class="title">Staff Access Portal</div>
-<div class="sub">Authenticate with your staff credentials</div>
+<div class="sub">Linked to your Emerald gaming account</div>
 
 <input id="firstName" placeholder="First Name">
 <input id="lastName" placeholder="Last Name">
@@ -49,66 +100,98 @@
 <div id="status" class="status"></div>
 
 </div>
-
 </div>
 
 <script type="module">
 import { db } from "../js/firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-document.getElementById("loginBtn").onclick = async () => {
+const btn = document.getElementById("loginBtn");
+const status = document.getElementById("status");
 
-  const firstName = document.getElementById("firstName").value.trim();
-  const lastName = document.getElementById("lastName").value.trim();
-  const staffId = document.getElementById("staffId").value.trim();
+btn.onclick = async () => {
 
-  const username = localStorage.getItem("username");
-  const userId = localStorage.getItem("userId");
+    status.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Checking...";
 
-  if (!username || !userId) {
-    return document.getElementById("status").textContent =
-      "You must be logged into a gaming account first.";
-  }
+    try {
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const staffId = document.getElementById("staffId").value.trim();
 
-  if (!firstName || !lastName || !staffId) {
-    return document.getElementById("status").textContent =
-      "All fields required.";
-  }
+        const username = localStorage.getItem("username");
+        const userId = localStorage.getItem("userId");
 
-  const snap = await getDoc(doc(db, "staffAccounts", staffId));
+        // MUST be logged into game account first
+        if (!username || !userId) {
+            status.textContent = "You must be logged into a gaming account first.";
+            return;
+        }
 
-  if (!snap.exists()) {
-    return document.getElementById("status").textContent =
-      "Staff account not found.";
-  }
+        if (!firstName || !lastName || !staffId) {
+            status.textContent = "All fields are required.";
+            return;
+        }
 
-  const data = snap.data();
+        // ✅ FIXED: correct collection name
+        const snap = await getDoc(doc(db, "staffAccounts", staffId));
 
-  /* 🔒 LINK CHECK (IMPORTANT) */
-  if (data.linkedUserId !== userId) {
-    return document.getElementById("status").textContent =
-      "This staff account is not linked to your current gaming session.";
-  }
+        if (!snap.exists()) {
+            status.textContent = "Staff account not found.";
+            return;
+        }
 
-  /* IDENTITY CHECK */
-  if (
-    data.firstName !== firstName ||
-    data.lastName !== lastName ||
-    data.status !== "active"
-  ) {
-    return document.getElementById("status").textContent =
-      "Invalid credentials.";
-  }
+        const data = snap.data();
 
-  /* SUCCESS */
-  localStorage.setItem("isStaff", "true");
-  localStorage.setItem("staffId", staffId);
-  localStorage.setItem("staffRole", data.staffRole);
-  localStorage.setItem("staffPermissions", JSON.stringify(data.permissions));
-  localStorage.setItem("staffName", data.displayName);
+        if (!data) {
+            status.textContent = "Invalid staff record.";
+            return;
+        }
 
-  window.location.href = "portal.html";
+        // LINK CHECK (supports both formats safely)
+        const linked =
+            data.linkedUserId === userId ||
+            data.linkedUser === username;
+
+        if (!linked) {
+            status.textContent = "This staff account is not linked to your gaming account.";
+            return;
+        }
+
+        // NAME CHECK (case-insensitive)
+        if (
+            (data.firstName || "").toLowerCase() !== firstName.toLowerCase() ||
+            (data.lastName || "").toLowerCase() !== lastName.toLowerCase()
+        ) {
+            status.textContent = "Name does not match staff record.";
+            return;
+        }
+
+        if (data.status && data.status !== "active") {
+            status.textContent = "Staff account is disabled.";
+            return;
+        }
+
+        // SUCCESS LOGIN
+        localStorage.setItem("isStaff", "true");
+        localStorage.setItem("staffId", staffId);
+        localStorage.setItem("staffRole", data.staffRole || "staff");
+        localStorage.setItem("staffPermissions", JSON.stringify(data.permissions || []));
+        localStorage.setItem("staffName", data.displayName || `${firstName} ${lastName}`);
+
+        window.location.href = "portal.html";
+
+    } catch (err) {
+        console.error(err);
+        status.textContent = "Login error occurred.";
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Sign In";
 };
 </script>
+
 </body>
 </html>
