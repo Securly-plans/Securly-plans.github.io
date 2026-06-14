@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Staff Login</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Staff Login</h2>
+
+<input id="firstName" placeholder="First Name">
+<input id="lastName" placeholder="Last Name">
+<input id="staffId" placeholder="Staff ID (e.g. 042)">
+
+<button id="loginBtn">Login</button>
+
+<div id="status" class="status"></div>
+
+</div>
+
+</div>
+
+<script type="module">
+import { db } from "../js/firebase.js";
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+document.getElementById("loginBtn").onclick = async () => {
+
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
+  const staffId = document.getElementById("staffId").value.trim();
+
+  if (!firstName || !lastName || !staffId) {
+    document.getElementById("status").textContent = "Missing fields";
+    return;
+  }
+
+  const snap = await getDoc(doc(db, "staffAccounts", staffId));
+
+  if (!snap.exists()) {
+    document.getElementById("status").textContent = "Staff account not found";
+    return;
+  }
+
+  const data = snap.data();
+
+  if (
+    data.firstName !== firstName ||
+    data.lastName !== lastName ||
+    data.status !== "active"
+  ) {
+    document.getElementById("status").textContent = "Invalid credentials";
+    return;
+  }
+
+  // SESSION SET
+  localStorage.setItem("isStaff", "true");
+  localStorage.setItem("staffId", staffId);
+  localStorage.setItem("staffRole", data.staffRole);
+  localStorage.setItem("staffPermissions", JSON.stringify(data.permissions));
+  localStorage.setItem("linkedUserId", data.linkedUserId);
+  localStorage.setItem("staffName", data.displayName || `${lastName}, ${firstName}`);
+
+  window.location.href = "portal.html";
+};
+</script>
+
+</body>
+</html>
