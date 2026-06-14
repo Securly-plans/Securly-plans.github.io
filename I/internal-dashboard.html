@@ -2,46 +2,62 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Internal Dashboard</title>
-
 <link rel="stylesheet" href="style.css">
+
+<style>
+header {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 30px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #6ea8fe, #7cdbaf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+</style>
 </head>
 
 <body>
 
-<header class="card" style="margin:20px;">
+<header>
     <h1>Internal Knowledge Base</h1>
-    <small>Staff Access Portal</small>
+    <small>Staff Portal System</small>
 </header>
 
-<div class="container">
+<div class="container grid">
 
 <div class="card">
-    <h2>Navigation</h2>
-
+    <h2>Quick Actions</h2>
     <div class="row">
         <button onclick="location.href='internal-writer.html'">New Document</button>
-        <button onclick="location.href='internal-files.html'">Browse Documents</button>
+        <button onclick="location.href='internal-files.html'">Browse</button>
         <button class="secondary" onclick="location.href='../home.html'">Home</button>
     </div>
 </div>
 
 <div class="card">
-    <h2>System Overview</h2>
-
-    <p>Internal documentation system for staff use only.</p>
-    <p>All documents are stored in Firestore under internalDocs.</p>
-    <p>Replies and activity tracking are enabled.</p>
+    <h2>Status</h2>
+    <p>System: Online</p>
+    <p>Documents: Active</p>
+    <p>Access: Staff Only</p>
 </div>
 
 </div>
 
 <script>
 const role = localStorage.getItem("role");
-
 if (!role || (role !== "admin" && role !== "mod")) {
-    window.location.href = "../home.html";
+    location.href = "../home.html";
 }
 </script>
 
