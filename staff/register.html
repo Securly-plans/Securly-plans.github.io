@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Staff Registration</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Staff Registration</h2>
+
+<input id="firstName" placeholder="First Name">
+<input id="lastName" placeholder="Last Name">
+
+<button id="createBtn">Create Staff Account</button>
+
+<div id="status" class="status"></div>
+
+</div>
+
+</div>
+
+<script type="module">
+import { db } from "../js/firebase.js";
+import {
+  doc,
+  getDoc,
+  runTransaction,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const username = localStorage.getItem("username");
+const role = localStorage.getItem("role");
+
+if (!username || (role !== "admin" && role !== "mod")) {
+  window.location.href = "../home.html";
+}
+
+/* GET USER ID FROM FIRESTORE */
+async function getUserIdFromUsername(username) {
+  const snap = await getDoc(doc(db, "users", username));
+
+  if (!snap.exists()) {
+    throw new Error("User not found in Firestore");
+  }
+
+  return snap.data().userId;
+}
+
+/* STAFF ID GENERATOR */
+async function getNextStaffId() {
+  const ref = doc(db, "system", "staffCounter");
+
+  return await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+
+    let next = 1;
+
+    if (snap.exists()) {
+      next = (snap.data().current || 0) + 1;
+      tx.update(ref, { current: next });
+    } else {
+      tx.set(ref, { current: 1 });
+    }
+
+    return String(next).padStart(3, "0");
+  });
+}
+
+document.getElementById("createBtn").onclick = async () => {
+
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
+
+  if (!firstName || !lastName) return;
+
+  try {
+    const userId = await getUserIdFromUsername(username);
+    const staffId = await getNextStaffId();
+
+    const displayName = `${lastName}, ${firstName}`;
+
+    await setDoc(doc(db, "staffAccounts", staffId), {
+      staffId,
+      firstName,
+      lastName,
+      displayName,
+
+      linkedUserId: userId,
+      linkedGameUsername: username,
+
+      staffRole: role,
+
+      permissions: {
+        internalAccess: true,
+        internalFiles: true,
+        internalWriter: true,
+
+        chatModeration: role === "mod" || role === "admin",
+        userManagement: role === "admin"
+      }
+
+      status: "active",
+      createdAt: Date.now(),
+      createdBy: username
+    });
+
+    document.getElementById("status").textContent =
+      "Staff account created: " + displayName + " (" + staffId + ")";
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1200);
+
+  } catch (err) {
+    document.getElementById("status").textContent =
+      "Error: " + err.message;
+  }
+};
+</script>
+
+</body>
+</html>
