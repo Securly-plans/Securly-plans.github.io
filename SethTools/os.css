@@ -64,11 +64,10 @@ body {
 #start-btn:active {
     border-color: #000 #fff #fff #000;
 }
-
-/* Window Styling */
+/* windows with built in css for resizing, damn, i never knew that */
 .window {
     position: absolute;
-    top: 50px;
+    top: 50px; 
     left: 50px;
     width: 350px;
     height: 250px;
@@ -78,6 +77,12 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.4);
+
+    /* --- NEW RESIZE PROPERTIES --- */
+    resize: both;      /* Allows resizing horizontally and vertically */
+    overflow: hidden;  /* Required for the resize property to work */
+    min-width: 200px;  /* Prevents the window from breaking if made too small */
+    min-height: 150px; /* Keeps the title bar usable */
 }
 
 .title-bar {
