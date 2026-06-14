@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Internal Files System</title>
+<title>Internal Files</title>
 
 <style>
 body {
@@ -30,6 +30,13 @@ body {
     color: white;
 }
 
+.sidebar .nav {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .doc {
     padding: 10px;
     border-bottom: 1px solid #263244;
@@ -52,32 +59,51 @@ body {
     border-radius: 10px;
     border: 1px solid #263244;
 }
+
+.replyBox {
+    margin-top: 15px;
+    border-top: 1px solid #263244;
+    padding-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-    <input id="search" placeholder="Search docs...">
-    <div id="list"></div>
+
+<div class="nav">
+    <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+    <button onclick="location.href='internal-writer.html'">New Document</button>
+    <button onclick="location.href='../home.html'">Home</button>
+</div>
+
+<input id="search" placeholder="Search docs...">
+
+<div id="list"></div>
+
 </div>
 
 <div class="main" id="viewer">
-    <div class="card">Loading documents...</div>
+    <div class="card">Loading...</div>
 </div>
 
 <script type="module">
 import { db } from "/js/firebase.js";
-import { collection, getDocs } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    addDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let docs = [];
+let currentDoc = null;
 
 async function load() {
     const snap = await getDocs(collection(db, "internalDocs"));
-
     docs = snap.docs.map(d => d.data());
-
     render();
 }
 
@@ -85,34 +111,75 @@ function render(filter = "") {
     const list = document.getElementById("list");
     list.innerHTML = "";
 
-    docs
-    .filter(d =>
+    docs.filter(d =>
         d.title.toLowerCase().includes(filter.toLowerCase()) ||
         d.id.toLowerCase().includes(filter.toLowerCase()) ||
         d.category.toLowerCase().includes(filter.toLowerCase())
-    )
-    .forEach(doc => {
+    ).forEach(doc => {
         const div = document.createElement("div");
         div.className = "doc";
-        div.innerHTML = `
-            <b>${doc.title}</b><br>
-            <small>${doc.id} • ${doc.category}</small>
-        `;
+        div.innerHTML = `<b>${doc.title}</b><br><small>${doc.id}</small>`;
         div.onclick = () => openDoc(doc);
         list.appendChild(div);
     });
 }
 
-function openDoc(doc) {
+async function loadReplies(docId) {
+    const q = query(collection(db, "internalDocReplies"), where("documentId", "==", docId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data());
+}
+
+async function openDoc(doc) {
+    currentDoc = doc;
+
+    const replies = await loadReplies(doc.id);
+
     document.getElementById("viewer").innerHTML = `
         <div class="card">
             <h2>${doc.title}</h2>
-            <p><b>${doc.id}</b> • ${doc.date} • ${doc.category}</p>
+
+            <p>${doc.id} • ${doc.category}</p>
+
+            <p>Author: ${doc.authorUsername}</p>
+            <p>Rank: ${doc.authorRole}</p>
+
             <hr>
+
             ${doc.content}
+
+            <div class="replyBox">
+                <h3>Replies</h3>
+
+                ${replies.map(r => `
+                    <div>
+                        <b>${r.author}</b> (${r.role})<br>
+                        ${r.message}
+                        <hr>
+                    </div>
+                `).join("")}
+
+                <textarea id="replyText" placeholder="Write reply"></textarea>
+                <button onclick="sendReply()">Post Reply</button>
+            </div>
         </div>
     `;
 }
+
+window.sendReply = async function () {
+    const text = document.getElementById("replyText").value.trim();
+    if (!text || !currentDoc) return;
+
+    await addDoc(collection(db, "internalDocReplies"), {
+        documentId: currentDoc.id,
+        author: localStorage.getItem("username"),
+        role: localStorage.getItem("role"),
+        message: text,
+        createdAt: Date.now()
+    });
+
+    openDoc(currentDoc);
+};
 
 document.getElementById("search").addEventListener("input", e => {
     render(e.target.value);
