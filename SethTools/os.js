@@ -97,14 +97,14 @@ function openNotes() {
 // ==========================================
 const appCatalog = [
     { 
-        name: 'Calculator', 
-        icon: '🧮', 
-        content: '<h3>Calculator App</h3><p>Imagine a cool calculator here.</p>' 
+        name: 'Drift Boss', 
+        icon: '🚗', 
+        content: '<iframe>https://securly-plans.github.io/play.html?id=1</iframe>' 
     },
     { 
-        name: 'Paint', 
-        icon: '🎨', 
-        content: '<h3>Paint App</h3><p>Canvas drawing area goes here.</p>' 
+        name: 'Totm', 
+        icon: '🕹️', 
+        content: '<iframe>https://securly-plans.github.io/play.html?id=2</iframe>' 
     }
 ];
 
