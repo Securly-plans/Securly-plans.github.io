@@ -2,57 +2,39 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Internal Document Writer</title>
+<title>Internal Files</title>
 
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
+<div style="display:flex; height:100vh;">
 
-<div class="card">
-    <div class="row">
-        <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
-        <button class="secondary" onclick="location.href='internal-files.html'">Browse</button>
-        <button class="secondary" onclick="location.href='../home.html'">Home</button>
-    </div>
+<div class="sidebar">
+
+<div class="row">
+    <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+    <button onclick="location.href='internal-writer.html'">New</button>
+    <button class="secondary" onclick="location.href='../home.html'">Home</button>
 </div>
 
-<div class="card">
+<input id="search" placeholder="Search documents">
 
-<h2>Create Document</h2>
+<div id="list"></div>
 
-<input id="title" placeholder="Document Title">
+</div>
 
-<select id="category">
-    <option>System</option>
-    <option>Training</option>
-    <option>Security</option>
-    <option>Operations</option>
-    <option>Executive</option>
-</select>
-
-<textarea id="content" placeholder="Write document content..."></textarea>
-
-<button id="saveBtn">Save Document</button>
-
-<div id="status" class="status"></div>
-
+<div class="main" id="viewer">
+    <div class="card">Select a document</div>
 </div>
 
 </div>
 
 <script type="module">
-import { db } from "/js/firebase.js";
-import {
-    collection,
-    addDoc,
-    doc,
-    getDoc,
-    runTransaction,
-    serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ✅ SESSION PROTECTION (ADDED)
+import "../js/session.js";
 
 const username = localStorage.getItem("username");
 const role = localStorage.getItem("role");
@@ -61,62 +43,114 @@ if (!username || (role !== "admin" && role !== "mod")) {
     window.location.href = "../home.html";
 }
 
-async function getUserRole(username) {
-    const snap = await getDoc(doc(db, "users", username));
-    return snap.exists() ? snap.data().role : "user";
+// existing imports
+import { db } from "/js/firebase.js";
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    addDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let docs = [];
+let current = null;
+
+async function load() {
+    const snap = await getDocs(collection(db, "internalDocs"));
+    docs = snap.docs.map(d => d.data());
+    render();
 }
 
-async function getNextId() {
-    const ref = doc(db, "system", "documentCounter");
+function render(f = "") {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
 
-    return await runTransaction(db, async (tx) => {
-        const snap = await tx.get(ref);
-
-        let next = 1;
-
-        if (snap.exists()) {
-            next = (snap.data().current || 0) + 1;
-            tx.update(ref, { current: next });
-        } else {
-            tx.set(ref, { current: 1 });
-        }
-
-        return "I/" + String(next).padStart(5, "0");
+    docs.filter(d =>
+        d.title.toLowerCase().includes(f.toLowerCase()) ||
+        d.id.toLowerCase().includes(f.toLowerCase())
+    ).forEach(d => {
+        const div = document.createElement("div");
+        div.className = "doc";
+        div.innerHTML = `
+            <b>${d.title}</b><br>
+            <span class="meta">${d.id} • ${d.category}</span>
+        `;
+        div.onclick = () => open(d);
+        list.appendChild(div);
     });
 }
 
-document.getElementById("saveBtn").onclick = async () => {
-    const title = document.getElementById("title").value.trim();
-    const category = document.getElementById("category").value;
-    const content = document.getElementById("content").value.trim();
+async function loadReplies(id) {
+    const q = query(collection(db, "internalDocReplies"), where("documentId", "==", id));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data());
+}
 
-    if (!title || !content) return alert("Missing fields");
+async function open(doc) {
+    current = doc;
 
-    document.getElementById("status").textContent = "Saving...";
+    const replies = await loadReplies(doc.id);
 
-    const id = await getNextId();
-    const authorRole = await getUserRole(username);
+    document.getElementById("viewer").innerHTML = `
+        <div class="card">
 
-    await addDoc(collection(db, "internalDocs"), {
-        id,
-        title,
-        category,
-        content,
+            <h2>${doc.title}</h2>
+            <div class="meta">${doc.id} • ${doc.category}</div>
 
-        authorUsername: username,
-        authorRole,
+            <hr>
 
-        createdAt: Date.now(),
-        createdAtServer: serverTimestamp(),
+            <p>
+                Author: ${doc.authorUsername || "Unknown"}<br>
+                Rank: ${doc.authorRole || "Unknown"}
+            </p>
 
-        replies: 0
+            <hr>
+
+            <div>${doc.content}</div>
+
+        </div>
+
+        <div class="card replyBox">
+
+            <h3>Replies</h3>
+
+            ${replies.map(r => `
+                <div>
+                    <b>${r.author}</b>
+                    <span class="meta">(${r.role})</span><br>
+                    ${r.message}
+                    <hr>
+                </div>
+            `).join("")}
+
+            <textarea id="replyText"></textarea>
+            <button onclick="send()">Post Reply</button>
+
+        </div>
+    `;
+}
+
+window.send = async function () {
+    const text = document.getElementById("replyText").value.trim();
+    if (!text || !current) return;
+
+    await addDoc(collection(db, "internalDocReplies"), {
+        documentId: current.id,
+        author: localStorage.getItem("username"),
+        role: localStorage.getItem("role"),
+        message: text,
+        createdAt: Date.now()
     });
 
-    document.getElementById("title").value = "";
-    document.getElementById("content").value = "";
-
-    document.getElementById("status").textContent = "Saved: " + id;
+    open(current);
 };
+
+document.getElementById("search").addEventListener("input", e => {
+    render(e.target.value);
+});
+
+load();
 </script>
 
 </body>
