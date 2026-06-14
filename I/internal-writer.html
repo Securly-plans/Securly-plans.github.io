@@ -7,7 +7,7 @@
 <style>
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     background: #0b0f17;
     color: #e6edf3;
 }
@@ -18,13 +18,11 @@ body {
     padding: 20px;
 }
 
-h1 {
-    margin-top: 0;
+.topbar {
+    margin-bottom: 15px;
 }
 
-input,
-textarea,
-select {
+input, textarea, select {
     width: 100%;
     margin: 10px 0;
     padding: 12px;
@@ -36,6 +34,7 @@ select {
 }
 
 textarea {
+    min-height: 220px;
     resize: vertical;
 }
 
@@ -44,179 +43,122 @@ button {
     background: #4ade80;
     border: none;
     border-radius: 6px;
-    font-weight: bold;
     cursor: pointer;
-}
-
-button:hover {
-    opacity: 0.9;
+    margin-right: 10px;
 }
 
 .status {
-    margin-top: 15px;
+    margin-top: 10px;
     color: #4ade80;
 }
 </style>
-
 </head>
+
 <body>
 
 <div class="container">
-    <h1>Internal Document Writer</h1>
 
-    <input
-        id="title"
-        type="text"
-        placeholder="Document Title"
-    >
+<div class="topbar">
+    <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+    <button onclick="location.href='internal-files.html'">Browse</button>
+    <button onclick="location.href='../home.html'">Home</button>
+</div>
 
-    <select id="category">
-        <option value="System">System</option>
-        <option value="Training">Training</option>
-        <option value="Security">Security</option>
-        <option value="Operations">Operations</option>
-        <option value="Executive">Executive</option>
-    </select>
+<h1>Internal Document Writer</h1>
 
-    <textarea
-        id="content"
-        rows="12"
-        placeholder="Document content (HTML supported)"
-    ></textarea>
+<input id="title" placeholder="Document Title">
 
-    <button id="saveBtn">Save Document</button>
+<select id="category">
+    <option value="System">System</option>
+    <option value="Training">Training</option>
+    <option value="Security">Security</option>
+    <option value="Operations">Operations</option>
+    <option value="Executive">Executive</option>
+</select>
 
-    <div id="status" class="status"></div>
+<textarea id="content" placeholder="Document content (HTML supported)"></textarea>
+
+<button id="saveBtn">Save Document</button>
+
+<div id="status" class="status"></div>
+
 </div>
 
 <script type="module">
 import { db } from "/js/firebase.js";
-
 import {
     collection,
     addDoc,
     doc,
+    getDoc,
     runTransaction,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const saveBtn = document.getElementById("saveBtn");
-const statusEl = document.getElementById("status");
+const username = localStorage.getItem("username");
+const role = localStorage.getItem("role");
 
-function getOrdinalDate() {
-    const d = new Date();
-    const day = d.getDate();
-
-    const suffix =
-        day % 10 === 1 && day !== 11 ? "st" :
-        day % 10 === 2 && day !== 12 ? "nd" :
-        day % 10 === 3 && day !== 13 ? "rd" :
-        "th";
-
-    return `${d.toLocaleString("en-US", {
-        month: "long"
-    })} ${day}${suffix}, ${d.getFullYear()}`;
+if (!username || (role !== "admin" && role !== "mod")) {
+    window.location.href = "../home.html";
 }
 
-async function getNextDocumentId() {
-    const counterRef = doc(
-        db,
-        "system",
-        "documentCounter"
-    );
+async function getUserRole(username) {
+    const snap = await getDoc(doc(db, "users", username));
+    return snap.exists() ? snap.data().role : "user";
+}
 
-    const nextNumber = await runTransaction(
-        db,
-        async (transaction) => {
+async function getNextId() {
+    const ref = doc(db, "system", "documentCounter");
 
-            const counterSnap =
-                await transaction.get(counterRef);
+    return await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
 
-            if (!counterSnap.exists()) {
-                transaction.set(counterRef, {
-                    current: 1
-                });
+        let next = 1;
 
-                return 1;
-            }
-
-            const current =
-                (counterSnap.data().current || 0) + 1;
-
-            transaction.update(counterRef, {
-                current
-            });
-
-            return current;
+        if (snap.exists()) {
+            next = (snap.data().current || 0) + 1;
+            tx.update(ref, { current: next });
+        } else {
+            tx.set(ref, { current: 1 });
         }
-    );
 
-    return "I/" + String(nextNumber).padStart(5, "0");
+        return "I/" + String(next).padStart(5, "0");
+    });
 }
 
-async function saveDoc() {
-    const title =
-        document.getElementById("title").value.trim();
+document.getElementById("saveBtn").onclick = async () => {
+    const title = document.getElementById("title").value.trim();
+    const category = document.getElementById("category").value;
+    const content = document.getElementById("content").value.trim();
 
-    const category =
-        document.getElementById("category").value;
+    if (!title || !content) return alert("Missing fields");
 
-    const content =
-        document.getElementById("content").value.trim();
+    const status = document.getElementById("status");
+    status.textContent = "Saving...";
 
-    if (!title) {
-        alert("Please enter a title.");
-        return;
-    }
+    const id = await getNextId();
+    const authorRole = await getUserRole(username);
 
-    if (!content) {
-        alert("Please enter document content.");
-        return;
-    }
+    await addDoc(collection(db, "internalDocs"), {
+        id,
+        title,
+        category,
+        content,
 
-    try {
-        saveBtn.disabled = true;
-        statusEl.textContent = "Saving...";
+        authorUsername: username,
+        authorRole,
 
-        const id = await getNextDocumentId();
+        createdAt: Date.now(),
+        createdAtServer: serverTimestamp(),
 
-        await addDoc(
-            collection(db, "internalDocs"),
-            {
-                id,
-                title,
-                category,
-                date: getOrdinalDate(),
-                content,
-                createdAt: Date.now(),
-                createdAtServer: serverTimestamp()
-            }
-        );
+        replies: 0
+    });
 
-        statusEl.textContent =
-            `Document saved successfully as ${id}`;
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
 
-        document.getElementById("title").value = "";
-        document.getElementById("content").value = "";
-
-    } catch (error) {
-        console.error(error);
-
-        statusEl.textContent =
-            "Failed to save document.";
-
-        alert(
-            "Error saving document. Check console."
-        );
-    } finally {
-        saveBtn.disabled = false;
-    }
-}
-
-saveBtn.addEventListener(
-    "click",
-    saveDoc
-);
+    status.textContent = "Saved: " + id;
+};
 </script>
 
 </body>
