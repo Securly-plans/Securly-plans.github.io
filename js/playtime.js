@@ -1,4 +1,10 @@
+// js/playtime.js
+
 import {
+  collection,
+  query,
+  where,
+  getDocs,
   doc,
   updateDoc,
   increment
@@ -6,51 +12,97 @@ import {
 
 import { db } from "./firebase.js";
 
-const userId = localStorage.getItem("userId");
+console.log("playtime.js LOADED.");
 
-if (!userId) {
-  throw new Error("No user logged in.");
-}
+const username = localStorage.getItem("username");
 
-let sessionSeconds = 0;
-let active = true;
+if (!username) {
+  console.warn("Playtime tracking disabled: no username found.");
+} else {
 
-// Count time only when tab is visible
-document.addEventListener("visibilitychange", () => {
-  active = !document.hidden;
-});
+  let userDocId = null;
+  let sessionSeconds = 0;
+  let active = true;
 
-setInterval(() => {
-  if (active) {
-    sessionSeconds++;
+  async function initPlaytime() {
+    try {
+      console.log("Looking up user:", username);
+
+      const q = query(
+        collection(db, "users"),
+        where("username", "==", username)
+      );
+
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        console.error("User not found:", username);
+        return;
+      }
+
+      userDocId = snap.docs[0].id;
+
+      console.log("Playtime tracking active for:", username);
+      console.log("User Doc ID:", userDocId);
+
+      startTracking();
+
+    } catch (err) {
+      console.error("Playtime initialization failed:", err);
+    }
   }
-}, 1000);
 
-async function saveTime() {
-  if (sessionSeconds <= 0) return;
+  function startTracking() {
 
-  try {
-    await updateDoc(doc(db, "users", userId), {
-      siteTimeSeconds: increment(sessionSeconds),
-      lastSeen: Date.now()
+    document.addEventListener("visibilitychange", () => {
+      active = !document.hidden;
+
+      if (document.hidden) {
+        saveTime();
+      }
     });
+
+    setInterval(() => {
+      if (active) {
+        sessionSeconds++;
+      }
+    }, 1000);
+
+    setInterval(saveTime, 300000);
+
+    window.addEventListener("beforeunload", () => {
+      saveTime();
+    });
+  }
+
+  async function saveTime() {
+
+    if (!userDocId) return;
+    if (sessionSeconds <= 0) return;
+
+    const timeToSave = sessionSeconds;
 
     sessionSeconds = 0;
 
-  } catch (err) {
-    console.error("Playtime save failed:", err);
+    try {
+
+      await updateDoc(
+        doc(db, "users", userDocId),
+        {
+          siteTimeSeconds: increment(timeToSave),
+          lastSeen: Date.now()
+        }
+      );
+
+      console.log(`Saved ${timeToSave} seconds of site time`);
+
+    } catch (err) {
+
+      sessionSeconds += timeToSave;
+
+      console.error("Failed to save playtime:", err);
+    }
   }
+
+  initPlaytime();
 }
-
-// Save every 5 minutes
-setInterval(saveTime, 300000);
-
-// Save when leaving page
-window.addEventListener("beforeunload", saveTime);
-
-// Save when tab becomes hidden
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    saveTime();
-  }
-});
