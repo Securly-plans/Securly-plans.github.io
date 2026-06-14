@@ -4,7 +4,12 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  getFirestore
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -27,3 +32,14 @@ export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
+
+/* ================= FIRESTORE EXPORTS ================= */
+
+// 🔥 THIS IS WHAT YOU WERE MISSING
+export {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs
+};
