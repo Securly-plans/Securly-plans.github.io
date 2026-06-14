@@ -13,7 +13,10 @@
     --danger: #ff6b6b;
 }
 
-/* Background */
+/* -----------------------
+   Base Layout
+------------------------*/
+
 body {
     margin: 0;
     font-family: Inter, Arial, sans-serif;
@@ -21,7 +24,6 @@ body {
     color: var(--text);
 }
 
-/* Typography */
 h1, h2, h3 {
     margin: 0 0 10px 0;
 }
@@ -30,7 +32,15 @@ small {
     color: var(--muted);
 }
 
-/* Cards (glass effect) */
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* -----------------------
+   Cards (Glass UI)
+------------------------*/
+
 .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -39,7 +49,10 @@ small {
     backdrop-filter: blur(10px);
 }
 
-/* Buttons */
+/* -----------------------
+   Buttons
+------------------------*/
+
 button {
     padding: 10px 14px;
     border-radius: 10px;
@@ -61,8 +74,13 @@ button.secondary {
     color: var(--text);
 }
 
-/* Inputs */
-input, textarea, select {
+/* -----------------------
+   Inputs (GLOBAL FIX)
+------------------------*/
+
+input,
+textarea,
+select {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
@@ -71,14 +89,34 @@ input, textarea, select {
     border-radius: 10px;
     color: var(--text);
     outline: none;
+    box-sizing: border-box;
+    font-size: 14px;
 }
 
+/* Fix textarea sizing */
 textarea {
     min-height: 240px;
     resize: vertical;
 }
 
-/* Layout */
+/* -----------------------
+   SIDEBAR FIX (IMPORTANT)
+   fixes oversized search bar issue
+------------------------*/
+
+.sidebar input {
+    width: calc(100% - 20px);
+    margin: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+/* -----------------------
+   Layout System
+------------------------*/
+
 .container {
     max-width: 1000px;
     margin: auto;
@@ -91,7 +129,10 @@ textarea {
     flex-wrap: wrap;
 }
 
-/* Sidebar */
+/* -----------------------
+   Sidebar
+------------------------*/
+
 .sidebar {
     width: 320px;
     background: var(--panel);
@@ -99,42 +140,55 @@ textarea {
     display: flex;
     flex-direction: column;
     padding: 10px;
+    overflow: hidden;
 }
 
-/* Document list */
+/* Document list items */
 .doc {
     padding: 12px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
-    transition: 0.15s;
+    transition: 0.15s ease;
 }
 
 .doc:hover {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
 }
 
-/* Viewer */
+/* -----------------------
+   Main Viewer
+------------------------*/
+
 .main {
     flex: 1;
     padding: 24px;
     overflow: auto;
 }
 
-/* Reply box */
+/* -----------------------
+   Replies Section
+------------------------*/
+
 .replyBox {
     margin-top: 15px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
 }
 
-/* Status */
-.status {
-    margin-top: 10px;
-    color: var(--accent2);
-}
+/* -----------------------
+   Meta / Labels
+------------------------*/
 
-/* Meta text */
 .meta {
     color: var(--muted);
     font-size: 13px;
+}
+
+/* -----------------------
+   Status Text
+------------------------*/
+
+.status {
+    margin-top: 10px;
+    color: var(--accent2);
 }
