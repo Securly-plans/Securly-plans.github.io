@@ -5,55 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Internal Dashboard</title>
 
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0b0f17;
-    color: white;
-}
-
-header {
-    padding: 30px;
-    border-bottom: 1px solid #263244;
-}
-
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-}
-
-.card {
-    background: #121a2a;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #263244;
-    margin-bottom: 15px;
-}
-
-button {
-    padding: 12px;
-    background: #4ade80;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-button.secondary {
-    background: #1f2937;
-    color: white;
-    border: 1px solid #263244;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>
+<header class="card" style="margin:20px;">
     <h1>Internal Knowledge Base</h1>
-    <p>Staff Access Portal</p>
+    <small>Staff Access Portal</small>
 </header>
 
 <div class="container">
@@ -61,16 +20,19 @@ button.secondary {
 <div class="card">
     <h2>Navigation</h2>
 
-    <button onclick="location.href='internal-writer.html'">New Document</button>
-    <button onclick="location.href='internal-files.html'">Browse Documents</button>
-    <button class="secondary" onclick="location.href='../home.html'">Home</button>
+    <div class="row">
+        <button onclick="location.href='internal-writer.html'">New Document</button>
+        <button onclick="location.href='internal-files.html'">Browse Documents</button>
+        <button class="secondary" onclick="location.href='../home.html'">Home</button>
+    </div>
 </div>
 
 <div class="card">
-    <h2>System Notes</h2>
-    <p>Staff-only internal documentation system.</p>
-    <p>All documents are logged and stored in Firestore.</p>
-    <p>Replies are enabled for collaboration.</p>
+    <h2>System Overview</h2>
+
+    <p>Internal documentation system for staff use only.</p>
+    <p>All documents are stored in Firestore under internalDocs.</p>
+    <p>Replies and activity tracking are enabled.</p>
 </div>
 
 </div>
