@@ -7,7 +7,7 @@
 <style>
 body {
     margin: 0;
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: #0b0f17;
     color: #e6edf3;
 }
@@ -18,51 +18,90 @@ body {
     padding: 20px;
 }
 
-input, textarea, select {
+h1 {
+    margin-top: 0;
+}
+
+input,
+textarea,
+select {
     width: 100%;
     margin: 10px 0;
-    padding: 10px;
+    padding: 12px;
     background: #121a2a;
     border: 1px solid #263244;
     color: white;
     border-radius: 6px;
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: vertical;
 }
 
 button {
-    padding: 12px;
+    padding: 12px 18px;
     background: #4ade80;
     border: none;
+    border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.status {
+    margin-top: 15px;
+    color: #4ade80;
 }
 </style>
 
 </head>
-
 <body>
 
 <div class="container">
     <h1>Internal Document Writer</h1>
 
-    <input id="title" placeholder="Title">
-    
+    <input
+        id="title"
+        type="text"
+        placeholder="Document Title"
+    >
+
     <select id="category">
-        <option>System</option>
-        <option>Training</option>
-        <option>Security</option>
-        <option>Operations</option>
-        <option>Executive</option>
+        <option value="System">System</option>
+        <option value="Training">Training</option>
+        <option value="Security">Security</option>
+        <option value="Operations">Operations</option>
+        <option value="Executive">Executive</option>
     </select>
 
-    <textarea id="content" rows="12" placeholder="Document content (HTML supported)"></textarea>
+    <textarea
+        id="content"
+        rows="12"
+        placeholder="Document content (HTML supported)"
+    ></textarea>
 
-    <button onclick="saveDoc()">Save Document</button>
+    <button id="saveBtn">Save Document</button>
+
+    <div id="status" class="status"></div>
 </div>
 
 <script type="module">
 import { db } from "/js/firebase.js";
-import { collection, addDoc, getDocs } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+    collection,
+    addDoc,
+    doc,
+    runTransaction,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const saveBtn = document.getElementById("saveBtn");
+const statusEl = document.getElementById("status");
 
 function getOrdinalDate() {
     const d = new Date();
@@ -71,39 +110,113 @@ function getOrdinalDate() {
     const suffix =
         day % 10 === 1 && day !== 11 ? "st" :
         day % 10 === 2 && day !== 12 ? "nd" :
-        day % 10 === 3 && day !== 13 ? "rd" : "th";
+        day % 10 === 3 && day !== 13 ? "rd" :
+        "th";
 
-    return d.toLocaleString("en-US", { month: "long" }) + " " + day + suffix + ", " + d.getFullYear();
+    return `${d.toLocaleString("en-US", {
+        month: "long"
+    })} ${day}${suffix}, ${d.getFullYear()}`;
 }
 
-function generateId(num) {
-    return "I/" + String(num).padStart(5, "0");
+async function getNextDocumentId() {
+    const counterRef = doc(
+        db,
+        "system",
+        "documentCounter"
+    );
+
+    const nextNumber = await runTransaction(
+        db,
+        async (transaction) => {
+
+            const counterSnap =
+                await transaction.get(counterRef);
+
+            if (!counterSnap.exists()) {
+                transaction.set(counterRef, {
+                    current: 1
+                });
+
+                return 1;
+            }
+
+            const current =
+                (counterSnap.data().current || 0) + 1;
+
+            transaction.update(counterRef, {
+                current
+            });
+
+            return current;
+        }
+    );
+
+    return "I/" + String(nextNumber).padStart(5, "0");
 }
 
 async function saveDoc() {
-    const title = document.getElementById("title").value;
-    const category = document.getElementById("category").value;
-    const content = document.getElementById("content").value;
+    const title =
+        document.getElementById("title").value.trim();
 
-    if (!title || !content) return alert("Missing fields");
+    const category =
+        document.getElementById("category").value;
 
-    // Get current count
-    const snap = await getDocs(collection(db, "internalDocs"));
-    const id = generateId(snap.size + 1);
+    const content =
+        document.getElementById("content").value.trim();
 
-    await addDoc(collection(db, "internalDocs"), {
-        id,
-        title,
-        category,
-        date: getOrdinalDate(),
-        content,
-        createdAt: Date.now()
-    });
+    if (!title) {
+        alert("Please enter a title.");
+        return;
+    }
 
-    alert("Document saved: " + id);
+    if (!content) {
+        alert("Please enter document content.");
+        return;
+    }
+
+    try {
+        saveBtn.disabled = true;
+        statusEl.textContent = "Saving...";
+
+        const id = await getNextDocumentId();
+
+        await addDoc(
+            collection(db, "internalDocs"),
+            {
+                id,
+                title,
+                category,
+                date: getOrdinalDate(),
+                content,
+                createdAt: Date.now(),
+                createdAtServer: serverTimestamp()
+            }
+        );
+
+        statusEl.textContent =
+            `Document saved successfully as ${id}`;
+
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+
+    } catch (error) {
+        console.error(error);
+
+        statusEl.textContent =
+            "Failed to save document.";
+
+        alert(
+            "Error saving document. Check console."
+        );
+    } finally {
+        saveBtn.disabled = false;
+    }
 }
 
-window.saveDoc = saveDoc;
+saveBtn.addEventListener(
+    "click",
+    saveDoc
+);
 </script>
 
 </body>
