@@ -3,22 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <title>Staff Login</title>
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="staff.css">
+
+<style>
+.page {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.card {
+    width: 380px;
+}
+
+.title {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.sub {
+    font-size: 13px;
+    color: #8aa0b6;
+    margin-bottom: 15px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="page">
 
 <div class="card">
 
-<h2>Staff Login</h2>
+<div class="title">Staff Access Portal</div>
+<div class="sub">Authenticate with your staff credentials</div>
 
 <input id="firstName" placeholder="First Name">
 <input id="lastName" placeholder="Last Name">
 <input id="staffId" placeholder="Staff ID (e.g. 042)">
 
-<button id="loginBtn">Login</button>
+<button id="loginBtn">Sign In</button>
 
 <div id="status" class="status"></div>
 
@@ -28,10 +54,7 @@
 
 <script type="module">
 import { db } from "../js/firebase.js";
-import {
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 document.getElementById("loginBtn").onclick = async () => {
 
@@ -40,15 +63,13 @@ document.getElementById("loginBtn").onclick = async () => {
   const staffId = document.getElementById("staffId").value.trim();
 
   if (!firstName || !lastName || !staffId) {
-    document.getElementById("status").textContent = "Missing fields";
-    return;
+    return document.getElementById("status").textContent = "All fields required";
   }
 
   const snap = await getDoc(doc(db, "staffAccounts", staffId));
 
   if (!snap.exists()) {
-    document.getElementById("status").textContent = "Staff account not found";
-    return;
+    return document.getElementById("status").textContent = "Staff account not found";
   }
 
   const data = snap.data();
@@ -58,17 +79,14 @@ document.getElementById("loginBtn").onclick = async () => {
     data.lastName !== lastName ||
     data.status !== "active"
   ) {
-    document.getElementById("status").textContent = "Invalid credentials";
-    return;
+    return document.getElementById("status").textContent = "Invalid credentials";
   }
 
-  // SESSION SET
   localStorage.setItem("isStaff", "true");
   localStorage.setItem("staffId", staffId);
   localStorage.setItem("staffRole", data.staffRole);
   localStorage.setItem("staffPermissions", JSON.stringify(data.permissions));
-  localStorage.setItem("linkedUserId", data.linkedUserId);
-  localStorage.setItem("staffName", data.displayName || `${lastName}, ${firstName}`);
+  localStorage.setItem("staffName", data.displayName);
 
   window.location.href = "portal.html";
 };
