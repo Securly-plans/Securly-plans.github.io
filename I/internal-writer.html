@@ -4,83 +4,42 @@
 <meta charset="UTF-8">
 <title>Internal Document Writer</title>
 
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0b0f17;
-    color: #e6edf3;
-}
-
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-}
-
-.topbar {
-    margin-bottom: 15px;
-}
-
-input, textarea, select {
-    width: 100%;
-    margin: 10px 0;
-    padding: 12px;
-    background: #121a2a;
-    border: 1px solid #263244;
-    color: white;
-    border-radius: 6px;
-    box-sizing: border-box;
-}
-
-textarea {
-    min-height: 220px;
-    resize: vertical;
-}
-
-button {
-    padding: 12px 18px;
-    background: #4ade80;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-.status {
-    margin-top: 10px;
-    color: #4ade80;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="container">
 
-<div class="topbar">
-    <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
-    <button onclick="location.href='internal-files.html'">Browse</button>
-    <button onclick="location.href='../home.html'">Home</button>
+<div class="card">
+    <div class="row">
+        <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+        <button class="secondary" onclick="location.href='internal-files.html'">Browse</button>
+        <button class="secondary" onclick="location.href='../home.html'">Home</button>
+    </div>
 </div>
 
-<h1>Internal Document Writer</h1>
+<div class="card">
+
+<h2>Create Document</h2>
 
 <input id="title" placeholder="Document Title">
 
 <select id="category">
-    <option value="System">System</option>
-    <option value="Training">Training</option>
-    <option value="Security">Security</option>
-    <option value="Operations">Operations</option>
-    <option value="Executive">Executive</option>
+    <option>System</option>
+    <option>Training</option>
+    <option>Security</option>
+    <option>Operations</option>
+    <option>Executive</option>
 </select>
 
-<textarea id="content" placeholder="Document content (HTML supported)"></textarea>
+<textarea id="content" placeholder="Write document content..."></textarea>
 
 <button id="saveBtn">Save Document</button>
 
 <div id="status" class="status"></div>
+
+</div>
 
 </div>
 
@@ -133,8 +92,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
     if (!title || !content) return alert("Missing fields");
 
-    const status = document.getElementById("status");
-    status.textContent = "Saving...";
+    document.getElementById("status").textContent = "Saving...";
 
     const id = await getNextId();
     const authorRole = await getUserRole(username);
@@ -157,7 +115,7 @@ document.getElementById("saveBtn").onclick = async () => {
     document.getElementById("title").value = "";
     document.getElementById("content").value = "";
 
-    status.textContent = "Saved: " + id;
+    document.getElementById("status").textContent = "Saved: " + id;
 };
 </script>
 
