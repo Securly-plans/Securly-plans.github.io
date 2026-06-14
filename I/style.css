@@ -1,0 +1,78 @@
+<style>
+:root {
+    --bg: #0b0f17;
+    --panel: #121a2a;
+    --panel2: #0f1724;
+    --border: #263244;
+    --text: #e6edf3;
+    --muted: #9aa4b2;
+    --accent: #4ade80;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Buttons */
+button {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: var(--panel2);
+    color: var(--text);
+}
+
+button:hover {
+    filter: brightness(1.05);
+}
+
+/* Cards */
+.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+/* Inputs */
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+/* Typography */
+h1, h2, h3 {
+    margin-top: 0;
+}
+
+small {
+    color: var(--muted);
+}
+
+/* Layout helpers */
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+}
+</style>
