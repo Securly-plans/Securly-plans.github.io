@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff Login</title>
+</head>
+<body>
+
+<h2>Staff Login</h2>
+
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<script type="module">
+import { db, doc, getDoc } from "./firebase.js";
+
+async function hash(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+window.login = async function () {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const snap = await getDocs(collection(db, "staffAccounts"));
+
+  for (const docSnap of snap.docs) {
+    const data = docSnap.data();
+
+    if (data.username === username) {
+      const hashed = await hash(password);
+
+      if (data.passwordHash === hashed) {
+        localStorage.setItem("staffSession", "true");
+        localStorage.setItem("staffId", data.staffId);
+        localStorage.setItem("staffRole", data.role);
+        localStorage.setItem("staffPermissions", JSON.stringify(data.permissions));
+
+        window.location.href = "portal.html";
+        return;
+      }
+    }
+  }
+
+  alert("Invalid login");
+};
+</script>
+
+</body>
+</html>
