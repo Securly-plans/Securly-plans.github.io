@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Staff Portal</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Staff Portal</h2>
+
+<div id="identity"></div>
+
+<hr>
+
+<button onclick="location.href='../internal-dashboard.html'">
+Internal Dashboard
+</button>
+
+<button onclick="location.href='../internal-files.html'">
+Internal Files
+</button>
+
+<button onclick="location.href='../internal-writer.html'">
+Document Writer
+</button>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+
+</div>
+
+<script>
+const isStaff = localStorage.getItem("isStaff") === "true";
+
+if (!isStaff) {
+  window.location.href = "../home.html";
+}
+
+const staffId = localStorage.getItem("staffId");
+const staffRole = localStorage.getItem("staffRole");
+const staffName = localStorage.getItem("staffName");
+
+document.getElementById("identity").innerHTML = `
+  <p><b>Name:</b> ${staffName}</p>
+  <p><b>Staff ID:</b> ${staffId}</p>
+  <p><b>Role:</b> ${staffRole}</p>
+`;
+
+function logout() {
+  localStorage.removeItem("isStaff");
+  localStorage.removeItem("staffId");
+  localStorage.removeItem("staffRole");
+  localStorage.removeItem("staffPermissions");
+  localStorage.removeItem("linkedUserId");
+  localStorage.removeItem("staffName");
+
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
