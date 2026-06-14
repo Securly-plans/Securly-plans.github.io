@@ -3,34 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <title>Staff Portal</title>
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="staff.css">
+
+<style>
+.layout {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.header {
+    background: #121824;
+    border: 1px solid #1f2a3a;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.grid button {
+    padding: 15px;
+}
+
+.identity {
+    font-size: 14px;
+    color: #b9c7d6;
+}
+
+.logout {
+    margin-top: 10px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="layout">
 
-<div class="card">
+<div class="header">
 
 <h2>Staff Portal</h2>
 
-<div id="identity"></div>
+<div class="identity" id="identity"></div>
 
-<hr>
+<button class="logout" onclick="logout()">Logout</button>
 
-<button onclick="location.href='../internal-dashboard.html'">
-Internal Dashboard
-</button>
+</div>
 
-<button onclick="location.href='../internal-files.html'">
-Internal Files
-</button>
+<div class="grid">
 
-<button onclick="location.href='../internal-writer.html'">
-Document Writer
-</button>
-
-<button onclick="logout()">Logout</button>
+<button onclick="location.href='../internal-dashboard.html'">Dashboard</button>
+<button onclick="location.href='../internal-files.html'">Files</button>
+<button onclick="location.href='../internal-writer.html'">Writer</button>
 
 </div>
 
@@ -48,19 +77,13 @@ const staffRole = localStorage.getItem("staffRole");
 const staffName = localStorage.getItem("staffName");
 
 document.getElementById("identity").innerHTML = `
-  <p><b>Name:</b> ${staffName}</p>
-  <p><b>Staff ID:</b> ${staffId}</p>
-  <p><b>Role:</b> ${staffRole}</p>
+  Name: ${staffName}<br>
+  Staff ID: ${staffId}<br>
+  Role: ${staffRole}
 `;
 
 function logout() {
-  localStorage.removeItem("isStaff");
-  localStorage.removeItem("staffId");
-  localStorage.removeItem("staffRole");
-  localStorage.removeItem("staffPermissions");
-  localStorage.removeItem("linkedUserId");
-  localStorage.removeItem("staffName");
-
+  localStorage.clear();
   window.location.href = "login.html";
 }
 </script>
