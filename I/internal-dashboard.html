@@ -1,43 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Internal Documents Dashboard</title>
+<title>Internal Dashboard</title>
 
 <style>
-:root {
-    --bg: #0b0f17;
-    --panel: #121a2a;
-    --border: #263244;
-    --text: #e6edf3;
-    --muted: #9aa4b2;
-    --accent: #4ade80;
-}
-
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
+    font-family: Arial;
+    background: #0b0f17;
+    color: white;
 }
 
 header {
-    padding: 40px 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(90deg, #111827, #0f172a);
-}
-
-header h1 {
-    margin: 0;
-    color: var(--accent);
-}
-
-header p {
-    color: var(--muted);
-    margin-top: 8px;
+    padding: 30px;
+    border-bottom: 1px solid #263244;
 }
 
 .container {
@@ -47,57 +25,26 @@ header p {
 }
 
 .card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    background: #121a2a;
     padding: 20px;
-    margin-bottom: 20px;
-}
-
-h2 {
-    color: var(--accent);
-    margin-top: 0;
-}
-
-p {
-    color: var(--text);
-}
-
-.buttons {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 15px;
+    border-radius: 10px;
+    border: 1px solid #263244;
+    margin-bottom: 15px;
 }
 
 button {
-    padding: 14px;
+    padding: 12px;
+    background: #4ade80;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
-    font-size: 1rem;
-    background: var(--accent);
-    color: #000;
-    transition: 0.2s;
+    margin-right: 10px;
 }
 
-button:hover {
-    transform: scale(1.02);
-}
-
-.secondary {
+button.secondary {
     background: #1f2937;
-    color: var(--text);
-    border: 1px solid var(--border);
-}
-
-footer {
-    text-align: center;
-    color: var(--muted);
-    padding: 20px;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
+    color: white;
+    border: 1px solid #263244;
 }
 </style>
 </head>
@@ -105,72 +52,34 @@ footer {
 <body>
 
 <header>
-    <h1>Internal Documents Dashboard</h1>
-    <p>Monroe Entertainment Services • Emerald Games Division</p>
+    <h1>Internal Knowledge Base</h1>
+    <p>Staff Access Portal</p>
 </header>
 
 <div class="container">
 
-    <div class="card">
-        <h2>System Overview</h2>
-        <p>
-            The Internal Documents System is the official knowledge and operations hub for 
-            Monroe Entertainment Services and the Emerald Games Division.
-        </p>
-        <p>
-            It stores structured internal records using the <b>I/#####</b> format,
-            including system documentation, training material, executive actions, and operational logs.
-        </p>
-    </div>
+<div class="card">
+    <h2>Navigation</h2>
 
-    <div class="card">
-        <h2>Navigation</h2>
-        <p>Use the tools below to manage and view internal documentation.</p>
+    <button onclick="location.href='internal-writer.html'">New Document</button>
+    <button onclick="location.href='internal-files.html'">Browse Documents</button>
+    <button class="secondary" onclick="location.href='../home.html'">Home</button>
+</div>
 
-        <div class="buttons">
-            <button onclick="goWriter()">Open Document Writer</button>
-            <button onclick="goFiles()">View Internal Documents</button>
-            <button class="secondary" onclick="refresh()">Refresh Dashboard</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Purpose of This System</h2>
-        <ul>
-            <li>Centralize all internal company documentation</li>
-            <li>Maintain structured records using I/##### IDs</li>
-            <li>Provide searchable access to operational knowledge</li>
-            <li>Support development and administrative workflows</li>
-        </ul>
-    </div>
-
-    <div class="card">
-        <h2>Rules & Structure</h2>
-        <ul>
-            <li>All documents must follow the I/##### format</li>
-            <li>All entries must include category + date stamp</li>
-            <li>System integrity must be preserved at all times</li>
-            <li>Unauthorized modifications are prohibited</li>
-        </ul>
-    </div>
+<div class="card">
+    <h2>System Notes</h2>
+    <p>Staff-only internal documentation system.</p>
+    <p>All documents are logged and stored in Firestore.</p>
+    <p>Replies are enabled for collaboration.</p>
+</div>
 
 </div>
 
-<footer>
-    Internal Systems Dashboard • Emerald Games • Monroe Entertainment Services
-</footer>
-
 <script>
-function goWriter() {
-    window.location.href = "internal-writer.html";
-}
+const role = localStorage.getItem("role");
 
-function goFiles() {
-    window.location.href = "internal-files.html";
-}
-
-function refresh() {
-    location.reload();
+if (!role || (role !== "admin" && role !== "mod")) {
+    window.location.href = "../home.html";
 }
 </script>
 
