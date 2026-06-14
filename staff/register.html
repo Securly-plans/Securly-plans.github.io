@@ -1,151 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Staff Registration</title>
-<link rel="stylesheet" href="staff.css">
 
 <style>
-.page {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
-.card {
+.container {
     width: 420px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
-.title {
-    font-size: 20px;
-    margin-bottom: 10px;
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #60a5fa;
 }
 
-.warning {
-    font-size: 12px;
-    color: #9fb3c8;
-    margin-bottom: 10px;
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: white;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+small {
+    display: block;
+    margin-top: 10px;
+    color: #94a3b8;
 }
 </style>
 </head>
 
 <body>
 
-<div class="page">
+<div class="container">
+    <h1>Staff Registration</h1>
 
-<div class="card">
+    <input id="first" placeholder="First Name">
+    <input id="last" placeholder="Last Name">
 
-<div class="title">Create Staff Account</div>
-<div class="warning">Only mod/admin gaming accounts can create staff access</div>
+    <input id="username" placeholder="Game Username (must exist)">
+    <input id="staffKey" placeholder="Staff Invite Key">
+    <input id="password" type="password" placeholder="Password">
 
-<input id="firstName" placeholder="First Name">
-<input id="lastName" placeholder="Last Name">
+    <button onclick="registerStaff()">Create Staff Account</button>
 
-<button id="createBtn">Create Staff Account</button>
-
-<div id="status" class="status"></div>
-
-</div>
-
+    <small id="msg"></small>
 </div>
 
 <script type="module">
-import { db } from "../js/firebase.js";
-import { doc, getDoc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "../firebase.js";
+import { doc, getDoc, setDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const username = localStorage.getItem("username");
-const userId = localStorage.getItem("userId");
-const role = localStorage.getItem("role");
+async function registerStaff() {
+    const first = document.getElementById("first").value;
+    const last = document.getElementById("last").value;
+    const username = document.getElementById("username").value;
+    const staffKey = document.getElementById("staffKey").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
 
-if (!username || (role !== "admin" && role !== "mod")) {
-  window.location.href = "../home.html";
-}
+    msg.textContent = "";
 
-async function getUserId(username) {
-  const snap = await getDoc(doc(db, "users", username));
-  if (!snap.exists()) throw new Error("User not found");
-  return snap.data().userId;
-}
-
-async function getNextStaffId() {
-  const ref = doc(db, "system", "staffCounter");
-
-  return await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-
-    let next = 1;
-
-    if (snap.exists()) {
-      next = (snap.data().current || 0) + 1;
-      tx.update(ref, { current: next });
-    } else {
-      tx.set(ref, { current: 1 });
+    // 1. check invite key (simple protection)
+    if (staffKey !== "EMERALD-STAFF-2026") {
+        msg.textContent = "Invalid staff key.";
+        return;
     }
 
-    return String(next).padStart(3, "0");
-  });
-}
+    // 2. check if game user exists (IMPORTANT LINK STEP)
+    const userRef = doc(db, "users", username);
+    const userSnap = await getDoc(userRef);
 
-document.getElementById("createBtn").onclick = async () => {
+    if (!userSnap.exists()) {
+        msg.textContent = "Game user not found. You must have a valid Emerald account.";
+        return;
+    }
 
-  const firstName = document.getElementById("firstName").value.trim();
-  const lastName = document.getElementById("lastName").value.trim();
+    // 3. create staff account (THIS is the fix)
+    const staffRef = doc(db, "staff", username);
 
-  if (!firstName || !lastName) return;
-
-  try {
-
-    const linkedUserId = await getUserId(username);
-    const staffId = await getNextStaffId();
-
-    const displayName = `${lastName}, ${firstName}`;
-
-    const permissions =
-      role === "admin"
-        ? {
-            internalAccess: true,
-            internalFiles: true,
-            internalWriter: true,
-            chatModeration: true,
-            userManagement: true
-          }
-        : {
-            internalAccess: true,
-            internalFiles: true,
-            internalWriter: true,
-            chatModeration: true,
-            userManagement: false
-          };
-
-    await setDoc(doc(db, "staffAccounts", staffId), {
-      staffId,
-      firstName,
-      lastName,
-      displayName,
-
-      linkedUserId,
-      linkedGameUsername: username,
-
-      staffRole: role,
-      permissions,
-
-      status: "active",
-      createdAt: Date.now(),
-      createdBy: username
+    await setDoc(staffRef, {
+        firstName: first,
+        lastName: last,
+        username: username,
+        passwordHash: await sha256(password),
+        linkedUser: username,
+        role: "staff",
+        created: Date.now()
     });
 
-    document.getElementById("status").textContent =
-      `Created: ${displayName} (${staffId})`;
+    msg.textContent = "Staff account created successfully!";
+}
 
-    setTimeout(() => {
-      window.location.href = "login.html";
-    }, 1200);
+async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
-  } catch (err) {
-    document.getElementById("status").textContent = err.message;
-  }
-};
+window.registerStaff = registerStaff;
 </script>
 
 </body>
