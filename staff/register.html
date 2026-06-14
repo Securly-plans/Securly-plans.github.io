@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Staff Account</title>
+</head>
+<body>
+
+<h2>Staff Register (U → S)</h2>
+
+<input id="username" placeholder="New staff username">
+<input id="password" type="password" placeholder="Password">
+<button onclick="createStaff()">Create Staff Account</button>
+
+<script type="module">
+import { db, collection, getDocs, doc, setDoc } from "./firebase.js";
+import { generateStaffId } from "./utils.js";
+
+async function hash(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getUAccountRole() {
+  return localStorage.getItem("role"); // from USERS system
+}
+
+function roleMap(role) {
+  if (role === "admin") {
+    return {
+      role: "admin",
+      permissions: {
+        users: { view: true, edit: true, ban: true },
+        chat: { monitor: true, delete: true },
+        files: { read: true, write: true },
+        system: { logs: true }
+      }
+    };
+  }
+
+  if (role === "mod") {
+    return {
+      role: "mod",
+      permissions: {
+        users: { view: true, edit: false, ban: true },
+        chat: { monitor: true, delete: true },
+        files: { read: true, write: false },
+        system: { logs: false }
+      }
+    };
+  }
+
+  return null;
+}
+
+window.createStaff = async function () {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const role = getUAccountRole();
+  const mapped = roleMap(role);
+
+  if (!mapped) {
+    alert("No permission to create staff account");
+    return;
+  }
+
+  const staffId = await generateStaffId();
+  const passwordHash = await hash(password);
+
+  await setDoc(doc(db, "staffAccounts", staffId), {
+    staffId,
+    username,
+    passwordHash,
+    role: mapped.role,
+    permissions: mapped.permissions,
+    sourceUserId: localStorage.getItem("userId"),
+    createdAt: Date.now()
+  });
+
+  alert("Staff account created: " + staffId);
+};
+</script>
+
+</body>
+</html>
