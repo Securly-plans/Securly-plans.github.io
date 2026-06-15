@@ -165,7 +165,7 @@ function openNotes() {
 // ==========================================
 const appCatalog = [
     { 
-        name: 'Calculator', 
+        name: 'Calculator.EOSas', 
         icon: '🧮', 
         content: `
             <div style="display: flex; flex-direction: column; height: 100%; background: #ddd; padding: 5px;">
@@ -193,7 +193,7 @@ const appCatalog = [
         ` 
     },
     { 
-        name: 'Paint', 
+        name: 'Paint.EOSas', 
         icon: '🎨', 
         content: `
             <div style="display: flex; flex-direction: column; height: 100%;">
@@ -211,6 +211,11 @@ const appCatalog = [
                 </div>
             </div>
         ` 
+    },
+    {  
+        name: 'Emerald.Aweb',
+        icon: '🌐',
+        content:`<iframe src= Securly-plans.github.io 'style= width:100%; height:98%; border:none;'></iframe>`
     }
 ];
 
