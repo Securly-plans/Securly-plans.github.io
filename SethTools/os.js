@@ -97,13 +97,13 @@ function openNotes() {
 // ==========================================
 const appCatalog = [
     { 
-        name: 'Drift Boss', 
-        icon: '🚗', 
-        content: '<iframe>https://securly-plans.github.io/play.html?id=1</iframe>' 
+        name: 'Ragdoll_Archers.EAS', 
+        icon: '💎', 
+        content: '<iframe>https://securly-plans.github.io/1436342-embeddable</iframe>' 
     },
     { 
-        name: 'Totm', 
-        icon: '🕹️', 
+        name: 'Totm.game.EA(nw)S', 
+        icon: '💎', 
         content: '<iframe>https://securly-plans.github.io/play.html?id=2</iframe>' 
     }
 ];
