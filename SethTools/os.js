@@ -15,6 +15,7 @@ updateClock();
 // ==========================================
 function openWindow(title, contentHTML) {
     const container = document.getElementById('windows-container');
+    const taskbarApps = document.getElementById('taskbar-apps');
     
     // Create window element
     const win = document.createElement('div');
@@ -33,14 +34,47 @@ function openWindow(title, contentHTML) {
         <div class="window-content">${contentHTML}</div>
     `;
 
-    // Bring to front on click
-    win.addEventListener('mousedown', () => {
-        win.style.zIndex = ++zIndexCounter;
+    // --- NEW: Create the Taskbar Tab ---
+    const tab = document.createElement('div');
+    tab.className = 'taskbar-tab active';
+    tab.innerText = title;
+    taskbarApps.appendChild(tab);
+
+    // Toggle Minimize / Restore when taskbar tab is clicked
+    tab.addEventListener('click', () => {
+        if (win.style.display === 'none') {
+            // Restore window
+            win.style.display = 'flex';
+            win.style.zIndex = ++zIndexCounter;
+            
+            // Visually push all tabs up, then press this one down
+            document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        } else {
+            // If it's visible but behind other windows, just bring it to the front
+            if (win.style.zIndex < zIndexCounter) {
+                win.style.zIndex = ++zIndexCounter;
+                document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            } else {
+                // If it's already the front window, minimize it
+                win.style.display = 'none';
+                tab.classList.remove('active');
+            }
+        }
     });
 
-    // Close button
+    // Bring to front and depress tab on window click
+    win.addEventListener('mousedown', () => {
+        win.style.zIndex = ++zIndexCounter;
+        document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    });
+
+    // Close button (Now removes the window AND the taskbar tab)
     win.querySelector('.close-btn').addEventListener('click', () => {
         win.remove();
+        tab.remove();
     });
 
     // --- Drag Logic ---
@@ -68,6 +102,10 @@ function openWindow(title, contentHTML) {
     });
 
     container.appendChild(win);
+    
+    // Visually update tabs so only the new one is "pressed down"
+    document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
 }
 
 // ==========================================
