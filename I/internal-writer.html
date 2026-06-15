@@ -45,7 +45,7 @@
 
 <script type="module">
 
-// ✅ SESSION PROTECTION (ADDED)
+// Session timeout system (if still used)
 import "../js/session.js";
 
 import { db } from "/js/firebase.js";
@@ -53,23 +53,26 @@ import {
     collection,
     addDoc,
     doc,
-    getDoc,
     runTransaction,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const username = localStorage.getItem("username");
-const role = localStorage.getItem("role");
+/* ===========================
+   STAFF SESSION CHECK
+=========================== */
 
-// already existed, kept unchanged
-if (!username || (role !== "admin" && role !== "mod")) {
-    window.location.href = "../home.html";
+const staffSession = localStorage.getItem("staffSession") === "true";
+const staffId = localStorage.getItem("staffId");
+const staffRole = localStorage.getItem("staffRole");
+const staffName = localStorage.getItem("staffName");
+
+if (!staffSession || !staffId) {
+    window.location.href = "../staff/login.html";
 }
 
-async function getUserRole(username) {
-    const snap = await getDoc(doc(db, "users", username));
-    return snap.exists() ? snap.data().role : "user";
-}
+/* ===========================
+   DOCUMENT ID GENERATOR
+=========================== */
 
 async function getNextId() {
     const ref = doc(db, "system", "documentCounter");
@@ -90,38 +93,58 @@ async function getNextId() {
     });
 }
 
+/* ===========================
+   SAVE DOCUMENT
+=========================== */
+
 document.getElementById("saveBtn").onclick = async () => {
+
     const title = document.getElementById("title").value.trim();
     const category = document.getElementById("category").value;
     const content = document.getElementById("content").value.trim();
 
-    if (!title || !content) return alert("Missing fields");
+    if (!title || !content) {
+        alert("Missing fields");
+        return;
+    }
 
     document.getElementById("status").textContent = "Saving...";
 
-    const id = await getNextId();
-    const authorRole = await getUserRole(username);
+    try {
 
-    await addDoc(collection(db, "internalDocs"), {
-        id,
-        title,
-        category,
-        content,
+        const id = await getNextId();
 
-        authorUsername: username,
-        authorRole,
+        await addDoc(collection(db, "internalDocs"), {
+            id,
+            title,
+            category,
+            content,
 
-        createdAt: Date.now(),
-        createdAtServer: serverTimestamp(),
+            // STAFF AUTHOR DATA
+            authorStaffId: staffId,
+            authorName: staffName || `Staff ${staffId}`,
+            authorRole: staffRole,
 
-        replies: 0
-    });
+            createdAt: Date.now(),
+            createdAtServer: serverTimestamp(),
 
-    document.getElementById("title").value = "";
-    document.getElementById("content").value = "";
+            replies: 0
+        });
 
-    document.getElementById("status").textContent = "Saved: " + id;
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+
+        document.getElementById("status").textContent =
+            "Saved: " + id;
+
+    } catch (err) {
+        console.error(err);
+
+        document.getElementById("status").textContent =
+            "Failed to save document";
+    }
 };
+
 </script>
 
 </body>
