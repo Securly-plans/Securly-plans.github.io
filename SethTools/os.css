@@ -13,6 +13,47 @@ body {
     flex-direction: column;
 }
 
+/* --- Start Menu --- */
+#start-menu {
+    position: absolute;
+    bottom: 40px; /* Matches the taskbar height */
+    left: 0;
+    width: 220px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+    display: none; /* Hidden by default */
+    flex-direction: row;
+    z-index: 10000; /* Stays above all windows */
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+}
+
+/* Class added via JS to reveal the menu */
+#start-menu.show {
+    display: flex;
+}
+
+.start-menu-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.start-menu-item:hover {
+    background: #000080;
+    color: white;
+}
+
+.start-menu-divider {
+    height: 0;
+    border-top: 1px solid #888;
+    border-bottom: 1px solid #fff;
+    margin: 5px 2px;
+}
+
 /* Desktop and Icons */
 #desktop {
     flex: 1;
