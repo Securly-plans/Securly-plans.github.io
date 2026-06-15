@@ -16,6 +16,21 @@
 
     <div id="installed-apps-zone" style="display: contents;"></div>
 </div>
+
+<div id="start-menu">
+        <div style="background: #000080; color: white; writing-mode: vertical-rl; transform: rotate(180deg); padding: 5px; font-weight: bold;">
+            Emerald Os 1.0
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; padding: 2px;">
+            <div class="start-menu-item" onclick="openAppStore()">🛒 App Store</div>
+            <div class="start-menu-item" onclick="openNotes()">📄 Notes</div>
+            <div class="start-menu-item" onclick="openWindow('Chat', '<iframe src=\'chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬 Chat</div>
+            <div class="start-menu-item" onclick="openWindow('System Info', '<h2>Emerald OS v1.0</h2>')">💻 System</div>
+            <div class="start-menu-divider"></div>
+            <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
+        </div>
+    </div>
+    
    <div id="taskbar">
     <button id="start-btn">Start</button>
     
