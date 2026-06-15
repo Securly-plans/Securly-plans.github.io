@@ -97,14 +97,52 @@ function openNotes() {
 // ==========================================
 const appCatalog = [
     { 
-        name: 'Ragdoll_Archers.EAS', 
-        icon: '💎', 
-        content: '<iframe>https://securly-plans.github.io/1436342-embeddable</iframe>' 
+        name: 'Calculator', 
+        icon: '🧮', 
+        content: `
+            <div style="display: flex; flex-direction: column; height: 100%; background: #ddd; padding: 5px;">
+                <input type="text" id="calc-display" disabled style="font-size: 20px; text-align: right; padding: 5px; margin-bottom: 5px; border: 2px inset #fff;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; flex: 1;">
+                    <button onclick="document.getElementById('calc-display').value = ''" style="grid-column: span 3;">C</button>
+                    <button onclick="document.getElementById('calc-display').value += '/'">/</button>
+                    <button onclick="document.getElementById('calc-display').value += '7'">7</button>
+                    <button onclick="document.getElementById('calc-display').value += '8'">8</button>
+                    <button onclick="document.getElementById('calc-display').value += '9'">9</button>
+                    <button onclick="document.getElementById('calc-display').value += '*'">*</button>
+                    <button onclick="document.getElementById('calc-display').value += '4'">4</button>
+                    <button onclick="document.getElementById('calc-display').value += '5'">5</button>
+                    <button onclick="document.getElementById('calc-display').value += '6'">6</button>
+                    <button onclick="document.getElementById('calc-display').value += '-'">-</button>
+                    <button onclick="document.getElementById('calc-display').value += '1'">1</button>
+                    <button onclick="document.getElementById('calc-display').value += '2'">2</button>
+                    <button onclick="document.getElementById('calc-display').value += '3'">3</button>
+                    <button onclick="document.getElementById('calc-display').value += '+'">+</button>
+                    <button onclick="document.getElementById('calc-display').value += '0'" style="grid-column: span 2;">0</button>
+                    <button onclick="document.getElementById('calc-display').value += '.'">.</button>
+                    <button onclick="try { document.getElementById('calc-display').value = eval(document.getElementById('calc-display').value) } catch(e) { document.getElementById('calc-display').value = 'Error' }">=</button>
+                </div>
+            </div>
+        ` 
     },
     { 
-        name: 'Totm.game.EA(nw)S', 
-        icon: '💎', 
-        content: '<iframe>https://securly-plans.github.io/play.html?id=2</iframe>' 
+        name: 'Paint', 
+        icon: '🎨', 
+        content: `
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <div style="padding: 5px; background: #c0c0c0; border-bottom: 2px solid #000;">
+                    <button onclick="clearCanvas()">Clear Canvas</button>
+                </div>
+                <div style="flex: 1; overflow: hidden; position: relative;">
+                    <canvas id="paint-canvas" width="600" height="400" 
+                        style="background: white; cursor: crosshair; display: block;"
+                        onmousedown="startDraw(event)" 
+                        onmousemove="draw(event)" 
+                        onmouseup="stopDraw()" 
+                        onmouseout="stopDraw()">
+                    </canvas>
+                </div>
+            </div>
+        ` 
     }
 ];
 
@@ -191,3 +229,71 @@ function uninstallApp(appIndex) {
 window.addEventListener('DOMContentLoaded', () => {
     renderDesktopApps();
 });
+
+// ==========================================
+// 6. PAINT APP LOGIC
+// ==========================================
+let isDrawing = false;
+let paintCtx = null;
+
+function startDraw(e) {
+    isDrawing = true;
+    const canvas = document.getElementById('paint-canvas');
+    if (!paintCtx) paintCtx = canvas.getContext('2d');
+    
+    // Get the exact position of the mouse relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    paintCtx.beginPath();
+    paintCtx.moveTo(x, y);
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const canvas = document.getElementById('paint-canvas');
+    
+    // Get the exact position of the mouse relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    paintCtx.lineWidth = 3;
+    paintCtx.lineCap = 'round';
+    paintCtx.lineTo(x, y);
+    paintCtx.stroke();
+}
+
+function stopDraw() {
+    isDrawing = false;
+    if (paintCtx) {
+        paintCtx.closePath();
+    }
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('paint-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
