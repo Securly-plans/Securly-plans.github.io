@@ -41,6 +41,19 @@ import {
     addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* ===========================
+   STAFF SESSION CHECK
+=========================== */
+
+const staffSession = localStorage.getItem("staffSession") === "true";
+const staffId = localStorage.getItem("staffId");
+const staffRole = localStorage.getItem("staffRole");
+const staffName = localStorage.getItem("staffName");
+
+if (!staffSession || !staffId) {
+    window.location.href = "../staff/login.html";
+}
+
 let docs = [];
 let current = null;
 
@@ -54,48 +67,63 @@ function render(f = "") {
     const list = document.getElementById("list");
     list.innerHTML = "";
 
-    docs.filter(d =>
-        d.title.toLowerCase().includes(f.toLowerCase()) ||
-        d.id.toLowerCase().includes(f.toLowerCase())
-    ).forEach(d => {
-        const div = document.createElement("div");
-        div.className = "doc";
-        div.innerHTML = `
-            <b>${d.title}</b><br>
-            <span class="meta">${d.id} • ${d.category}</span>
-        `;
-        div.onclick = () => open(d);
-        list.appendChild(div);
-    });
+    docs
+        .filter(d =>
+            d.title.toLowerCase().includes(f.toLowerCase()) ||
+            d.id.toLowerCase().includes(f.toLowerCase())
+        )
+        .forEach(d => {
+            const div = document.createElement("div");
+
+            div.className = "doc";
+
+            div.innerHTML = `
+                <b>${d.title}</b><br>
+                <span class="meta">${d.id} • ${d.category}</span>
+            `;
+
+            div.onclick = () => open(d);
+
+            list.appendChild(div);
+        });
 }
 
 async function loadReplies(id) {
-    const q = query(collection(db, "internalDocReplies"), where("documentId", "==", id));
+    const q = query(
+        collection(db, "internalDocReplies"),
+        where("documentId", "==", id)
+    );
+
     const snap = await getDocs(q);
+
     return snap.docs.map(d => d.data());
 }
 
-async function open(doc) {
-    current = doc;
+async function open(docData) {
+    current = docData;
 
-    const replies = await loadReplies(doc.id);
+    const replies = await loadReplies(docData.id);
 
     document.getElementById("viewer").innerHTML = `
         <div class="card">
 
-            <h2>${doc.title}</h2>
-            <div class="meta">${doc.id} • ${doc.category}</div>
+            <h2>${docData.title}</h2>
+
+            <div class="meta">
+                ${docData.id} • ${docData.category}
+            </div>
 
             <hr>
 
             <p>
-                Author: ${doc.authorUsername || "Unknown"}<br>
-                Rank: ${doc.authorRole || "Unknown"}
+                Author: ${docData.authorName || "Unknown"}<br>
+                Staff ID: ${docData.authorStaffId || "Unknown"}<br>
+                Role: ${docData.authorRole || "Unknown"}
             </p>
 
             <hr>
 
-            <div>${doc.content}</div>
+            <div>${docData.content}</div>
 
         </div>
 
@@ -105,28 +133,41 @@ async function open(doc) {
 
             ${replies.map(r => `
                 <div>
-                    <b>${r.author}</b>
-                    <span class="meta">(${r.role})</span><br>
+                    <b>${r.authorName || "Unknown"}</b>
+                    <span class="meta">
+                        (${r.role || "Unknown"} • ${r.staffId || "???"})
+                    </span><br>
+
                     ${r.message}
+
                     <hr>
                 </div>
             `).join("")}
 
             <textarea id="replyText"></textarea>
-            <button onclick="send()">Post Reply</button>
+
+            <button onclick="send()">
+                Post Reply
+            </button>
 
         </div>
     `;
 }
 
 window.send = async function () {
-    const text = document.getElementById("replyText").value.trim();
+
+    const text =
+        document.getElementById("replyText").value.trim();
+
     if (!text || !current) return;
 
     await addDoc(collection(db, "internalDocReplies"), {
         documentId: current.id,
-        author: localStorage.getItem("username"),
-        role: localStorage.getItem("role"),
+
+        authorName: staffName,
+        staffId: staffId,
+        role: staffRole,
+
         message: text,
         createdAt: Date.now()
     });
@@ -134,9 +175,11 @@ window.send = async function () {
     open(current);
 };
 
-document.getElementById("search").addEventListener("input", e => {
-    render(e.target.value);
-});
+document
+    .getElementById("search")
+    .addEventListener("input", e => {
+        render(e.target.value);
+    });
 
 load();
 </script>
