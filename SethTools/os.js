@@ -11,6 +11,36 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ==========================================
+// START MENU LOGIC
+// ==========================================
+const startBtn = document.getElementById('start-btn');
+const startMenu = document.getElementById('start-menu');
+
+// Toggle menu when clicking the Start button
+startBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevents the document click listener below from firing immediately
+    startMenu.classList.toggle('show');
+    
+    // Visually press the start button down
+    if (startMenu.classList.contains('show')) {
+        startBtn.style.borderColor = '#000 #fff #fff #000';
+        startBtn.style.background = '#dfdfdf';
+    } else {
+        startBtn.style.borderColor = '#fff #000 #000 #fff';
+        startBtn.style.background = '#c0c0c0';
+    }
+});
+
+// Close the start menu if you click anywhere else on the screen
+document.addEventListener('click', (e) => {
+    if (startMenu.classList.contains('show') && !startMenu.contains(e.target)) {
+        startMenu.classList.remove('show');
+        startBtn.style.borderColor = '#fff #000 #000 #fff';
+        startBtn.style.background = '#c0c0c0';
+    }
+});
+
+// ==========================================
 // 2. WINDOW MANAGEMENT & DRAGGING
 // ==========================================
 function openWindow(title, contentHTML) {
