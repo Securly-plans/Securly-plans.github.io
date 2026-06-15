@@ -24,6 +24,14 @@ header h1 {
     grid-template-columns: 1fr;
     gap: 16px;
 }
+
+.staff-info {
+    text-align: center;
+    margin-top: -20px;
+    margin-bottom: 20px;
+    color: var(--muted, #9ca3af);
+    font-size: 14px;
+}
 </style>
 </head>
 
@@ -34,6 +42,8 @@ header h1 {
     <small>Staff Portal System</small>
 </header>
 
+<div class="staff-info" id="staffInfo"></div>
+
 <div class="container grid">
 
 <div class="card">
@@ -41,7 +51,7 @@ header h1 {
     <div class="row">
         <button onclick="location.href='internal-writer.html'">New Document</button>
         <button onclick="location.href='internal-files.html'">Browse</button>
-        <button class="secondary" onclick="location.href='../home.html'">Home</button>
+        <button class="secondary" onclick="location.href='../staff/portal.html'">Staff Portal</button>
     </div>
 </div>
 
@@ -55,10 +65,17 @@ header h1 {
 </div>
 
 <script>
-const role = localStorage.getItem("role");
-if (!role || (role !== "admin" && role !== "mod")) {
-    location.href = "../home.html";
+const staffSession = localStorage.getItem("staffSession") === "true";
+
+if (!staffSession) {
+    window.location.replace("../staff/login.html");
 }
+
+const staffRole = localStorage.getItem("staffRole") || "Unknown";
+const staffId = localStorage.getItem("staffId") || "???";
+
+document.getElementById("staffInfo").textContent =
+    `Staff ID: ${staffId} | Role: ${staffRole}`;
 </script>
 
 </body>
