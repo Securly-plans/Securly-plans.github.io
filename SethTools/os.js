@@ -139,7 +139,7 @@ function openWindow(title, contentHTML) {
 }
 
 // ==========================================
-// 3. FILE SYSTEM (LOCALSTORAGE)
+// 3. FILE SYSTEM & UPGRADED NOTES
 // ==========================================
 const FileSystem = {
     saveFile: function(filename, content) {
@@ -151,11 +151,21 @@ const FileSystem = {
     }
 };
 
-function openNotes() {
-    const savedText = FileSystem.readFile('my_notes.txt');
+function openNotes(filename = 'New_Note.txt') {
+    const savedText = FileSystem.readFile(filename);
+    
+    // We generate a random ID for the inputs so it doesn't break if you open two Note windows at once
+    const safeId = Math.floor(Math.random() * 10000); 
+    
     const notesHTML = `
-        <textarea id="notes-input" style="width:100%; height:80%; resize:none; border:none; outline:none;">${savedText}</textarea>
-        <button onclick="FileSystem.saveFile('my_notes.txt', document.getElementById('notes-input').value)">Save File</button>
+        <div style="background: #c0c0c0; padding: 4px; display: flex; gap: 5px; border-bottom: 2px solid #000;">
+            <input type="text" id="fname-${safeId}" value="${filename}" style="flex: 1; padding: 2px;">
+            <button onclick="
+                FileSystem.saveFile(document.getElementById('fname-${safeId}').value, document.getElementById('fcontent-${safeId}').value);
+                if (document.getElementById('explorer-content')) renderFileExplorer(); // Auto-refresh Explorer if open
+            ">Save</button>
+        </div>
+        <textarea id="fcontent-${safeId}" style="width:100%; height:calc(100% - 35px); resize:none; border:none; outline:none; padding:5px; box-sizing: border-box;">${savedText}</textarea>
     `;
     openWindow('Notes', notesHTML);
 }
@@ -353,6 +363,72 @@ function clearCanvas() {
     }
 }
 
+// ==========================================
+// 7. FILE EXPLORER APP
+// ==========================================
+
+function getFilesList() {
+    let files = [];
+    // Loop through everything in local storage
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        // Only grab things we explicitly saved as files
+        if (key.startsWith('os_file_')) {
+            files.push(key.replace('os_file_', '')); // Remove prefix for display
+        }
+    }
+    return files;
+}
+
+function deleteFile(filename) {
+    if (confirm(`Are you sure you want to delete ${filename}?`)) {
+        localStorage.removeItem('os_file_' + filename);
+        renderFileExplorer(); // Live-refresh the window
+    }
+}
+
+function renderFileExplorer() {
+    const container = document.getElementById('explorer-content');
+    if (!container) return; // If window is closed, do nothing
+    
+    const files = getFilesList();
+    
+    if (files.length === 0) {
+        container.innerHTML = '<p style="padding: 10px; color: #666; font-style: italic;">Folder is empty. Open Notes to save a file!</p>';
+        return;
+    }
+    
+    // Build an HTML table to display the files
+    let html = '<table style="width: 100%; border-collapse: collapse; text-align: left;">';
+    html += '<tr style="background: #e0e0e0; border-bottom: 2px solid #999;">
+                <th style="padding: 5px;">Filename</th>
+                <th style="padding: 5px; width: 80px;">Actions</th>
+             </tr>';
+             
+    files.forEach(file => {
+        html += `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 5px; cursor: pointer; color: #000080; text-decoration: underline;" onclick="openNotes('${file}')">
+                    📄 ${file}
+                </td>
+                <td style="padding: 5px;">
+                    <button onclick="deleteFile('${file}')" style="color: red; cursor: pointer;">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+}
+
+function openFileExplorer() {
+    // We wrap the content in a div with an ID so we can live-refresh it when files are deleted or added
+    const content = `<div id="explorer-content" style="height: 100%; background: #fff; overflow-y: auto;"></div>`;
+    openWindow('File Explorer', content);
+    
+    // Give the DOM a tiny fraction of a second to attach the window before rendering the files inside it
+    setTimeout(renderFileExplorer, 10);
+}
 
 
 
