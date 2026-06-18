@@ -116,9 +116,14 @@ async function open(docData) {
             <hr>
 
             <p>
-                Author: ${docData.authorName || "Unknown"}<br>
-                Staff ID: ${docData.authorStaffId || "Unknown"}<br>
-                Role: ${docData.authorRole || "Unknown"}
+                <strong>Author:</strong>
+                ${docData.authorStaffId || "Unknown"}
+                •
+                ${docData.authorName || "Unknown"}
+                <br>
+
+                <strong>Role:</strong>
+                ${docData.authorRole || "Unknown"}
             </p>
 
             <hr>
@@ -133,14 +138,23 @@ async function open(docData) {
 
             ${replies.map(r => `
                 <div>
-                    <b>${r.authorName || "Unknown"}</b>
+
+                    <b>
+                        ${r.staffId || "???"}
+                        •
+                        ${r.authorName || "Unknown"}
+                    </b>
+
                     <span class="meta">
-                        (${r.role || "Unknown"} • ${r.staffId || "???"})
-                    </span><br>
+                        (${r.role || "Unknown"})
+                    </span>
+
+                    <br><br>
 
                     ${r.message}
 
                     <hr>
+
                 </div>
             `).join("")}
 
@@ -156,24 +170,26 @@ async function open(docData) {
 
 window.send = async function () {
 
-    const text =
-        document.getElementById("replyText").value.trim();
+const text =
+    document.getElementById("replyText").value.trim();
 
-    if (!text || !current) return;
+if (!text || !current) return;
 
-    await addDoc(collection(db, "internalDocReplies"), {
-        documentId: current.id,
+await addDoc(collection(db, "internalDocReplies"), {
+    documentId: current.id,
 
-        authorName: staffName,
-        staffId: staffId,
-        role: staffRole,
+    staffId: staffId,
+    authorName: staffName,
+    role: staffRole,
 
-        message: text,
-        createdAt: Date.now()
-    });
+    message: text,
+    createdAt: Date.now()
+});
 
-    open(current);
+open(current);
+
 };
+
 
 document
     .getElementById("search")
