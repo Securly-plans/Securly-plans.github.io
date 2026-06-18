@@ -1,92 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Staff Login</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #0f1115;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Login</title>
 
-    .box {
-      background: #1a1d24;
-      padding: 25px;
-      border-radius: 10px;
-      width: 320px;
-    }
+<style>
+:root{
+    --bg:#0f1115;
+    --panel:#1a1d24;
+    --border:#2a2f3a;
+    --text:#ffffff;
+    --muted:#9ca3af;
+    --primary:#3b82f6;
+    --primaryHover:#2563eb;
+}
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      background: #0f1115;
-      border: 1px solid #2a2f3a;
-      color: white;
-      border-radius: 6px;
-    }
+*{
+    box-sizing:border-box;
+}
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #3b82f6;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:var(--bg);
+    font-family:Arial,sans-serif;
+    color:var(--text);
+}
 
-    button:hover {
-      background: #2563eb;
-    }
-  </style>
+.login-box{
+    width:380px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px;
+}
+
+h1{
+    margin-top:0;
+    text-align:center;
+}
+
+.subtitle{
+    text-align:center;
+    color:var(--muted);
+    margin-bottom:20px;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:12px;
+    background:#0f1115;
+    border:1px solid var(--border);
+    color:white;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+    transition:.2s;
+}
+
+.login-btn{
+    background:var(--primary);
+}
+
+.login-btn:hover{
+    background:var(--primaryHover);
+}
+
+.register-btn{
+    margin-top:10px;
+    background:#374151;
+}
+
+.register-btn:hover{
+    background:#4b5563;
+}
+
+.status{
+    margin-top:12px;
+    text-align:center;
+    color:var(--muted);
+}
+</style>
 </head>
 
 <body>
-  <div class="box">
-    <h2>Staff Login</h2>
-    <input id="name" placeholder="Full Name (Last, First)">
-    <input id="pass" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
+
+<div class="login-box">
+
+    <h1>Staff Login</h1>
+
+    <div class="subtitle">
+        Staff Portal Authentication
+    </div>
+
+    <input
+        id="name"
+        placeholder="Last Name, First Name"
+        autocomplete="username"
+    >
+
+    <input
+        id="pass"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+    >
+
+    <button class="login-btn" onclick="login()">
+        Login
+    </button>
+
+    <button
+        class="register-btn"
+        onclick="location.href='register.html'"
+    >
+        Need to register your staff account?
+    </button>
+
+    <div id="status" class="status"></div>
+
+</div>
 
 <script type="module">
-import { db, collection, getDocs } from "../js/firebase.js";
+
+import { db } from "../js/firebase.js";
+
+import {
+    collection,
+    getDocs
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 async function hash(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+
+    const buffer = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(str)
+    );
+
+    return [...new Uint8Array(buffer)]
+        .map(b => b.toString(16).padStart(2,"0"))
+        .join("");
 }
 
 window.login = async function () {
-  const name = document.getElementById("name").value;
-  const pass = document.getElementById("pass").value;
 
-  const snap = await getDocs(collection(db, "staffAccounts"));
+    const status = document.getElementById("status");
 
-  const hashed = await hash(pass);
+    const name =
+        document.getElementById("name").value.trim();
 
-  for (const d of snap.docs) {
-    const data = d.data();
+    const pass =
+        document.getElementById("pass").value;
 
-    if (data.fullName === name && data.passwordHash === hashed) {
-      localStorage.setItem("staffSession", "true");
-      localStorage.setItem("staffId", data.staffId);
-      localStorage.setItem("staffRole", data.role);
-      localStorage.setItem("staffPermissions", JSON.stringify(data.permissions));
-
-      window.location.href = "portal.html";
-      return;
+    if (!name || !pass) {
+        status.textContent = "Enter name and password.";
+        return;
     }
-  }
 
-  alert("Invalid login");
+    status.textContent = "Authenticating...";
+
+    try {
+
+        const snap =
+            await getDocs(collection(db, "staffAccounts"));
+
+        const hashed =
+            await hash(pass);
+
+        for (const docSnap of snap.docs) {
+
+            const data = docSnap.data();
+
+            if (
+                data.fullName === name &&
+                data.passwordHash === hashed
+            ) {
+
+                localStorage.setItem(
+                    "staffSession",
+                    "true"
+                );
+
+                localStorage.setItem(
+                    "staffId",
+                    data.staffId
+                );
+
+                localStorage.setItem(
+                    "staffName",
+                    data.fullName
+                );
+
+                localStorage.setItem(
+                    "staffRole",
+                    data.role
+                );
+
+                localStorage.setItem(
+                    "staffPermissions",
+                    JSON.stringify(
+                        data.permissions || {}
+                    )
+                );
+
+                window.location.href =
+                    "portal.html";
+
+                return;
+            }
+        }
+
+        status.textContent =
+            "Invalid staff credentials.";
+
+    } catch (err) {
+
+        console.error(err);
+
+        status.textContent =
+            "Login failed.";
+    }
 };
+
 </script>
 
 </body>
