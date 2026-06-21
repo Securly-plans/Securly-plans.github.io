@@ -1,14 +1,11 @@
 "use strict";
 
-/* =========================
-   IMPORT CLOUD STORAGE
-========================= */
-
 import {
     loadDrive,
-    createFile as cloudCreateFile,
-    saveFile as cloudSaveFile,
-    deleteFile as cloudDeleteFile
+    createFile,
+    saveFile,
+    deleteFile,
+    ensureUser
 } from "./cloudstorage.js";
 
 /* =========================
@@ -31,6 +28,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
+
+    await ensureUser();
     await loadSystem();
 });
 
@@ -46,7 +45,7 @@ function initStartMenu() {
 
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     });
 
     document.addEventListener("click", () => {
@@ -75,7 +74,7 @@ function initClock() {
 }
 
 /* =========================
-   CLOUD LOAD
+   LOAD CLOUD DRIVE
 ========================= */
 
 async function loadSystem() {
@@ -84,13 +83,14 @@ async function loadSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM (DRAG + RESIZE FIXED)
+   WINDOW SYSTEM (STABLE DRAG + RESIZE)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
 
     if (dragState) {
         const win = dragState.win;
+
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
@@ -112,7 +112,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   WINDOW CORE
+   CORE WINDOW SYSTEM
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -179,11 +179,11 @@ window.openWindow = function (title, contentHTML) {
 };
 
 /* =========================
-   FILE EXPLORER (NO RECURSION EVER)
+   FILE EXPLORER (SAFE)
 ========================= */
 
 function renderFilesApp() {
-    const files = fileSystem.files;
+    const files = fileSystem.files || {};
 
     return `
         <div style="padding:6px;">
@@ -195,6 +195,7 @@ function renderFilesApp() {
             ${Object.keys(files).map(id => `
                 <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ddd;">
                     <span>${files[id].name}</span>
+
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="removeFile('${id}')">Delete</button>
@@ -205,56 +206,83 @@ function renderFilesApp() {
     `;
 }
 
-/* SAFE SINGLE ENTRY POINT */
 window.openFileExplorer = function () {
     openWindow("Cloud Files", renderFilesApp());
 };
 
 /* =========================
-   FILE ACTIONS (CLEAN)
+   FILE OPEN (TEXT / IMAGE / VIDEO)
 ========================= */
-
-window.createNewFile = async function () {
-    await cloudCreateFile("New File", "");
-    await loadSystem();
-    refreshWindows();
-};
 
 window.openFile = function (id) {
     const file = fileSystem.files?.[id];
     if (!file) return;
 
-    openWindow(
-        file.name,
-        `
-        <div style="display:flex;flex-direction:column;height:100%;">
-            <textarea id="file_${id}" style="flex:1;width:100%;">${file.content || ""}</textarea>
-            <button onclick="saveOpenedFile('${id}')">Save</button>
-        </div>
-        `
-    );
+    let content = "";
+
+    if (file.type === "image") {
+        content = `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                <img src="${file.content}" style="max-width:100%;max-height:80vh;" />
+                <div>${file.name}</div>
+            </div>
+        `;
+    }
+
+    else if (file.type === "video") {
+        content = `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                <video controls style="max-width:100%;max-height:80vh;">
+                    <source src="${file.content}" />
+                </video>
+                <div>${file.name}</div>
+            </div>
+        `;
+    }
+
+    else {
+        content = `
+            <div style="display:flex;flex-direction:column;height:100%;">
+                <textarea id="file_${id}" style="flex:1;width:100%;">${file.content || ""}</textarea>
+                <button onclick="saveOpenedFile('${id}')">Save</button>
+            </div>
+        `;
+    }
+
+    openWindow(file.name, content);
+};
+
+/* =========================
+   FILE ACTIONS (CLOUD SAFE)
+========================= */
+
+window.createNewFile = async function () {
+    await createFile("New File", "", "text");
+    await loadSystem();
+    refreshWindows();
 };
 
 window.saveOpenedFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
-    await cloudSaveFile(id, {
+    await saveFile(id, {
         name: fileSystem.files[id].name,
-        content: el.value
+        content: el.value,
+        type: "text"
     });
 
     await loadSystem();
 };
 
 window.removeFile = async function (id) {
-    await cloudDeleteFile(id);
+    await deleteFile(id);
     await loadSystem();
     refreshWindows();
 };
 
 /* =========================
-   UPLOAD
+   UPLOAD (IMAGE + VIDEO SUPPORT)
 ========================= */
 
 window.uploadFile = function () {
@@ -268,19 +296,26 @@ window.uploadFile = function () {
         const reader = new FileReader();
 
         reader.onload = async () => {
-            await cloudCreateFile(file.name, reader.result);
+
+            let type = "text";
+
+            if (file.type.startsWith("image/")) type = "image";
+            if (file.type.startsWith("video/")) type = "video";
+
+            await createFile(file.name, reader.result, type);
+
             await loadSystem();
             refreshWindows();
         };
 
-        reader.readAsText(file);
+        reader.readAsDataURL(file);
     };
 
     input.click();
 };
 
 /* =========================
-   UI REFRESH
+   REFRESH
 ========================= */
 
 function refreshWindows() {
@@ -288,7 +323,7 @@ function refreshWindows() {
 }
 
 /* =========================
-   LEGACY API (SAFE)
+   LEGACY API
 ========================= */
 
 function exposeLegacyAPI() {
@@ -301,7 +336,10 @@ function exposeLegacyAPI() {
         openWindow("App Store", "<p>Store placeholder</p>");
 }
 
-/* optional re-render hook */
+/* =========================
+   OPTIONAL
+========================= */
+
 function renderExplorerIfOpen() {
     // safe no-op for now
 }
