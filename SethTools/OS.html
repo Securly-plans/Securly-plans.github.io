@@ -13,6 +13,8 @@ body {
     overflow: hidden;
 }
 
+/* ================= DESKTOP ================= */
+
 #desktop {
     position: absolute;
     inset: 0;
@@ -34,6 +36,16 @@ body {
     user-select: none;
 }
 
+/* installed apps */
+#installed-apps-zone {
+    position: absolute;
+    top: 0;
+    left: 120px;
+    display: contents;
+}
+
+/* ================= WINDOWS ================= */
+
 .window {
     position: absolute;
     background: #c0c0c0;
@@ -50,6 +62,8 @@ body {
     justify-content: space-between;
     cursor: move;
 }
+
+/* ================= START MENU ================= */
 
 #start-menu {
     position: absolute;
@@ -77,6 +91,8 @@ body {
     color: white;
 }
 
+/* ================= TASKBAR ================= */
+
 #taskbar {
     position: absolute;
     bottom: 0;
@@ -98,92 +114,51 @@ body {
     font-size: 12px;
     cursor: pointer;
 }
-
-#app-dock {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 200px;
-    background: rgba(192,192,192,0.9);
-    border: 2px solid #fff;
-    padding: 8px;
-}
-
-.app-item {
-    font-size: 12px;
-    padding: 4px;
-    cursor: pointer;
-}
-
-.app-item:hover {
-    background: #000080;
-    color: white;
-}
 </style>
 </head>
 
 <body>
 
-<!-- DESKTOP -->
+<!-- ================= DESKTOP ================= -->
 <main id="desktop">
+
+    <!-- BUILT-IN ICONS -->
     <div id="desktop-icons">
-
-        <div class="icon" onclick="safeOpen('notes')">📄 Notes</div>
-        <div class="icon" onclick="safeOpen('files')">📁 Files</div>
-        <div class="icon" onclick="safeOpen('store')">🛒 Store</div>
-        <div class="icon" onclick="safeOpen('system')">💻 System</div>
-        <div class="icon" onclick="safeOpen('chat')">💬 Chat</div>
-
+        <div class="icon" onclick="Applications.notes()">📄<br>Notes</div>
+        <div class="icon" onclick="Applications.files()">📁<br>Files</div>
+        <div class="icon" onclick="Applications.store()">🛒<br>Store</div>
+        <div class="icon" onclick="Applications.system()">💻<br>System</div>
+        <div class="icon" onclick="Applications.chat()">💬<br>Chat</div>
     </div>
+
+    <!-- INSTALLED APPS -->
+    <div id="installed-apps-zone"></div>
+
 </main>
 
-<!-- APP DOCK -->
-<div id="app-dock">
-    <b>Available Apps</b>
-    <div id="app-list"></div>
-</div>
-
-<!-- START MENU -->
+<!-- ================= START MENU ================= -->
 <aside id="start-menu">
-    <div class="start-menu-item" onclick="safeOpen('notes')">📄 Notes</div>
-    <div class="start-menu-item" onclick="safeOpen('files')">📁 File Explorer</div>
-    <div class="start-menu-item" onclick="safeOpen('store')">🛒 App Store</div>
-    <div class="start-menu-item" onclick="safeOpen('system')">💻 System</div>
-    <div class="start-menu-item" onclick="safeOpen('chat')">💬 Chat</div>
+    <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
+    <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
+    <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
+    <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
+    <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
 </aside>
 
-<!-- WINDOWS -->
+<!-- ================= WINDOWS ================= -->
 <div id="windows-container"></div>
 
-<!-- TASKBAR -->
+<!-- ================= TASKBAR ================= -->
 <footer id="taskbar">
     <button id="start-btn">Start</button>
 </footer>
 
-<!-- OS SCRIPT -->
+<!-- ================= OS SCRIPT ================= -->
 <script src="os.js"></script>
 
 <script>
 // =============================
-// SAFE WRAPPER (FIXES CRASHES)
-// =============================
-
-function safeOpen(appName) {
-
-    if (!window.Applications) {
-        console.warn("Applications not loaded yet");
-        return;
-    }
-
-    if (typeof window.Applications[appName] === "function") {
-        window.Applications[appName]();
-    } else {
-        console.warn("App not found:", appName);
-    }
-}
-
-// =============================
-// START MENU
+// START MENU CONTROL
 // =============================
 
 const startBtn = document.getElementById("start-btn");
@@ -194,65 +169,37 @@ startBtn.addEventListener("click", (e) => {
     startMenu.classList.toggle("show");
 });
 
-document.addEventListener("click", () => {
-    startMenu.classList.remove("show");
+document.addEventListener("click", (e) => {
+    if (!startMenu.contains(e.target)) {
+        startMenu.classList.remove("show");
+    }
 });
 
 // =============================
-// APP LIST RENDER (SAFE)
+// SAFETY WRAPPER (optional fallback)
 // =============================
 
-function renderAppList() {
-
-    const list = document.getElementById("app-list");
-
-    if (!list || !window.appCatalog) {
-        console.warn("App catalog not ready yet");
-        return;
+function safeOpen(app) {
+    if (window.Applications && window.Applications[app]) {
+        window.Applications[app]();
     }
-
-    list.innerHTML = "";
-
-    window.appCatalog.forEach(app => {
-
-        const div = document.createElement("div");
-        div.className = "app-item";
-        div.textContent = app.icon + " " + app.name;
-
-        div.onclick = () => {
-
-            if (typeof window.openWindow === "function") {
-                window.openWindow(
-                    app.name,
-                    typeof app.content === "function"
-                        ? app.content()
-                        : app.content
-                );
-            } else {
-                console.warn("openWindow not defined");
-            }
-        };
-
-        list.appendChild(div);
-    });
 }
 
-// Retry render until OS loads
-function waitForOS() {
-    let tries = 0;
+// =============================
+// BOOT HANDLER
+// =============================
 
-    const interval = setInterval(() => {
-        tries++;
+window.addEventListener("DOMContentLoaded", () => {
 
-        if (window.appCatalog || tries > 20) {
-            clearInterval(interval);
-            renderAppList();
+    // wait for os.js to mount desktop apps
+    setTimeout(() => {
+
+        if (typeof renderDesktopApps === "function") {
+            renderDesktopApps();
         }
-    }, 200);
-}
 
-window.addEventListener("DOMContentLoaded", waitForOS);
-
+    }, 100);
+});
 </script>
 
 </body>
