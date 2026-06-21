@@ -438,3 +438,23 @@ window.addEventListener("DOMContentLoaded", () => {
 
     console.log("Emerald OS upgraded loaded");
 });
+
+// ==========================================
+// GLOBAL BRIDGE (FIX HTML ONCLICK ERRORS)
+// ==========================================
+
+// File system functions (fix OS.html + File Explorer)
+window.openFile = openFile;
+window.loadFile = loadFile;
+window.saveFile = saveFile;
+window.createFile = createFile;
+
+// App system (used by OS.html and start menu)
+window.Applications = Applications;
+
+// Direct app shortcuts (used in OS.html + start menu)
+window.openAppStore = Applications.store;
+window.openFileExplorer = Applications.files;
+window.openNotes = Applications.notes;
+window.openChat = Applications.chat;
+window.openSystem = Applications.system;
