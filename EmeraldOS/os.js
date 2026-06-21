@@ -1,24 +1,66 @@
 "use strict";
 
+/* =========================
+   IMPORT CLOUD STORAGE
+========================= */
 import {
     loadDrive,
     createFile,
-    saveFile,
-    deleteFile,
-    ensureUser
+    saveFile as cloudSaveFile,
+    deleteFile as cloudDeleteFile
 } from "./cloudstorage.js";
 
 /* =========================
-   STATE
+   SYSTEM STATE
 ========================= */
 
 let zIndexCounter = 100;
+
 let dragState = null;
 let resizeState = null;
 
-let fileSystem = {
-    files: {}
+let fileSystem = { files: {} };
+
+const systemState = {
+    brightness: Number(localStorage.getItem("brightness")) || 100,
+    volume: Number(localStorage.getItem("volume")) || 80,
+    username: localStorage.getItem("username") || "Guest"
 };
+
+/* =========================
+   AUDIO SYSTEM
+========================= */
+
+let audioContext = null;
+let masterGain = null;
+
+function initAudioSystem() {
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = systemState.volume / 100;
+        masterGain.connect(audioContext.destination);
+    } catch (e) {
+        console.warn("Audio system not available:", e);
+    }
+}
+
+function setVolume(val) {
+    systemState.volume = Number(val);
+    localStorage.setItem("volume", systemState.volume);
+
+    if (masterGain) {
+        masterGain.gain.value = systemState.volume / 100;
+    }
+}
+
+/* =========================
+   BRIGHTNESS SYSTEM
+========================= */
+
+function applyBrightness() {
+    document.body.style.filter = `brightness(${systemState.brightness}%)`;
+}
 
 /* =========================
    BOOT
@@ -27,9 +69,11 @@ let fileSystem = {
 window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
-    exposeLegacyAPI();
 
-    await ensureUser();
+    applyBrightness();
+    initAudioSystem();
+
+    exposeLegacyAPI();
     await loadSystem();
 });
 
@@ -74,23 +118,20 @@ function initClock() {
 }
 
 /* =========================
-   LOAD CLOUD DRIVE
+   CLOUD LOAD
 ========================= */
 
 async function loadSystem() {
     fileSystem.files = await loadDrive();
-    renderExplorerIfOpen();
 }
 
 /* =========================
-   WINDOW SYSTEM (STABLE DRAG + RESIZE)
+   WINDOW SYSTEM (FIXED DRAG + RESIZE)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
-
     if (dragState) {
         const win = dragState.win;
-
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
@@ -151,7 +192,6 @@ window.openWindow = function (title, contentHTML) {
 
     closeBtn.onclick = () => win.remove();
 
-    /* DRAG */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
@@ -160,7 +200,6 @@ window.openWindow = function (title, contentHTML) {
         };
     });
 
-    /* RESIZE */
     resizeHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
 
@@ -179,26 +218,29 @@ window.openWindow = function (title, contentHTML) {
 };
 
 /* =========================
-   FILE EXPLORER (SAFE)
+   FILE EXPLORER
 ========================= */
 
-function renderFilesApp() {
-    const files = fileSystem.files || {};
+window.openFileExplorer = function () {
+    openWindow("Cloud Files", renderFiles());
+};
+
+function renderFiles() {
+    const files = fileSystem.files;
 
     return `
         <div style="padding:6px;">
-            <button onclick="createNewFile()">New File</button>
-            <button onclick="uploadFile()">Upload File</button>
+            <button onclick="createFile()">New File</button>
+            <button onclick="uploadFile()">Upload</button>
 
             <hr>
 
             ${Object.keys(files).map(id => `
-                <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ddd;">
+                <div style="display:flex;justify-content:space-between;padding:4px;">
                     <span>${files[id].name}</span>
-
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="removeFile('${id}')">Delete</button>
+                        <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
@@ -206,121 +248,91 @@ function renderFilesApp() {
     `;
 }
 
-window.openFileExplorer = function () {
-    openWindow("Cloud Files", renderFilesApp());
-};
-
 /* =========================
-   FILE OPEN (TEXT / IMAGE / VIDEO)
+   FILE ACTIONS
 ========================= */
+
+window.createFile = async function () {
+    await createFile("New File", "");
+    fileSystem.files = await loadDrive();
+    openFileExplorer();
+};
 
 window.openFile = function (id) {
-    const file = fileSystem.files?.[id];
+    const file = fileSystem.files[id];
     if (!file) return;
 
-    let content = "";
-
-    if (file.type === "image") {
-        content = `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-                <img src="${file.content}" style="max-width:100%;max-height:80vh;" />
-                <div>${file.name}</div>
-            </div>
-        `;
-    }
-
-    else if (file.type === "video") {
-        content = `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-                <video controls style="max-width:100%;max-height:80vh;">
-                    <source src="${file.content}" />
-                </video>
-                <div>${file.name}</div>
-            </div>
-        `;
-    }
-
-    else {
-        content = `
-            <div style="display:flex;flex-direction:column;height:100%;">
-                <textarea id="file_${id}" style="flex:1;width:100%;">${file.content || ""}</textarea>
-                <button onclick="saveOpenedFile('${id}')">Save</button>
-            </div>
-        `;
-    }
-
-    openWindow(file.name, content);
+    openWindow(file.name, `
+        <textarea id="file_${id}" style="width:100%;height:80%;">${file.content || ""}</textarea>
+        <button onclick="saveFile('${id}')">Save</button>
+    `);
 };
 
-/* =========================
-   FILE ACTIONS (CLOUD SAFE)
-========================= */
-
-window.createNewFile = async function () {
-    await createFile("New File", "", "text");
-    await loadSystem();
-    refreshWindows();
-};
-
-window.saveOpenedFile = async function (id) {
+window.saveFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
-    await saveFile(id, {
+    await cloudSaveFile(id, {
         name: fileSystem.files[id].name,
-        content: el.value,
-        type: "text"
+        content: el.value
     });
 
-    await loadSystem();
+    fileSystem.files = await loadDrive();
 };
 
-window.removeFile = async function (id) {
-    await deleteFile(id);
-    await loadSystem();
-    refreshWindows();
-};
-
-/* =========================
-   UPLOAD (IMAGE + VIDEO SUPPORT)
-========================= */
-
-window.uploadFile = function () {
-    const input = document.createElement("input");
-    input.type = "file";
-
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = async () => {
-
-            let type = "text";
-
-            if (file.type.startsWith("image/")) type = "image";
-            if (file.type.startsWith("video/")) type = "video";
-
-            await createFile(file.name, reader.result, type);
-
-            await loadSystem();
-            refreshWindows();
-        };
-
-        reader.readAsDataURL(file);
-    };
-
-    input.click();
+window.deleteFile = async function (id) {
+    await cloudDeleteFile(id);
+    fileSystem.files = await loadDrive();
+    openFileExplorer();
 };
 
 /* =========================
-   REFRESH
+   SETTINGS / USER SYSTEM
 ========================= */
 
-function refreshWindows() {
-    document.querySelectorAll(".window").forEach(w => w.remove());
-}
+window.openSystemSettings = function () {
+    openWindow("System Settings", `
+        <div style="padding:10px;">
+            <h3>Brightness</h3>
+            <input type="range" min="10" max="150"
+                value="${systemState.brightness}"
+                oninput="setBrightness(this.value)">
+
+            <h3>Volume</h3>
+            <input type="range" min="0" max="100"
+                value="${systemState.volume}"
+                oninput="setVolume(this.value)">
+
+            <h3>User</h3>
+            <button onclick="openUserInfo()">User Info</button>
+        </div>
+    `);
+};
+
+window.setBrightness = function (val) {
+    systemState.brightness = Number(val);
+    localStorage.setItem("brightness", val);
+    applyBrightness();
+};
+
+window.setVolume = setVolume;
+
+window.openUserInfo = function () {
+    openWindow("User Info", `
+        <div style="padding:10px;">
+            <p><b>User:</b> ${systemState.username}</p>
+            <p><b>Brightness:</b> ${systemState.brightness}%</p>
+            <p><b>Volume:</b> ${systemState.volume}%</p>
+
+            <button onclick="logout()">Logout</button>
+        </div>
+    `);
+};
+
+window.logout = function () {
+    localStorage.clear();
+    window.location.href = "index.html";
+};
 
 /* =========================
    LEGACY API
@@ -328,18 +340,6 @@ function refreshWindows() {
 
 function exposeLegacyAPI() {
     window.launchApp = openWindow;
-
-    window.openNotes = () =>
-        openWindow("Notes", "<p>Notes placeholder</p>");
-
-    window.openAppStore = () =>
-        openWindow("App Store", "<p>Store placeholder</p>");
-}
-
-/* =========================
-   OPTIONAL
-========================= */
-
-function renderExplorerIfOpen() {
-    // safe no-op for now
+    window.openNotes = () => openWindow("Notes", "<p>Notes</p>");
+    window.openAppStore = () => openWindow("Store", "<p>Store</p>");
 }
