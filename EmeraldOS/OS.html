@@ -1,236 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EmeraldOS</title>
-
-<style>
-body {
-    margin: 0;
-    font-family: "MS Sans Serif", Arial, sans-serif;
-    background: #008080;
-    overflow: hidden;
-}
-
-/* ================= LOGIN SCREEN ================= */
-
-#login-screen {
-    position: absolute;
-    inset: 0;
-    background: #008080;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 99999;
-}
-
-.login-box {
-    width: 300px;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    padding: 20px;
-    text-align: center;
-}
-
-.login-box input {
-    width: 90%;
-    padding: 6px;
-    margin: 5px 0;
-    border: 2px inset #fff;
-}
-
-.login-box button {
-    margin-top: 10px;
-    padding: 5px 15px;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    cursor: pointer;
-}
-
-/* ================= EXISTING OS ================= */
-
-#desktop {
-    display: none;
-    position: absolute;
-    inset: 0;
-}
-
-#windows-container {
-    display: none;
-}
-
-#taskbar {
-    display: none;
-}
-
-/* Desktop icons */
-#desktop-icons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 15px;
-}
-
-.icon {
-    width: 80px;
-    text-align: center;
-    font-size: 12px;
-    cursor: pointer;
-    color: white;
-    user-select: none;
-}
-
-/* installed apps */
-#installed-apps-zone {
-    position: absolute;
-    top: 0;
-    left: 120px;
-    display: contents;
-}
-
-/* windows */
-.window {
-    position: absolute;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-}
-
-.title-bar {
-    background: #000080;
-    color: white;
-    padding: 3px;
-    font-size: 12px;
-    display: flex;
-    justify-content: space-between;
-    cursor: move;
-}
-
-/* start menu */
-#start-menu {
-    position: absolute;
-    bottom: 35px;
-    left: 0;
-    width: 200px;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-    display: none;
-}
-
-#start-menu.show {
-    display: block;
-}
-
-.start-menu-item {
-    padding: 6px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.start-menu-item:hover {
-    background: #000080;
-    color: white;
-}
-
-/* taskbar */
-#taskbar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 35px;
-    background: #c0c0c0;
-    border-top: 2px solid #fff;
-    display: flex;
-    align-items: center;
-    padding: 2px;
-}
-
-#start-btn {
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-    font-weight: bold;
-    font-size: 12px;
-    cursor: pointer;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emerald OS</title>
+    <link rel="stylesheet" href="os.css">
 </head>
-
 <body>
+    <div id="desktop">
+        <div class="icon" onclick="openNotes()">📄<br>Notes</div>
+        <div class="icon" onclick="openFileExplorer()">📁<br>Files</div>
+        <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
+        <div class="icon" onclick="openWindow('System Info', '<h2>Emerald OS v1.0</h2><p>Built with 100% pure HTML, CSS, and JS.</p>')">💻<br>System</div>
+        <div class="icon" onclick="openWindow('Chat', '<iframe src=\'chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬<br>Chat</div>
 
-<!-- ================= LOGIN SCREEN ================= -->
-<div id="login-screen">
-    <div class="login-box">
-        <h3>Emerald OS Login</h3>
-        <input id="login-user" placeholder="Username">
-        <input id="login-pass" type="password" placeholder="Password">
-        <button onclick="doLogin()">Login</button>
-    </div>
-</div>
-
-<!-- ================= DESKTOP ================= -->
-<main id="desktop">
-
-    <div id="desktop-icons">
-        <div class="icon" onclick="Applications.notes()">📄<br>Notes</div>
-        <div class="icon" onclick="Applications.files()">📁<br>Files</div>
-        <div class="icon" onclick="Applications.store()">🛒<br>Store</div>
-        <div class="icon" onclick="Applications.system()">💻<br>System</div>
-        <div class="icon" onclick="Applications.chat()">💬<br>Chat</div>
+        <div id="installed-apps-zone" style="display: contents;"></div>
     </div>
 
-    <div id="installed-apps-zone"></div>
+    <div id="start-menu">
+        <div style="background: #000080; color: white; writing-mode: vertical-rl; transform: rotate(180deg); padding: 5px; font-weight: bold;">
+            Emerald OS
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; padding: 2px;">
+            <div class="start-menu-item" onclick="openAppStore()">🛒 App Store</div>
+            <div class="start-menu-item" onclick="openFileExplorer()">📁 File Explorer</div>
+            <div class="start-menu-item" onclick="openNotes()">📄 Notes</div>
+            <div class="start-menu-item" onclick="openWindow('Chat', '<iframe src=\'https://securly-plans.github.io/chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬 Chat</div>
+            <div class="start-menu-item" onclick="openWindow('System Info', '<h2>Vanilla OS v1.0</h2>')">💻 System</div>
+            <div class="start-menu-divider"></div>
+            <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
+        </div>
+    </div>
 
-</main>
+    <div id="taskbar">
+        <button id="start-btn">Start</button>
+        <div id="taskbar-apps" style="flex: 1; display: flex; gap: 5px; margin: 0 15px; overflow-x: auto;"></div>
+        <div id="clock">00:00 PM</div>
+    </div>
 
-<!-- START MENU -->
-<aside id="start-menu">
-    <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
-    <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
-    <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
-    <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
-    <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
-</aside>
+    <div id="windows-container"></div>
 
-<!-- WINDOWS -->
-<div id="windows-container"></div>
-
-<!-- TASKBAR -->
-<footer id="taskbar">
-    <button id="start-btn">Start</button>
-</footer>
-
-<script src="os.js"></script>
-
-<script>
-function doLogin() {
-    const user = document.getElementById("login-user").value;
-
-    if (!user) return alert("Enter username");
-
-    localStorage.setItem("loggedIn", "true");
-    localStorage.setItem("osUsername", user);
-
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("desktop").style.display = "block";
-    document.getElementById("windows-container").style.display = "block";
-    document.getElementById("taskbar").style.display = "flex";
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem("loggedIn") === "true") {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("desktop").style.display = "block";
-        document.getElementById("windows-container").style.display = "block";
-        document.getElementById("taskbar").style.display = "flex";
-    }
-});
-</script>
-
+    <script src="os.js"></script>
 </body>
 </html>
