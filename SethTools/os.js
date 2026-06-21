@@ -1,5 +1,9 @@
+// ==========================================
+// EMERALD OS - FULL MERGED CORE
+// ==========================================
+
 // ================================
-// EMERALD FILE SYSTEM
+// FILE SYSTEM (os-storage.js)
 // ================================
 
 const FS_KEY = "emerald_fs";
@@ -35,6 +39,7 @@ const Session = {
 // ================================
 
 const Clock = {
+
     start() {
         this.update();
         setInterval(() => this.update(), 1000);
@@ -66,8 +71,8 @@ const WindowManager = {
 
         win.style.width = w + "px";
         win.style.height = h + "px";
-        win.style.top = (50 + Math.random() * 100) + "px";
-        win.style.left = (50 + Math.random() * 100) + "px";
+        win.style.top = (50 + Math.random() * 120) + "px";
+        win.style.left = (50 + Math.random() * 120) + "px";
         win.style.zIndex = ++this.highestZ;
 
         win.innerHTML = `
@@ -80,10 +85,8 @@ const WindowManager = {
 
         document.getElementById("windows-container").appendChild(win);
 
-        // close
         win.querySelector(".close").onclick = () => win.remove();
 
-        // drag
         this.makeDraggable(win);
 
         return win;
@@ -119,10 +122,14 @@ const WindowManager = {
 };
 
 // ================================
-// FILE SYSTEM HELPERS
+// GLOBAL FILE STATE
 // ================================
 
 let currentFileId = null;
+
+// ================================
+// FILE HELPERS
+// ================================
 
 function createFile(type = "note") {
 
@@ -158,33 +165,31 @@ const Applications = {
 
         WindowManager.create(
             "Notes",
-
             `
             <div style="display:flex; height:100%;">
 
-                <!-- LIST -->
-                <div style="width:35%; border-right:1px solid #333; padding:5px;">
+                <!-- SIDEBAR -->
+                <div style="width:35%; border-right:1px solid #333; padding:6px; overflow:auto;">
 
                     <button onclick="createFile('note')">+ New Note</button>
 
-                    <div>
-                        ${notes.map(n => `
-                            <div onclick="loadFile('${n.id}')">
-                                📄 ${n.name}
-                            </div>
-                        `).join("")}
-                    </div>
+                    ${notes.map(n => `
+                        <div style="padding:5px; cursor:pointer;"
+                            onclick="loadFile('${n.id}')">
+                            📄 ${n.name}
+                        </div>
+                    `).join("")}
 
                 </div>
 
                 <!-- EDITOR -->
-                <div style="flex:1; padding:10px; display:flex; flex-direction:column;">
+                <div style="flex:1; display:flex; flex-direction:column; padding:10px;">
 
                     <input id="file-name" placeholder="File name"
-                        style="margin-bottom:10px;">
+                        style="margin-bottom:10px; padding:5px;">
 
                     <textarea id="file-content"
-                        style="flex:1;"></textarea>
+                        style="flex:1; resize:none; padding:6px;"></textarea>
 
                     <button onclick="saveFile()">Save</button>
 
@@ -192,11 +197,13 @@ const Applications = {
 
             </div>
             `,
-            700,
+            750,
             450
         );
 
-        if (openId) setTimeout(() => loadFile(openId), 100);
+        if (openId) {
+            setTimeout(() => loadFile(openId), 80);
+        }
     },
 
     // ================= FILE EXPLORER =================
@@ -207,15 +214,18 @@ const Applications = {
 
         WindowManager.create(
             "File Explorer",
-
             `
             <div style="padding:10px;">
 
-                ${fs.map(f => `
-                    <div onclick="openFile('${f.id}')">
-                        📄 ${f.name} (${f.type})
-                    </div>
-                `).join("")}
+                ${fs.length === 0
+                    ? "<p>No files found</p>"
+                    : fs.map(f => `
+                        <div style="cursor:pointer; padding:4px;"
+                            onclick="openFile('${f.id}')">
+                            📄 ${f.name} (${f.type})
+                        </div>
+                    `).join("")
+                }
 
             </div>
             `,
@@ -224,16 +234,23 @@ const Applications = {
         );
     },
 
-    // ================= STORE =================
+    // ================= APP STORE =================
 
     store() {
 
         WindowManager.create(
             "App Store",
-
             `
             <h3>Emerald Store</h3>
-            <p>No apps installed yet.</p>
+            <p>Apps coming soon...</p>
+
+            <ul>
+                <li>Notes</li>
+                <li>Files</li>
+                <li>Calculator</li>
+                <li>Paint</li>
+                <li>Browser</li>
+            </ul>
             `,
             400,
             300
@@ -245,19 +262,19 @@ const Applications = {
     system() {
 
         WindowManager.create(
-            "System",
-
+            "System Info",
             `
             <h3>EmeraldOS</h3>
             <p>Version: 2.0</p>
-            <p>User: ${localStorage.getItem("username") || "Guest"}</p>
+            <p>User: ${localStorage.getItem("osUsername") || "Guest"}</p>
             `
         );
     },
 
-    // ================= CHAT (stub) =================
+    // ================= CHAT =================
 
     chat() {
+
         WindowManager.create(
             "Chat",
             `<p>Chat system coming soon...</p>`
@@ -266,7 +283,7 @@ const Applications = {
 };
 
 // ================================
-// FILE FUNCTIONS
+// FILE OPERATIONS
 // ================================
 
 function loadFile(id) {
@@ -278,8 +295,11 @@ function loadFile(id) {
 
     currentFileId = id;
 
-    document.getElementById("file-name").value = file.name;
-    document.getElementById("file-content").value = file.content;
+    const name = document.getElementById("file-name");
+    const content = document.getElementById("file-content");
+
+    if (name) name.value = file.name;
+    if (content) content.value = file.content;
 }
 
 function saveFile() {
@@ -312,7 +332,24 @@ function openFile(id) {
 }
 
 // ================================
-// STARTUP
+// DESKTOP SHORTCUTS
+// ================================
+
+function addDesktopIcon(icon, label, action) {
+
+    const desktop = document.getElementById("desktop-icons");
+    if (!desktop) return;
+
+    const el = document.createElement("div");
+    el.className = "icon";
+    el.innerHTML = `${icon}<br>${label}`;
+    el.onclick = action;
+
+    desktop.appendChild(el);
+}
+
+// ================================
+// BOOT
 // ================================
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -320,6 +357,11 @@ window.addEventListener("DOMContentLoaded", () => {
     Session.check();
     Clock.start();
 
-    console.log("EmeraldOS booted");
+    addDesktopIcon("📁", "Files", () => Applications.files());
+    addDesktopIcon("📝", "Notes", () => Applications.notes());
+    addDesktopIcon("🛒", "Store", () => Applications.store());
+    addDesktopIcon("💻", "System", () => Applications.system());
+    addDesktopIcon("💬", "Chat", () => Applications.chat());
 
+    console.log("Emerald OS fully loaded");
 });
