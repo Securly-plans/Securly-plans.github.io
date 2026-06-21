@@ -18,10 +18,6 @@ body {
     overflow: hidden;
 }
 
-/* =========================
-   DESKTOP
-========================= */
-
 #desktop {
     position: absolute;
     inset: 0;
@@ -35,16 +31,12 @@ body {
 }
 
 .icon {
-    width: 70px;
+    width: 80px;
     text-align: center;
     font-size: 12px;
     cursor: pointer;
     color: white;
     user-select: none;
-}
-
-.icon:hover {
-    background: rgba(0,0,128,0.25);
 }
 
 /* =========================
@@ -55,8 +47,7 @@ body {
     position: absolute;
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #ffffff #404040 #404040 #ffffff;
-    box-shadow: 2px 2px 0 black;
+    border-color: #fff #404040 #404040 #fff;
 }
 
 .title-bar {
@@ -69,64 +60,6 @@ body {
     cursor: move;
 }
 
-.title-bar button {
-    width: 18px;
-    height: 18px;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #ffffff #404040 #404040 #ffffff;
-    font-size: 10px;
-    cursor: pointer;
-}
-
-.window-content {
-    padding: 8px;
-    background: #c0c0c0;
-    color: black;
-    height: calc(100% - 28px);
-    overflow: auto;
-}
-
-/* =========================
-   BUTTONS / INPUTS
-========================= */
-
-button {
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #ffffff #404040 #404040 #ffffff;
-    font-size: 12px;
-    padding: 3px 8px;
-    cursor: pointer;
-}
-
-button:active {
-    border-color: #404040 #ffffff #ffffff #404040;
-}
-
-input, textarea {
-    background: white;
-    border: 2px solid;
-    border-color: #404040 #ffffff #ffffff #404040;
-    font-family: inherit;
-    font-size: 12px;
-}
-
-/* =========================
-   FILE ITEMS
-========================= */
-
-.file-item {
-    padding: 4px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.file-item:hover {
-    background: #000080;
-    color: white;
-}
-
 /* =========================
    START MENU
 ========================= */
@@ -135,10 +68,10 @@ input, textarea {
     position: absolute;
     bottom: 35px;
     left: 0;
-    width: 180px;
+    width: 200px;
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #ffffff #404040 #404040 #ffffff;
+    border-color: #fff #404040 #404040 #fff;
     display: none;
 }
 
@@ -168,7 +101,7 @@ input, textarea {
     right: 0;
     height: 35px;
     background: #c0c0c0;
-    border-top: 2px solid #ffffff;
+    border-top: 2px solid #fff;
     display: flex;
     align-items: center;
     padding: 2px;
@@ -177,25 +110,38 @@ input, textarea {
 #start-btn {
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #ffffff #404040 #404040 #ffffff;
+    border-color: #fff #404040 #404040 #fff;
     font-weight: bold;
     font-size: 12px;
+    cursor: pointer;
 }
 
 /* =========================
-   SCROLLBAR
+   APP DASHBOARD (NEW)
 ========================= */
 
-::-webkit-scrollbar {
-    width: 6px;
+#app-dock {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 200px;
+    background: rgba(192,192,192,0.9);
+    border: 2px solid #fff;
+    padding: 8px;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #888;
+.app-item {
+    font-size: 12px;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.app-item:hover {
+    background: #000080;
+    color: white;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -216,6 +162,13 @@ input, textarea {
 
 </main>
 
+<!-- ================= APP DASHBOARD (NEW) ================= -->
+
+<div id="app-dock">
+    <b>Available Apps</b>
+    <div id="app-list"></div>
+</div>
+
 <!-- ================= START MENU ================= -->
 
 <aside id="start-menu">
@@ -224,6 +177,7 @@ input, textarea {
     <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
     <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
     <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
+    <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
 
 </aside>
 
@@ -242,6 +196,60 @@ input, textarea {
 <!-- ================= SCRIPTS ================= -->
 
 <script src="os.js"></script>
+
+<script>
+// ================================
+// START BUTTON LOGIC (FIXED)
+// ================================
+
+const startBtn = document.getElementById("start-btn");
+const startMenu = document.getElementById("start-menu");
+
+startBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    startMenu.classList.toggle("show");
+});
+
+document.addEventListener("click", () => {
+    startMenu.classList.remove("show");
+});
+
+// ================================
+// APP REGISTRY DISPLAY (FROM OS.JS)
+// ================================
+
+function renderAppList() {
+
+    const list = document.getElementById("app-list");
+    if (!list || !window.appCatalog) return;
+
+    list.innerHTML = "";
+
+    window.appCatalog.forEach(app => {
+
+        const div = document.createElement("div");
+        div.className = "app-item";
+        div.textContent = app.icon + " " + app.name;
+
+        div.onclick = () => {
+
+            openWindow(
+                app.name,
+                typeof app.content === "function"
+                    ? app.content()
+                    : app.content
+            );
+        };
+
+        list.appendChild(div);
+    });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(renderAppList, 200);
+});
+</script>
 
 </body>
 </html>
