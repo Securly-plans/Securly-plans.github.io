@@ -73,13 +73,22 @@ import {
     updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* =========================
+   HASH PASSWORD
+========================= */
+
 async function sha256(text) {
     const enc = new TextEncoder().encode(text);
     const hash = await crypto.subtle.digest("SHA-256", enc);
+
     return [...new Uint8Array(hash)]
         .map(b => b.toString(16).padStart(2, "0"))
         .join("");
 }
+
+/* =========================
+   LOGIN
+========================= */
 
 async function login() {
     const username = document.getElementById("user").value.trim();
@@ -110,13 +119,28 @@ async function login() {
         lastLogin: Date.now()
     });
 
-    localStorage.setItem("os_session", username);
+    /* =========================
+       FIX: REQUIRED FOR CLOUD OS
+    ========================= */
+
+    localStorage.setItem("username", username);      // ✅ REQUIRED
+    localStorage.setItem("os_session", username);     // optional legacy support
+    localStorage.setItem("loggedIn", "true");         // optional stability flag
+
     window.location.href = "OS.html";
 }
+
+/* =========================
+   REGISTER REDIRECT
+========================= */
 
 function goRegister() {
     window.location.href = "register.html";
 }
+
+/* =========================
+   INIT
+========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginBtn").addEventListener("click", login);
