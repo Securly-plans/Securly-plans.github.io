@@ -1,5 +1,5 @@
 // ==========================================
-// EMERALD OS - UPGRADED CORE SYSTEM
+// EMERALD OS - DROP-IN FIXED CORE
 // ==========================================
 
 // ================================
@@ -17,11 +17,10 @@ function saveFS(fs) {
 }
 
 // ================================
-// SESSION (FIXED)
+// SESSION
 // ================================
 
 const Session = {
-
     check() {
         if (localStorage.getItem("loggedIn") !== "true") {
             location.href = "../index.html";
@@ -57,11 +56,10 @@ const Clock = {
 };
 
 // ================================
-// WINDOW MANAGER (UNCHANGED CORE)
+// WINDOW MANAGER
 // ================================
 
 const WindowManager = {
-
     highestZ: 100,
 
     create(title, content, w = 500, h = 350) {
@@ -83,7 +81,7 @@ const WindowManager = {
             <div class="window-content">${content}</div>
         `;
 
-        document.getElementById("windows-container").appendChild(win);
+        document.getElementById("windows-container")?.appendChild(win);
 
         win.querySelector(".close").onclick = () => win.remove();
 
@@ -93,7 +91,6 @@ const WindowManager = {
     },
 
     makeDraggable(win) {
-
         const bar = win.querySelector(".title-bar");
 
         let dragging = false;
@@ -108,7 +105,6 @@ const WindowManager = {
 
         document.onmousemove = (e) => {
             if (!dragging) return;
-
             win.style.left = (e.clientX - ox) + "px";
             win.style.top = (e.clientY - oy) + "px";
         };
@@ -145,7 +141,7 @@ function setupStartMenu() {
 }
 
 // ================================
-// FILE SYSTEM
+// FILE SYSTEM (NOTE APP STYLE)
 // ================================
 
 let currentFileId = null;
@@ -169,6 +165,43 @@ function createFile(type = "note") {
     Applications.notes(file.id);
 }
 
+function loadFile(id) {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === id);
+    if (!file) return;
+
+    currentFileId = id;
+
+    document.getElementById("file-name").value = file.name;
+    document.getElementById("file-content").value = file.content;
+}
+
+function saveFile() {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === currentFileId);
+    if (!file) return;
+
+    file.name = document.getElementById("file-name").value;
+    file.content = document.getElementById("file-content").value;
+    file.updated = Date.now();
+
+    saveFS(fs);
+}
+
+function openFile(id) {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === id);
+    if (!file) return;
+
+    WindowManager.create(
+        file.name,
+        `<pre style="white-space:pre-wrap;">${file.content}</pre>`
+    );
+}
+
 // ================================
 // APPLICATIONS (BUILT-IN)
 // ================================
@@ -183,21 +216,21 @@ const Applications = {
         WindowManager.create(
             "Notes",
             `
-            <div style="display:flex; height:100%;">
+            <div style="display:flex;height:100%;">
 
-                <div style="width:35%; border-right:1px solid #333; padding:6px; overflow:auto;">
+                <div style="width:35%;border-right:1px solid #333;padding:6px;overflow:auto;">
                     <button onclick="createFile('note')">+ New Note</button>
 
                     ${notes.map(n => `
-                        <div style="padding:5px; cursor:pointer;"
-                            onclick="loadFile('${n.id}')">
+                        <div style="padding:5px;cursor:pointer;"
+                             onclick="loadFile('${n.id}')">
                             📄 ${n.name}
                         </div>
                     `).join("")}
                 </div>
 
-                <div style="flex:1; display:flex; flex-direction:column; padding:10px;">
-                    <input id="file-name" style="margin-bottom:10px; padding:5px;">
+                <div style="flex:1;display:flex;flex-direction:column;padding:10px;">
+                    <input id="file-name" style="margin-bottom:10px;padding:5px;">
                     <textarea id="file-content" style="flex:1;"></textarea>
                     <button onclick="saveFile()">Save</button>
                 </div>
@@ -208,9 +241,7 @@ const Applications = {
             450
         );
 
-        if (openId) {
-            setTimeout(() => loadFile(openId), 80);
-        }
+        if (openId) setTimeout(() => loadFile(openId), 50);
     },
 
     files() {
@@ -224,7 +255,8 @@ const Applications = {
                 ${fs.length === 0
                     ? "<p>No files</p>"
                     : fs.map(f => `
-                        <div onclick="openFile('${f.id}')">
+                        <div style="cursor:pointer;padding:4px;"
+                             onclick="openFile('${f.id}')">
                             📄 ${f.name}
                         </div>
                     `).join("")
@@ -261,35 +293,7 @@ const Applications = {
 };
 
 // ================================
-// FILE OPS
-// ================================
-
-function loadFile(id) {
-
-    const fs = getFS();
-    const file = fs.find(f => f.id === id);
-    if (!file) return;
-
-    currentFileId = id;
-
-    document.getElementById("file-name").value = file.name;
-    document.getElementById("file-content").value = file.content;
-}
-
-function saveFile() {
-
-    const fs = getFS();
-    const file = fs.find(f => f.id === currentFileId);
-    if (!file) return;
-
-    file.name = document.getElementById("file-name").value;
-    file.content = document.getElementById("file-content").value;
-
-    saveFS(fs);
-}
-
-// ================================
-// APP STORE SYSTEM (NEW)
+// STORE APPS (REAL LOGIC APPS)
 // ================================
 
 const STORE_APPS = [
@@ -297,21 +301,40 @@ const STORE_APPS = [
         id: "calc",
         name: "Calculator",
         icon: "🧮",
-        content: "<h3>Calculator App</h3>"
+        run: () => `
+            <div>
+                <h3>Calculator</h3>
+                <input id="calc-display" readonly style="width:100%;font-size:18px;">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px;">
+                    ${"789/456*123-0.=+".split("").map(c =>
+                        `<button onclick="calcPress('${c}')">${c}</button>`
+                    ).join("")}
+                </div>
+            </div>
+        `
     },
+
     {
         id: "paint",
         name: "Paint",
         icon: "🎨",
-        content: "<h3>Paint App</h3>"
+        run: () => `<canvas id="paint-canvas" width="450" height="250" style="background:white;"></canvas>`
     },
+
     {
         id: "browser",
         name: "Browser",
         icon: "🌐",
-        content: "<iframe src='https://example.com' style='width:100%;height:100%;border:none'></iframe>"
+        run: () => `
+            <iframe src="https://example.com"
+                style="width:100%;height:100%;border:none;"></iframe>
+        `
     }
 ];
+
+// ================================
+// STORE SYSTEM
+// ================================
 
 function getInstalledApps() {
     return JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
@@ -322,26 +345,16 @@ function saveInstalledApps(list) {
 }
 
 function installApp(id) {
-
-    const app = STORE_APPS.find(a => a.id === id);
-    if (!app) return;
-
-    let installed = getInstalledApps();
-
-    if (!installed.includes(id)) {
-        installed.push(id);
-        saveInstalledApps(installed);
-    }
-
+    const list = getInstalledApps();
+    if (!list.includes(id)) list.push(id);
+    saveInstalledApps(list);
     renderDesktopApps();
 }
 
 function uninstallApp(id) {
-
-    let installed = getInstalledApps();
-    installed = installed.filter(a => a !== id);
-
-    saveInstalledApps(installed);
+    let list = getInstalledApps();
+    list = list.filter(a => a !== id);
+    saveInstalledApps(list);
     renderDesktopApps();
 }
 
@@ -352,12 +365,12 @@ function getAppStoreHTML() {
     return `
         <div style="padding:10px;">
             ${STORE_APPS.map(app => `
-                <div style="border:1px solid #000; padding:8px; margin:5px;">
+                <div style="border:1px solid #000;padding:8px;margin:5px;">
                     <b>${app.icon} ${app.name}</b><br>
                     ${
                         installed.includes(app.id)
-                        ? `<button onclick="uninstallApp('${app.id}')">Uninstall</button>`
-                        : `<button onclick="installApp('${app.id}')">Install</button>`
+                            ? `<button onclick="uninstallApp('${app.id}')">Uninstall</button>`
+                            : `<button onclick="installApp('${app.id}')">Install</button>`
                     }
                 </div>
             `).join("")}
@@ -366,7 +379,7 @@ function getAppStoreHTML() {
 }
 
 // ================================
-// DESKTOP APPS
+// DESKTOP RENDER
 // ================================
 
 function renderDesktopApps() {
@@ -376,9 +389,7 @@ function renderDesktopApps() {
 
     zone.innerHTML = "";
 
-    const installed = getInstalledApps();
-
-    installed.forEach(id => {
+    getInstalledApps().forEach(id => {
 
         const app = STORE_APPS.find(a => a.id === id);
         if (!app) return;
@@ -389,7 +400,7 @@ function renderDesktopApps() {
         el.innerHTML = `${app.icon}<br>${app.name}`;
 
         el.onclick = () => {
-            WindowManager.create(app.name, app.content);
+            WindowManager.create(app.name, app.run());
         };
 
         el.oncontextmenu = (e) => {
@@ -406,7 +417,6 @@ function renderDesktopApps() {
 // ================================
 
 function addDesktopIcon(icon, label, action) {
-
     const desktop = document.getElementById("desktop-icons");
     if (!desktop) return;
 
@@ -436,23 +446,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
     renderDesktopApps();
 
-    console.log("Emerald OS upgraded loaded");
+    console.log("Emerald OS drop-in loaded");
 });
 
-// ==========================================
-// GLOBAL BRIDGE (FIX HTML ONCLICK ERRORS)
-// ==========================================
+// ================================
+// GLOBAL BRIDGE FIX
+// ================================
 
-// File system functions (fix OS.html + File Explorer)
 window.openFile = openFile;
 window.loadFile = loadFile;
 window.saveFile = saveFile;
 window.createFile = createFile;
 
-// App system (used by OS.html and start menu)
 window.Applications = Applications;
-
-// Direct app shortcuts (used in OS.html + start menu)
 window.openAppStore = Applications.store;
 window.openFileExplorer = Applications.files;
 window.openNotes = Applications.notes;
