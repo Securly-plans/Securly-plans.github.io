@@ -1,9 +1,6 @@
 let zIndexCounter = 100;
 let activeDrag = null;
 
-let db = null;
-let authUser = null;
-
 /* =========================
    BOOT
 ========================= */
@@ -12,28 +9,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     initClock();
     initStartMenu();
     initDesktop();
-    exposeGlobalsSafe();
+    exposeGlobals();
 
-    await tryInitFirebase();
-    await loadInstalledApps();
+    loadInstalledApps();
     renderDesktopApps();
     renderFileExplorer();
 });
 
 /* =========================
-   START MENU
+   START MENU (FIXED)
 ========================= */
 
 function initStartMenu() {
-    const btn = document.getElementById("startButton");
-    const menu = document.getElementById("startMenu");
+    const btn = document.getElementById("start-btn");
+    const menu = document.getElementById("start-menu");
 
-    if (!btn || !menu) return;
+    if (!btn || !menu) {
+        console.warn("Start menu missing:", { btn, menu });
+        return;
+    }
 
-    btn.onclick = (e) => {
+    btn.addEventListener("click", (e) => {
         e.stopPropagation();
         menu.classList.toggle("open");
-    };
+    });
 
     document.addEventListener("click", (e) => {
         if (!menu.contains(e.target) && e.target !== btn) {
@@ -43,28 +42,29 @@ function initStartMenu() {
 }
 
 /* =========================
-   DESKTOP INIT
+   DESKTOP
 ========================= */
 
 function initDesktop() {
     const zone = document.getElementById("installed-apps-zone");
-    if (!zone) return;
-    zone.innerHTML = "";
+    if (zone) zone.innerHTML = "";
 }
 
 /* =========================
-   GLOBALS SAFE
+   GLOBALS
 ========================= */
 
-function exposeGlobalsSafe() {
+function exposeGlobals() {
     window.openWindow = openWindow;
-    window.openAppStore = openAppStore;
-    window.openFileExplorer = openFileExplorer;
     window.openNotes = openNotes;
-    window.saveNote = saveNote;
+    window.openFileExplorer = openFileExplorer;
+    window.openAppStore = openAppStore;
+
     window.installApp = installApp;
     window.uninstallApp = uninstallApp;
     window.launchApp = launchApp;
+
+    window.saveNote = saveNote;
     window.renderFileExplorer = renderFileExplorer;
 }
 
@@ -95,8 +95,9 @@ function openWindow(title, html) {
 
     const win = document.createElement("div");
     win.className = "window";
-    win.style.left = 60 + Math.random() * 120 + "px";
-    win.style.top = 60 + Math.random() * 120 + "px";
+
+    win.style.left = (60 + Math.random() * 120) + "px";
+    win.style.top = (60 + Math.random() * 120) + "px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -144,30 +145,24 @@ document.addEventListener("mouseup", () => activeDrag = null);
 ========================= */
 
 function escapeHTML(t) {
-    return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return String(t)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 /* =========================
-   FILE SYSTEM (FIXED)
+   FILES (LOCAL ONLY)
 ========================= */
 
 function saveFile(name, content) {
     localStorage.setItem("os_file_" + name, content);
-
-    if (authUser?.uid && db) {
-        db.collection("emeraldOSUsers")
-            .doc(authUser.uid)
-            .collection("files")
-            .doc(name)
-            .set({ content });
-    }
 }
 
 function readFile(name) {
     return localStorage.getItem("os_file_" + name) || "";
 }
 
-/* IMPORTANT FIX: always renders correctly */
 function renderFileExplorer() {
     const el = document.getElementById("explorer");
     if (!el) return;
@@ -177,9 +172,7 @@ function renderFileExplorer() {
         .map(k => k.replace("os_file_", ""));
 
     el.innerHTML = files.length
-        ? files.map(f => `
-            <div onclick="openNotes('${f}')">📄 ${f}</div>
-        `).join("")
+        ? files.map(f => `<div onclick="openNotes('${f}')">📄 ${f}</div>`).join("")
         : "<div>No files</div>";
 }
 
@@ -205,52 +198,46 @@ function openNotes(filename = "New.txt") {
 function saveNote(id) {
     const name = document.getElementById("fn-" + id).value;
     const content = document.getElementById("txt-" + id).value;
+
     saveFile(name, content);
     renderFileExplorer();
 }
 
 /* =========================
-   APP SYSTEM
+   APPS
 ========================= */
 
 const appCatalog = [
     {
-        name: "Calculator.EOSas",
+        name: "Calculator",
         icon: "🧮",
         content: calculatorApp()
     },
     {
-        name: "Paint.EOSas",
+        name: "Paint",
         icon: "🎨",
         content: paintApp()
     }
 ];
-
-/* =========================
-   CALCULATOR (WORKING)
-========================= */
 
 function calculatorApp() {
     const id = Math.random().toString(36).slice(2);
 
     setTimeout(() => {
         const input = document.getElementById("calc-" + id);
-        const buttons = document.querySelectorAll("[data-calc='" + id + "']");
+        const buttons = document.querySelectorAll(`[data-calc="${id}"]`);
 
         buttons.forEach(b => {
             b.onclick = () => {
-                const val = b.dataset.val;
+                const v = b.dataset.val;
 
-                if (val === "=") {
-                    try {
-                        input.value = eval(input.value);
-                    } catch {
-                        input.value = "Error";
-                    }
-                } else if (val === "C") {
+                if (v === "=") {
+                    try { input.value = eval(input.value); }
+                    catch { input.value = "Error"; }
+                } else if (v === "C") {
                     input.value = "";
                 } else {
-                    input.value += val;
+                    input.value += v;
                 }
             };
         });
@@ -258,22 +245,14 @@ function calculatorApp() {
 
     return `
         <input id="calc-${id}" style="width:100%;font-size:20px;"><br><br>
-
-        <div>
-            ${["7","8","9","/","C",
-               "4","5","6","*","=",
-               "1","2","3","-",
-               "0",".","+"]
+        ${["7","8","9","/","C","4","5","6","*","=","1","2","3","-","0",".","+"]
             .map(v => `
-                <button data-calc="${id}" data-val="${v}" style="width:40px;height:40px;">${v}</button>
+                <button data-calc="${id}" data-val="${v}">
+                    ${v}
+                </button>
             `).join("")}
-        </div>
     `;
 }
-
-/* =========================
-   PAINT (SIMPLE MS PAINT COPY)
-========================= */
 
 function paintApp() {
     const id = Math.random().toString(36).slice(2);
@@ -281,82 +260,29 @@ function paintApp() {
     setTimeout(() => {
         const canvas = document.getElementById("paint-" + id);
         const ctx = canvas.getContext("2d");
-
         let drawing = false;
 
         canvas.onmousedown = () => drawing = true;
         canvas.onmouseup = () => drawing = false;
+
         canvas.onmousemove = (e) => {
             if (!drawing) return;
+            const r = canvas.getBoundingClientRect();
 
-            const rect = canvas.getBoundingClientRect();
             ctx.fillStyle = "black";
-            ctx.fillRect(e.clientX - rect.left, e.clientY - rect.top, 2, 2);
+            ctx.fillRect(e.clientX - r.left, e.clientY - r.top, 2, 2);
         };
 
         document.getElementById("clear-" + id).onclick = () => {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         };
     }, 50);
 
     return `
         <button id="clear-${id}">Clear</button><br>
         <canvas id="paint-${id}" width="300" height="200"
-            style="border:1px solid black;background:white;"></canvas>
+            style="border:1px solid #000;background:#fff;"></canvas>
     `;
-}
-
-/* =========================
-   INSTALL SYSTEM
-========================= */
-
-function installApp(i) {
-    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-    if (!installed.includes(appCatalog[i].name)) {
-        installed.push(appCatalog[i].name);
-    }
-    localStorage.setItem("os_installed_apps", JSON.stringify(installed));
-    renderDesktopApps();
-}
-
-function uninstallApp(i) {
-    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-    installed = installed.filter(a => a !== appCatalog[i].name);
-    localStorage.setItem("os_installed_apps", JSON.stringify(installed));
-    renderDesktopApps();
-}
-
-/* =========================
-   DESKTOP
-========================= */
-
-function loadInstalledApps() {
-    let apps = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-    localStorage.setItem("os_installed_apps", JSON.stringify(apps));
-}
-
-function renderDesktopApps() {
-    const zone = document.getElementById("installed-apps-zone");
-    if (!zone) return;
-
-    zone.innerHTML = "";
-
-    const installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-
-    installed.forEach(name => {
-        const app = appCatalog.find(a => a.name === name);
-        const div = document.createElement("div");
-
-        div.className = "icon";
-        div.innerHTML = "📦<br>" + escapeHTML(name);
-
-        div.onclick = () => {
-            if (!app) return openWindow("Error", "Missing app");
-            openWindow(app.name, app.content);
-        };
-
-        zone.appendChild(div);
-    });
 }
 
 /* =========================
@@ -364,20 +290,20 @@ function renderDesktopApps() {
 ========================= */
 
 function openAppStore() {
-    const installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-
-    const html = appCatalog.map((a,i) => `
+    const html = appCatalog.map((a, i) => `
         <div>
             ${a.icon} <b>${a.name}</b><br>
-            ${
-                installed.includes(a.name)
-                ? `<button onclick="uninstallApp(${i})">Uninstall</button>`
-                : `<button onclick="installApp(${i})">Install</button>`
-            }
+            <button onclick="launchApp(${i})">Launch</button>
         </div>
     `).join("");
 
     openWindow("App Store", html);
+}
+
+function launchApp(i) {
+    const app = appCatalog[i];
+    if (!app) return openWindow("Error", "Missing app");
+    openWindow(app.name, app.content);
 }
 
 /* =========================
@@ -386,14 +312,4 @@ function openAppStore() {
 
 function openFileExplorer() {
     openWindow("File Explorer", `<div id="explorer"></div>`);
-}
-
-/* =========================
-   LAUNCH
-========================= */
-
-function launchApp(name) {
-    const app = appCatalog.find(a => a.name === name);
-    if (!app) return openWindow("Launching", "Loading " + name);
-    openWindow(app.name, app.content);
 }
