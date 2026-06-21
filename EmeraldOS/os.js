@@ -10,7 +10,7 @@ let authUser = null;
 
 window.addEventListener("DOMContentLoaded", async () => {
     initClock();
-    initStartMenu();
+    initStartMenu(); // FIXED: now guaranteed to exist
     exposeGlobals();
     await tryInitFirebase();
     await loadInstalledApps();
@@ -26,6 +26,31 @@ async function tryInitFirebase() {
     } catch (e) {
         console.log("Firebase not active, using local mode");
     }
+}
+
+/* =========================
+   START MENU (FIXED DROP-IN)
+========================= */
+
+function initStartMenu() {
+    const startButton = document.getElementById("startButton");
+    const startMenu = document.getElementById("startMenu");
+
+    if (!startButton || !startMenu) {
+        console.warn("Start menu elements missing");
+        return;
+    }
+
+    startButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        startMenu.classList.toggle("open");
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!startMenu.contains(e.target) && e.target !== startButton) {
+            startMenu.classList.remove("open");
+        }
+    });
 }
 
 /* =========================
@@ -134,7 +159,7 @@ function escapeHTML(t) {
 }
 
 /* =========================
-   FILE SYSTEM (LOCAL + FIREBASE)
+   FILE SYSTEM
 ========================= */
 
 function saveFile(name, content) {
@@ -202,7 +227,7 @@ const appCatalog = [
 ];
 
 /* =========================
-   INSTALLED APPS (FIREBASE + LOCAL)
+   INSTALLED APPS
 ========================= */
 
 async function loadInstalledApps() {
@@ -232,7 +257,7 @@ function saveInstalledApps(apps) {
 }
 
 /* =========================
-   DESKTOP + FIXED LAUNCH (YOUR BUG FIX)
+   DESKTOP APPS
 ========================= */
 
 function renderDesktopApps() {
@@ -327,7 +352,7 @@ function openAppStore() {
 }
 
 /* =========================
-   LAUNCH FIX (IMPORTANT)
+   LAUNCH FIX
 ========================= */
 
 function launchApp(name) {
