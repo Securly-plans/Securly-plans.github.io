@@ -231,7 +231,7 @@ async function loginOS() {
         account.id
     );
 
-    location.href = "os.html";
+    location.href = "OS.html";
 }
 
 // ==========================================
