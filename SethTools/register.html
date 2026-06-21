@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create EmeraldOS Account</title>
+    <link rel="stylesheet" href="os.css">
+
+    <style>
+        body {
+            background: #008080;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .register-window {
+            width: 450px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .title-bar-register {
+            background: #000080;
+            color: white;
+            padding: 5px 8px;
+            font-weight: bold;
+        }
+
+        .register-content {
+            padding: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 2px inset white;
+            font-family: inherit;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: white;
+            border: 2px inset white;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            padding: 5px 20px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #000 #000 #fff;
+            cursor: pointer;
+        }
+
+        button:active {
+            border-color: #000 #fff #fff #000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="register-window">
+
+        <div class="title-bar-register">
+            Create EmeraldOS Account
+        </div>
+
+        <div class="register-content">
+
+            <div class="logo">💎</div>
+
+            <div class="info-box">
+                This EmeraldOS account will be linked to your
+                currently signed-in site account.
+            </div>
+
+            <label>OS Username</label>
+            <input id="os-user">
+
+            <label>Password</label>
+            <input id="os-pass" type="password">
+
+            <label>Confirm Password</label>
+            <input id="os-pass2" type="password">
+
+            <div class="buttons">
+                <button onclick="registerOS()">
+                    Create
+                </button>
+
+                <button onclick="location.href='index.html'">
+                    Cancel
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="os-auth.js"></script>
+
+</body>
+</html>
