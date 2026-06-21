@@ -6,11 +6,6 @@
 <title>EmeraldOS</title>
 
 <style>
-
-/* =========================
-   WINDOWS 95 BASE THEME
-========================= */
-
 body {
     margin: 0;
     font-family: "MS Sans Serif", Arial, sans-serif;
@@ -39,10 +34,6 @@ body {
     user-select: none;
 }
 
-/* =========================
-   WINDOWS
-========================= */
-
 .window {
     position: absolute;
     background: #c0c0c0;
@@ -59,10 +50,6 @@ body {
     justify-content: space-between;
     cursor: move;
 }
-
-/* =========================
-   START MENU
-========================= */
 
 #start-menu {
     position: absolute;
@@ -90,10 +77,6 @@ body {
     color: white;
 }
 
-/* =========================
-   TASKBAR
-========================= */
-
 #taskbar {
     position: absolute;
     bottom: 0;
@@ -116,10 +99,6 @@ body {
     cursor: pointer;
 }
 
-/* =========================
-   APP DASHBOARD (NEW)
-========================= */
-
 #app-dock {
     position: absolute;
     top: 10px;
@@ -140,74 +119,78 @@ body {
     background: #000080;
     color: white;
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- ================= DESKTOP ================= -->
-
+<!-- DESKTOP -->
 <main id="desktop">
-
     <div id="desktop-icons">
 
-        <div class="icon" onclick="Applications.notes()">📄 Notes</div>
-        <div class="icon" onclick="Applications.files()">📁 Files</div>
-        <div class="icon" onclick="Applications.store()">🛒 Store</div>
-        <div class="icon" onclick="Applications.system()">💻 System</div>
-        <div class="icon" onclick="Applications.chat()">💬 Chat</div>
+        <div class="icon" onclick="safeOpen('notes')">📄 Notes</div>
+        <div class="icon" onclick="safeOpen('files')">📁 Files</div>
+        <div class="icon" onclick="safeOpen('store')">🛒 Store</div>
+        <div class="icon" onclick="safeOpen('system')">💻 System</div>
+        <div class="icon" onclick="safeOpen('chat')">💬 Chat</div>
 
     </div>
-
 </main>
 
-<!-- ================= APP DASHBOARD (NEW) ================= -->
-
+<!-- APP DOCK -->
 <div id="app-dock">
     <b>Available Apps</b>
     <div id="app-list"></div>
 </div>
 
-<!-- ================= START MENU ================= -->
-
+<!-- START MENU -->
 <aside id="start-menu">
-
-    <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
-    <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
-    <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
-    <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
-    <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
-
+    <div class="start-menu-item" onclick="safeOpen('notes')">📄 Notes</div>
+    <div class="start-menu-item" onclick="safeOpen('files')">📁 File Explorer</div>
+    <div class="start-menu-item" onclick="safeOpen('store')">🛒 App Store</div>
+    <div class="start-menu-item" onclick="safeOpen('system')">💻 System</div>
+    <div class="start-menu-item" onclick="safeOpen('chat')">💬 Chat</div>
 </aside>
 
-<!-- ================= WINDOWS ================= -->
-
+<!-- WINDOWS -->
 <div id="windows-container"></div>
 
-<!-- ================= TASKBAR ================= -->
-
+<!-- TASKBAR -->
 <footer id="taskbar">
-
     <button id="start-btn">Start</button>
-
 </footer>
 
-<!-- ================= SCRIPTS ================= -->
-
+<!-- OS SCRIPT -->
 <script src="os.js"></script>
 
 <script>
-// ================================
-// START BUTTON LOGIC (FIXED)
-// ================================
+// =============================
+// SAFE WRAPPER (FIXES CRASHES)
+// =============================
+
+function safeOpen(appName) {
+
+    if (!window.Applications) {
+        console.warn("Applications not loaded yet");
+        return;
+    }
+
+    if (typeof window.Applications[appName] === "function") {
+        window.Applications[appName]();
+    } else {
+        console.warn("App not found:", appName);
+    }
+}
+
+// =============================
+// START MENU
+// =============================
 
 const startBtn = document.getElementById("start-btn");
 const startMenu = document.getElementById("start-menu");
 
 startBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-
     startMenu.classList.toggle("show");
 });
 
@@ -215,14 +198,18 @@ document.addEventListener("click", () => {
     startMenu.classList.remove("show");
 });
 
-// ================================
-// APP REGISTRY DISPLAY (FROM OS.JS)
-// ================================
+// =============================
+// APP LIST RENDER (SAFE)
+// =============================
 
 function renderAppList() {
 
     const list = document.getElementById("app-list");
-    if (!list || !window.appCatalog) return;
+
+    if (!list || !window.appCatalog) {
+        console.warn("App catalog not ready yet");
+        return;
+    }
 
     list.innerHTML = "";
 
@@ -234,21 +221,38 @@ function renderAppList() {
 
         div.onclick = () => {
 
-            openWindow(
-                app.name,
-                typeof app.content === "function"
-                    ? app.content()
-                    : app.content
-            );
+            if (typeof window.openWindow === "function") {
+                window.openWindow(
+                    app.name,
+                    typeof app.content === "function"
+                        ? app.content()
+                        : app.content
+                );
+            } else {
+                console.warn("openWindow not defined");
+            }
         };
 
         list.appendChild(div);
     });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-    setTimeout(renderAppList, 200);
-});
+// Retry render until OS loads
+function waitForOS() {
+    let tries = 0;
+
+    const interval = setInterval(() => {
+        tries++;
+
+        if (window.appCatalog || tries > 20) {
+            clearInterval(interval);
+            renderAppList();
+        }
+    }, 200);
+}
+
+window.addEventListener("DOMContentLoaded", waitForOS);
+
 </script>
 
 </body>
