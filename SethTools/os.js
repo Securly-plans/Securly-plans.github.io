@@ -1,9 +1,9 @@
 // ==========================================
-// EMERALD OS - FULL MERGED CORE
+// EMERALD OS - UPGRADED CORE SYSTEM
 // ==========================================
 
 // ================================
-// FILE SYSTEM (os-storage.js)
+// FILE SYSTEM
 // ================================
 
 const FS_KEY = "emerald_fs";
@@ -17,7 +17,7 @@ function saveFS(fs) {
 }
 
 // ================================
-// SESSION
+// SESSION (FIXED)
 // ================================
 
 const Session = {
@@ -29,8 +29,9 @@ const Session = {
     },
 
     logout() {
-        localStorage.removeItem("osLoggedIn");
-        location.href = "index.html";
+        localStorage.removeItem("loggedIn");
+        localStorage.removeItem("osUsername");
+        location.href = "../index.html";
     }
 };
 
@@ -39,7 +40,6 @@ const Session = {
 // ================================
 
 const Clock = {
-
     start() {
         this.update();
         setInterval(() => this.update(), 1000);
@@ -57,7 +57,7 @@ const Clock = {
 };
 
 // ================================
-// WINDOW SYSTEM
+// WINDOW MANAGER (UNCHANGED CORE)
 // ================================
 
 const WindowManager = {
@@ -134,41 +134,21 @@ function setupStartMenu() {
 
     startBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-
-        const open = startMenu.classList.toggle("show");
-
-        if (open) {
-            startBtn.style.borderColor = "#000 #fff #fff #000";
-            startBtn.style.background = "#dfdfdf";
-        } else {
-            startBtn.style.borderColor = "#fff #000 #000 #fff";
-            startBtn.style.background = "#c0c0c0";
-        }
+        startMenu.classList.toggle("show");
     });
 
     document.addEventListener("click", (e) => {
-
-        if (
-            startMenu.classList.contains("show") &&
-            !startMenu.contains(e.target)
-        ) {
+        if (!startMenu.contains(e.target)) {
             startMenu.classList.remove("show");
-
-            startBtn.style.borderColor = "#fff #000 #000 #fff";
-            startBtn.style.background = "#c0c0c0";
         }
     });
 }
 
 // ================================
-// GLOBAL FILE STATE
+// FILE SYSTEM
 // ================================
 
 let currentFileId = null;
-
-// ================================
-// FILE HELPERS
-// ================================
 
 function createFile(type = "note") {
 
@@ -190,12 +170,10 @@ function createFile(type = "note") {
 }
 
 // ================================
-// APPLICATIONS
+// APPLICATIONS (BUILT-IN)
 // ================================
 
 const Applications = {
-
-    // ================= NOTES =================
 
     notes(openId = null) {
 
@@ -207,9 +185,7 @@ const Applications = {
             `
             <div style="display:flex; height:100%;">
 
-                <!-- SIDEBAR -->
                 <div style="width:35%; border-right:1px solid #333; padding:6px; overflow:auto;">
-
                     <button onclick="createFile('note')">+ New Note</button>
 
                     ${notes.map(n => `
@@ -218,20 +194,12 @@ const Applications = {
                             📄 ${n.name}
                         </div>
                     `).join("")}
-
                 </div>
 
-                <!-- EDITOR -->
                 <div style="flex:1; display:flex; flex-direction:column; padding:10px;">
-
-                    <input id="file-name" placeholder="File name"
-                        style="margin-bottom:10px; padding:5px;">
-
-                    <textarea id="file-content"
-                        style="flex:1; resize:none; padding:6px;"></textarea>
-
+                    <input id="file-name" style="margin-bottom:10px; padding:5px;">
+                    <textarea id="file-content" style="flex:1;"></textarea>
                     <button onclick="saveFile()">Save</button>
-
                 </div>
 
             </div>
@@ -245,8 +213,6 @@ const Applications = {
         }
     },
 
-    // ================= FILE EXPLORER =================
-
     files() {
 
         const fs = getFS();
@@ -255,17 +221,14 @@ const Applications = {
             "File Explorer",
             `
             <div style="padding:10px;">
-
                 ${fs.length === 0
-                    ? "<p>No files found</p>"
+                    ? "<p>No files</p>"
                     : fs.map(f => `
-                        <div style="cursor:pointer; padding:4px;"
-                            onclick="openFile('${f.id}')">
-                            📄 ${f.name} (${f.type})
+                        <div onclick="openFile('${f.id}')">
+                            📄 ${f.name}
                         </div>
                     `).join("")
                 }
-
             </div>
             `,
             500,
@@ -273,105 +236,173 @@ const Applications = {
         );
     },
 
-    // ================= APP STORE =================
-
     store() {
-
         WindowManager.create(
             "App Store",
-            `
-            <h3>Emerald Store</h3>
-            <p>Apps coming soon...</p>
-
-            <ul>
-                <li>Notes</li>
-                <li>Files</li>
-                <li>Calculator</li>
-                <li>Paint</li>
-                <li>Browser</li>
-            </ul>
-            `,
-            400,
-            300
+            getAppStoreHTML(),
+            500,
+            400
         );
     },
 
-    // ================= SYSTEM =================
-
     system() {
-
         WindowManager.create(
-            "System Info",
+            "System",
             `
             <h3>EmeraldOS</h3>
-            <p>Version: 2.0</p>
             <p>User: ${localStorage.getItem("osUsername") || "Guest"}</p>
             `
         );
     },
 
-    // ================= CHAT =================
-
     chat() {
-
-        WindowManager.create(
-            "Chat",
-            `<p>Chat system coming soon...</p>`
-        );
+        WindowManager.create("Chat", "<p>Coming soon</p>");
     }
 };
 
 // ================================
-// FILE OPERATIONS
+// FILE OPS
 // ================================
 
 function loadFile(id) {
 
     const fs = getFS();
     const file = fs.find(f => f.id === id);
-
     if (!file) return;
 
     currentFileId = id;
 
-    const name = document.getElementById("file-name");
-    const content = document.getElementById("file-content");
-
-    if (name) name.value = file.name;
-    if (content) content.value = file.content;
+    document.getElementById("file-name").value = file.name;
+    document.getElementById("file-content").value = file.content;
 }
 
 function saveFile() {
 
     const fs = getFS();
     const file = fs.find(f => f.id === currentFileId);
-
     if (!file) return;
 
     file.name = document.getElementById("file-name").value;
     file.content = document.getElementById("file-content").value;
-    file.updated = Date.now();
 
     saveFS(fs);
-
-    alert("Saved");
-}
-
-function openFile(id) {
-
-    const fs = getFS();
-    const file = fs.find(f => f.id === id);
-
-    if (!file) return;
-
-    WindowManager.create(
-        file.name,
-        `<pre style="white-space:pre-wrap;">${file.content}</pre>`
-    );
 }
 
 // ================================
-// DESKTOP SHORTCUTS
+// APP STORE SYSTEM (NEW)
+// ================================
+
+const STORE_APPS = [
+    {
+        id: "calc",
+        name: "Calculator",
+        icon: "🧮",
+        content: "<h3>Calculator App</h3>"
+    },
+    {
+        id: "paint",
+        name: "Paint",
+        icon: "🎨",
+        content: "<h3>Paint App</h3>"
+    },
+    {
+        id: "browser",
+        name: "Browser",
+        icon: "🌐",
+        content: "<iframe src='https://example.com' style='width:100%;height:100%;border:none'></iframe>"
+    }
+];
+
+function getInstalledApps() {
+    return JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+}
+
+function saveInstalledApps(list) {
+    localStorage.setItem("os_installed_apps", JSON.stringify(list));
+}
+
+function installApp(id) {
+
+    const app = STORE_APPS.find(a => a.id === id);
+    if (!app) return;
+
+    let installed = getInstalledApps();
+
+    if (!installed.includes(id)) {
+        installed.push(id);
+        saveInstalledApps(installed);
+    }
+
+    renderDesktopApps();
+}
+
+function uninstallApp(id) {
+
+    let installed = getInstalledApps();
+    installed = installed.filter(a => a !== id);
+
+    saveInstalledApps(installed);
+    renderDesktopApps();
+}
+
+function getAppStoreHTML() {
+
+    const installed = getInstalledApps();
+
+    return `
+        <div style="padding:10px;">
+            ${STORE_APPS.map(app => `
+                <div style="border:1px solid #000; padding:8px; margin:5px;">
+                    <b>${app.icon} ${app.name}</b><br>
+                    ${
+                        installed.includes(app.id)
+                        ? `<button onclick="uninstallApp('${app.id}')">Uninstall</button>`
+                        : `<button onclick="installApp('${app.id}')">Install</button>`
+                    }
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+// ================================
+// DESKTOP APPS
+// ================================
+
+function renderDesktopApps() {
+
+    const zone = document.getElementById("installed-apps-zone");
+    if (!zone) return;
+
+    zone.innerHTML = "";
+
+    const installed = getInstalledApps();
+
+    installed.forEach(id => {
+
+        const app = STORE_APPS.find(a => a.id === id);
+        if (!app) return;
+
+        const el = document.createElement("div");
+        el.className = "icon";
+
+        el.innerHTML = `${app.icon}<br>${app.name}`;
+
+        el.onclick = () => {
+            WindowManager.create(app.name, app.content);
+        };
+
+        el.oncontextmenu = (e) => {
+            e.preventDefault();
+            uninstallApp(id);
+        };
+
+        zone.appendChild(el);
+    });
+}
+
+// ================================
+// DESKTOP ICONS
 // ================================
 
 function addDesktopIcon(icon, label, action) {
@@ -395,8 +426,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     Session.check();
     Clock.start();
-
-    setupStartMenu(); // ✅ ADD THIS
+    setupStartMenu();
 
     addDesktopIcon("📁", "Files", () => Applications.files());
     addDesktopIcon("📝", "Notes", () => Applications.notes());
@@ -404,5 +434,7 @@ window.addEventListener("DOMContentLoaded", () => {
     addDesktopIcon("💻", "System", () => Applications.system());
     addDesktopIcon("💬", "Chat", () => Applications.chat());
 
-    console.log("Emerald OS fully loaded");
+    renderDesktopApps();
+
+    console.log("Emerald OS upgraded loaded");
 });
