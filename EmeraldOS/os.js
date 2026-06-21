@@ -8,11 +8,12 @@ let activeDrag = null;
 window.addEventListener("DOMContentLoaded", () => {
     initClock();
     initStartMenu();
+    renderDesktopApps();
     exposeGlobals();
 });
 
 // ==========================================
-// MAKE HTML ONCLICK WORK (CRITICAL FIX)
+// GLOBAL FIX (IMPORTANT)
 // ==========================================
 
 function exposeGlobals() {
@@ -24,6 +25,8 @@ function exposeGlobals() {
         saveNote,
         deleteFile,
         renderFileExplorer,
+        installApp,
+        uninstallApp,
         FileSystem
     });
 }
@@ -82,7 +85,7 @@ function openWindow(title, html) {
     const win = document.createElement("div");
     win.className = "window";
 
-    win.style.left = (50 + Math.random() * 120) + "px";
+    win.style.left = (50 + Math.random() * 100) + "px";
     win.style.top = (50 + Math.random() * 100) + "px";
     win.style.zIndex = ++zIndexCounter;
 
@@ -103,7 +106,10 @@ function openWindow(title, html) {
     tab.textContent = title;
     taskbar.appendChild(tab);
 
-    tab.onclick = () => win.remove();
+    tab.onclick = () => {
+        win.remove();
+        tab.remove();
+    };
 
     win.querySelector(".close-btn").onclick = () => {
         win.remove();
@@ -124,7 +130,7 @@ function openWindow(title, html) {
 }
 
 // ==========================================
-// DRAG SYSTEM
+// DRAGGING
 // ==========================================
 
 document.addEventListener("mousemove", (e) => {
@@ -153,7 +159,7 @@ function escapeHTML(t) {
 }
 
 // ==========================================
-// FILE SYSTEM (LOCAL STORAGE ONLY)
+// FILE SYSTEM
 // ==========================================
 
 const FileSystem = {
@@ -172,7 +178,7 @@ const FileSystem = {
 };
 
 // ==========================================
-// NOTES (FIXED saveNote ERROR)
+// NOTES + FIX saveNote ERROR
 // ==========================================
 
 function openNotes(filename = "New.txt") {
@@ -192,7 +198,6 @@ function openNotes(filename = "New.txt") {
     }, 50);
 }
 
-// THIS WAS YOUR ERROR
 function saveNote(id) {
     const name = document.getElementById("fn-" + id).value;
     const content = document.getElementById("txt-" + id).value;
@@ -202,7 +207,7 @@ function saveNote(id) {
 }
 
 // ==========================================
-// FILE EXPLORER (FIXED CLICK + DELETE)
+// FILE EXPLORER (FIXED CLICKING)
 // ==========================================
 
 function getFiles() {
@@ -249,9 +254,114 @@ function openFileExplorer() {
 }
 
 // ==========================================
-// APP STORE (PLACEHOLDER)
+// ===============================
+// APP STORE (RESTORED)
+// ===============================
 // ==========================================
 
 function openAppStore() {
-    openWindow("App Store", "<p>Coming soon</p>");
+    const apps = [
+        { name: "Notes", icon: "📄", desc: "Text editor" },
+        { name: "File Explorer", icon: "📁", desc: "Browse files" },
+        { name: "Paint", icon: "🎨", desc: "Draw canvas" }
+    ];
+
+    const installed = JSON.parse(
+        localStorage.getItem("os_installed_apps") || "[]"
+    );
+
+    const html = apps.map(app => {
+        const isInstalled = installed.includes(app.name);
+
+        return `
+            <div style="
+                border:2px solid #000;
+                padding:10px;
+                margin:5px;
+                background:#e0e0e0;
+                width:150px;
+            ">
+                <div style="font-size:30px;">${app.icon}</div>
+                <b>${escapeHTML(app.name)}</b><br>
+                <small>${app.desc}</small><br><br>
+
+                ${
+                    isInstalled
+                        ? `<button onclick="uninstallApp('${app.name}')">Uninstall</button>`
+                        : `<button onclick="installApp('${app.name}')">Install</button>`
+                }
+            </div>
+        `;
+    }).join("");
+
+    openWindow("App Store", `
+        <div style="display:flex;flex-wrap:wrap;">
+            ${html}
+        </div>
+    `);
+}
+
+// ==========================================
+// INSTALL / UNINSTALL
+// ==========================================
+
+function installApp(name) {
+    let installed = JSON.parse(
+        localStorage.getItem("os_installed_apps") || "[]"
+    );
+
+    if (!installed.includes(name)) {
+        installed.push(name);
+    }
+
+    localStorage.setItem(
+        "os_installed_apps",
+        JSON.stringify(installed)
+    );
+
+    renderDesktopApps();
+    openAppStore();
+}
+
+function uninstallApp(name) {
+    let installed = JSON.parse(
+        localStorage.getItem("os_installed_apps") || "[]"
+    );
+
+    installed = installed.filter(a => a !== name);
+
+    localStorage.setItem(
+        "os_installed_apps",
+        JSON.stringify(installed)
+    );
+
+    renderDesktopApps();
+    openAppStore();
+}
+
+// ==========================================
+// DESKTOP ICONS
+// ==========================================
+
+function renderDesktopApps() {
+    const zone = document.getElementById("installed-apps-zone");
+    if (!zone) return;
+
+    zone.innerHTML = "";
+
+    const installed = JSON.parse(
+        localStorage.getItem("os_installed_apps") || "[]"
+    );
+
+    installed.forEach(app => {
+        const icon = document.createElement("div");
+        icon.className = "icon";
+        icon.innerHTML = "📦<br>" + escapeHTML(app);
+
+        icon.onclick = () => {
+            openWindow(app, `<div>Launching ${app}...</div>`);
+        };
+
+        zone.appendChild(icon);
+    });
 }
