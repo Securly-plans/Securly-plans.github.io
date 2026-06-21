@@ -1,40 +1,41 @@
 // ==========================================
-// EMERALD OS - HYBRID CLOUD EDITION
+// EMERALD OS - MODULE SAFE DROP-IN
 // ==========================================
 
 let zIndexCounter = 100;
 let activeDrag = null;
 
 // ==========================================
-// FIREBASE IMPORT (safe optional use)
-// ==========================================
-
-let db = null;
-
-try {
-    const firebaseModule = await import("./firebase.js");
-    db = firebaseModule.db;
-} catch (e) {
-    console.warn("Firebase not loaded, using localStorage only");
-}
-
-// ==========================================
-// USER
-// ==========================================
-
-function getUser() {
-    return localStorage.getItem("username");
-}
-
-// ==========================================
-// CLOCK
+// BOOT
 // ==========================================
 
 window.addEventListener("DOMContentLoaded", () => {
     initClock();
     initStartMenu();
     renderDesktopApps();
+
+    console.log("Emerald OS booted");
 });
+
+// ==========================================
+// MAKE EVERYTHING GLOBAL (FIX FOR MODULE MODE)
+// ==========================================
+
+function exposeGlobals() {
+    Object.assign(window, {
+        openWindow,
+        openNotes,
+        openFileExplorer,
+        openAppStore,
+        FileSystem,
+        renderFileExplorer,
+        deleteFile
+    });
+}
+
+// ==========================================
+// CLOCK
+// ==========================================
 
 function initClock() {
     const clock = document.getElementById("clock");
@@ -66,11 +67,11 @@ function initStartMenu() {
         menu.classList.toggle("show");
     };
 
-    document.onclick = (e) => {
+    document.addEventListener("click", (e) => {
         if (!menu.contains(e.target)) {
             menu.classList.remove("show");
         }
-    };
+    });
 }
 
 // ==========================================
@@ -95,7 +96,9 @@ function openWindow(title, html) {
             <span>${escapeHTML(title)}</span>
             <button class="close-btn">X</button>
         </div>
-        <div class="window-content">${html}</div>
+        <div class="window-content">
+            ${html}
+        </div>
     `;
 
     container.appendChild(win);
@@ -109,15 +112,14 @@ function openWindow(title, html) {
         win.style.zIndex = ++zIndexCounter;
     }
 
-    win.onclick = focus;
-    tab.onclick = () => win.remove();
+    win.addEventListener("mousedown", focus);
+    tab.addEventListener("click", () => win.remove());
 
     win.querySelector(".close-btn").onclick = () => {
         win.remove();
         tab.remove();
     };
 
-    // drag
     win.querySelector(".title-bar").onmousedown = (e) => {
         activeDrag = {
             win,
@@ -161,98 +163,78 @@ function escapeHTML(t) {
 }
 
 // ==========================================
-// CLOUD FILE SYSTEM (FIREBASE + FALLBACK)
+// FILE SYSTEM (LOCAL ONLY - SAFE)
 // ==========================================
 
 const FileSystem = {
-
-    async saveFile(name, content) {
-        const user = getUser();
-
-        if (db && user) {
-            const mod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-            const ref = mod.doc(db, "emeraldOSUsers", user);
-            const snap = await mod.getDoc(ref);
-
-            let data = snap.exists() ? snap.data() : {};
-            let files = data.files || {};
-
-            files[name] = content;
-
-            await mod.setDoc(ref, { ...data, files }, { merge: true });
-        } else {
-            localStorage.setItem("os_file_" + name, content);
-        }
+    saveFile(name, content) {
+        if (!name) return;
+        localStorage.setItem("os_file_" + name, content);
     },
 
-    async readFile(name) {
-        const user = getUser();
-
-        if (db && user) {
-            const mod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-            const ref = mod.doc(db, "emeraldOSUsers", user);
-            const snap = await mod.getDoc(ref);
-
-            return snap.exists() ? (snap.data().files?.[name] || "") : "";
-        }
-
+    readFile(name) {
         return localStorage.getItem("os_file_" + name) || "";
     },
 
-    async deleteFile(name) {
-        const user = getUser();
-
-        if (db && user) {
-            const mod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-            const ref = mod.doc(db, "emeraldOSUsers", user);
-            const snap = await mod.getDoc(ref);
-
-            let data = snap.data();
-            if (!data?.files) return;
-
-            delete data.files[name];
-
-            await mod.setDoc(ref, data, { merge: true });
-        } else {
-            localStorage.removeItem("os_file_" + name);
-        }
+    deleteFile(name) {
+        localStorage.removeItem("os_file_" + name);
     }
 };
 
 // ==========================================
-// FILE EXPLORER (FIXED CLICK EVENTS)
+// NOTES
 // ==========================================
 
-async function getFiles() {
-    const user = getUser();
+function openNotes(filename = "New.txt") {
+    const id = Math.random().toString(36).slice(2);
 
-    if (db && user) {
-        const mod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-        const ref = mod.doc(db, "emeraldOSUsers", user);
-        const snap = await mod.getDoc(ref);
+    const win = openWindow("Notes", `
+        <input id="fn-${id}" value="${escapeHTML(filename)}">
+        <br><br>
+        <textarea id="txt-${id}" style="width:100%;height:200px;"></textarea>
+        <br>
+        <button onclick="saveNote('${id}')">Save</button>
+    `);
 
-        if (!snap.exists()) return [];
-        return Object.keys(snap.data().files || {});
-    }
+    setTimeout(() => {
+        document.getElementById("txt-" + id).value =
+            FileSystem.readFile(filename);
+    }, 50);
+}
 
-    const out = [];
+function saveNote(id) {
+    const name = document.getElementById("fn-" + id).value;
+    const content = document.getElementById("txt-" + id).value;
+
+    FileSystem.saveFile(name, content);
+    renderFileExplorer();
+}
+
+// ==========================================
+// FILE EXPLORER (FIXED CLICK + DELETE)
+// ==========================================
+
+function getFiles() {
+    const files = [];
+
     for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k?.startsWith("os_file_")) {
-            out.push(k.replace("os_file_", ""));
+            files.push(k.replace("os_file_", ""));
         }
     }
-    return out;
+
+    return files.sort();
 }
 
-async function renderFileExplorer() {
+function renderFileExplorer() {
     const el = document.getElementById("explorer-content");
     if (!el) return;
 
-    const files = await getFiles();
+    const files = getFiles();
 
     if (!files.length) {
-        el.innerHTML = "<div style='padding:10px;'>Empty</div>";
+        el.innerHTML = "<div style='padding:10px;'>Empty folder</div>";
         return;
     }
 
@@ -265,49 +247,32 @@ async function renderFileExplorer() {
     `).join("");
 }
 
-async function deleteFile(name) {
-    await FileSystem.deleteFile(name);
+function deleteFile(name) {
+    FileSystem.deleteFile(name);
     renderFileExplorer();
 }
 
 function openFileExplorer() {
-    openWindow("File Explorer", `<div id="explorer-content">Loading...</div>`);
+    openWindow("File Explorer", `<div id="explorer-content"></div>`);
     setTimeout(renderFileExplorer, 100);
 }
 
 // ==========================================
-// NOTES FIXED
-// ==========================================
-
-function openNotes(filename = "New.txt") {
-    const id = Math.random().toString(36).slice(2);
-
-    openWindow("Notes", `
-        <input id="fn-${id}" value="${escapeHTML(filename)}">
-        <br>
-        <textarea id="txt-${id}" style="width:100%;height:200px;"></textarea>
-        <br>
-        <button onclick="saveNote('${id}')">Save</button>
-    `);
-
-    setTimeout(async () => {
-        const txt = document.getElementById("txt-" + id);
-        txt.value = await FileSystem.readFile(filename);
-    }, 100);
-}
-
-async function saveNote(id) {
-    const name = document.getElementById("fn-" + id).value;
-    const content = document.getElementById("txt-" + id).value;
-
-    await FileSystem.saveFile(name, content);
-    renderFileExplorer();
-}
-
-// ==========================================
-// PLACEHOLDER APPS
+// APP STORE (PLACEHOLDER SAFE)
 // ==========================================
 
 function openAppStore() {
-    openWindow("App Store", "<p>Coming soon</p>");
+    openWindow("App Store", "<p>App Store coming soon</p>");
 }
+
+// ==========================================
+// DESKTOP APPS (SAFE)
+// ==========================================
+
+function renderDesktopApps() {}
+
+// ==========================================
+// FINAL BOOT PATCH
+// ==========================================
+
+exposeGlobals();
