@@ -5,7 +5,197 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EmeraldOS</title>
 
-<link rel="stylesheet" href="os.css">
+<style>
+
+/* =========================
+   WINDOWS 95 BASE THEME
+========================= */
+
+body {
+    margin: 0;
+    font-family: "MS Sans Serif", Arial, sans-serif;
+    background: #008080;
+    overflow: hidden;
+}
+
+/* =========================
+   DESKTOP
+========================= */
+
+#desktop {
+    position: absolute;
+    inset: 0;
+}
+
+#desktop-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+}
+
+.icon {
+    width: 70px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    color: white;
+    user-select: none;
+}
+
+.icon:hover {
+    background: rgba(0,0,128,0.25);
+}
+
+/* =========================
+   WINDOWS
+========================= */
+
+.window {
+    position: absolute;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    box-shadow: 2px 2px 0 black;
+}
+
+.title-bar {
+    background: #000080;
+    color: white;
+    padding: 3px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    cursor: move;
+}
+
+.title-bar button {
+    width: 18px;
+    height: 18px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.window-content {
+    padding: 8px;
+    background: #c0c0c0;
+    color: black;
+    height: calc(100% - 28px);
+    overflow: auto;
+}
+
+/* =========================
+   BUTTONS / INPUTS
+========================= */
+
+button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    font-size: 12px;
+    padding: 3px 8px;
+    cursor: pointer;
+}
+
+button:active {
+    border-color: #404040 #ffffff #ffffff #404040;
+}
+
+input, textarea {
+    background: white;
+    border: 2px solid;
+    border-color: #404040 #ffffff #ffffff #404040;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+/* =========================
+   FILE ITEMS
+========================= */
+
+.file-item {
+    padding: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.file-item:hover {
+    background: #000080;
+    color: white;
+}
+
+/* =========================
+   START MENU
+========================= */
+
+#start-menu {
+    position: absolute;
+    bottom: 35px;
+    left: 0;
+    width: 180px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    display: none;
+}
+
+#start-menu.show {
+    display: block;
+}
+
+.start-menu-item {
+    padding: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.start-menu-item:hover {
+    background: #000080;
+    color: white;
+}
+
+/* =========================
+   TASKBAR
+========================= */
+
+#taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35px;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+}
+
+#start-btn {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -16,25 +206,11 @@
 
     <div id="desktop-icons">
 
-        <div class="icon" onclick="Applications.notes()">
-            📄 <span>Notes</span>
-        </div>
-
-        <div class="icon" onclick="Applications.files()">
-            📁 <span>Files</span>
-        </div>
-
-        <div class="icon" onclick="Applications.store()">
-            🛒 <span>Store</span>
-        </div>
-
-        <div class="icon" onclick="Applications.system()">
-            💻 <span>System</span>
-        </div>
-
-        <div class="icon" onclick="Applications.chat()">
-            💬 <span>Chat</span>
-        </div>
+        <div class="icon" onclick="Applications.notes()">📄 Notes</div>
+        <div class="icon" onclick="Applications.files()">📁 Files</div>
+        <div class="icon" onclick="Applications.store()">🛒 Store</div>
+        <div class="icon" onclick="Applications.system()">💻 System</div>
+        <div class="icon" onclick="Applications.chat()">💬 Chat</div>
 
     </div>
 
@@ -44,22 +220,10 @@
 
 <aside id="start-menu">
 
-    <div id="start-banner">EmeraldOS</div>
-
-    <div id="start-items">
-
-        <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
-        <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
-        <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
-        <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
-        <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
-
-        <div class="start-menu-divider"></div>
-
-        <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
-        <div class="start-menu-item" onclick="Session.logout()">🚪 Log Out</div>
-
-    </div>
+    <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
+    <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
+    <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
+    <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
 
 </aside>
 
@@ -72,13 +236,6 @@
 <footer id="taskbar">
 
     <button id="start-btn">Start</button>
-
-    <div id="taskbar-apps"></div>
-
-    <div id="taskbar-right">
-        <div id="os-user">User</div>
-        <div id="clock">00:00</div>
-    </div>
 
 </footer>
 
