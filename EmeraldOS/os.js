@@ -1,23 +1,21 @@
 // ==========================================
-// EMERALDOS - FIXED CORE SYSTEM
+// EMERALDOS - STABLE DROP-IN BUILD
 // ==========================================
 
 let zIndexCounter = 100;
 let activeDrag = null;
 
 // ==========================================
-// BOOT SEQUENCE (SAFE INIT WRAPPER)
+// BOOT SEQUENCE
 // ==========================================
 
 window.addEventListener("DOMContentLoaded", () => {
-
     initClock();
     initStartMenu();
-    initDesktop();
-    initPaint();
     renderDesktopApps();
+    initPaint();
 
-    console.log("Emerald OS initialized.");
+    console.log("Emerald OS initialized");
 });
 
 // ==========================================
@@ -28,19 +26,19 @@ function initClock() {
     const clock = document.getElementById("clock");
     if (!clock) return;
 
-    function updateClock() {
+    function tick() {
         clock.textContent = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit"
         });
     }
 
-    updateClock();
-    setInterval(updateClock, 1000);
+    tick();
+    setInterval(tick, 1000);
 }
 
 // ==========================================
-// START MENU (FIXED INIT)
+// START MENU
 // ==========================================
 
 function initStartMenu() {
@@ -51,7 +49,6 @@ function initStartMenu() {
 
     startBtn.addEventListener("click", e => {
         e.stopPropagation();
-
         startMenu.classList.toggle("show");
 
         if (startMenu.classList.contains("show")) {
@@ -64,12 +61,8 @@ function initStartMenu() {
     });
 
     document.addEventListener("click", e => {
-        if (
-            startMenu.classList.contains("show") &&
-            !startMenu.contains(e.target)
-        ) {
+        if (!startMenu.contains(e.target) && startMenu.classList.contains("show")) {
             startMenu.classList.remove("show");
-
             startBtn.style.borderColor = "#fff #000 #000 #fff";
             startBtn.style.background = "#c0c0c0";
         }
@@ -77,7 +70,7 @@ function initStartMenu() {
 }
 
 // ==========================================
-// SAFE HTML ESCAPE
+// ESCAPE HTML
 // ==========================================
 
 function escapeHTML(text) {
@@ -96,16 +89,16 @@ function escapeHTML(text) {
 function openWindow(title, contentHTML) {
 
     const container = document.getElementById("windows-container");
-    const taskbarApps = document.getElementById("taskbar-apps");
+    const taskbar = document.getElementById("taskbar-apps");
 
-    if (!container || !taskbarApps) return;
+    if (!container || !taskbar) return;
 
     const win = document.createElement("div");
     win.className = "window";
 
+    win.style.left = (50 + Math.random() * 100) + "px";
+    win.style.top = (50 + Math.random() * 80) + "px";
     win.style.zIndex = ++zIndexCounter;
-    win.style.left = Math.floor(50 + Math.random() * 80) + "px";
-    win.style.top = Math.floor(50 + Math.random() * 80) + "px";
 
     win.innerHTML = `
         <div class="title-bar">
@@ -122,9 +115,9 @@ function openWindow(title, contentHTML) {
     const tab = document.createElement("div");
     tab.className = "taskbar-tab active";
     tab.textContent = title;
-    taskbarApps.appendChild(tab);
+    taskbar.appendChild(tab);
 
-    function activateWindow() {
+    function focusWindow() {
         win.style.display = "flex";
         win.style.zIndex = ++zIndexCounter;
 
@@ -136,21 +129,14 @@ function openWindow(title, contentHTML) {
 
     tab.addEventListener("click", () => {
         if (win.style.display === "none") {
-            activateWindow();
-            return;
-        }
-
-        win.style.display =
-            win.style.display === "none" ? "flex" : "none";
-
-        if (win.style.display === "none") {
-            tab.classList.remove("active");
+            focusWindow();
         } else {
-            activateWindow();
+            win.style.display = "none";
+            tab.classList.remove("active");
         }
     });
 
-    win.addEventListener("mousedown", activateWindow);
+    win.addEventListener("mousedown", focusWindow);
 
     win.querySelector(".close-btn").addEventListener("click", () => {
         win.remove();
@@ -161,7 +147,7 @@ function openWindow(title, contentHTML) {
 
     titleBar.addEventListener("mousedown", e => {
         activeDrag = {
-            window: win,
+            win,
             startX: e.clientX,
             startY: e.clientY,
             left: win.offsetLeft,
@@ -169,13 +155,13 @@ function openWindow(title, contentHTML) {
         };
     });
 
-    activateWindow();
+    focusWindow();
 
     return win;
 }
 
 // ==========================================
-// GLOBAL DRAG SYSTEM
+// DRAG SYSTEM
 // ==========================================
 
 document.addEventListener("mousemove", e => {
@@ -184,8 +170,8 @@ document.addEventListener("mousemove", e => {
     const dx = e.clientX - activeDrag.startX;
     const dy = e.clientY - activeDrag.startY;
 
-    activeDrag.window.style.left = activeDrag.left + dx + "px";
-    activeDrag.window.style.top = activeDrag.top + dy + "px";
+    activeDrag.win.style.left = activeDrag.left + dx + "px";
+    activeDrag.win.style.top = activeDrag.top + dy + "px";
 });
 
 document.addEventListener("mouseup", () => {
@@ -193,152 +179,155 @@ document.addEventListener("mouseup", () => {
 });
 
 // ==========================================
-// FILE SYSTEM (LOCALSTORAGE)
+// FILE SYSTEM
 // ==========================================
 
 const FileSystem = {
-    saveFile(filename, content) {
-        filename = filename.trim();
-        if (!filename) return alert("Enter filename");
-
-        localStorage.setItem("os_file_" + filename, content);
-        alert("Saved " + filename);
+    saveFile(name, content) {
+        if (!name) return alert("No filename");
+        localStorage.setItem("os_file_" + name, content);
     },
 
-    readFile(filename) {
-        return localStorage.getItem("os_file_" + filename) || "";
+    readFile(name) {
+        return localStorage.getItem("os_file_" + name) || "";
     },
 
-    deleteFile(filename) {
-        localStorage.removeItem("os_file_" + filename);
+    deleteFile(name) {
+        localStorage.removeItem("os_file_" + name);
     }
 };
 
 // ==========================================
-// NOTES APP
+// NOTES
 // ==========================================
 
-function openNotes(filename = "New_Note.txt") {
+function openNotes(filename = "New.txt") {
 
-    const noteId = Math.random().toString(36).substring(2);
-    const savedText = FileSystem.readFile(filename);
+    const id = Math.random().toString(36).slice(2);
+    const text = FileSystem.readFile(filename);
 
     const html = `
-        <div style="padding:5px;background:#c0c0c0;display:flex;gap:5px;border-bottom:2px solid #000;">
-            <input id="fname-${noteId}" value="${escapeHTML(filename)}" style="flex:1;padding:4px;">
-            <button id="save-${noteId}">Save</button>
+        <div style="display:flex;gap:5px;background:#c0c0c0;padding:5px;">
+            <input id="fn-${id}" value="${escapeHTML(filename)}" style="flex:1;">
+            <button id="save-${id}">Save</button>
         </div>
 
-        <textarea id="content-${noteId}"
-            style="width:100%;height:calc(100% - 40px);border:none;padding:6px;">
-            ${escapeHTML(savedText)}
-        </textarea>
+        <textarea id="txt-${id}" style="width:100%;height:90%;">${escapeHTML(text)}</textarea>
     `;
 
     const win = openWindow("Notes", html);
 
     setTimeout(() => {
-        const btn = document.getElementById("save-" + noteId);
-
-        if (!btn) return;
+        const btn = document.getElementById("save-" + id);
 
         btn.onclick = () => {
-            const fname = document.getElementById("fname-" + noteId).value;
-            const content = document.getElementById("content-" + noteId).value;
+            const name = document.getElementById("fn-" + id).value;
+            const content = document.getElementById("txt-" + id).value;
 
-            FileSystem.saveFile(fname, content);
+            FileSystem.saveFile(name, content);
             renderFileExplorer();
         };
-    }, 10);
+    }, 50);
 }
 
 // ==========================================
-// FILE EXPLORER
+// FILE EXPLORER (FIXED CLICKABLE UI)
 // ==========================================
 
-function getFilesList() {
-    const files = [];
+function getFiles() {
+    const out = [];
 
     for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-
-        if (key.startsWith("os_file_")) {
-            files.push(key.replace("os_file_", ""));
+        const k = localStorage.key(i);
+        if (k && k.startsWith("os_file_")) {
+            out.push(k.replace("os_file_", ""));
         }
     }
 
-    return files.sort();
+    return out.sort();
+}
+
+function deleteFile(name) {
+    if (confirm("Delete " + name + "?")) {
+        FileSystem.deleteFile(name);
+        renderFileExplorer();
+    }
 }
 
 function renderFileExplorer() {
-    const container = document.getElementById("explorer-content");
-    if (!container) return;
+    const el = document.getElementById("explorer-content");
+    if (!el) return;
 
-    const files = getFilesList();
+    const files = getFiles();
 
     if (!files.length) {
-        container.innerHTML = "<div style='padding:20px;color:gray;'>Empty</div>";
+        el.innerHTML = "<div style='padding:10px;color:gray;'>Empty</div>";
         return;
     }
 
-    container.innerHTML = files.map(file => `
-        <div>
-            📄 ${escapeHTML(file)}
-        </div>
-    `).join("");
+    let html = `
+        <table style="width:100%;border-collapse:collapse;">
+            <tr style="background:#ddd;">
+                <th style="text-align:left;">File</th>
+                <th>Actions</th>
+            </tr>
+    `;
+
+    files.forEach(f => {
+        html += `
+            <tr>
+                <td style="padding:5px;">📄 ${escapeHTML(f)}</td>
+                <td style="text-align:center;">
+                    <button onclick="openNotes('${f}')">Open</button>
+                    <button onclick="deleteFile('${f}')" style="color:red;">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += "</table>";
+
+    el.innerHTML = html;
 }
 
 function openFileExplorer() {
     openWindow("File Explorer", `<div id="explorer-content"></div>`);
-    setTimeout(renderFileExplorer, 20);
+    setTimeout(renderFileExplorer, 50);
 }
 
 // ==========================================
-// DESKTOP RENDER
+// DESKTOP APPS (SAFE)
 // ==========================================
 
-function renderDesktopApps() {
-    const zone = document.getElementById("installed-apps-zone");
-    if (!zone) return;
-    zone.innerHTML = "";
-}
+function renderDesktopApps() {}
 
 // ==========================================
-// PAINT INIT (SAFE PLACEHOLDER)
+// PAINT (SAFE)
 // ==========================================
 
 function initPaint() {
-    document.querySelectorAll("canvas[id^='paint-']").forEach(canvas => {
-        if (canvas.dataset.init) return;
-        canvas.dataset.init = "true";
+    document.querySelectorAll("canvas[id^='paint-']").forEach(c => {
+        if (c.dataset.init) return;
+        c.dataset.init = "1";
 
-        const ctx = canvas.getContext("2d");
-        let drawing = false;
+        const ctx = c.getContext("2d");
+        let draw = false;
 
-        canvas.addEventListener("mousedown", e => {
-            drawing = true;
-            const r = canvas.getBoundingClientRect();
+        c.addEventListener("mousedown", e => {
+            draw = true;
+            const r = c.getBoundingClientRect();
             ctx.beginPath();
             ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
         });
 
-        canvas.addEventListener("mousemove", e => {
-            if (!drawing) return;
-
-            const r = canvas.getBoundingClientRect();
+        c.addEventListener("mousemove", e => {
+            if (!draw) return;
+            const r = c.getBoundingClientRect();
             ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
             ctx.stroke();
         });
 
-        canvas.addEventListener("mouseup", () => drawing = false);
-        canvas.addEventListener("mouseleave", () => drawing = false);
+        c.addEventListener("mouseup", () => draw = false);
+        c.addEventListener("mouseleave", () => draw = false);
     });
-}
-
-// ==========================================
-// DESKTOP INIT
-// ==========================================
-
-function initDesktop() {
-    // placeholder for future icons system safety
 }
