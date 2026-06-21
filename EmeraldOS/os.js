@@ -1,18 +1,6 @@
 "use strict";
 
 /* =========================
-   IMPORT CLOUD STORAGE
-========================= */
-
-import {
-    loadDrive,
-    createFile as cloudCreateFile,
-    saveFile as cloudSaveFile,
-    deleteFile as cloudDeleteFile,
-    ensureUser
-} from "./cloudstorage.js";
-
-/* =========================
    STATE
 ========================= */
 
@@ -26,20 +14,18 @@ let fileSystem = {
     notes: {}
 };
 
-let currentNoteId = null;
-let currentFileId = null;
+let currentNote = null;
+let currentFile = null;
 
 /* =========================
    BOOT
 ========================= */
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
-
-    await ensureUser();
-    await loadSystem();
+    loadSystem();
 });
 
 /* =========================
@@ -54,11 +40,11 @@ function initStartMenu() {
 
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.style.display = menu.style.display === "block" ? "none" : "block";
+        menu.classList.toggle("show");
     });
 
     document.addEventListener("click", () => {
-        menu.style.display = "none";
+        menu.classList.remove("show");
     });
 }
 
@@ -83,29 +69,36 @@ function initClock() {
 }
 
 /* =========================
-   CLOUD LOAD
+   STORAGE (LOCAL ONLY)
 ========================= */
 
-async function loadSystem() {
-    const drive = await loadDrive();
+function loadSystem() {
+    try {
+        const saved = JSON.parse(localStorage.getItem("fileSystem"));
+        if (saved) fileSystem = saved;
+    } catch {
+        fileSystem = { files: {}, notes: {} };
+    }
+}
 
-    fileSystem.files = drive || {};
-    refresh();
+function saveSystem() {
+    localStorage.setItem("fileSystem", JSON.stringify(fileSystem));
 }
 
 /* =========================
-   WINDOW SYSTEM (DRAG + RESIZE FIXED)
+   WINDOW SYSTEM (FIXED DRAG + RESIZE)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
 
+    /* DRAG */
     if (dragState) {
         const win = dragState.win;
-
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
+    /* RESIZE */
     if (resizeState) {
         const win = resizeState.win;
 
@@ -123,7 +116,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   WINDOW CORE
+   CORE WINDOW SYSTEM
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -132,8 +125,9 @@ window.openWindow = function (title, contentHTML) {
     const win = document.createElement("div");
     win.className = "window";
 
-    win.style.left = "80px";
+    win.style.position = "absolute";
     win.style.top = "80px";
+    win.style.left = "80px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -161,16 +155,20 @@ window.openWindow = function (title, contentHTML) {
 
     closeBtn.onclick = () => win.remove();
 
+    /* DRAG */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
+        win.style.zIndex = ++zIndexCounter;
     });
 
+    /* RESIZE */
     resizeHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
+        e.stopPropagation();
 
         const rect = win.getBoundingClientRect();
 
@@ -181,13 +179,108 @@ window.openWindow = function (title, contentHTML) {
             startWidth: rect.width,
             startHeight: rect.height
         };
+
+        win.style.zIndex = ++zIndexCounter;
     });
 
     return win;
 };
 
 /* =========================
-   FILE EXPLORER
+   REFRESH SAFE
+========================= */
+
+function refresh() {
+    document.querySelectorAll(".window").forEach(w => w.remove());
+}
+
+/* =========================
+   NOTES APP (FIXED FULL)
+========================= */
+
+window.openNotes = function () {
+    openWindow("Notes", renderNotesApp());
+};
+
+function renderNotesApp() {
+    const notes = fileSystem.notes;
+
+    return `
+        <div style="display:flex;height:100%;">
+            
+            <div style="width:35%;border-right:1px solid #999;padding:5px;">
+                <button onclick="createNote()">+ New Note</button>
+
+                <div>
+                    ${Object.keys(notes).map(id => `
+                        <div style="display:flex;justify-content:space-between;padding:4px;">
+                            <span onclick="openNote('${id}')">${notes[id].name}</span>
+                            <button onclick="deleteNote('${id}')">x</button>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+
+            <div style="flex:1;padding:5px;display:flex;flex-direction:column;">
+                <input id="noteTitle" placeholder="Title" style="margin-bottom:6px;">
+                <textarea id="noteContent" style="flex:1;"></textarea>
+                <button onclick="saveNote()">Save</button>
+            </div>
+
+        </div>
+    `;
+}
+
+window.createNote = function () {
+    const id = "note_" + Date.now();
+    fileSystem.notes[id] = { name: "Untitled", content: "" };
+    saveSystem();
+    refresh();
+    openNotes();
+};
+
+window.openNote = function (id) {
+    currentNote = id;
+
+    setTimeout(() => {
+        const n = fileSystem.notes[id];
+        const t = document.getElementById("noteTitle");
+        const c = document.getElementById("noteContent");
+
+        if (t && c) {
+            t.value = n.name;
+            c.value = n.content;
+        }
+    }, 50);
+};
+
+window.saveNote = function () {
+    if (!currentNote) return;
+
+    const t = document.getElementById("noteTitle");
+    const c = document.getElementById("noteContent");
+
+    if (!t || !c) return;
+
+    fileSystem.notes[currentNote] = {
+        name: t.value,
+        content: c.value
+    };
+
+    saveSystem();
+    refresh();
+    openNotes();
+};
+
+window.deleteNote = function (id) {
+    delete fileSystem.notes[id];
+    saveSystem();
+    refresh();
+    openNotes();
+};
+
+/* =========================
+   FILE EXPLORER (FIXED UI)
 ========================= */
 
 window.openFileExplorer = function () {
@@ -198,33 +291,46 @@ function renderFilesApp() {
     const files = fileSystem.files;
 
     return `
-        <div style="padding:6px;">
-            <button onclick="createFile()">New File</button>
-            <button onclick="createNote()">New Note</button>
+        <div style="padding:6px;display:flex;flex-direction:column;height:100%;">
 
-            <hr>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <button onclick="createFile()">New File</button>
+                <button onclick="uploadFile()">Upload File</button>
+                <button onclick="openFileExplorer()">Refresh</button>
+            </div>
 
-            ${Object.keys(files).map(id => `
-                <div style="display:flex;justify-content:space-between;padding:4px;">
-                    <span>${files[id].name}</span>
-                    <div>
-                        <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="deleteFile('${id}')">Delete</button>
-                    </div>
-                </div>
-            `).join("")}
+            <div style="flex:1;overflow:auto;background:white;border:1px solid #aaa;">
+                ${
+                    Object.keys(files).length === 0
+                        ? `<div style="padding:8px;">No files</div>`
+                        : Object.keys(files).map(id => `
+                            <div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #ddd;">
+                                <span>📄 ${files[id].name}</span>
+                                <div>
+                                    <button onclick="openFile('${id}')">Open</button>
+                                    <button onclick="deleteFile('${id}')">Delete</button>
+                                </div>
+                            </div>
+                        `).join("")
+                }
+            </div>
         </div>
     `;
 }
 
 /* =========================
-   FILE SYSTEM
+   FILE ACTIONS (FIXED)
 ========================= */
 
-window.createFile = async function () {
-    const id = await cloudCreateFile("New File", "");
-    await loadSystem();
-    refresh();
+window.createFile = function () {
+    const id = "file_" + Date.now();
+    fileSystem.files[id] = {
+        name: "New File.txt",
+        content: ""
+    };
+
+    saveSystem();
+    openFileExplorer();
 };
 
 window.openFile = function (id) {
@@ -232,107 +338,58 @@ window.openFile = function (id) {
     if (!file) return;
 
     openWindow(file.name, `
-        <textarea id="file_${id}" style="width:100%;height:85%;">${file.content || ""}</textarea>
-        <button onclick="saveFile('${id}')">Save</button>
+        <div style="display:flex;flex-direction:column;height:100%;">
+            <textarea id="file_${id}" style="flex:1;">${file.content}</textarea>
+            <button onclick="saveFile('${id}')">Save</button>
+        </div>
     `);
 };
 
-window.saveFile = async function (id) {
+window.saveFile = function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
-    await cloudSaveFile(id, {
-        name: fileSystem.files[id].name,
-        content: el.value
-    });
-
-    await loadSystem();
+    fileSystem.files[id].content = el.value;
+    saveSystem();
 };
 
-window.deleteFile = async function (id) {
-    await cloudDeleteFile(id);
-    await loadSystem();
-    refresh();
+window.deleteFile = function (id) {
+    delete fileSystem.files[id];
+    saveSystem();
+    openFileExplorer();
 };
 
 /* =========================
-   NOTES (FIXED FULL SYSTEM)
+   UPLOAD (FIXED WORKING)
 ========================= */
 
-window.createNote = function () {
-    const id = "note_" + Date.now();
+window.uploadFile = function () {
+    const input = document.createElement("input");
+    input.type = "file";
 
-    fileSystem.notes[id] = {
-        name: "Untitled Note",
-        content: ""
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const id = "file_" + Date.now();
+
+            fileSystem.files[id] = {
+                name: file.name,
+                content: reader.result
+            };
+
+            saveSystem();
+            openFileExplorer();
+        };
+
+        reader.readAsText(file);
     };
 
-    openNote(id);
-    refresh();
+    input.click();
 };
-
-window.openNotes = function () {
-    let list = Object.keys(fileSystem.notes);
-
-    openWindow("Notes", `
-        <button onclick="createNote()">New Note</button>
-        <hr>
-
-        ${list.map(id => `
-            <div style="padding:4px;cursor:pointer;" onclick="openNote('${id}')">
-                ${fileSystem.notes[id].name}
-            </div>
-        `).join("")}
-    `);
-};
-
-window.openNote = function (id) {
-    currentNoteId = id;
-
-    const note = fileSystem.notes[id];
-
-    openWindow(note.name, `
-        <input id="note_title_${id}" style="width:100%;" value="${note.name}">
-        <textarea id="note_content_${id}" style="width:100%;height:80%;">${note.content}</textarea>
-        <button onclick="saveNote('${id}')">Save</button>
-    `);
-};
-
-window.saveNote = function (id) {
-    const title = document.getElementById(`note_title_${id}`)?.value;
-    const content = document.getElementById(`note_content_${id}`)?.value;
-
-    fileSystem.notes[id] = {
-        name: title,
-        content: content
-    };
-
-    // convert note → real file
-    const fileId = "file_" + id;
-
-    cloudSaveFile(fileId, {
-        name: title + ".txt",
-        content: content
-    });
-
-    refresh();
-};
-
-/* =========================
-   APP STUBS
-========================= */
-
-window.openAppStore = function () {
-    openWindow("App Store", "<p>Store coming soon</p>");
-};
-
-/* =========================
-   REFRESH
-========================= */
-
-function refresh() {
-    document.querySelectorAll(".window").forEach(w => w.remove());
-}
 
 /* =========================
    LEGACY API
