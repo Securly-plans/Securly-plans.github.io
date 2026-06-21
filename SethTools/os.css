@@ -1,166 +1,140 @@
-/* ==========================================
-   EMERALDOS GLOBAL STYLES
-   ========================================== */
-
-html,
 body {
     margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "MS Sans Serif", Arial, sans-serif;
     background: #008080;
+    overflow: hidden;
 }
 
-/* ==========================================
-   LOGIN / REGISTER PAGES
-   ========================================== */
+/* =========================
+   WINDOWS 95 WINDOW
+========================= */
 
-body.auth-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.auth-window {
-    width: 430px;
+.window {
+    position: absolute;
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
+    border-color: #ffffff #404040 #404040 #ffffff;
+    box-shadow: 2px 2px 0 #000;
 }
 
-.auth-content {
-    padding: 20px;
-}
-
-.auth-logo {
-    font-size: 42px;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.auth-subtitle {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.auth-info {
-    background: white;
-    border: 2px inset white;
-    padding: 10px;
-    margin-bottom: 20px;
-    font-size: 13px;
-}
-
-.auth-buttons {
+.title-bar {
+    background: #000080;
+    color: white;
+    padding: 3px;
     display: flex;
     justify-content: space-between;
-    margin-top: 15px;
+    align-items: center;
+    font-size: 12px;
+    cursor: move;
 }
 
-/* ==========================================
-   FORMS
-   ========================================== */
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
+.title-bar button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
 }
 
-input,
-textarea,
-select {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px;
-    border: 2px inset white;
-    background: white;
-    font-family: inherit;
-    margin-bottom: 15px;
+.window-content {
+    padding: 8px;
+    background: #c0c0c0;
+    color: black;
 }
 
-textarea {
-    resize: none;
+/* =========================
+   ICONS
+========================= */
+
+.icon {
+    width: 70px;
+    text-align: center;
+    margin: 10px;
+    cursor: pointer;
+    font-size: 12px;
 }
 
-/* ==========================================
-   BUTTONS
-   ========================================== */
+.icon:hover {
+    background: rgba(0,0,128,0.2);
+}
+
+/* =========================
+   BUTTONS (WIN95 STYLE)
+========================= */
 
 button {
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    padding: 5px 15px;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    padding: 3px 8px;
+    font-size: 12px;
     cursor: pointer;
-    font-family: inherit;
 }
 
 button:active {
-    border-color: #000 #fff #fff #000;
-    background: #dfdfdf;
+    border-color: #404040 #ffffff #ffffff #404040;
 }
 
-/* ==========================================
-   DESKTOP
-   ========================================== */
+/* =========================
+   INPUTS
+========================= */
 
-#desktop {
-    flex: 1;
-    position: relative;
-    padding: 20px;
+input, textarea {
+    background: white;
+    border: 2px solid;
+    border-color: #404040 #ffffff #ffffff #404040;
+    font-family: inherit;
+}
+
+/* =========================
+   TASKBAR
+========================= */
+
+#taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35px;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    align-items: center;
+    padding: 2px;
 }
 
-.icon {
-    width: 70px;
-    color: white;
-    text-align: center;
-    cursor: pointer;
-    font-size: 14px;
-    user-select: none;
-    padding: 5px;
-    text-shadow: 1px 1px 2px black;
+#start-btn {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    font-weight: bold;
 }
 
-.icon:hover {
-    background: rgba(255,255,255,0.2);
-    border-radius: 4px;
-}
-
-/* ==========================================
+/* =========================
    START MENU
-   ========================================== */
+========================= */
 
 #start-menu {
     position: absolute;
+    bottom: 35px;
     left: 0;
-    bottom: 40px;
-    width: 220px;
+    width: 180px;
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #fff #000 #000 #fff;
+    border-color: #ffffff #404040 #404040 #ffffff;
     display: none;
-    flex-direction: row;
-    z-index: 10000;
-    box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
 }
 
 #start-menu.show {
-    display: flex;
+    display: block;
 }
 
 .start-menu-item {
-    padding: 8px 10px;
+    padding: 6px;
+    font-size: 12px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
 }
 
 .start-menu-item:hover {
@@ -168,173 +142,17 @@ button:active {
     color: white;
 }
 
-.start-menu-divider {
-    height: 0;
-    border-top: 1px solid #888;
-    border-bottom: 1px solid white;
-    margin: 4px 2px;
-}
+/* =========================
+   FILE LIST
+========================= */
 
-/* ==========================================
-   TASKBAR
-   ========================================== */
-
-#taskbar {
-    height: 40px;
-    background: #c0c0c0;
-    border-top: 2px solid white;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    box-sizing: border-box;
-    z-index: 9999;
-}
-
-#start-btn {
-    font-weight: bold;
-    padding: 5px 15px;
-}
-
-#clock {
-    min-width: 80px;
-    text-align: center;
-}
-
-#os-user {
-    margin-left: 10px;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-/* ==========================================
-   TASKBAR APPS
-   ========================================== */
-
-.taskbar-tab {
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    padding: 3px 10px;
-    cursor: pointer;
+.file-item {
+    padding: 4px;
     font-size: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    max-width: 140px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    cursor: pointer;
 }
 
-.taskbar-tab.active {
-    border-color: #000 #fff #fff #000;
-    background: #dfdfdf;
-}
-
-/* ==========================================
-   WINDOWS
-   ========================================== */
-
-.window {
-    position: absolute;
-    width: 350px;
-    height: 250px;
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-    overflow: hidden;
-    min-width: 220px;
-    min-height: 150px;
-    box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
-}
-
-.title-bar {
+.file-item:hover {
     background: #000080;
     color: white;
-    padding: 4px 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: grab;
-    user-select: none;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.title-bar:active {
-    cursor: grabbing;
-}
-
-.close-btn {
-    padding: 2px 6px;
-    font-size: 12px;
-}
-
-.window-content {
-    flex: 1;
-    background: white;
-    border: 2px solid;
-    border-color: #000 #fff #fff #000;
-    margin: 5px;
-    padding: 10px;
-    overflow: auto;
-    box-sizing: border-box;
-}
-
-/* ==========================================
-   SCROLLBARS
-   ========================================== */
-
-::-webkit-scrollbar {
-    width: 16px;
-    height: 16px;
-}
-
-::-webkit-scrollbar-track {
-    background: #c0c0c0;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #fff #000 #000 #fff;
-}
-
-::-webkit-scrollbar-corner {
-    background: #c0c0c0;
-}
-
-/* ==========================================
-   LINKS
-   ========================================== */
-
-a {
-    color: #000080;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-/* ==========================================
-   MOBILE
-   ========================================== */
-
-@media (max-width: 600px) {
-
-    .auth-window {
-        width: 95%;
-    }
-
-    .window {
-        width: 95vw;
-        height: 70vh;
-    }
-
-    #start-menu {
-        width: 90%;
-    }
 }
