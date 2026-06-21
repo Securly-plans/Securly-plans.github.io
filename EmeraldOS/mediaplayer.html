@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Media Player</title>
+
+<style>
+
+:root{
+    --win-bg:#008080;
+    --win-face:#c0c0c0;
+    --win-light:#ffffff;
+    --win-shadow:#808080;
+    --win-dark:#000000;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:#008080;
+    font-family:"MS Sans Serif",Tahoma,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+/* WINDOW */
+
+.window{
+    width:650px;
+    background:#c0c0c0;
+    border-top:2px solid white;
+    border-left:2px solid white;
+    border-right:2px solid #808080;
+    border-bottom:2px solid #808080;
+    box-shadow:3px 3px black;
+}
+
+/* TITLE BAR */
+
+.title-bar{
+    background:linear-gradient(to right,#000080,#1084d0);
+    color:white;
+    padding:4px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.title-buttons{
+    display:flex;
+    gap:2px;
+}
+
+.title-buttons button{
+    width:18px;
+    height:18px;
+    padding:0;
+    font-size:11px;
+}
+
+/* MENU BAR */
+
+.menu-bar{
+    padding:4px 8px;
+    background:#c0c0c0;
+    border-bottom:1px solid #808080;
+    font-size:12px;
+}
+
+.menu-bar span{
+    margin-right:20px;
+    cursor:pointer;
+}
+
+/* SCREEN */
+
+.screen{
+    margin:8px;
+    height:320px;
+    background:black;
+    border:2px inset white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+video,
+audio{
+    width:100%;
+    height:100%;
+    background:black;
+}
+
+/* TIME BAR */
+
+.time-bar{
+    margin:0 8px;
+    padding:6px;
+    border:2px inset white;
+    background:white;
+    font-size:11px;
+}
+
+/* SEEK */
+
+.seek-container{
+    padding:8px;
+}
+
+.seek-container input{
+    width:100%;
+}
+
+/* CONTROLS */
+
+.controls{
+    padding:8px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+}
+
+button{
+    background:#c0c0c0;
+    border-top:2px solid white;
+    border-left:2px solid white;
+    border-right:2px solid #808080;
+    border-bottom:2px solid #808080;
+    padding:5px 14px;
+    font-family:"MS Sans Serif",Tahoma,sans-serif;
+    cursor:pointer;
+}
+
+button:active{
+    border-top:2px solid #808080;
+    border-left:2px solid #808080;
+    border-right:2px solid white;
+    border-bottom:2px solid white;
+}
+
+label{
+    font-size:12px;
+}
+
+input[type="range"]{
+    vertical-align:middle;
+}
+
+/* STATUS BAR */
+
+.status{
+    padding:4px 8px;
+    border-top:1px solid #808080;
+    background:#c0c0c0;
+    font-size:11px;
+}
+
+@media(max-width:700px){
+
+    .window{
+        width:95%;
+    }
+
+    .screen{
+        height:220px;
+    }
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="window">
+
+    <div class="title-bar">
+        <div>🎵 Media Player</div>
+
+        <div class="title-buttons">
+            <button>_</button>
+            <button>□</button>
+            <button>×</button>
+        </div>
+    </div>
+
+    <div class="menu-bar">
+        <span>File</span>
+        <span>View</span>
+        <span>Play</span>
+        <span>Favorites</span>
+        <span>Help</span>
+    </div>
+
+    <div class="screen">
+        <video id="player">
+            Your browser does not support media playback.
+        </video>
+    </div>
+
+    <div class="time-bar" id="timeDisplay">
+        0:00 / 0:00
+    </div>
+
+    <div class="seek-container">
+        <input type="range" id="seek" min="0" max="100" value="0">
+    </div>
+
+    <div class="controls">
+
+        <button onclick="openMedia()">
+            Open
+        </button>
+
+        <button onclick="playPause()">
+            Play/Pause
+        </button>
+
+        <button onclick="stopMedia()">
+            Stop
+        </button>
+
+        <button onclick="rewindMedia()">
+            <<
+        </button>
+
+        <button onclick="forwardMedia()">
+            >>
+        </button>
+
+        <label>
+            Volume
+            <input
+                type="range"
+                id="volume"
+                min="0"
+                max="100"
+                value="100">
+        </label>
+
+    </div>
+
+    <div class="status">
+        Ready
+    </div>
+
+</div>
+
+<input
+    type="file"
+    id="fileInput"
+    accept="audio/*,video/*"
+    style="display:none;">
+
+<script>
+
+const player =
+    document.getElementById("player");
+
+const fileInput =
+    document.getElementById("fileInput");
+
+const volume =
+    document.getElementById("volume");
+
+const seek =
+    document.getElementById("seek");
+
+const timeDisplay =
+    document.getElementById("timeDisplay");
+
+function openMedia(){
+
+    fileInput.click();
+}
+
+fileInput.addEventListener("change", e=>{
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    player.src =
+        URL.createObjectURL(file);
+
+    player.play();
+});
+
+function playPause(){
+
+    if(player.paused){
+        player.play();
+    }else{
+        player.pause();
+    }
+}
+
+function stopMedia(){
+
+    player.pause();
+    player.currentTime = 0;
+}
+
+function rewindMedia(){
+
+    player.currentTime =
+        Math.max(0, player.currentTime - 10);
+}
+
+function forwardMedia(){
+
+    player.currentTime =
+        Math.min(
+            player.duration || 0,
+            player.currentTime + 10
+        );
+}
+
+volume.addEventListener("input", ()=>{
+
+    player.volume =
+        volume.value / 100;
+});
+
+player.addEventListener("loadedmetadata", ()=>{
+
+    seek.max =
+        Math.floor(player.duration);
+});
+
+player.addEventListener("timeupdate", ()=>{
+
+    seek.value =
+        Math.floor(player.currentTime);
+
+    timeDisplay.textContent =
+        formatTime(player.currentTime)
+        + " / " +
+        formatTime(player.duration || 0);
+});
+
+seek.addEventListener("input", ()=>{
+
+    player.currentTime =
+        seek.value;
+});
+
+function formatTime(seconds){
+
+    seconds = Math.floor(seconds);
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    const secs =
+        seconds % 60;
+
+    return (
+        minutes +
+        ":" +
+        String(secs).padStart(2,"0")
+    );
+}
+
+</script>
+
+</body>
+</html>
