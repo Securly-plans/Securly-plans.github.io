@@ -1,23 +1,30 @@
+console.log("os.js OPENED");
+
+"use strict";
+
+/* =========================
+   STATE
+========================= */
+
 let zIndexCounter = 100;
 let activeDrag = null;
 
 /* =========================
-   BOOT
+   BOOT (SAFE)
 ========================= */
 
-window.addEventListener("DOMContentLoaded", async () => {
-    initClock();
+window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
+    initClock();
     initDesktop();
     exposeGlobals();
-
     loadInstalledApps();
     renderDesktopApps();
     renderFileExplorer();
 });
 
 /* =========================
-   START MENU (FIXED)
+   START MENU (FIXED 100%)
 ========================= */
 
 function initStartMenu() {
@@ -25,7 +32,7 @@ function initStartMenu() {
     const menu = document.getElementById("start-menu");
 
     if (!btn || !menu) {
-        console.warn("Start menu missing:", { btn, menu });
+        console.warn("Start menu missing elements", { btn, menu });
         return;
     }
 
@@ -51,21 +58,25 @@ function initDesktop() {
 }
 
 /* =========================
-   GLOBALS
+   GLOBAL EXPORTS (SAFE)
 ========================= */
 
 function exposeGlobals() {
-    window.openWindow = openWindow;
-    window.openNotes = openNotes;
-    window.openFileExplorer = openFileExplorer;
-    window.openAppStore = openAppStore;
+    const safe = (name, fn) => {
+        if (typeof fn === "function") window[name] = fn;
+    };
 
-    window.installApp = installApp;
-    window.uninstallApp = uninstallApp;
-    window.launchApp = launchApp;
+    safe("openWindow", openWindow);
+    safe("openNotes", openNotes);
+    safe("openFileExplorer", openFileExplorer);
+    safe("openAppStore", openAppStore);
 
-    window.saveNote = saveNote;
-    window.renderFileExplorer = renderFileExplorer;
+    safe("installApp", installApp);
+    safe("uninstallApp", uninstallApp);
+    safe("launchApp", launchApp);
+
+    safe("saveNote", saveNote);
+    safe("renderFileExplorer", renderFileExplorer);
 }
 
 /* =========================
@@ -152,7 +163,7 @@ function escapeHTML(t) {
 }
 
 /* =========================
-   FILES (LOCAL ONLY)
+   FILE SYSTEM (LOCAL ONLY)
 ========================= */
 
 function saveFile(name, content) {
@@ -189,10 +200,10 @@ function openNotes(filename = "New.txt") {
         <button onclick="saveNote('${id}')">Save</button>
     `);
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         const el = document.getElementById("txt-" + id);
         if (el) el.value = readFile(filename);
-    }, 50);
+    });
 }
 
 function saveNote(id) {
@@ -220,14 +231,18 @@ const appCatalog = [
     }
 ];
 
+/* =========================
+   CALCULATOR (SAFE)
+========================= */
+
 function calculatorApp() {
     const id = Math.random().toString(36).slice(2);
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         const input = document.getElementById("calc-" + id);
-        const buttons = document.querySelectorAll(`[data-calc="${id}"]`);
+        if (!input) return;
 
-        buttons.forEach(b => {
+        document.querySelectorAll(`[data-calc="${id}"]`).forEach(b => {
             b.onclick = () => {
                 const v = b.dataset.val;
 
@@ -241,24 +256,27 @@ function calculatorApp() {
                 }
             };
         });
-    }, 50);
+    });
 
     return `
         <input id="calc-${id}" style="width:100%;font-size:20px;"><br><br>
         ${["7","8","9","/","C","4","5","6","*","=","1","2","3","-","0",".","+"]
-            .map(v => `
-                <button data-calc="${id}" data-val="${v}">
-                    ${v}
-                </button>
-            `).join("")}
+            .map(v => `<button data-calc="${id}" data-val="${v}">${v}</button>`)
+            .join("")}
     `;
 }
+
+/* =========================
+   PAINT (FIXED CRASH)
+========================= */
 
 function paintApp() {
     const id = Math.random().toString(36).slice(2);
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         const canvas = document.getElementById("paint-" + id);
+        if (!canvas) return;
+
         const ctx = canvas.getContext("2d");
         let drawing = false;
 
@@ -267,21 +285,22 @@ function paintApp() {
 
         canvas.onmousemove = (e) => {
             if (!drawing) return;
-            const r = canvas.getBoundingClientRect();
 
+            const rect = canvas.getBoundingClientRect();
             ctx.fillStyle = "black";
-            ctx.fillRect(e.clientX - r.left, e.clientY - r.top, 2, 2);
+            ctx.fillRect(e.clientX - rect.left, e.clientY - rect.top, 2, 2);
         };
 
-        document.getElementById("clear-" + id).onclick = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        };
-    }, 50);
+        const clear = document.getElementById("clear-" + id);
+        if (clear) {
+            clear.onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    });
 
     return `
         <button id="clear-${id}">Clear</button><br>
         <canvas id="paint-${id}" width="300" height="200"
-            style="border:1px solid #000;background:#fff;"></canvas>
+            style="border:1px solid black;background:white;"></canvas>
     `;
 }
 
@@ -313,3 +332,55 @@ function launchApp(i) {
 function openFileExplorer() {
     openWindow("File Explorer", `<div id="explorer"></div>`);
 }
+
+/* =========================
+   INSTALL SYSTEM (SIMPLE FIXED)
+========================= */
+
+function loadInstalledApps() {
+    if (!localStorage.getItem("os_installed_apps")) {
+        localStorage.setItem("os_installed_apps", "[]");
+    }
+}
+
+function installApp(i) {
+    let list = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+    if (!list.includes(appCatalog[i].name)) {
+        list.push(appCatalog[i].name);
+    }
+    localStorage.setItem("os_installed_apps", JSON.stringify(list));
+    renderDesktopApps();
+}
+
+function uninstallApp(i) {
+    let list = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+    list = list.filter(n => n !== appCatalog[i].name);
+    localStorage.setItem("os_installed_apps", JSON.stringify(list));
+    renderDesktopApps();
+}
+
+function renderDesktopApps() {
+    const zone = document.getElementById("installed-apps-zone");
+    if (!zone) return;
+
+    const installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+
+    zone.innerHTML = "";
+
+    installed.forEach(name => {
+        const app = appCatalog.find(a => a.name === name);
+
+        const div = document.createElement("div");
+        div.className = "icon";
+        div.innerHTML = "📦<br>" + escapeHTML(name);
+
+        div.onclick = () => {
+            if (!app) return openWindow("Error", "Missing app");
+            openWindow(app.name, app.content);
+        };
+
+        zone.appendChild(div);
+    });
+}
+
+console.log("os.js RAN");
