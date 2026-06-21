@@ -11,7 +11,7 @@ import {
 } from "./firebase.js";
 
 /* =========================
-   USER IDENTITY (USERNAME ONLY)
+   USER IDENTITY
 ========================= */
 
 function getUsername() {
@@ -19,25 +19,61 @@ function getUsername() {
 }
 
 /* =========================
-   INTERNAL PATH HELPER
+   USER DOCUMENT (IMPORTANT FIX)
+========================= */
+
+function userDoc() {
+    const username = getUsername();
+    if (!username) return null;
+
+    // document ID = username
+    return doc(db, "emeraldOSUsers", username);
+}
+
+/* =========================
+   DRIVE PATH
 ========================= */
 
 function driveCollection() {
     const username = getUsername();
     if (!username) return null;
 
-    return collection(db, "cloudUsers", username, "drive");
+    return collection(db, "emeraldOSUsers", username, "drive");
 }
 
 function fileDoc(fileId) {
     const username = getUsername();
     if (!username) return null;
 
-    return doc(db, "cloudUsers", username, "drive", fileId);
+    return doc(db, "emeraldOSUsers", username, "drive", fileId);
 }
 
 /* =========================
-   LOAD ALL FILES (DRIVE MOUNT)
+   ENSURE USER EXISTS
+========================= */
+
+export async function ensureUser() {
+    const username = getUsername();
+    if (!username) return false;
+
+    const ref = userDoc();
+    if (!ref) return false;
+
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        await setDoc(ref, {
+            username,            // stored field
+            createdAt: Date.now(),
+            locked: false
+        });
+    }
+
+    return true;
+}
+
+/* =========================
+   LOAD DRIVE
 ========================= */
 
 export async function loadDrive() {
@@ -56,7 +92,7 @@ export async function loadDrive() {
 }
 
 /* =========================
-   GET SINGLE FILE
+   GET FILE
 ========================= */
 
 export async function getFile(fileId) {
@@ -64,7 +100,6 @@ export async function getFile(fileId) {
     if (!ref) return null;
 
     const snap = await getDoc(ref);
-
     return snap.exists() ? snap.data() : null;
 }
 
@@ -81,16 +116,16 @@ export async function createFile(name = "New File", content = "") {
     await setDoc(fileDoc(id), {
         name,
         content,
+        type: "text/plain",
         createdAt: Date.now(),
-        updatedAt: Date.now(),
-        type: "text/plain"
+        updatedAt: Date.now()
     });
 
     return id;
 }
 
 /* =========================
-   SAVE / UPDATE FILE
+   SAVE FILE
 ========================= */
 
 export async function saveFile(fileId, data) {
@@ -115,18 +150,11 @@ export async function deleteFile(fileId) {
 }
 
 /* =========================
-   UPSERT (SAFE SAVE)
-========================= */
-
-export async function upsertFile(fileId, data) {
-    return saveFile(fileId, data);
-}
-
-/* =========================
-   DEBUG HELPERS
+   DEBUG
 ========================= */
 
 export async function debugDrive() {
     console.log("USERNAME:", getUsername());
+    console.log("USER DOC:", await getDoc(userDoc()));
     console.log("DRIVE:", await loadDrive());
 }
