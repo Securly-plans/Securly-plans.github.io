@@ -4,18 +4,11 @@
    STATE
 ========================= */
 
-let zIndexCounter = 100;
+let zIndex = 100;
+let currentNoteId = null;
 
-let installedApps = [];
-let appRegistry = {};
-
-// virtual file system
-let fileSystem = {
-    notes: {},
-    files: {}
-};
-
-let currentFile = null;
+let notes = JSON.parse(localStorage.getItem("emerald_notes") || "{}");
+let files = JSON.parse(localStorage.getItem("emerald_files") || "{}");
 
 /* =========================
    BOOT
@@ -23,13 +16,7 @@ let currentFile = null;
 
 window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
-    initClock();
-    initDesktop();
-
-    loadSystem();
-    renderAll();
-
-    exposeLegacyAPI();
+    initStartButton();
 });
 
 /* =========================
@@ -37,8 +24,24 @@ window.addEventListener("DOMContentLoaded", () => {
 ========================= */
 
 function initStartMenu() {
-    const btn = document.getElementById("startButton");
-    const menu = document.getElementById("startMenu");
+    const menu = document.getElementById("start-menu");
+
+    document.addEventListener("click", (e) => {
+        const startBtn = document.getElementById("start-btn");
+
+        if (startBtn && startBtn.contains(e.target)) return;
+
+        if (menu) menu.classList.remove("show");
+    });
+}
+
+/* =========================
+   START BUTTON
+========================= */
+
+function initStartButton() {
+    const btn = document.getElementById("start-btn");
+    const menu = document.getElementById("start-menu");
 
     if (!btn || !menu) return;
 
@@ -46,340 +49,264 @@ function initStartMenu() {
         e.stopPropagation();
         menu.classList.toggle("show");
     });
-
-    document.addEventListener("click", () => {
-        menu.classList.remove("show");
-    });
 }
 
 /* =========================
-   CLOCK
+   CORE WINDOW SYSTEM
 ========================= */
 
-function initClock() {
-    const clock = document.getElementById("clock");
-    if (!clock) return;
+window.openWindow = function (title, content) {
+    const container = document.getElementById("windows-container");
+    if (!container) return;
 
-    const update = () => {
-        const d = new Date();
-        clock.textContent = d.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    };
-
-    update();
-    setInterval(update, 1000);
-}
-
-/* =========================
-   DESKTOP
-========================= */
-
-function initDesktop() {
-    const desktop = document.getElementById("desktop");
-    if (!desktop) return;
-
-    desktop.addEventListener("click", () => {
-        document.getElementById("startMenu")?.classList.remove("show");
-    });
-
-    // SAVE BUTTON (dashboard requirement)
-    const saveBtn = document.getElementById("saveButton");
-    if (saveBtn) {
-        saveBtn.addEventListener("click", saveSystem);
-    }
-}
-
-/* =========================
-   LOAD / SAVE SYSTEM
-========================= */
-
-function loadSystem() {
-    try {
-        installedApps = JSON.parse(localStorage.getItem("installedApps")) || [];
-        fileSystem = JSON.parse(localStorage.getItem("fileSystem")) || fileSystem;
-    } catch {
-        installedApps = [];
-    }
-
-    if (installedApps.length === 0) {
-        installedApps = [
-            { id: "notes", name: "Notes", icon: "📄" },
-            { id: "files", name: "Files", icon: "📁" },
-            { id: "store", name: "App Store", icon: "🛒" }
-        ];
-    }
-
-    appRegistry = {};
-    installedApps.forEach(a => appRegistry[a.id] = a);
-}
-
-function saveSystem() {
-    localStorage.setItem("installedApps", JSON.stringify(installedApps));
-    localStorage.setItem("fileSystem", JSON.stringify(fileSystem));
-
-    alert("System saved");
-}
-
-/* =========================
-   RENDER
-========================= */
-
-function renderAll() {
-    renderDesktop();
-    renderStartMenu();
-}
-
-/* =========================
-   DESKTOP
-========================= */
-
-function renderDesktop() {
-    const desktop = document.getElementById("desktop");
-    if (!desktop) return;
-
-    desktop.querySelectorAll(".app-icon").forEach(e => e.remove());
-
-    installedApps.forEach(app => {
-        const el = document.createElement("div");
-        el.className = "app-icon";
-        el.innerHTML = `${app.icon}<br>${app.name}`;
-        el.onclick = () => launchApp(app.id);
-        desktop.appendChild(el);
-    });
-}
-
-/* =========================
-   START MENU
-========================= */
-
-function renderStartMenu() {
-    const menu = document.getElementById("startMenu");
-    if (!menu) return;
-
-    menu.innerHTML = "";
-
-    installedApps.forEach(app => {
-        const el = document.createElement("div");
-        el.className = "start-item";
-        el.textContent = `${app.icon} ${app.name}`;
-        el.onclick = () => launchApp(app.id);
-        menu.appendChild(el);
-    });
-}
-
-/* =========================
-   APP LAUNCHER
-========================= */
-
-function launchApp(id) {
-    const app = appRegistry[id];
-    if (!app) return;
-
-    createWindow(app);
-}
-
-function createWindow(app) {
     const win = document.createElement("div");
     win.className = "window";
-    win.style.zIndex = ++zIndexCounter;
+    win.style.zIndex = ++zIndex;
 
     win.innerHTML = `
-        <div class="titlebar">
-            <span>${app.icon} ${app.name}</span>
-            <button class="close">X</button>
+        <div class="title-bar">
+            <div>${title}</div>
+            <button class="close-btn">X</button>
         </div>
-        <div class="content">Loading...</div>
+        <div class="window-content">
+            ${content}
+        </div>
     `;
 
-    document.body.appendChild(win);
+    win.querySelector(".close-btn").onclick = () => win.remove();
 
-    win.querySelector(".close").onclick = () => win.remove();
-
-    setTimeout(() => {
-        const content = win.querySelector(".content");
-        content.innerHTML = getApp(app.id, win);
-    }, 80);
-}
+    container.appendChild(win);
+};
 
 /* =========================
-   APPS
+   LEGACY APP WRAPPERS (FIXES YOUR ERRORS)
 ========================= */
 
-function getApp(id, win) {
-    switch (id) {
+window.openNotes = function () {
+    openNotesApp();
+};
 
-        /* ================= NOTES ================= */
-        case "notes":
-            return notesApp();
+window.openFileExplorer = function () {
+    openFileExplorerApp();
+};
 
-        /* ================= FILES ================= */
-        case "files":
-            return filesApp();
-
-        /* ================= STORE ================= */
-        case "store":
-            return storeApp();
-
-        default:
-            return "App not found";
-    }
-}
+window.openAppStore = function () {
+    openAppStoreApp();
+};
 
 /* =========================
-   NOTES APP (FULL)
+   NOTES (FULL FIXED APP)
 ========================= */
 
-function notesApp() {
-    const notes = fileSystem.notes;
+function openNotesApp() {
+    const id = Date.now().toString();
+    currentNoteId = id;
 
-    return `
-        <div style="display:flex;height:100%;">
-            <div style="width:35%;border-right:1px solid #444;padding:5px;">
+    const html = `
+        <div style="display:flex; height:100%;">
+            
+            <div style="width:35%; border-right:1px solid #aaa; padding:5px; overflow:auto;">
                 <button onclick="createNote()">+ New Note</button>
-                <div id="noteList">
-                    ${Object.keys(notes).map(id => `
-                        <div onclick="openNote('${id}')">
-                            ${notes[id].name}
-                            <button onclick="deleteNote('${id}');event.stopPropagation()">x</button>
-                        </div>
-                    `).join("")}
-                </div>
+                <div id="noteList"></div>
             </div>
 
-            <div style="flex:1;padding:5px;">
-                <input id="noteTitle" placeholder="Title" style="width:100%;">
-                <textarea id="noteContent" style="width:100%;height:80%;"></textarea>
-                <button onclick="saveNote()">Save Note</button>
+            <div style="flex:1; padding:5px;">
+                <input id="noteTitle" placeholder="Title" style="width:100%; margin-bottom:5px;">
+                <textarea id="noteContent" style="width:100%; height:80%;"></textarea>
+                <button onclick="saveNote()">Save</button>
             </div>
+
         </div>
     `;
+
+    openWindow("Notes", html);
+
+    setTimeout(renderNotesList, 50);
+}
+
+function renderNotesList() {
+    const list = document.getElementById("noteList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    Object.keys(notes).forEach(id => {
+        const n = notes[id];
+
+        const div = document.createElement("div");
+        div.style.padding = "4px";
+        div.style.cursor = "pointer";
+        div.style.borderBottom = "1px solid #ccc";
+
+        div.innerHTML = `
+            ${n.title || "Untitled"}
+            <button style="float:right;" onclick="deleteNote('${id}')">x</button>
+        `;
+
+        div.onclick = () => loadNote(id);
+
+        list.appendChild(div);
+    });
 }
 
 window.createNote = function () {
-    const id = "note_" + Date.now();
-    fileSystem.notes[id] = { name: "Untitled", content: "" };
-    renderAll();
-};
+    const id = Date.now().toString();
 
-window.openNote = function (id) {
-    currentFile = id;
-    const n = fileSystem.notes[id];
-
-    setTimeout(() => {
-        const t = document.getElementById("noteTitle");
-        const c = document.getElementById("noteContent");
-        if (t && c) {
-            t.value = n.name;
-            c.value = n.content;
-        }
-    }, 50);
-};
-
-window.saveNote = function () {
-    if (!currentFile) return;
-
-    const t = document.getElementById("noteTitle").value;
-    const c = document.getElementById("noteContent").value;
-
-    fileSystem.notes[currentFile] = {
-        name: t,
-        content: c
+    notes[id] = {
+        title: "New Note",
+        content: ""
     };
 
-    saveSystem();
-    renderAll();
+    saveNotes();
+    renderNotesList();
+};
+
+function loadNote(id) {
+    const note = notes[id];
+    if (!note) return;
+
+    currentNoteId = id;
+
+    const title = document.getElementById("noteTitle");
+    const content = document.getElementById("noteContent");
+
+    if (title) title.value = note.title;
+    if (content) content.value = note.content;
+}
+
+window.saveNote = function () {
+    if (!currentNoteId) return;
+
+    const title = document.getElementById("noteTitle")?.value || "Untitled";
+    const content = document.getElementById("noteContent")?.value || "";
+
+    notes[currentNoteId] = { title, content };
+
+    saveNotes();
+    renderNotesList();
 };
 
 window.deleteNote = function (id) {
-    delete fileSystem.notes[id];
-    if (currentFile === id) currentFile = null;
-    renderAll();
+    delete notes[id];
+    saveNotes();
+    renderNotesList();
 };
 
+function saveNotes() {
+    localStorage.setItem("emerald_notes", JSON.stringify(notes));
+}
+
 /* =========================
-   FILES APP
+   FILE EXPLORER (FIXED)
 ========================= */
 
-function filesApp() {
-    const files = fileSystem.files;
-
-    return `
+function openFileExplorerApp() {
+    const html = `
         <div>
             <button onclick="createFile()">New File</button>
-            <div>
-                ${Object.keys(files).map(id => `
-                    <div>
-                        ${files[id].name}
-                        <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="deleteFile('${id}')">Delete</button>
-                    </div>
-                `).join("")}
-            </div>
+            <div id="fileList"></div>
         </div>
     `;
+
+    openWindow("Files", html);
+
+    setTimeout(renderFiles, 50);
+}
+
+function renderFiles() {
+    const list = document.getElementById("fileList");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    Object.keys(files).forEach(id => {
+        const f = files[id];
+
+        const div = document.createElement("div");
+        div.style.padding = "4px";
+        div.style.borderBottom = "1px solid #ccc";
+
+        div.innerHTML = `
+            ${f.name}
+            <button onclick="deleteFile('${id}')">Delete</button>
+            <button onclick="editFile('${id}')">Open</button>
+        `;
+
+        list.appendChild(div);
+    });
 }
 
 window.createFile = function () {
-    const id = "file_" + Date.now();
-    fileSystem.files[id] = { name: "New File", content: "" };
-    renderAll();
+    const id = Date.now().toString();
+
+    files[id] = {
+        name: "New File",
+        content: ""
+    };
+
+    saveFiles();
+    renderFiles();
 };
 
-window.openFile = function (id) {
-    const f = fileSystem.files[id];
-    const text = prompt("Edit file:", f.content);
+window.editFile = function (id) {
+    const f = files[id];
+    const text = prompt("Edit file content:", f.content);
+
     if (text !== null) {
         f.content = text;
-        saveSystem();
+        saveFiles();
     }
 };
 
 window.deleteFile = function (id) {
-    delete fileSystem.files[id];
-    renderAll();
+    delete files[id];
+    saveFiles();
+    renderFiles();
 };
 
+function saveFiles() {
+    localStorage.setItem("emerald_files", JSON.stringify(files));
+}
+
 /* =========================
-   APP STORE (FIXED BASIC)
+   APP STORE (FIXED + CLEAN)
 ========================= */
 
-function storeApp() {
-    return `
+function openAppStoreApp() {
+    const html = `
         <div>
             <h3>App Store</h3>
 
             <button onclick="installApp('calculator')">Install Calculator</button>
-            <button onclick="installApp('paint')">Install Paint</button>
+            <button onclick="installApp('media')">Install Media Player</button>
+            <button onclick="installApp('games')">Install Games Hub</button>
         </div>
     `;
+
+    openWindow("App Store", html);
 }
 
 window.installApp = function (id) {
-    if (appRegistry[id]) return;
-
-    const app = {
-        id,
-        name: id.charAt(0).toUpperCase() + id.slice(1),
-        icon: "📦"
-    };
-
-    installedApps.push(app);
-    appRegistry[id] = app;
-
-    saveSystem();
-    renderAll();
+    alert(id + " installed (demo only)");
 };
 
 /* =========================
-   LEGACY FIXES (YOUR ERRORS)
+   FIX GAMES / MEDIA PLAYER
+   (your HTML already handles these)
 ========================= */
 
-function exposeLegacyAPI() {
-    window.openWindow = launchApp;
-    window.openNotes = () => launchApp("notes");
-    window.openFileExplorer = () => launchApp("files");
-    window.openAppStore = () => launchApp("store");
-    window.launchApp = launchApp;
-}
+window.openGames = function () {
+    openWindow(
+        "Games",
+        `<iframe src="https://securly-plans.github.io/EmeraldOS/home.html"
+        style="width:100%; height:100%; border:none;"></iframe>`
+    );
+};
+
+window.openMediaPlayer = function () {
+    openWindow(
+        "Media Player",
+        `<iframe src="https://securly-plans.github.io/EmeraldOS/mediaplayer.html"
+        style="width:100%; height:100%; border:none;"></iframe>`
+    );
+};
