@@ -113,7 +113,7 @@
             <input id="os-pass" type="password">
 
             <div class="buttons">
-                <button onclick="loginOS()">Login</button>
+                <button id="login-btn">Login</button>
                 <button onclick="location.href='../home.html'">
                     Cancel
                 </button>
@@ -131,6 +131,32 @@
     </div>
 
     <script type="module" src="os-auth.js"></script>
+
+    <script type="module">
+import { loginOSUser } from "./os-auth.js";
+
+document.getElementById("login-btn").addEventListener("click", async () => {
+
+    const username = document.getElementById("os-user").value.trim();
+    const password = document.getElementById("os-pass").value;
+
+    if (!username || !password) {
+        alert("Fill in all fields");
+        return;
+    }
+
+    try {
+        await loginOSUser(username, password);
+
+        alert("Login successful");
+
+        window.location.href = "../OS.html";
+
+    } catch (err) {
+        alert(err.message);
+    }
+});
+</script>
 
 </body>
 </html>
