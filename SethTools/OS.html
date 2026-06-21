@@ -1,159 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmeraldOS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmeraldOS</title>
 
-    <link rel="stylesheet" href="os.css">
+<link rel="stylesheet" href="os.css">
 </head>
 
 <body>
 
-    <!-- ======================================
-         DESKTOP
-    ======================================= -->
+<!-- ================= DESKTOP ================= -->
 
-    <main id="desktop">
+<main id="desktop">
 
-        <div id="desktop-icons">
+    <div id="desktop-icons">
 
-            <div class="icon" onclick="openNotes()">
-                📄
-                <span>Notes</span>
-            </div>
-
-            <div class="icon" onclick="openFileExplorer()">
-                📁
-                <span>Files</span>
-            </div>
-
-            <div class="icon" onclick="openAppStore()">
-                🛒
-                <span>Store</span>
-            </div>
-
-            <div class="icon" onclick="Applications.system()">
-                💻
-                <span>System</span>
-            </div>
-
-            <div class="icon" onclick="Applications.chat()">
-                💬
-                <span>Chat</span>
-            </div>
-
+        <div class="icon" onclick="Applications.notes()">
+            📄 <span>Notes</span>
         </div>
 
-        <!-- Installed apps appear here -->
-        <div id="installed-apps-zone"></div>
-
-    </main>
-
-    <!-- ======================================
-         START MENU
-    ======================================= -->
-
-    <aside id="start-menu">
-
-        <div id="start-banner">
-            EmeraldOS
+        <div class="icon" onclick="Applications.files()">
+            📁 <span>Files</span>
         </div>
 
-        <div id="start-items">
-
-            <div
-                class="start-menu-item"
-                onclick="openNotes()">
-                📄 Notes
-            </div>
-
-            <div
-                class="start-menu-item"
-                onclick="openFileExplorer()">
-                📁 File Explorer
-            </div>
-
-            <div
-                class="start-menu-item"
-                onclick="openAppStore()">
-                🛒 App Store
-            </div>
-
-            <div
-                class="start-menu-item"
-                onclick="Applications.chat()">
-                💬 Chat
-            </div>
-
-            <div
-                class="start-menu-item"
-                onclick="Applications.system()">
-                💻 System
-            </div>
-
-            <div class="start-menu-divider"></div>
-
-            <div
-                class="start-menu-item"
-                onclick="location.reload()">
-                🔄 Restart
-            </div>
-
-            <div
-                class="start-menu-item"
-                onclick="Session.logout()">
-                🚪 Log Out
-            </div>
-
+        <div class="icon" onclick="Applications.store()">
+            🛒 <span>Store</span>
         </div>
 
-    </aside>
-
-    <!-- ======================================
-         WINDOWS
-    ======================================= -->
-
-    <div id="windows-container"></div>
-
-    <!-- ======================================
-         NOTIFICATIONS
-    ======================================= -->
-
-    <div id="notification-area"></div>
-
-    <!-- ======================================
-         TASKBAR
-    ======================================= -->
-
-    <footer id="taskbar">
-
-        <button id="start-btn">
-            Start
-        </button>
-
-        <div id="taskbar-apps"></div>
-
-        <div id="taskbar-right">
-
-            <div id="os-user">
-                User
-            </div>
-
-            <div id="clock">
-                00:00 PM
-            </div>
-
+        <div class="icon" onclick="Applications.system()">
+            💻 <span>System</span>
         </div>
 
-    </footer>
+        <div class="icon" onclick="Applications.chat()">
+            💬 <span>Chat</span>
+        </div>
 
-    <!-- ======================================
-         SCRIPTS
-    ======================================= -->
+    </div>
 
-    <script src="os-storage.js"></script>
-    <script src="os.js"></script>
+</main>
+
+<!-- ================= START MENU ================= -->
+
+<aside id="start-menu">
+
+    <div id="start-banner">EmeraldOS</div>
+
+    <div id="start-items">
+
+        <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
+        <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
+        <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
+        <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
+        <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
+
+        <div class="start-menu-divider"></div>
+
+        <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
+        <div class="start-menu-item" onclick="Session.logout()">🚪 Log Out</div>
+
+    </div>
+
+</aside>
+
+<!-- ================= WINDOWS ================= -->
+
+<div id="windows-container"></div>
+
+<!-- ================= TASKBAR ================= -->
+
+<footer id="taskbar">
+
+    <button id="start-btn">Start</button>
+
+    <div id="taskbar-apps"></div>
+
+    <div id="taskbar-right">
+        <div id="os-user">User</div>
+        <div id="clock">00:00</div>
+    </div>
+
+</footer>
+
+<!-- ================= SCRIPTS ================= -->
+
+<script src="os.js"></script>
 
 </body>
 </html>
