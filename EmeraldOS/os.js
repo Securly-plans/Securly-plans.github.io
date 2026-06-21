@@ -1,6 +1,17 @@
 "use strict";
 
 /* =========================
+   IMPORT CLOUD STORAGE
+========================= */
+
+import {
+    loadDrive,
+    createFile,
+    saveFile,
+    deleteFile
+} from "./cloudstorage.js";
+
+/* =========================
    STATE
 ========================= */
 
@@ -10,8 +21,7 @@ let dragState = null;
 let resizeState = null;
 
 let fileSystem = {
-    files: {},
-    notes: {}
+    files: {}
 };
 
 let currentFile = null;
@@ -20,11 +30,12 @@ let currentFile = null;
    BOOT
 ========================= */
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
-    loadSystem();
+
+    await loadSystem();
 });
 
 /* =========================
@@ -68,38 +79,28 @@ function initClock() {
 }
 
 /* =========================
-   LOAD SYSTEM (LOCAL ONLY HERE)
+   CLOUD LOAD SYSTEM
 ========================= */
 
-function loadSystem() {
-    try {
-        const saved = JSON.parse(localStorage.getItem("fileSystem"));
-        if (saved) fileSystem = saved;
-    } catch {
-        fileSystem = { files: {}, notes: {} };
-    }
-}
-
-function saveSystem() {
-    localStorage.setItem("fileSystem", JSON.stringify(fileSystem));
+async function loadSystem() {
+    fileSystem.files = await loadDrive();
+    refresh();
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED DRAG + RESIZE)
+   WINDOW SYSTEM (UNCHANGED CORE)
 ========================= */
 
-/* DRAG + RESIZE GLOBAL HANDLER */
 document.addEventListener("mousemove", (e) => {
 
-    /* ================= DRAG ================= */
+    /* DRAG */
     if (dragState) {
         const win = dragState.win;
-
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
-    /* ================= RESIZE (FIXED) ================= */
+    /* RESIZE */
     if (resizeState) {
         const win = resizeState.win;
 
@@ -111,7 +112,6 @@ document.addEventListener("mousemove", (e) => {
     }
 });
 
-/* STOP DRAG / RESIZE */
 document.addEventListener("mouseup", () => {
     dragState = null;
     resizeState = null;
@@ -151,26 +151,23 @@ window.openWindow = function (title, contentHTML) {
     const closeBtn = win.querySelector(".close-btn");
     const resizeHandle = win.querySelector(".resize-handle");
 
-    /* bring to front */
     win.addEventListener("mousedown", () => {
         win.style.zIndex = ++zIndexCounter;
     });
 
-    /* close */
     closeBtn.onclick = () => win.remove();
 
-    /* ================= DRAG ================= */
+    /* DRAG */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-
         win.style.zIndex = ++zIndexCounter;
     });
 
-    /* ================= RESIZE (FIXED VERSION) ================= */
+    /* RESIZE */
     resizeHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -192,11 +189,11 @@ window.openWindow = function (title, contentHTML) {
 };
 
 /* =========================
-   FILE EXPLORER
+   FILE EXPLORER (CLOUD)
 ========================= */
 
 window.openFileExplorer = function () {
-    openWindow("Files", renderFilesApp());
+    openWindow("Cloud Files", renderFilesApp());
 };
 
 function renderFilesApp() {
@@ -224,18 +221,13 @@ function renderFilesApp() {
 }
 
 /* =========================
-   FILE ACTIONS
+   CLOUD FILE ACTIONS
 ========================= */
 
-window.createFile = function () {
-    const id = "file_" + Date.now();
+window.createFile = async function () {
+    const id = await createFile("New File", "");
 
-    fileSystem.files[id] = {
-        name: "New File",
-        content: ""
-    };
-
-    saveSystem();
+    await loadSystem();
     refresh();
 };
 
@@ -254,42 +246,42 @@ window.openFile = function (id) {
     );
 };
 
-window.saveFile = function (id) {
+window.saveFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
-    fileSystem.files[id].content = el.value;
-    saveSystem();
+    await saveFile(id, {
+        name: fileSystem.files[id].name,
+        content: el.value
+    });
+
+    await loadSystem();
 };
 
-window.deleteFile = function (id) {
-    delete fileSystem.files[id];
+window.deleteFile = async function (id) {
+    await deleteFile(id);
+    await loadSystem();
     refresh();
 };
 
 /* =========================
-   FILE UPLOAD
+   FILE UPLOAD (CLOUD)
 ========================= */
 
 window.uploadFile = function () {
     const input = document.createElement("input");
     input.type = "file";
 
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
 
-        reader.onload = () => {
-            const id = "file_" + Date.now();
+        reader.onload = async () => {
+            await createFile(file.name, reader.result);
 
-            fileSystem.files[id] = {
-                name: file.name,
-                content: reader.result
-            };
-
-            saveSystem();
+            await loadSystem();
             refresh();
         };
 
@@ -297,18 +289,6 @@ window.uploadFile = function () {
     };
 
     input.click();
-};
-
-/* =========================
-   NOTES + STUB APPS
-========================= */
-
-window.openNotes = function () {
-    openWindow("Notes", "<p>Notes app placeholder</p>");
-};
-
-window.openAppStore = function () {
-    openWindow("App Store", "<p>App Store placeholder</p>");
 };
 
 /* =========================
@@ -325,4 +305,7 @@ function refresh() {
 
 function exposeLegacyAPI() {
     window.launchApp = openWindow;
+    window.openFileExplorer = () => openFileExplorer();
+    window.openNotes = () => openWindow("Notes", "<p>Notes placeholder</p>");
+    window.openAppStore = () => openWindow("App Store", "<p>Store placeholder</p>");
 }
