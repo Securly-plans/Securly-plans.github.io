@@ -12,7 +12,7 @@ let activeDrag = null;
 let db = null;
 
 try {
-    const firebaseModule = await import("./js/firebase.js");
+    const firebaseModule = await import("./firebase.js");
     db = firebaseModule.db;
 } catch (e) {
     console.warn("Firebase not loaded, using localStorage only");
