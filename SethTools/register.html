@@ -1,127 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create EmeraldOS Account</title>
-    <link rel="stylesheet" href="os.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create EmeraldOS Account</title>
 
-    <style>
-        body {
-            background: #008080;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+<style>
+body {
+    margin: 0;
+    background: #008080;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
 
-        .register-window {
-            width: 450px;
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #fff #000 #000 #fff;
-            box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
-        }
+.window {
+    width: 420px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+}
 
-        .title-bar-register {
-            background: #000080;
-            color: white;
-            padding: 5px 8px;
-            font-weight: bold;
-        }
+.title {
+    background: #000080;
+    color: white;
+    padding: 6px;
+    font-weight: bold;
+}
 
-        .register-content {
-            padding: 20px;
-        }
+.content {
+    padding: 15px;
+}
 
-        .logo {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 15px;
-        }
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 13px;
+}
 
-        input {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-            border: 2px inset white;
-            font-family: inherit;
-        }
+input {
+    width: 100%;
+    padding: 6px;
+    margin-top: 5px;
+    box-sizing: border-box;
+    border: 2px inset white;
+}
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+.info {
+    background: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    border: 2px inset white;
+}
 
-        .info-box {
-            background: white;
-            border: 2px inset white;
-            padding: 10px;
-            margin-bottom: 20px;
-            font-size: 13px;
-        }
+.buttons {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+}
 
-        .buttons {
-            display: flex;
-            justify-content: space-between;
-        }
+button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    padding: 5px 15px;
+    cursor: pointer;
+}
 
-        button {
-            padding: 5px 20px;
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #fff #000 #000 #fff;
-            cursor: pointer;
-        }
-
-        button:active {
-            border-color: #000 #fff #fff #000;
-        }
-    </style>
+button:active {
+    border-color: #404040 #ffffff #ffffff #404040;
+}
+</style>
 </head>
 
 <body>
 
-    <div class="register-window">
+<div class="window">
 
-        <div class="title-bar-register">
-            Create EmeraldOS Account
+    <div class="title">
+        Create EmeraldOS Account
+    </div>
+
+    <div class="content">
+
+        <div class="info">
+            This account will be stored in EmeraldOS cloud storage.
         </div>
 
-        <div class="register-content">
+        <label>Username</label>
+        <input id="os-user" type="text">
 
-            <div class="logo">💎</div>
+        <label>Password</label>
+        <input id="os-pass" type="password">
 
-            <div class="info-box">
-                This EmeraldOS account will be linked to your
-                currently signed-in site account.
-            </div>
+        <label>Confirm Password</label>
+        <input id="os-pass2" type="password">
 
-            <label>OS Username</label>
-            <input id="os-user">
+        <div class="buttons">
 
-            <label>Password</label>
-            <input id="os-pass" type="password">
+            <button onclick="registerOS()">
+                Create
+            </button>
 
-            <label>Confirm Password</label>
-            <input id="os-pass2" type="password">
-
-            <div class="buttons">
-                <button onclick="registerOS()">
-                    Create
-                </button>
-
-                <button onclick="location.href='index.html'">
-                    Cancel
-                </button>
-            </div>
+            <button onclick="location.href='../index.html'">
+                Cancel
+            </button>
 
         </div>
 
     </div>
+</div>
 
-    <script type="module" src="os-auth.js"></script>
+<script type="module" src="os-auth.js"></script>
 
 </body>
 </html>
