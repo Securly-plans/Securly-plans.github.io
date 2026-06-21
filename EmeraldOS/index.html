@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Emerald OS Login</title>
+
+<style>
+body {
+    margin:0;
+    background:#008080;
+    font-family:Tahoma;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.panel {
+    width:340px;
+    background:#c0c0c0;
+    border:2px solid;
+    border-color:#fff #000 #000 #fff;
+    padding:15px;
+}
+
+.title {
+    background:#000080;
+    color:white;
+    padding:5px;
+    font-weight:bold;
+    margin:-15px -15px 10px -15px;
+}
+
+input {
+    width:100%;
+    margin:6px 0;
+    padding:6px;
+    border:2px inset #fff;
+    box-sizing:border-box;
+}
+
+button {
+    width:100%;
+    padding:6px;
+    margin-top:8px;
+    border:2px outset #fff;
+    background:#c0c0c0;
+    cursor:pointer;
+}
+
+button:active {
+    border:2px inset #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+    <div class="title">Emerald OS Login</div>
+
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    <button onclick="goRegister()">Create Account</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+    getFirestore,
+    doc,
+    getDoc,
+    updateDoc,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// --------------------
+// FIREBASE CONFIG
+// --------------------
+const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// --------------------
+// HASH
+// --------------------
+async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+// --------------------
+// LOGIN
+// --------------------
+window.login = async function () {
+    const username = document.getElementById("user").value.trim();
+    const password = document.getElementById("pass").value;
+
+    if (!username || !password) {
+        alert("Fill in all fields");
+        return;
+    }
+
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        alert("User not found");
+        return;
+    }
+
+    const data = snap.data();
+    const hash = await sha256(password);
+
+    if (data.passwordHash !== hash) {
+        alert("Incorrect password");
+        return;
+    }
+
+    await updateDoc(ref, {
+        lastLogin: Date.now()
+    });
+
+    localStorage.setItem("os_session", username);
+    window.location.href = "OS.html";
+};
+
+// --------------------
+// REGISTER NAV
+// --------------------
+window.goRegister = function () {
+    window.location.href = "register.html";
+};
+</script>
+
+</body>
+</html>
