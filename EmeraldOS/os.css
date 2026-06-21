@@ -1,4 +1,4 @@
- /* =========================
+/* =========================
    WIN95 GLOBAL BASE
 ========================= */
 
@@ -96,7 +96,7 @@ html, body {
     bottom: 40px;
     left: 0;
 
-    width: 240px;
+    width: 260px;   /* slightly bigger = nicer UX */
 
     background: #c0c0c0;
 
@@ -104,6 +104,8 @@ html, body {
     border-color: #ffffff #000000 #000000 #ffffff;
 
     display: none;
+
+    z-index: 10000;
 }
 
 #start-menu.show {
@@ -121,7 +123,7 @@ html, body {
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED CORE)
+   WINDOWS CONTAINER
 ========================= */
 
 #windows-container {
@@ -130,10 +132,12 @@ html, body {
 
     pointer-events: none;
     overflow: hidden;
+
+    z-index: 1;
 }
 
 /* =========================
-   WINDOW (CRITICAL FIXED LAYER)
+   WINDOW CORE
 ========================= */
 
 .window {
@@ -142,8 +146,8 @@ html, body {
     width: 420px;
     height: 300px;
 
-    min-width: 200px;
-    min-height: 150px;
+    min-width: 220px;
+    min-height: 160px;
 
     background: #c0c0c0;
 
@@ -156,6 +160,8 @@ html, body {
     pointer-events: auto;
 
     box-sizing: border-box;
+
+    z-index: 10;
 }
 
 /* =========================
@@ -175,6 +181,12 @@ html, body {
     padding: 0 6px;
 
     font-weight: bold;
+
+    cursor: grab;
+}
+
+.title-bar:active {
+    cursor: grabbing;
 }
 
 /* =========================
@@ -192,6 +204,9 @@ html, body {
 
     font-size: 10px;
     cursor: pointer;
+
+    line-height: 12px;
+    text-align: center;
 }
 
 .close-btn:active {
@@ -199,13 +214,13 @@ html, body {
 }
 
 /* =========================
-   WINDOW CONTENT (FIXED)
+   WINDOW CONTENT
 ========================= */
 
 .window-content {
     flex: 1;
 
-    margin: 0;               /* IMPORTANT FIX */
+    margin: 0;
     padding: 6px;
 
     background: white;
@@ -215,17 +230,19 @@ html, body {
     overflow: auto;
 
     box-sizing: border-box;
+
+    user-select: text; /* IMPORTANT FIX so text apps work */
 }
 
 /* =========================
-   RESIZE HANDLE (CRITICAL)
+   RESIZE HANDLE (FIXED + STABLE)
 ========================= */
 
 .resize-handle {
     position: absolute;
 
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
 
     right: 0;
     bottom: 0;
@@ -243,7 +260,7 @@ html, body {
 }
 
 /* =========================
-   CONTROLS (WIN95 STYLE)
+   INPUTS / BUTTONS (WIN95 STYLE)
 ========================= */
 
 button, input, textarea {
@@ -263,6 +280,14 @@ button:active {
 }
 
 /* =========================
+   BRIGHTNESS SUPPORT LAYER
+========================= */
+
+body {
+    transition: filter 0.1s linear;
+}
+
+/* =========================
    UTILITY
 ========================= */
 
@@ -277,7 +302,7 @@ button:active {
 }
 
 /* =========================
-   FINAL STABILITY FIX
+   FINAL SAFETY FIX
 ========================= */
 
 * {
