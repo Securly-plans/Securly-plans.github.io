@@ -13,7 +13,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// GLOBAL FIX (IMPORTANT)
+// GLOBAL FIX (CRITICAL)
 // ==========================================
 
 function exposeGlobals() {
@@ -23,11 +23,11 @@ function exposeGlobals() {
         openFileExplorer,
         openAppStore,
         saveNote,
-        deleteFile,
-        renderFileExplorer,
         installApp,
         uninstallApp,
-        FileSystem
+        deleteFile,
+        renderFileExplorer,
+        launchApp
     });
 }
 
@@ -130,7 +130,7 @@ function openWindow(title, html) {
 }
 
 // ==========================================
-// DRAGGING
+// DRAG SYSTEM
 // ==========================================
 
 document.addEventListener("mousemove", (e) => {
@@ -178,7 +178,7 @@ const FileSystem = {
 };
 
 // ==========================================
-// NOTES + FIX saveNote ERROR
+// NOTES (FIXED saveNote ERROR)
 // ==========================================
 
 function openNotes(filename = "New.txt") {
@@ -207,7 +207,7 @@ function saveNote(id) {
 }
 
 // ==========================================
-// FILE EXPLORER (FIXED CLICKING)
+// FILE EXPLORER (FIXED)
 // ==========================================
 
 function getFiles() {
@@ -254,16 +254,14 @@ function openFileExplorer() {
 }
 
 // ==========================================
-// ===============================
 // APP STORE (RESTORED)
-// ===============================
 // ==========================================
 
 function openAppStore() {
     const apps = [
         { name: "Notes", icon: "📄", desc: "Text editor" },
         { name: "File Explorer", icon: "📁", desc: "Browse files" },
-        { name: "Paint", icon: "🎨", desc: "Draw canvas" }
+        { name: "Paint", icon: "🎨", desc: "Canvas drawing" }
     ];
 
     const installed = JSON.parse(
@@ -340,7 +338,31 @@ function uninstallApp(name) {
 }
 
 // ==========================================
-// DESKTOP ICONS
+// FIXED APP LAUNCH SYSTEM (THIS FIXES YOUR ISSUE)
+// ==========================================
+
+function launchApp(name) {
+    switch (name) {
+
+        case "Notes":
+            openNotes();
+            break;
+
+        case "File Explorer":
+            openFileExplorer();
+            break;
+
+        case "Paint":
+            openWindow("Paint", "<div>Paint not fully implemented yet</div>");
+            break;
+
+        default:
+            openWindow(name, `<div>Launching ${escapeHTML(name)}...</div>`);
+    }
+}
+
+// ==========================================
+// DESKTOP ICONS (FIXED)
 // ==========================================
 
 function renderDesktopApps() {
@@ -356,11 +378,10 @@ function renderDesktopApps() {
     installed.forEach(app => {
         const icon = document.createElement("div");
         icon.className = "icon";
+
         icon.innerHTML = "📦<br>" + escapeHTML(app);
 
-        icon.onclick = () => {
-            openWindow(app, `<div>Launching ${app}...</div>`);
-        };
+        icon.onclick = () => launchApp(app);
 
         zone.appendChild(icon);
     });
