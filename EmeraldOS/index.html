@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Emerald OS Login</title>
+<title>EmeraldOS Login</title>
 
 <style>
 body {
@@ -56,7 +56,7 @@ button:active {
 <body>
 
 <div class="panel">
-    <div class="title">Emerald OS Login</div>
+    <div class="title">EmeraldOS Login</div>
 
     <input id="user" placeholder="Username">
     <input id="pass" type="password" placeholder="Password">
@@ -66,77 +66,60 @@ button:active {
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { db } from "./js/firebase.js";
 import {
-    getFirestore,
     doc,
     getDoc,
-    updateDoc,
-    setDoc
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --------------------
-// FIREBASE CONFIG
-// --------------------
-const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// --------------------
-// HASH
-// --------------------
 async function sha256(text) {
     const enc = new TextEncoder().encode(text);
     const hash = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(hash))
+    return [...new Uint8Array(hash)]
         .map(b => b.toString(16).padStart(2, "0"))
         .join("");
 }
 
-// --------------------
-// LOGIN
-// --------------------
 window.login = async function () {
-    const username = document.getElementById("user").value.trim();
-    const password = document.getElementById("pass").value;
+    try {
+        const username = document.getElementById("user").value.trim();
+        const password = document.getElementById("pass").value;
 
-    if (!username || !password) {
-        alert("Fill in all fields");
-        return;
+        if (!username || !password) {
+            alert("Fill all fields");
+            return;
+        }
+
+        const ref = doc(db, "emeraldOSUsers", username);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+            alert("User not found");
+            return;
+        }
+
+        const data = snap.data();
+        const hash = await sha256(password);
+
+        if (data.passwordHash !== hash) {
+            alert("Incorrect password");
+            return;
+        }
+
+        await updateDoc(ref, {
+            lastLogin: Date.now()
+        });
+
+        localStorage.setItem("os_session", username);
+        window.location.href = "OS.html";
+
+    } catch (err) {
+        console.error(err);
+        alert("Login failed — check console");
     }
-
-    const ref = doc(db, "emeraldOSUsers", username);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-        alert("User not found");
-        return;
-    }
-
-    const data = snap.data();
-    const hash = await sha256(password);
-
-    if (data.passwordHash !== hash) {
-        alert("Incorrect password");
-        return;
-    }
-
-    await updateDoc(ref, {
-        lastLogin: Date.now()
-    });
-
-    localStorage.setItem("os_session", username);
-    window.location.href = "OS.html";
 };
 
-// --------------------
-// REGISTER NAV
-// --------------------
 window.goRegister = function () {
     window.location.href = "register.html";
 };
