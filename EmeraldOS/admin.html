@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<style>
+:root{
+  --desktop:#008080;
+  --win:#c0c0c0;
+  --light:#ffffff;
+  --dark:#808080;
+  --black:#000000;
+  --title:#000080;
+  --titleText:#ffffff;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:"Tahoma","MS Sans Serif",Arial,sans-serif;
+}
+
+body{
+  margin:0;
+  background:var(--desktop);
+  color:black;
+}
+
+/* ================= HEADER ================= */
+
+.header{
+  background:var(--title);
+  color:var(--titleText);
+
+  padding:8px 12px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+
+  border-bottom:2px solid black;
+}
+
+.header h1{
+  margin:0;
+  font-size:18px;
+  color:white;
+}
+
+.header .status{
+  font-size:12px;
+  color:#ffffff;
+}
+
+/* ================= LAYOUT ================= */
+
+.container{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  min-height:calc(100vh - 42px);
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+  background:var(--win);
+
+  padding:10px;
+
+  border-right:2px solid var(--dark);
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+}
+
+.sidebar h2{
+  margin-top:0;
+  font-size:16px;
+}
+
+/* ================= NAV BUTTONS ================= */
+
+.nav-btn{
+  width:100%;
+  margin-bottom:8px;
+  padding:8px;
+
+  text-align:left;
+
+  background:var(--win);
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+
+  cursor:pointer;
+}
+
+.nav-btn:active,
+button:active{
+  border-top:2px solid var(--dark);
+  border-left:2px solid var(--dark);
+  border-right:2px solid var(--light);
+  border-bottom:2px solid var(--light);
+}
+
+/* ================= MAIN ================= */
+
+.main{
+  padding:12px;
+}
+
+/* ================= STATS ================= */
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.card{
+  background:var(--win);
+
+  padding:10px;
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+}
+
+.card h4{
+  margin:0 0 8px;
+  font-size:12px;
+}
+
+.card .value{
+  font-size:24px;
+  font-weight:bold;
+}
+
+/* ================= GRID ================= */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:12px;
+}
+
+/* ================= WINDOWS ================= */
+
+.box{
+  background:var(--win);
+
+  padding:10px;
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+}
+
+.box h3{
+  margin:0 0 12px;
+
+  background:var(--title);
+  color:white;
+
+  padding:4px 8px;
+
+  font-size:14px;
+}
+
+/* ================= INPUTS ================= */
+
+input,
+select,
+textarea{
+  width:100%;
+
+  padding:6px;
+  margin-top:5px;
+  margin-bottom:10px;
+
+  background:white;
+  color:black;
+
+  border-top:2px solid var(--dark);
+  border-left:2px solid var(--dark);
+  border-right:2px solid var(--light);
+  border-bottom:2px solid var(--light);
+
+  border-radius:0;
+}
+
+textarea{
+  resize:vertical;
+}
+
+/* ================= BUTTONS ================= */
+
+button{
+  padding:6px 12px;
+
+  background:var(--win);
+
+  color:black;
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+
+  cursor:pointer;
+
+  margin-right:4px;
+  margin-top:4px;
+}
+
+button.success{
+  color:green;
+}
+
+button.warning{
+  color:#996600;
+}
+
+button.danger{
+  color:red;
+}
+
+/* ================= USERS ================= */
+
+.user{
+  background:var(--win);
+
+  padding:10px;
+  margin-bottom:12px;
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+}
+
+.user-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+
+  margin-bottom:10px;
+}
+
+.locked{
+  color:red;
+  font-weight:bold;
+}
+
+.unlocked{
+  color:green;
+  font-weight:bold;
+}
+
+.badge{
+  display:inline-block;
+
+  padding:2px 8px;
+
+  background:#e0e0e0;
+
+  border:1px solid black;
+
+  font-size:11px;
+}
+
+/* ================= CHAT ================= */
+
+.chat-item{
+  background:#ffffff;
+
+  padding:8px;
+
+  margin-bottom:8px;
+
+  border-top:2px solid var(--dark);
+  border-left:2px solid var(--dark);
+  border-right:2px solid var(--light);
+  border-bottom:2px solid var(--light);
+}
+
+/* ================= INCIDENTS ================= */
+
+.report{
+  background:white;
+
+  padding:10px;
+  margin-bottom:10px;
+
+  border:2px solid black;
+}
+
+.report.high{
+  border-left:6px solid red;
+}
+
+.report.medium{
+  border-left:6px solid orange;
+}
+
+.report.low{
+  border-left:6px solid green;
+}
+
+.severity-tag{
+  display:inline-block;
+
+  padding:3px 8px;
+
+  border:1px solid black;
+
+  background:#e0e0e0;
+
+  font-size:11px;
+}
+
+.severity-low{
+  color:green;
+}
+
+.severity-medium{
+  color:#996600;
+}
+
+.severity-high{
+  color:red;
+}
+
+/* ================= TOAST ================= */
+
+#toastContainer{
+  position:fixed;
+  top:10px;
+  right:10px;
+  z-index:9999;
+}
+
+.toast{
+  background:var(--win);
+
+  color:black;
+
+  padding:8px 12px;
+
+  margin-bottom:8px;
+
+  border-top:2px solid var(--light);
+  border-left:2px solid var(--light);
+  border-right:2px solid var(--dark);
+  border-bottom:2px solid var(--dark);
+}
+
+.toast.success{
+  color:green;
+}
+
+.toast.error{
+  color:red;
+}
+
+.toast.info{
+  color:blue;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:900px){
+
+  .container{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    display:none;
+  }
+
+}
+</style>
+</head>
+
+<script type="module" src="./js/session.js"></script>
+
+<script type="module" src="js/playtime.js"></script>
+
+<body>
+
+<div class="header">
+  <h1>Administration Panel</h1>
+  <div class="status">● Secure Admin Session Active</div>
+</div>
+
+<div id="toastContainer"></div>
+
+<div class="container">
+
+  <div class="sidebar">
+    <h2>Admin Tools</h2>
+
+    <button class="nav-btn" onclick="window.location.href='admin.html'">
+      Dashboard
+    </button>
+
+    <button class="nav-btn" onclick="window.location.href='admin-logs.html'">
+      Advanced Logs
+    </button>
+
+    <button class="nav-btn" onclick="window.location.href='chatmod.html'">
+      Chat Moderation
+    </button>
+
+    <button class="nav-btn" onclick="toggleChatMonitor()">
+      Toggle Chat Monitor
+    </button>
+
+    <button class="nav-btn" onclick="loadUsers()">
+      Refresh Users
+    </button>
+  </div>
+
+  <div class="main">
+
+    <div class="stats">
+
+      <div class="card">
+        <h4>Total Users</h4>
+        <div class="value" id="totalUsers">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Admins</h4>
+        <div class="value" id="adminCount">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Locked Users</h4>
+        <div class="value" id="lockedCount">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Live Chats</h4>
+        <div class="value" id="chatCount">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Incident Reports</h4>
+        <div class="value" id="incidentCount">0</div>
+      </div>
+
+      <div class="card">
+        <h4>Critical Incidents</h4>
+        <div class="value" id="criticalIncidentCount">0</div>
+      </div>
+
+    </div>
+
+    <div class="grid">
+
+      <div class="box">
+        <h3>Add User</h3>
+
+        <input id="newUser" placeholder="Username">
+
+        <input id="newPass" type="password" placeholder="Password">
+
+        <button class="success" onclick="createUser()">
+          Create User
+        </button>
+      </div>
+
+      <div class="box">
+        <h3>Admin Logs</h3>
+
+        <p style="color:var(--muted);">
+          Open the advanced moderation and security dashboard.
+        </p>
+
+        <button onclick="window.location.href='admin-logs.html'">
+          Open Logs Dashboard
+        </button>
+      </div>
+
+      <div class="box">
+        <h3>Create Incident Report</h3>
+
+        <input id="incidentTitle" placeholder="Incident title">
+
+        <input id="incidentTarget" placeholder="Target user/system">
+
+        <select id="incidentSeverity">
+          <option value="low">Low Severity</option>
+          <option value="medium">Medium Severity</option>
+          <option value="high">High Severity</option>
+        </select>
+
+        <textarea id="incidentDetails" rows="5" placeholder="Incident details..."></textarea>
+
+        <button class="danger" onclick="createIncidentReport()">
+          Submit Incident
+        </button>
+      </div>
+
+      <div class="box">
+        <h3>System Settings</h3>
+
+        <button id="redirectToggleBtn">
+          Loading...
+        </button>
+      </div>
+
+      <div class="box">
+        <h3>User Search</h3>
+
+        <input id="userSearch" placeholder="Search username or ID...">
+      </div>
+
+    </div>
+
+    <div class="box incident-box">
+      <h3>Recent Incident Reports</h3>
+
+      <div id="incidentReports">
+        Loading incident reports...
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:20px;">
+      <h3>Live Chat Monitor</h3>
+
+      <button onclick="loadChats()">Refresh Chats</button>
+
+      <div id="chatMonitorWrapper" style="display:none;margin-top:15px;">
+        <div id="chatMonitor"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <h2>User Management</h2>
+      <div id="users">Loading users...</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module">
+
+import {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { db } from "./js/firebase.js";
+
+/* ================= STATE ================= */
+let chatMonitorOpen = false;
+let cachedUsers = [];
+let cachedIncidents = [];
+
+/* ================= TOAST ================= */
+function toast(msg,type="info"){
+  const c=document.getElementById("toastContainer");
+  const d=document.createElement("div");
+  d.className="toast "+type;
+  d.textContent=msg;
+  c.appendChild(d);
+
+  setTimeout(()=>d.remove(),3000);
+}
+
+/* ================= ADMIN CHECK ================= */
+if(localStorage.getItem("role")!=="admin"){
+  alert("Access denied");
+  location.href="index.html";
+}
+
+/* ================= LOGGING ================= */
+async function logAction(type,details,target="System",severity="low"){
+  try{
+    await addDoc(collection(db,"adminLogs"),{
+      type,
+      severity,
+      adminUser:localStorage.getItem("username") || "Unknown",
+      targetUser:target,
+      details,
+      timestamp:Date.now()
+    });
+  }catch(err){
+    console.error("Failed to write admin log:",err);
+  }
+}
+
+/* ================= INCIDENT REPORTS ================= */
+window.createIncidentReport = async ()=>{
+  const title = document.getElementById("incidentTitle").value.trim();
+  const target = document.getElementById("incidentTarget").value.trim();
+  const severity = document.getElementById("incidentSeverity").value;
+  const details = document.getElementById("incidentDetails").value.trim();
+
+  if(!title || !details){
+    return toast("Missing incident information","error");
+  }
+
+  try{
+
+    await addDoc(collection(db,"incidentReports"),{
+      title,
+      target,
+      severity,
+      details,
+      createdBy:localStorage.getItem("username") || "Unknown",
+      timestamp:Date.now(),
+      status:"open"
+    });
+
+    await logAction(
+      "incident-report",
+      `${title}: ${details}`,
+      target || "System",
+      severity
+    );
+
+    document.getElementById("incidentTitle").value = "";
+    document.getElementById("incidentTarget").value = "";
+    document.getElementById("incidentDetails").value = "";
+    document.getElementById("incidentSeverity").value = "low";
+
+    toast("Incident report submitted","success");
+
+    loadIncidentReports();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to create incident report","error");
+  }
+};
+
+async function loadIncidentReports(){
+
+  const container = document.getElementById("incidentReports");
+
+  container.innerHTML = "Loading incident reports...";
+
+  try{
+
+    const q = query(
+      collection(db,"incidentReports"),
+      orderBy("timestamp","desc"),
+      limit(25)
+    );
+
+    const snap = await getDocs(q);
+
+    cachedIncidents = [];
+
+    snap.forEach(docSnap=>{
+      cachedIncidents.push({
+        id:docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    renderIncidentReports();
+    updateIncidentStats();
+
+  }catch(err){
+    console.error(err);
+
+    container.innerHTML = `
+      <div class="report high">
+        Failed to load incident reports.
+      </div>
+    `;
+  }
+}
+
+function renderIncidentReports(){
+
+  const container = document.getElementById("incidentReports");
+
+  container.innerHTML = "";
+
+  if(cachedIncidents.length === 0){
+
+    container.innerHTML = `
+      <div class="report low">
+        No incident reports found.
+      </div>
+    `;
+
+    return;
+  }
+
+  cachedIncidents.forEach(report=>{
+
+    const div = document.createElement("div");
+
+    div.className = `report ${report.severity || "low"}`;
+
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <b>${escapeHtml(report.title || "Untitled Incident")}</b>
+          <br>
+          <span style="color:var(--muted);font-size:13px;">
+            ${formatDate(report.timestamp)}
+          </span>
+        </div>
+
+        <div>
+          Reported By:
+          <b>${escapeHtml(report.createdBy || "Unknown")}</b>
+        </div>
+      </div>
+
+      <br>
+
+      <b>Target:</b>
+      ${escapeHtml(report.target || "System")}
+
+      <br><br>
+
+      ${escapeHtml(report.details || "No details")}
+
+      <br>
+
+      <div class="severity-tag severity-${report.severity || "low"}">
+        ${(report.severity || "low").toUpperCase()} SEVERITY
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function updateIncidentStats(){
+
+  document.getElementById("incidentCount").textContent =
+    cachedIncidents.length;
+
+  document.getElementById("criticalIncidentCount").textContent =
+    cachedIncidents.filter(i=>i.severity === "high").length;
+}
+
+/* ================= HASH ================= */
+async function hashPassword(password){
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-256", enc.encode(password));
+
+  return [...new Uint8Array(buf)]
+    .map(b=>b.toString(16).padStart(2,"0"))
+    .join("");
+}
+
+/* ================= USERS ================= */
+async function loadUsers(){
+  const box = document.getElementById("users");
+  box.innerHTML = "Loading users...";
+
+  try{
+    const snap = await getDocs(collection(db,"users"));
+
+    cachedUsers = [];
+
+    snap.forEach(docSnap=>{
+      cachedUsers.push({
+        id:docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    updateStats();
+    renderUsers();
+
+  }catch(err){
+    console.error(err);
+
+    box.innerHTML = `
+      <div class="box" style="border-color:red;">
+        Failed to load users.
+      </div>
+    `;
+  }
+}
+
+function renderUsers(){
+  const box = document.getElementById("users");
+
+  const search =
+    document.getElementById("userSearch")?.value?.toLowerCase() || "";
+
+  box.innerHTML = "";
+
+  const filtered = cachedUsers.filter(user=>{
+    return (
+      user.id.toLowerCase().includes(search) ||
+      (user.username || "").toLowerCase().includes(search)
+    );
+  });
+
+  if(filtered.length === 0){
+    box.innerHTML = `
+      <div class="box">No users found.</div>
+    `;
+    return;
+  }
+
+  filtered.forEach(user=>{
+
+    const username = user.username || "Unknown";
+    const role = user.role || "user";
+    const locked = !!user.locked;
+
+    const div = document.createElement("div");
+    div.className = "user";
+
+    div.innerHTML = `
+      <div class="user-header">
+        <div>
+          <b>${escapeHtml(username)}</b>
+          <div style="margin-top:5px;">
+            <span class="badge">${escapeHtml(role)}</span>
+          </div>
+        </div>
+
+        <div class="${locked ? "locked" : "unlocked"}">
+          ${locked ? "🔒 Locked" : "🔓 Active"}
+        </div>
+      </div>
+
+      <b>User ID:</b><br>
+      ${escapeHtml(user.id)}
+
+      <br><br>
+
+      <b>Joined:</b><br>
+      ${formatDate(user.created)}
+
+      <br><br>
+
+      Username:
+      <input id="u-${user.id}" value="${escapeHtml(username)}">
+
+      Role:
+      <select id="r-${user.id}">
+        <option value="user" ${role === "user" ? "selected" : ""}>User</option>
+        <option value="mod" ${role === "mod" ? "selected" : ""}>Mod</option>
+        <option value="admin" ${role === "admin" ? "selected" : ""}>Admin</option>
+        <option value="vip" ${role === "vip" ? "selected" : ""}>VIP</option>
+      </select>
+
+      Password:
+      <input id="p-${user.id}" placeholder="New password">
+
+      Admin Notes:
+      <textarea id="n-${user.id}">${escapeHtml(user.adminNotes || "")}</textarea>
+
+      ${locked ? `
+        <div class="locked">
+          Lock Reason: ${escapeHtml(user.lockReason || "No reason provided")}
+        </div>
+      ` : ""}
+
+      <div style="margin-top:10px;">
+        <button class="success" onclick="saveUser('${user.id}')">
+          Save
+        </button>
+
+        <button class="danger" onclick="deleteUser('${user.id}')">
+          Delete
+        </button>
+
+        <button class="warning" onclick="toggleLock('${user.id}', ${locked})">
+          ${locked ? "Unlock" : "Lock"}
+        </button>
+      </div>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+/* ================= USER ACTIONS ================= */
+window.createUser = async ()=>{
+  const username = document.getElementById("newUser").value.trim();
+  const password = document.getElementById("newPass").value;
+
+  if(!username || !password){
+    return toast("Missing fields","error");
+  }
+
+  try{
+    await addDoc(collection(db,"users"),{
+      username,
+      passwordHash:await hashPassword(password),
+      role:"user",
+      locked:false,
+      reputation:0,
+      created:Date.now()
+    });
+
+    await logAction(
+      "create-user",
+      `Created user ${username}`,
+      username,
+      "low"
+    );
+
+    toast("User created","success");
+
+    document.getElementById("newUser").value = "";
+    document.getElementById("newPass").value = "";
+
+    loadUsers();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to create user","error");
+  }
+};
+
+window.saveUser = async (id)=>{
+  try{
+    const username = document.getElementById("u-"+id).value;
+    const role = document.getElementById("r-"+id).value;
+    const password = document.getElementById("p-"+id).value;
+    const notes = document.getElementById("n-"+id).value;
+
+    const data = {
+      username,
+      role,
+      adminNotes:notes
+    };
+
+    if(password){
+      data.passwordHash = await hashPassword(password);
+    }
+
+    await updateDoc(doc(db,"users",id),data);
+
+    await logAction(
+      "edit-user",
+      `Updated ${username}`,
+      username,
+      "medium"
+    );
+
+    toast("User updated","success");
+    loadUsers();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to save user","error");
+  }
+};
+
+window.deleteUser = async (id)=>{
+  if(!confirm("Delete this user?")) return;
+
+  try{
+    const user = cachedUsers.find(u=>u.id===id);
+
+    await deleteDoc(doc(db,"users",id));
+
+    await logAction(
+      "delete-user",
+      `Deleted user ${user?.username || id}`,
+      user?.username || id,
+      "high"
+    );
+
+    toast("User deleted","info");
+    loadUsers();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to delete user","error");
+  }
+};
+
+window.toggleLock = async (id,state)=>{
+  try{
+    const user = cachedUsers.find(u=>u.id===id);
+
+    let reason = "";
+
+    if(!state){
+      reason = prompt("Lock reason:");
+
+      if(!reason) return;
+    }
+
+    await updateDoc(doc(db,"users",id),{
+      locked:!state,
+      lockReason:!state ? reason : ""
+    });
+
+    await logAction(
+      !state ? "lock" : "unlock",
+      !state
+        ? `Locked ${user?.username || id}: ${reason}`
+        : `Unlocked ${user?.username || id}`,
+      user?.username || id,
+      !state ? "high" : "medium"
+    );
+
+    toast(!state ? "User locked" : "User unlocked","info");
+
+    loadUsers();
+
+  }catch(err){
+    console.error(err);
+    toast("Failed to update lock state","error");
+  }
+};
+
+/* ================= CHAT MONITOR ================= */
+window.toggleChatMonitor = ()=>{
+  const wrapper = document.getElementById("chatMonitorWrapper");
+
+  chatMonitorOpen = !chatMonitorOpen;
+
+  wrapper.style.display =
+    chatMonitorOpen ? "block" : "none";
+
+  if(chatMonitorOpen){
+    loadChats();
+  }
+};
+
+window.loadChats = async ()=>{
+  const monitor = document.getElementById("chatMonitor");
+
+  monitor.innerHTML = "Loading chats...";
+
+  try{
+    const snap = await getDocs(collection(db,"chats"));
+
+    document.getElementById("chatCount").textContent = snap.size;
+
+    monitor.innerHTML = "";
+
+    if(snap.empty){
+      monitor.innerHTML = `
+        <div class="chat-item">No chats found.</div>
+      `;
+      return;
+    }
+
+    snap.forEach(chat=>{
+      const data = chat.data();
+
+      const div = document.createElement("div");
+      div.className = "chat-item";
+
+      div.innerHTML = `
+        <b>Chat ID:</b> ${escapeHtml(chat.id)}
+        <br><br>
+        <b>Last Message:</b><br>
+        ${escapeHtml(data.lastMessage || "No messages")}
+      `;
+
+      monitor.appendChild(div);
+    });
+
+  }catch(err){
+    console.error(err);
+    monitor.innerHTML = `
+      <div class="chat-item">
+        Failed to load chats.
+      </div>
+    `;
+  }
+};
+
+/* ================= STATS ================= */
+function updateStats(){
+  document.getElementById("totalUsers").textContent = cachedUsers.length;
+
+  document.getElementById("adminCount").textContent =
+    cachedUsers.filter(u=>u.role === "admin").length;
+
+  document.getElementById("lockedCount").textContent =
+    cachedUsers.filter(u=>u.locked).length;
+}
+
+/* ================= HELPERS ================= */
+function formatDate(timestamp){
+  if(!timestamp) return "Unknown";
+
+  return new Date(timestamp).toLocaleString();
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/\"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+/* ================= INIT ================= */
+window.addEventListener("DOMContentLoaded",()=>{
+
+  loadUsers();
+  loadIncidentReports();
+
+  document
+    .getElementById("userSearch")
+    .addEventListener("input",renderUsers);
+});
+
+</script>
+
+</body>
+</html>
