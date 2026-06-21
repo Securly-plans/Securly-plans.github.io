@@ -1,5 +1,3 @@
-console.log("os.js OPENED");
-
 "use strict";
 
 /* =========================
@@ -7,7 +5,6 @@ console.log("os.js OPENED");
 ========================= */
 
 let zIndexCounter = 100;
-let activeDrag = null;
 
 let installedApps = [];
 let appRegistry = {};
@@ -20,8 +17,12 @@ window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
     initClock();
     initDesktop();
+
     loadInstalledApps();
     renderAllApps();
+
+    // IMPORTANT: legacy HTML support
+    exposeLegacyAPI();
 });
 
 /* =========================
@@ -78,7 +79,7 @@ function initDesktop() {
 }
 
 /* =========================
-   APPS LOADING
+   LOAD APPS
 ========================= */
 
 function loadInstalledApps() {
@@ -88,15 +89,15 @@ function loadInstalledApps() {
         installedApps = [];
     }
 
-    // fallback demo apps if empty
+    // fallback apps if none exist
     if (installedApps.length === 0) {
         installedApps = [
             { id: "notes", name: "Notes", icon: "📄" },
-            { id: "browser", name: "Browser", icon: "🌐" }
+            { id: "files", name: "File Explorer", icon: "📁" },
+            { id: "store", name: "App Store", icon: "🛒" }
         ];
     }
 
-    // build registry
     appRegistry = {};
     installedApps.forEach(app => {
         appRegistry[app.id] = app;
@@ -123,7 +124,7 @@ function renderDesktopApps() {
         div.className = "app-icon";
         div.innerHTML = `${app.icon}<br>${app.name}`;
 
-        div.onclick = () => launchApp(app.id);
+        div.addEventListener("click", () => launchApp(app.id));
 
         desktop.appendChild(div);
     });
@@ -140,14 +141,14 @@ function renderStartMenuApps() {
         item.className = "start-item";
         item.textContent = `${app.icon} ${app.name}`;
 
-        item.onclick = () => launchApp(app.id);
+        item.addEventListener("click", () => launchApp(app.id));
 
         menu.appendChild(item);
     });
 }
 
 /* =========================
-   APP LAUNCHER (FIXED CORE)
+   APP LAUNCHER
 ========================= */
 
 function launchApp(appId) {
@@ -178,26 +179,29 @@ function createWindow(app) {
 
     document.body.appendChild(win);
 
-    // FIX: immediate render override (prevents "stuck launching")
+    // FIX: always replace loading state
     setTimeout(() => {
         const content = win.querySelector(".content");
         content.innerHTML = getAppContent(app.id);
-    }, 150);
+    }, 120);
 
     win.querySelector(".close").onclick = () => win.remove();
 }
 
 /* =========================
-   APP CONTENT ROUTER
+   APP CONTENT
 ========================= */
 
 function getAppContent(id) {
     switch (id) {
         case "notes":
-            return `<textarea style="width:100%;height:100%"></textarea>`;
+            return `<textarea style="width:100%;height:100%;border:none;outline:none;"></textarea>`;
 
-        case "browser":
-            return `<iframe src="https://example.com" style="width:100%;height:100%;border:0;"></iframe>`;
+        case "files":
+            return `<div>File Explorer (WIP)</div>`;
+
+        case "store":
+            return `<div>App Store (WIP)</div>`;
 
         default:
             return `<div>App not implemented: ${id}</div>`;
@@ -205,11 +209,19 @@ function getAppContent(id) {
 }
 
 /* =========================
-   EXPOSE GLOBALS
+   LEGACY FIX (YOUR ERROR FIX)
 ========================= */
 
-function exposeGlobals() {
-    window.launchApp = launchApp;
+function exposeLegacyAPI() {
+    // These fix your current HTML errors immediately
+
+    window.openNotes = () => launchApp("notes");
+    window.openFileExplorer = () => launchApp("files");
+    window.openAppStore = () => launchApp("store");
 }
 
-console.log("os.js RAN");
+/* =========================
+   OPTIONAL GLOBAL ACCESS
+========================= */
+
+window.launchApp = launchApp;
