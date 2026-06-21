@@ -1,7 +1,3 @@
-// ==========================================
-// EMERALD OS - MODULE SAFE DROP-IN
-// ==========================================
-
 let zIndexCounter = 100;
 let activeDrag = null;
 
@@ -12,13 +8,11 @@ let activeDrag = null;
 window.addEventListener("DOMContentLoaded", () => {
     initClock();
     initStartMenu();
-    renderDesktopApps();
-
-    console.log("Emerald OS booted");
+    exposeGlobals();
 });
 
 // ==========================================
-// MAKE EVERYTHING GLOBAL (FIX FOR MODULE MODE)
+// MAKE HTML ONCLICK WORK (CRITICAL FIX)
 // ==========================================
 
 function exposeGlobals() {
@@ -27,9 +21,10 @@ function exposeGlobals() {
         openNotes,
         openFileExplorer,
         openAppStore,
-        FileSystem,
+        saveNote,
+        deleteFile,
         renderFileExplorer,
-        deleteFile
+        FileSystem
     });
 }
 
@@ -87,8 +82,8 @@ function openWindow(title, html) {
     const win = document.createElement("div");
     win.className = "window";
 
-    win.style.left = (50 + Math.random() * 100) + "px";
-    win.style.top = (50 + Math.random() * 80) + "px";
+    win.style.left = (50 + Math.random() * 120) + "px";
+    win.style.top = (50 + Math.random() * 100) + "px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -104,16 +99,11 @@ function openWindow(title, html) {
     container.appendChild(win);
 
     const tab = document.createElement("div");
-    tab.className = "taskbar-tab active";
+    tab.className = "taskbar-tab";
     tab.textContent = title;
     taskbar.appendChild(tab);
 
-    function focus() {
-        win.style.zIndex = ++zIndexCounter;
-    }
-
-    win.addEventListener("mousedown", focus);
-    tab.addEventListener("click", () => win.remove());
+    tab.onclick = () => win.remove();
 
     win.querySelector(".close-btn").onclick = () => {
         win.remove();
@@ -163,7 +153,7 @@ function escapeHTML(t) {
 }
 
 // ==========================================
-// FILE SYSTEM (LOCAL ONLY - SAFE)
+// FILE SYSTEM (LOCAL STORAGE ONLY)
 // ==========================================
 
 const FileSystem = {
@@ -182,13 +172,13 @@ const FileSystem = {
 };
 
 // ==========================================
-// NOTES
+// NOTES (FIXED saveNote ERROR)
 // ==========================================
 
 function openNotes(filename = "New.txt") {
     const id = Math.random().toString(36).slice(2);
 
-    const win = openWindow("Notes", `
+    openWindow("Notes", `
         <input id="fn-${id}" value="${escapeHTML(filename)}">
         <br><br>
         <textarea id="txt-${id}" style="width:100%;height:200px;"></textarea>
@@ -202,6 +192,7 @@ function openNotes(filename = "New.txt") {
     }, 50);
 }
 
+// THIS WAS YOUR ERROR
 function saveNote(id) {
     const name = document.getElementById("fn-" + id).value;
     const content = document.getElementById("txt-" + id).value;
@@ -254,25 +245,13 @@ function deleteFile(name) {
 
 function openFileExplorer() {
     openWindow("File Explorer", `<div id="explorer-content"></div>`);
-    setTimeout(renderFileExplorer, 100);
+    setTimeout(renderFileExplorer, 80);
 }
 
 // ==========================================
-// APP STORE (PLACEHOLDER SAFE)
+// APP STORE (PLACEHOLDER)
 // ==========================================
 
 function openAppStore() {
-    openWindow("App Store", "<p>App Store coming soon</p>");
+    openWindow("App Store", "<p>Coming soon</p>");
 }
-
-// ==========================================
-// DESKTOP APPS (SAFE)
-// ==========================================
-
-function renderDesktopApps() {}
-
-// ==========================================
-// FINAL BOOT PATCH
-// ==========================================
-
-exposeGlobals();
