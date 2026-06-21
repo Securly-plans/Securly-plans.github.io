@@ -13,12 +13,7 @@ body {
     overflow: hidden;
 }
 
-/* ================= DESKTOP ================= */
-
-#desktop {
-    position: absolute;
-    inset: 0;
-}
+#desktop { position: absolute; inset: 0; }
 
 #desktop-icons {
     display: flex;
@@ -35,16 +30,6 @@ body {
     color: white;
     user-select: none;
 }
-
-/* installed apps */
-#installed-apps-zone {
-    position: absolute;
-    top: 0;
-    left: 120px;
-    display: contents;
-}
-
-/* ================= WINDOWS ================= */
 
 .window {
     position: absolute;
@@ -63,7 +48,16 @@ body {
     cursor: move;
 }
 
-/* ================= START MENU ================= */
+/* RESIZE HANDLE */
+.resize-handle {
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: se-resize;
+    background: #404040;
+}
 
 #start-menu {
     position: absolute;
@@ -72,13 +66,10 @@ body {
     width: 200px;
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
     display: none;
 }
 
-#start-menu.show {
-    display: block;
-}
+#start-menu.show { display: block; }
 
 .start-menu-item {
     padding: 6px;
@@ -90,8 +81,6 @@ body {
     background: #000080;
     color: white;
 }
-
-/* ================= TASKBAR ================= */
 
 #taskbar {
     position: absolute;
@@ -109,96 +98,48 @@ body {
 #start-btn {
     background: #c0c0c0;
     border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-    font-weight: bold;
-    font-size: 12px;
-    cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= DESKTOP ================= -->
 <main id="desktop">
 
-    <!-- BUILT-IN ICONS -->
-    <div id="desktop-icons">
-        <div class="icon" onclick="Applications.notes()">📄<br>Notes</div>
-        <div class="icon" onclick="Applications.files()">📁<br>Files</div>
-        <div class="icon" onclick="Applications.store()">🛒<br>Store</div>
-        <div class="icon" onclick="Applications.system()">💻<br>System</div>
-        <div class="icon" onclick="Applications.chat()">💬<br>Chat</div>
-    </div>
-
-    <!-- INSTALLED APPS -->
+    <div id="desktop-icons"></div>
     <div id="installed-apps-zone"></div>
 
 </main>
 
-<!-- ================= START MENU ================= -->
 <aside id="start-menu">
     <div class="start-menu-item" onclick="Applications.notes()">📄 Notes</div>
-    <div class="start-menu-item" onclick="Applications.files()">📁 File Explorer</div>
-    <div class="start-menu-item" onclick="Applications.store()">🛒 App Store</div>
+    <div class="start-menu-item" onclick="Applications.files()">📁 Files</div>
+    <div class="start-menu-item" onclick="Applications.store()">🛒 Store</div>
     <div class="start-menu-item" onclick="Applications.system()">💻 System</div>
     <div class="start-menu-item" onclick="Applications.chat()">💬 Chat</div>
 </aside>
 
-<!-- ================= WINDOWS ================= -->
 <div id="windows-container"></div>
 
-<!-- ================= TASKBAR ================= -->
 <footer id="taskbar">
     <button id="start-btn">Start</button>
 </footer>
 
-<!-- ================= OS SCRIPT ================= -->
 <script src="os.js"></script>
 
 <script>
-// =============================
-// START MENU CONTROL
-// =============================
-
 const startBtn = document.getElementById("start-btn");
 const startMenu = document.getElementById("start-menu");
 
-startBtn.addEventListener("click", (e) => {
+startBtn.onclick = (e) => {
     e.stopPropagation();
     startMenu.classList.toggle("show");
-});
+};
 
 document.addEventListener("click", (e) => {
-    if (!startMenu.contains(e.target)) {
+    if (!startMenu.contains(e.target) && e.target !== startBtn) {
         startMenu.classList.remove("show");
     }
-});
-
-// =============================
-// SAFETY WRAPPER (optional fallback)
-// =============================
-
-function safeOpen(app) {
-    if (window.Applications && window.Applications[app]) {
-        window.Applications[app]();
-    }
-}
-
-// =============================
-// BOOT HANDLER
-// =============================
-
-window.addEventListener("DOMContentLoaded", () => {
-
-    // wait for os.js to mount desktop apps
-    setTimeout(() => {
-
-        if (typeof renderDesktopApps === "function") {
-            renderDesktopApps();
-        }
-
-    }, 100);
 });
 </script>
 
