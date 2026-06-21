@@ -61,8 +61,8 @@ button:active {
     <input id="user" placeholder="Username">
     <input id="pass" type="password" placeholder="Password">
 
-    <button onclick="register()">Register</button>
-    <button onclick="goLogin()">Back</button>
+    <button id="regBtn">Register</button>
+    <button id="backBtn">Back to Login</button>
 </div>
 
 <script type="module">
@@ -81,45 +81,44 @@ async function sha256(text) {
         .join("");
 }
 
-window.register = async function () {
-    try {
-        const username = document.getElementById("user").value.trim();
-        const password = document.getElementById("pass").value;
+async function register() {
+    const username = document.getElementById("user").value.trim();
+    const password = document.getElementById("pass").value;
 
-        if (!username || !password) {
-            alert("Fill all fields");
-            return;
-        }
-
-        const ref = doc(db, "emeraldOSUsers", username);
-        const snap = await getDoc(ref);
-
-        if (snap.exists()) {
-            alert("User already exists");
-            return;
-        }
-
-        const hash = await sha256(password);
-
-        await setDoc(ref, {
-            username,
-            passwordHash: hash,
-            created: Date.now(),
-            lastLogin: null
-        });
-
-        alert("Account created!");
-        window.location.href = "index.html";
-
-    } catch (err) {
-        console.error(err);
-        alert("Register failed — check console");
+    if (!username || !password) {
+        alert("Fill all fields");
+        return;
     }
-};
 
-window.goLogin = function () {
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+        alert("User already exists");
+        return;
+    }
+
+    const hash = await sha256(password);
+
+    await setDoc(ref, {
+        username,
+        passwordHash: hash,
+        created: Date.now(),
+        lastLogin: null
+    });
+
+    alert("Account created!");
     window.location.href = "index.html";
-};
+}
+
+function goLogin() {
+    window.location.href = "index.html";
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("regBtn").addEventListener("click", register);
+    document.getElementById("backBtn").addEventListener("click", goLogin);
+});
 </script>
 
 </body>
