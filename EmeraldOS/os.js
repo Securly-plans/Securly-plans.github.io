@@ -16,7 +16,6 @@ import {
 ========================= */
 
 let zIndexCounter = 100;
-
 let dragState = null;
 let resizeState = null;
 
@@ -32,7 +31,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
-
     await loadSystem();
 });
 
@@ -48,7 +46,7 @@ function initStartMenu() {
 
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+        menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
     });
 
     document.addEventListener("click", () => {
@@ -77,16 +75,16 @@ function initClock() {
 }
 
 /* =========================
-   CLOUD LOAD SYSTEM
+   CLOUD LOAD
 ========================= */
 
 async function loadSystem() {
     fileSystem.files = await loadDrive();
-    refresh();
+    renderExplorerIfOpen();
 }
 
 /* =========================
-   WINDOW SYSTEM
+   WINDOW SYSTEM (DRAG + RESIZE FIXED)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
@@ -114,7 +112,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW SYSTEM
+   WINDOW CORE
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -153,21 +151,18 @@ window.openWindow = function (title, contentHTML) {
 
     closeBtn.onclick = () => win.remove();
 
-    /* drag */
+    /* DRAG */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-
-        win.style.zIndex = ++zIndexCounter;
     });
 
-    /* resize */
+    /* RESIZE */
     resizeHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        e.stopPropagation();
 
         const rect = win.getBoundingClientRect();
 
@@ -178,20 +173,14 @@ window.openWindow = function (title, contentHTML) {
             startWidth: rect.width,
             startHeight: rect.height
         };
-
-        win.style.zIndex = ++zIndexCounter;
     });
 
     return win;
 };
 
 /* =========================
-   FILE EXPLORER
+   FILE EXPLORER (NO RECURSION EVER)
 ========================= */
-
-window.openFileExplorer = function () {
-    openWindow("Cloud Files", renderFilesApp());
-};
 
 function renderFilesApp() {
     const files = fileSystem.files;
@@ -206,7 +195,6 @@ function renderFilesApp() {
             ${Object.keys(files).map(id => `
                 <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ddd;">
                     <span>${files[id].name}</span>
-
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="removeFile('${id}')">Delete</button>
@@ -217,17 +205,23 @@ function renderFilesApp() {
     `;
 }
 
+/* SAFE SINGLE ENTRY POINT */
+window.openFileExplorer = function () {
+    openWindow("Cloud Files", renderFilesApp());
+};
+
 /* =========================
-   FILE ACTIONS (FIXED NO COLLISION)
+   FILE ACTIONS (CLEAN)
 ========================= */
 
 window.createNewFile = async function () {
     await cloudCreateFile("New File", "");
     await loadSystem();
+    refreshWindows();
 };
 
 window.openFile = function (id) {
-    const file = fileSystem.files[id];
+    const file = fileSystem.files?.[id];
     if (!file) return;
 
     openWindow(
@@ -256,10 +250,11 @@ window.saveOpenedFile = async function (id) {
 window.removeFile = async function (id) {
     await cloudDeleteFile(id);
     await loadSystem();
+    refreshWindows();
 };
 
 /* =========================
-   UPLOAD FILE
+   UPLOAD
 ========================= */
 
 window.uploadFile = function () {
@@ -275,6 +270,7 @@ window.uploadFile = function () {
         reader.onload = async () => {
             await cloudCreateFile(file.name, reader.result);
             await loadSystem();
+            refreshWindows();
         };
 
         reader.readAsText(file);
@@ -284,20 +280,28 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   REFRESH
+   UI REFRESH
 ========================= */
 
-function refresh() {
+function refreshWindows() {
     document.querySelectorAll(".window").forEach(w => w.remove());
 }
 
 /* =========================
-   LEGACY API
+   LEGACY API (SAFE)
 ========================= */
 
 function exposeLegacyAPI() {
     window.launchApp = openWindow;
-    window.openFileExplorer = () => openFileExplorer();
-    window.openNotes = () => openWindow("Notes", "<p>Notes placeholder</p>");
-    window.openAppStore = () => openWindow("App Store", "<p>Store placeholder</p>");
+
+    window.openNotes = () =>
+        openWindow("Notes", "<p>Notes placeholder</p>");
+
+    window.openAppStore = () =>
+        openWindow("App Store", "<p>Store placeholder</p>");
+}
+
+/* optional re-render hook */
+function renderExplorerIfOpen() {
+    // safe no-op for now
 }
