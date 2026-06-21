@@ -1,5 +1,5 @@
 // =======================================
-// EmeraldOS Auth (SethTools)
+// EmeraldOS Auth (SethTools) - FIXED
 // =======================================
 
 import { db } from "../js/firebase.js";
@@ -26,7 +26,7 @@ async function hashPassword(password) {
 
 
 // ===============================
-// CORE REGISTER FUNCTION
+// REGISTER USER
 // ===============================
 
 async function registerOSUser(username, password) {
@@ -53,7 +53,42 @@ async function registerOSUser(username, password) {
 
 
 // ===============================
-// UI WRAPPER (USED BY HTML)
+// LOGIN USER (FIXED - WAS MISSING)
+// ===============================
+
+async function loginOSUser(username, password) {
+
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        throw new Error("User does not exist");
+    }
+
+    const data = snap.data();
+
+    const hashed = await hashPassword(password);
+
+    if (data.passwordHash !== hashed) {
+        throw new Error("Incorrect password");
+    }
+
+    // update last login
+    await setDoc(ref, {
+        ...data,
+        lastLogin: Date.now()
+    });
+
+    // optional: session storage
+    localStorage.setItem("osUser", username);
+    localStorage.setItem("osLoggedIn", "true");
+
+    return true;
+}
+
+
+// ===============================
+// UI WRAPPER (REGISTER)
 // ===============================
 
 window.registerOS = async function () {
@@ -76,11 +111,20 @@ window.registerOS = async function () {
         await registerOSUser(username, pass1);
 
         alert("Account created successfully!");
-
-        // redirect to login page
         window.location.href = "../index.html";
 
     } catch (err) {
         alert(err.message);
     }
+};
+
+
+// ===============================
+// EXPORTS (THIS FIXES YOUR ERROR)
+// ===============================
+
+export {
+    registerOSUser,
+    loginOSUser,
+    hashPassword
 };
