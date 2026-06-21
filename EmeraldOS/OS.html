@@ -4,47 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EmeraldOS</title>
+
     <link rel="stylesheet" href="os.css">
 </head>
+
 <body>
+
+    <!-- ================= DESKTOP ================= -->
     <div id="desktop">
+
         <div class="icon" onclick="openNotes()">📄<br>Notes</div>
+
         <div class="icon" onclick="openFileExplorer()">📁<br>Files</div>
+
         <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
-        <div class="icon" onclick="openWindow('System Info', '<h2>EmeraldOS v2.0</h2><p>Copyright 2026, Emerald Games, Monroe Enterainment Services (MES), Monroe Technology Service (M-Tech)</p>')">💻<br>System</div>
-        <div class="icon" onclick="openWindow('Chat', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬<br>Chat</div>
-        <div class="icon" onclick="openWindow('Games', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/home.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">🌐<br>Games</div>
-        <div class="icon" onclick="openWindow('Media Player', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/mediaplayer.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">📀<br>Media Player</div>
 
+        <div class="icon"
+            onclick="openWindow('System Info',
+            '<h2>EmeraldOS v2.0</h2><p>Copyright 2026 Emerald Systems</p>')">
+            💻<br>System
+        </div>
 
-        <div id="installed-apps-zone" style="display: contents;"></div>
+        <div class="icon"
+            onclick="openWindow('Chat',
+            '<iframe src=\'https://securly-plans.github.io/EmeraldOS/chat.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+            💬<br>Chat
+        </div>
+
+        <div class="icon"
+            onclick="openWindow('Games',
+            '<iframe src=\'https://securly-plans.github.io/EmeraldOS/home.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+            🌐<br>Games
+        </div>
+
+        <div class="icon"
+            onclick="openWindow('Media Player',
+            '<iframe src=\'https://securly-plans.github.io/EmeraldOS/mediaplayer.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+            📀<br>Media Player
+        </div>
+
     </div>
 
+    <!-- ================= START MENU ================= -->
     <div id="start-menu">
-        <div style="background: #000080; color: white; writing-mode: vertical-rl; transform: rotate(180deg); padding: 5px; font-weight: bold;">
+
+        <div style="
+            background:#000080;
+            color:white;
+            writing-mode:vertical-rl;
+            transform:rotate(180deg);
+            padding:6px;
+            font-weight:bold;">
             EmeraldOS
         </div>
-        <div style="flex: 1; display: flex; flex-direction: column; padding: 2px;">
-            <div class="start-menu-item" onclick="openAppStore()">🛒 App Store</div>
-            <div class="start-menu-item" onclick="openFileExplorer()">📁 File Explorer</div>
-            <div class="start-menu-item" onclick="openNotes()">📄 Notes</div>
-            <div class="start-menu-item" onclick="openWindow('Chat', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬 Chat</div>
-            <div class="start-menu-item" onclick="openWindow('Games', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/home.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">🌐 Games</div>
-            <div class="start-menu-item" onclick="openWindow('Media Player', '<iframe src=\'https://securly-plans.github.io/EmeraldOS/home.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">📀 Media Player</div>
-            <div class="start-menu-item" onclick="openWindow('System Info', '<h2>Vanilla OS v1.0</h2>')">💻 System</div>
-            <div class="start-menu-divider"></div>
-            <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
+
+        <div style="flex:1;display:flex;flex-direction:column;padding:2px;">
+
+            <div class="start-item" onclick="openAppStore()">🛒 App Store</div>
+            <div class="start-item" onclick="openFileExplorer()">📁 File Explorer</div>
+            <div class="start-item" onclick="openNotes()">📄 Notes</div>
+
+            <div class="start-item"
+                onclick="openWindow('Chat',
+                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/chat.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+                💬 Chat
+            </div>
+
+            <div class="start-item"
+                onclick="openWindow('Games',
+                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/home.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+                🌐 Games
+            </div>
+
+            <div class="start-item"
+                onclick="openWindow('Media Player',
+                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/mediaplayer.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+                📀 Media Player
+            </div>
+
+            <div class="start-item"
+                onclick="openWindow('System Info','<h2>EmeraldOS v2.0</h2>')">
+                💻 System
+            </div>
+
+            <div class="start-item" onclick="location.reload()">
+                🔄 Restart
+            </div>
+
         </div>
     </div>
 
+    <!-- ================= TASKBAR ================= -->
     <div id="taskbar">
+
         <button id="start-btn">Start</button>
-        <div id="taskbar-apps" style="flex: 1; display: flex; gap: 5px; margin: 0 15px; overflow-x: auto;"></div>
+
+        <div id="taskbar-apps"
+            style="flex:1;display:flex;gap:5px;margin:0 15px;overflow-x:auto;">
+        </div>
+
         <div id="clock">00:00 PM</div>
     </div>
 
+    <!-- ================= WINDOWS ================= -->
     <div id="windows-container"></div>
 
+    <!-- ================= OS SCRIPT ================= -->
     <script type="module" src="os.js"></script>
+
 </body>
 </html>
