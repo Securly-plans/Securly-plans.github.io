@@ -3,15 +3,17 @@
 /* =========================
    IMPORT CLOUD STORAGE
 ========================= */
+
 import {
     loadDrive,
-    createFile,
+    createFile as cloudCreateFile,
     saveFile as cloudSaveFile,
-    deleteFile as cloudDeleteFile
+    deleteFile as cloudDeleteFile,
+    ensureUser
 } from "./cloudstorage.js";
 
 /* =========================
-   SYSTEM STATE
+   STATE
 ========================= */
 
 let zIndexCounter = 100;
@@ -19,48 +21,13 @@ let zIndexCounter = 100;
 let dragState = null;
 let resizeState = null;
 
-let fileSystem = { files: {} };
-
-const systemState = {
-    brightness: Number(localStorage.getItem("brightness")) || 100,
-    volume: Number(localStorage.getItem("volume")) || 80,
-    username: localStorage.getItem("username") || "Guest"
+let fileSystem = {
+    files: {},
+    notes: {}
 };
 
-/* =========================
-   AUDIO SYSTEM
-========================= */
-
-let audioContext = null;
-let masterGain = null;
-
-function initAudioSystem() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        masterGain = audioContext.createGain();
-        masterGain.gain.value = systemState.volume / 100;
-        masterGain.connect(audioContext.destination);
-    } catch (e) {
-        console.warn("Audio system not available:", e);
-    }
-}
-
-function setVolume(val) {
-    systemState.volume = Number(val);
-    localStorage.setItem("volume", systemState.volume);
-
-    if (masterGain) {
-        masterGain.gain.value = systemState.volume / 100;
-    }
-}
-
-/* =========================
-   BRIGHTNESS SYSTEM
-========================= */
-
-function applyBrightness() {
-    document.body.style.filter = `brightness(${systemState.brightness}%)`;
-}
+let currentNoteId = null;
+let currentFileId = null;
 
 /* =========================
    BOOT
@@ -69,11 +36,9 @@ function applyBrightness() {
 window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
-
-    applyBrightness();
-    initAudioSystem();
-
     exposeLegacyAPI();
+
+    await ensureUser();
     await loadSystem();
 });
 
@@ -89,7 +54,7 @@ function initStartMenu() {
 
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
     });
 
     document.addEventListener("click", () => {
@@ -122,16 +87,21 @@ function initClock() {
 ========================= */
 
 async function loadSystem() {
-    fileSystem.files = await loadDrive();
+    const drive = await loadDrive();
+
+    fileSystem.files = drive || {};
+    refresh();
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED DRAG + RESIZE)
+   WINDOW SYSTEM (DRAG + RESIZE FIXED)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
+
     if (dragState) {
         const win = dragState.win;
+
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
@@ -153,7 +123,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW SYSTEM
+   WINDOW CORE
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -162,9 +132,8 @@ window.openWindow = function (title, contentHTML) {
     const win = document.createElement("div");
     win.className = "window";
 
-    win.style.position = "absolute";
-    win.style.top = "80px";
     win.style.left = "80px";
+    win.style.top = "80px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -222,16 +191,16 @@ window.openWindow = function (title, contentHTML) {
 ========================= */
 
 window.openFileExplorer = function () {
-    openWindow("Cloud Files", renderFiles());
+    openWindow("Files", renderFilesApp());
 };
 
-function renderFiles() {
+function renderFilesApp() {
     const files = fileSystem.files;
 
     return `
         <div style="padding:6px;">
             <button onclick="createFile()">New File</button>
-            <button onclick="uploadFile()">Upload</button>
+            <button onclick="createNote()">New Note</button>
 
             <hr>
 
@@ -249,13 +218,13 @@ function renderFiles() {
 }
 
 /* =========================
-   FILE ACTIONS
+   FILE SYSTEM
 ========================= */
 
 window.createFile = async function () {
-    await createFile("New File", "");
-    fileSystem.files = await loadDrive();
-    openFileExplorer();
+    const id = await cloudCreateFile("New File", "");
+    await loadSystem();
+    refresh();
 };
 
 window.openFile = function (id) {
@@ -263,7 +232,7 @@ window.openFile = function (id) {
     if (!file) return;
 
     openWindow(file.name, `
-        <textarea id="file_${id}" style="width:100%;height:80%;">${file.content || ""}</textarea>
+        <textarea id="file_${id}" style="width:100%;height:85%;">${file.content || ""}</textarea>
         <button onclick="saveFile('${id}')">Save</button>
     `);
 };
@@ -277,62 +246,93 @@ window.saveFile = async function (id) {
         content: el.value
     });
 
-    fileSystem.files = await loadDrive();
+    await loadSystem();
 };
 
 window.deleteFile = async function (id) {
     await cloudDeleteFile(id);
-    fileSystem.files = await loadDrive();
-    openFileExplorer();
+    await loadSystem();
+    refresh();
 };
 
 /* =========================
-   SETTINGS / USER SYSTEM
+   NOTES (FIXED FULL SYSTEM)
 ========================= */
 
-window.openSystemSettings = function () {
-    openWindow("System Settings", `
-        <div style="padding:10px;">
-            <h3>Brightness</h3>
-            <input type="range" min="10" max="150"
-                value="${systemState.brightness}"
-                oninput="setBrightness(this.value)">
+window.createNote = function () {
+    const id = "note_" + Date.now();
 
-            <h3>Volume</h3>
-            <input type="range" min="0" max="100"
-                value="${systemState.volume}"
-                oninput="setVolume(this.value)">
+    fileSystem.notes[id] = {
+        name: "Untitled Note",
+        content: ""
+    };
 
-            <h3>User</h3>
-            <button onclick="openUserInfo()">User Info</button>
-        </div>
+    openNote(id);
+    refresh();
+};
+
+window.openNotes = function () {
+    let list = Object.keys(fileSystem.notes);
+
+    openWindow("Notes", `
+        <button onclick="createNote()">New Note</button>
+        <hr>
+
+        ${list.map(id => `
+            <div style="padding:4px;cursor:pointer;" onclick="openNote('${id}')">
+                ${fileSystem.notes[id].name}
+            </div>
+        `).join("")}
     `);
 };
 
-window.setBrightness = function (val) {
-    systemState.brightness = Number(val);
-    localStorage.setItem("brightness", val);
-    applyBrightness();
-};
+window.openNote = function (id) {
+    currentNoteId = id;
 
-window.setVolume = setVolume;
+    const note = fileSystem.notes[id];
 
-window.openUserInfo = function () {
-    openWindow("User Info", `
-        <div style="padding:10px;">
-            <p><b>User:</b> ${systemState.username}</p>
-            <p><b>Brightness:</b> ${systemState.brightness}%</p>
-            <p><b>Volume:</b> ${systemState.volume}%</p>
-
-            <button onclick="logout()">Logout</button>
-        </div>
+    openWindow(note.name, `
+        <input id="note_title_${id}" style="width:100%;" value="${note.name}">
+        <textarea id="note_content_${id}" style="width:100%;height:80%;">${note.content}</textarea>
+        <button onclick="saveNote('${id}')">Save</button>
     `);
 };
 
-window.logout = function () {
-    localStorage.clear();
-    window.location.href = "index.html";
+window.saveNote = function (id) {
+    const title = document.getElementById(`note_title_${id}`)?.value;
+    const content = document.getElementById(`note_content_${id}`)?.value;
+
+    fileSystem.notes[id] = {
+        name: title,
+        content: content
+    };
+
+    // convert note → real file
+    const fileId = "file_" + id;
+
+    cloudSaveFile(fileId, {
+        name: title + ".txt",
+        content: content
+    });
+
+    refresh();
 };
+
+/* =========================
+   APP STUBS
+========================= */
+
+window.openAppStore = function () {
+    openWindow("App Store", "<p>Store coming soon</p>");
+};
+
+/* =========================
+   REFRESH
+========================= */
+
+function refresh() {
+    document.querySelectorAll(".window").forEach(w => w.remove());
+}
 
 /* =========================
    LEGACY API
@@ -340,6 +340,4 @@ window.logout = function () {
 
 function exposeLegacyAPI() {
     window.launchApp = openWindow;
-    window.openNotes = () => openWindow("Notes", "<p>Notes</p>");
-    window.openAppStore = () => openWindow("Store", "<p>Store</p>");
 }
