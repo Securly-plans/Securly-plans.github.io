@@ -11,7 +11,7 @@ import {
 } from "./firebase.js";
 
 /* =========================
-   USER IDENTITY
+   USER IDENTITY (USERNAME ONLY)
 ========================= */
 
 function getUsername() {
@@ -19,19 +19,18 @@ function getUsername() {
 }
 
 /* =========================
-   USER DOCUMENT (IMPORTANT FIX)
+   USER DOC (emeraldOSUsers/{username})
 ========================= */
 
 function userDoc() {
     const username = getUsername();
     if (!username) return null;
 
-    // document ID = username
     return doc(db, "emeraldOSUsers", username);
 }
 
 /* =========================
-   DRIVE PATH
+   DRIVE COLLECTION
 ========================= */
 
 function driveCollection() {
@@ -54,88 +53,130 @@ function fileDoc(fileId) {
 
 export async function ensureUser() {
     const username = getUsername();
-    if (!username) return false;
+    if (!username) {
+        console.warn("No username found in localStorage");
+        return false;
+    }
 
     const ref = userDoc();
     if (!ref) return false;
 
-    const snap = await getDoc(ref);
+    try {
+        const snap = await getDoc(ref);
 
-    if (!snap.exists()) {
-        await setDoc(ref, {
-            username,            // stored field
-            createdAt: Date.now(),
-            locked: false
-        });
+        if (!snap.exists()) {
+            await setDoc(ref, {
+                username,
+                createdAt: Date.now(),
+                locked: false
+            });
+        }
+
+        return true;
+    } catch (err) {
+        console.error("ensureUser failed:", err);
+        return false;
     }
-
-    return true;
 }
 
 /* =========================
-   LOAD DRIVE
+   LOAD DRIVE (NORMALIZED)
 ========================= */
 
 export async function loadDrive() {
     const col = driveCollection();
     if (!col) return {};
 
-    const snap = await getDocs(col);
+    try {
+        const snap = await getDocs(col);
 
-    const files = {};
+        const files = {};
 
-    snap.forEach(d => {
-        files[d.id] = d.data();
-    });
+        snap.forEach(d => {
+            const data = d.data();
 
-    return files;
+            files[d.id] = {
+                name: data.name || "Untitled",
+                content: data.content || "",
+                type: data.type || "text", // text | image | video
+                createdAt: data.createdAt || 0,
+                updatedAt: data.updatedAt || 0
+            };
+        });
+
+        return files;
+    } catch (err) {
+        console.error("loadDrive failed:", err);
+        return {};
+    }
 }
 
 /* =========================
-   GET FILE
+   GET SINGLE FILE
 ========================= */
 
 export async function getFile(fileId) {
     const ref = fileDoc(fileId);
     if (!ref) return null;
 
-    const snap = await getDoc(ref);
-    return snap.exists() ? snap.data() : null;
+    try {
+        const snap = await getDoc(ref);
+        return snap.exists() ? snap.data() : null;
+    } catch (err) {
+        console.error("getFile failed:", err);
+        return null;
+    }
 }
 
 /* =========================
-   CREATE FILE
+   CREATE FILE (TYPE SUPPORT)
 ========================= */
 
-export async function createFile(name = "New File", content = "") {
+export async function createFile(
+    name = "New File",
+    content = "",
+    type = "text"
+) {
     const username = getUsername();
-    if (!username) return null;
+    if (!username) {
+        console.warn("No username found");
+        return null;
+    }
 
     const id = "file_" + Date.now();
 
-    await setDoc(fileDoc(id), {
-        name,
-        content,
-        type: "text/plain",
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    });
+    try {
+        await setDoc(fileDoc(id), {
+            name,
+            content,
+            type, // IMPORTANT for media support
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        });
 
-    return id;
+        return id;
+    } catch (err) {
+        console.error("createFile failed:", err);
+        return null;
+    }
 }
 
 /* =========================
-   SAVE FILE
+   SAVE FILE (MERGE SAFE)
 ========================= */
 
 export async function saveFile(fileId, data) {
     const ref = fileDoc(fileId);
     if (!ref) return;
 
-    await setDoc(ref, {
-        ...data,
-        updatedAt: Date.now()
-    }, { merge: true });
+    try {
+        await setDoc(ref, {
+            ...data,
+            updatedAt: Date.now()
+        }, { merge: true });
+    } catch (err) {
+        console.error("saveFile failed:", err);
+    }
 }
 
 /* =========================
@@ -146,15 +187,24 @@ export async function deleteFile(fileId) {
     const ref = fileDoc(fileId);
     if (!ref) return;
 
-    await deleteDoc(ref);
+    try {
+        await deleteDoc(ref);
+    } catch (err) {
+        console.error("deleteFile failed:", err);
+    }
 }
 
 /* =========================
-   DEBUG
+   DEBUG TOOL
 ========================= */
 
 export async function debugDrive() {
     console.log("USERNAME:", getUsername());
-    console.log("USER DOC:", await getDoc(userDoc()));
-    console.log("DRIVE:", await loadDrive());
+
+    try {
+        console.log("USER DOC:", await getDoc(userDoc()));
+        console.log("DRIVE:", await loadDrive());
+    } catch (err) {
+        console.error("debugDrive failed:", err);
+    }
 }
