@@ -61,8 +61,8 @@ button:active {
     <input id="user" placeholder="Username">
     <input id="pass" type="password" placeholder="Password">
 
-    <button onclick="login()">Login</button>
-    <button onclick="goRegister()">Create Account</button>
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Create Account</button>
 </div>
 
 <script type="module">
@@ -81,48 +81,47 @@ async function sha256(text) {
         .join("");
 }
 
-window.login = async function () {
-    try {
-        const username = document.getElementById("user").value.trim();
-        const password = document.getElementById("pass").value;
+async function login() {
+    const username = document.getElementById("user").value.trim();
+    const password = document.getElementById("pass").value;
 
-        if (!username || !password) {
-            alert("Fill all fields");
-            return;
-        }
-
-        const ref = doc(db, "emeraldOSUsers", username);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-            alert("User not found");
-            return;
-        }
-
-        const data = snap.data();
-        const hash = await sha256(password);
-
-        if (data.passwordHash !== hash) {
-            alert("Incorrect password");
-            return;
-        }
-
-        await updateDoc(ref, {
-            lastLogin: Date.now()
-        });
-
-        localStorage.setItem("os_session", username);
-        window.location.href = "OS.html";
-
-    } catch (err) {
-        console.error(err);
-        alert("Login failed — check console");
+    if (!username || !password) {
+        alert("Fill all fields");
+        return;
     }
-};
 
-window.goRegister = function () {
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        alert("User not found");
+        return;
+    }
+
+    const data = snap.data();
+    const hash = await sha256(password);
+
+    if (data.passwordHash !== hash) {
+        alert("Incorrect password");
+        return;
+    }
+
+    await updateDoc(ref, {
+        lastLogin: Date.now()
+    });
+
+    localStorage.setItem("os_session", username);
+    window.location.href = "OS.html";
+}
+
+function goRegister() {
     window.location.href = "register.html";
-};
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("registerBtn").addEventListener("click", goRegister);
+});
 </script>
 
 </body>
