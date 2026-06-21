@@ -1,454 +1,325 @@
-// ==========================================
-// EMERALDOS CORE
-// ==========================================
+// ================================
+// EMERALD FILE SYSTEM
+// ================================
 
-const EmeraldOS = {
+const FS_KEY = "emerald_fs";
 
-    version: "2.0",
+function getFS() {
+    return JSON.parse(localStorage.getItem(FS_KEY) || "[]");
+}
 
-    highestZ: 100,
+function saveFS(fs) {
+    localStorage.setItem(FS_KEY, JSON.stringify(fs));
+}
 
-    windows: [],
-
-    boot() {
-
-        Session.check();
-
-        Clock.start();
-
-        StartMenu.initialize();
-
-        Desktop.initialize();
-
-        console.log(
-            "EmeraldOS booted."
-        );
-    }
-};
-
-// ==========================================
+// ================================
 // SESSION
-// ==========================================
+// ================================
 
 const Session = {
 
     check() {
-
-        const siteLoggedIn =
-            localStorage.getItem(
-                "loggedIn"
-            ) === "true";
-
-        const osLoggedIn =
-            localStorage.getItem(
-                "osLoggedIn"
-            ) === "true";
-
-        if (!siteLoggedIn) {
-            location.href =
-                "../index.html";
-            return;
-        }
-
-        if (!osLoggedIn) {
-            location.href =
-                "index.html";
+        if (localStorage.getItem("loggedIn") !== "true") {
+            location.href = "../index.html";
         }
     },
 
     logout() {
-
-        localStorage.removeItem(
-            "osLoggedIn"
-        );
-
-        localStorage.removeItem(
-            "osUsername"
-        );
-
-        localStorage.removeItem(
-            "osAccountId"
-        );
-
-        location.href =
-            "index.html";
+        localStorage.removeItem("osLoggedIn");
+        location.href = "index.html";
     }
 };
 
-const Desktop = {
+// ================================
+// CLOCK
+// ================================
 
-    initialize() {
+const Clock = {
+    start() {
+        this.update();
+        setInterval(() => this.update(), 1000);
+    },
 
-        const desktop =
-            document.getElementById("desktop");
+    update() {
+        const el = document.getElementById("clock");
+        if (!el) return;
 
-        if (!desktop) return;
-
-        // Example: click-to-focus windows behind desktop
-        desktop.addEventListener("mousedown", () => {
-            console.log("Desktop clicked");
+        el.textContent = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
         });
     }
 };
 
-// ==========================================
-// CLOCK
-// ==========================================
-
-const Clock = {
-
-    start() {
-
-        this.update();
-
-        setInterval(
-            () => this.update(),
-            1000
-        );
-    },
-
-    update() {
-
-        const clock =
-            document.getElementById(
-                "clock"
-            );
-
-        if (!clock) return;
-
-        clock.textContent =
-            new Date().toLocaleTimeString(
-                [],
-                {
-                    hour: "numeric",
-                    minute: "2-digit"
-                }
-            );
-    }
-};
-
-// ==========================================
-// START MENU
-// ==========================================
-
-const StartMenu = {
-
-    initialize() {
-
-        const button =
-            document.getElementById(
-                "start-btn"
-            );
-
-        const menu =
-            document.getElementById(
-                "start-menu"
-            );
-
-        if (!button || !menu) return;
-
-        button.onclick = () => {
-            menu.classList.toggle(
-                "show"
-            );
-        };
-
-        document.addEventListener(
-            "click",
-            e => {
-
-                if (
-                    !menu.contains(e.target)
-                    &&
-                    e.target !== button
-                ) {
-                    menu.classList.remove(
-                        "show"
-                    );
-                }
-            }
-        );
-    }
-};
-
-// ==========================================
-// WINDOW MANAGER
-// ==========================================
+// ================================
+// WINDOW SYSTEM
+// ================================
 
 const WindowManager = {
 
-    create(
-        title,
-        content,
-        width = 500,
-        height = 350
-    ) {
+    highestZ: 100,
 
-        const win =
-            document.createElement(
-                "div"
-            );
+    create(title, content, w = 500, h = 350) {
 
-        win.className =
-            "window";
+        const win = document.createElement("div");
+        win.className = "window";
 
-        win.style.width =
-            width + "px";
-
-        win.style.height =
-            height + "px";
-
-        win.style.top =
-            50 +
-            Math.random() * 100 +
-            "px";
-
-        win.style.left =
-            50 +
-            Math.random() * 100 +
-            "px";
-
-        win.style.zIndex =
-            ++EmeraldOS.highestZ;
+        win.style.width = w + "px";
+        win.style.height = h + "px";
+        win.style.top = (50 + Math.random() * 100) + "px";
+        win.style.left = (50 + Math.random() * 100) + "px";
+        win.style.zIndex = ++this.highestZ;
 
         win.innerHTML = `
             <div class="title-bar">
-
                 <span>${title}</span>
-
-                <button
-                    class="close-btn">
-                    X
-                </button>
-
+                <button class="close">X</button>
             </div>
-
-            <div class="window-content">
-                ${content}
-            </div>
+            <div class="window-content">${content}</div>
         `;
 
-        document
-            .getElementById(
-                "windows-container"
-            )
-            .appendChild(win);
+        document.getElementById("windows-container").appendChild(win);
 
+        // close
+        win.querySelector(".close").onclick = () => win.remove();
+
+        // drag
         this.makeDraggable(win);
-
-        this.focus(win);
-
-        win
-            .querySelector(
-                ".close-btn"
-            )
-            .onclick = () => {
-                win.remove();
-            };
 
         return win;
     },
 
-    focus(win) {
-
-        win.style.zIndex =
-            ++EmeraldOS.highestZ;
-    },
-
     makeDraggable(win) {
 
-        const title =
-            win.querySelector(
-                ".title-bar"
-            );
+        const bar = win.querySelector(".title-bar");
 
-        let dragging =
-            false;
+        let dragging = false;
+        let ox = 0, oy = 0;
 
-        let offsetX = 0;
-        let offsetY = 0;
+        bar.onmousedown = (e) => {
+            dragging = true;
+            ox = e.clientX - win.offsetLeft;
+            oy = e.clientY - win.offsetTop;
+            this.focus(win);
+        };
 
-        title.addEventListener(
-            "mousedown",
-            e => {
+        document.onmousemove = (e) => {
+            if (!dragging) return;
 
-                dragging = true;
+            win.style.left = (e.clientX - ox) + "px";
+            win.style.top = (e.clientY - oy) + "px";
+        };
 
-                offsetX =
-                    e.clientX -
-                    win.offsetLeft;
+        document.onmouseup = () => dragging = false;
+    },
 
-                offsetY =
-                    e.clientY -
-                    win.offsetTop;
-
-                this.focus(win);
-            }
-        );
-
-        document.addEventListener(
-            "mousemove",
-            e => {
-
-                if (!dragging)
-                    return;
-
-                win.style.left =
-                    (
-                        e.clientX -
-                        offsetX
-                    ) + "px";
-
-                win.style.top =
-                    (
-                        e.clientY -
-                        offsetY
-                    ) + "px";
-            }
-        );
-
-        document.addEventListener(
-            "mouseup",
-            () => {
-                dragging = false;
-            }
-        );
+    focus(win) {
+        win.style.zIndex = ++this.highestZ;
     }
 };
 
-// Compatibility
+// ================================
+// FILE SYSTEM HELPERS
+// ================================
 
-function openWindow(
-    title,
-    content
-) {
-    WindowManager.create(
-        title,
-        content
-    );
+let currentFileId = null;
+
+function createFile(type = "note") {
+
+    const fs = getFS();
+
+    const file = {
+        id: crypto.randomUUID(),
+        name: "Untitled",
+        type,
+        content: "",
+        created: Date.now(),
+        updated: Date.now()
+    };
+
+    fs.push(file);
+    saveFS(fs);
+
+    Applications.notes(file.id);
 }
 
-// ==========================================
+// ================================
 // APPLICATIONS
-// ==========================================
+// ================================
 
 const Applications = {
 
-    notes() {
+    // ================= NOTES =================
+
+    notes(openId = null) {
+
+        const fs = getFS();
+        const notes = fs.filter(f => f.type === "note");
 
         WindowManager.create(
             "Notes",
 
             `
-            <textarea
-                id="note-text"
-                style="
-                    width:100%;
-                    height:80%;
-                ">
-            </textarea>
+            <div style="display:flex; height:100%;">
 
-            <button
-                onclick="saveCurrentNote()">
-                Save
-            </button>
+                <!-- LIST -->
+                <div style="width:35%; border-right:1px solid #333; padding:5px;">
+
+                    <button onclick="createFile('note')">+ New Note</button>
+
+                    <div>
+                        ${notes.map(n => `
+                            <div onclick="loadFile('${n.id}')">
+                                📄 ${n.name}
+                            </div>
+                        `).join("")}
+                    </div>
+
+                </div>
+
+                <!-- EDITOR -->
+                <div style="flex:1; padding:10px; display:flex; flex-direction:column;">
+
+                    <input id="file-name" placeholder="File name"
+                        style="margin-bottom:10px;">
+
+                    <textarea id="file-content"
+                        style="flex:1;"></textarea>
+
+                    <button onclick="saveFile()">Save</button>
+
+                </div>
+
+            </div>
             `,
-
-            500,
-            400
+            700,
+            450
         );
+
+        if (openId) setTimeout(() => loadFile(openId), 100);
     },
 
-    explorer() {
+    // ================= FILE EXPLORER =================
+
+    files() {
+
+        const fs = getFS();
 
         WindowManager.create(
             "File Explorer",
 
             `
-            <div id="explorer">
-                Loading...
+            <div style="padding:10px;">
+
+                ${fs.map(f => `
+                    <div onclick="openFile('${f.id}')">
+                        📄 ${f.name} (${f.type})
+                    </div>
+                `).join("")}
+
             </div>
             `,
-
-            600,
+            500,
             400
         );
     },
 
-    appStore() {
+    // ================= STORE =================
+
+    store() {
 
         WindowManager.create(
             "App Store",
 
             `
-            <h2>
-                Emerald Store
-            </h2>
-
-            <p>
-                Future applications
-                will appear here.
-            </p>
+            <h3>Emerald Store</h3>
+            <p>No apps installed yet.</p>
             `,
-
-            500,
-            350
+            400,
+            300
         );
     },
+
+    // ================= SYSTEM =================
 
     system() {
 
         WindowManager.create(
-
-            "System Info",
+            "System",
 
             `
-            <h2>
-                EmeraldOS
-            </h2>
-
-            <p>
-                Version:
-                ${EmeraldOS.version}
-            </p>
-
-            <p>
-                User:
-                ${
-                    localStorage.getItem(
-                        "osUsername"
-                    )
-                }
-            </p>
+            <h3>EmeraldOS</h3>
+            <p>Version: 2.0</p>
+            <p>User: ${localStorage.getItem("username") || "Guest"}</p>
             `
+        );
+    },
+
+    // ================= CHAT (stub) =================
+
+    chat() {
+        WindowManager.create(
+            "Chat",
+            `<p>Chat system coming soon...</p>`
         );
     }
 };
 
-// Compatibility
+// ================================
+// FILE FUNCTIONS
+// ================================
 
-function openNotes() {
-    Applications.notes();
+function loadFile(id) {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === id);
+
+    if (!file) return;
+
+    currentFileId = id;
+
+    document.getElementById("file-name").value = file.name;
+    document.getElementById("file-content").value = file.content;
 }
 
-function openFileExplorer() {
-    Applications.explorer();
+function saveFile() {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === currentFileId);
+
+    if (!file) return;
+
+    file.name = document.getElementById("file-name").value;
+    file.content = document.getElementById("file-content").value;
+    file.updated = Date.now();
+
+    saveFS(fs);
+
+    alert("Saved");
 }
 
-function openAppStore() {
-    Applications.appStore();
+function openFile(id) {
+
+    const fs = getFS();
+    const file = fs.find(f => f.id === id);
+
+    if (!file) return;
+
+    WindowManager.create(
+        file.name,
+        `<pre style="white-space:pre-wrap;">${file.content}</pre>`
+    );
 }
 
-// ==========================================
-// BOOT
-// ==========================================
+// ================================
+// STARTUP
+// ================================
 
-window.addEventListener(
-    "DOMContentLoaded",
+window.addEventListener("DOMContentLoaded", () => {
 
-    () => {
+    Session.check();
+    Clock.start();
 
-        EmeraldOS.boot();
+    console.log("EmeraldOS booted");
 
-    }
-);
+});
