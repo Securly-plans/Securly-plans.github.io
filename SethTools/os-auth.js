@@ -1,256 +1,127 @@
-// ==========================================
-// EMERALDOS AUTHENTICATION
-// ==========================================
+// =======================================
+// EmeraldOS Auth System (FULL FIXED)
+// Location: /SethTools/os-auth.js
+// =======================================
 
-(function () {
+// IMPORTANT: must come from your firebase.js
+import { db } from "../js/firebase.js";
 
-    // User must be signed into the main site.
+import {
+    doc,
+    setDoc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    if (
-        localStorage.getItem("loggedIn") !== "true"
-    ) {
-        location.href = "../index.html";
-    }
 
-})();
-
-// ==========================================
-// HASH PASSWORD
-// ==========================================
+// =======================================
+// PASSWORD HASH (SHA-256)
+// =======================================
 
 async function hashPassword(password) {
+    const encoder = new TextEncoder().encode(password);
+    const buffer = await crypto.subtle.digest("SHA-256", encoder);
 
-    const data =
-        new TextEncoder().encode(password);
-
-    const hash =
-        await crypto.subtle.digest(
-            "SHA-256",
-            data
-        );
-
-    return Array.from(
-        new Uint8Array(hash)
-    )
-    .map(b =>
-        b.toString(16).padStart(2, "0")
-    )
-    .join("");
+    return [...new Uint8Array(buffer)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
 }
 
-// ==========================================
-// REGISTER OS ACCOUNT
-// ==========================================
 
-async function registerOS() {
+// =======================================
+// REGISTER USER
+// =======================================
 
-    const username =
-        document.getElementById(
-            "os-user"
-        ).value.trim();
+export async function registerOSUser(username, password) {
 
-    const password =
-        document.getElementById(
-            "os-pass"
-        ).value;
-
-    const confirm =
-        document.getElementById(
-            "os-pass2"
-        ).value;
-
-    if (!username) {
-        alert("Enter a username.");
-        return;
+    if (!username || !password) {
+        throw new Error("Missing username or password");
     }
 
-    if (password.length < 4) {
-        alert(
-            "Password must be at least 4 characters."
-        );
-        return;
+    const passwordHash = await hashPassword(password);
+
+    const userRef = doc(db, "emeraldOSUsers", username);
+
+    const existing = await getDoc(userRef);
+
+    if (existing.exists()) {
+        throw new Error("User already exists");
     }
 
-    if (password !== confirm) {
-        alert("Passwords do not match.");
-        return;
-    }
-
-    const siteUserId =
-        localStorage.getItem("userId");
-
-    const accounts =
-        JSON.parse(
-            localStorage.getItem(
-                "os_accounts"
-            ) || "[]"
-        );
-
-    const existingLink =
-        accounts.find(
-            a =>
-                a.linkedUserId ===
-                siteUserId
-        );
-
-    if (existingLink) {
-        alert(
-            "This account already has an EmeraldOS account."
-        );
-        return;
-    }
-
-    const existingName =
-        accounts.find(
-            a =>
-                a.osUsername
-                    .toLowerCase() ===
-                username.toLowerCase()
-        );
-
-    if (existingName) {
-        alert(
-            "Username already exists."
-        );
-        return;
-    }
-
-    const passwordHash =
-        await hashPassword(password);
-
-    const account = {
-
-        id:
-            "os_" +
-            Date.now(),
-
-        osUsername:
-            username,
-
+    await setDoc(userRef, {
+        username,
         passwordHash,
+        role: "user",
+        created: Date.now(),
+        lastLogin: null
+    });
 
-        linkedUserId:
-            siteUserId,
+    console.log("[OS AUTH] Registered:", username);
 
-        created:
-            Date.now()
-    };
+    // ✅ redirect after register
+    window.location.href = "../index.html";
 
-    accounts.push(account);
-
-    localStorage.setItem(
-        "os_accounts",
-        JSON.stringify(accounts)
-    );
-
-    alert(
-        "EmeraldOS account created."
-    );
-
-    location.href = "index.html";
+    return true;
 }
 
-// ==========================================
-// LOGIN
-// ==========================================
 
-async function loginOS() {
+// =======================================
+// LOGIN USER
+// =======================================
 
-    const username =
-        document.getElementById(
-            "os-user"
-        ).value.trim();
+export async function loginOSUser(username, password) {
 
-    const password =
-        document.getElementById(
-            "os-pass"
-        ).value;
-
-    const passwordHash =
-        await hashPassword(password);
-
-    const accounts =
-        JSON.parse(
-            localStorage.getItem(
-                "os_accounts"
-            ) || "[]"
-        );
-
-    const account =
-        accounts.find(
-            a =>
-                a.osUsername
-                    .toLowerCase() ===
-                username.toLowerCase()
-        );
-
-    if (!account) {
-        alert(
-            "Account not found."
-        );
-        return;
+    if (!username || !password) {
+        throw new Error("Missing username or password");
     }
 
-    const siteUserId =
-        localStorage.getItem(
-            "userId"
-        );
+    const passwordHash = await hashPassword(password);
 
-    if (
-        account.linkedUserId !==
-        siteUserId
-    ) {
-        alert(
-            "This EmeraldOS account belongs to another site account."
-        );
-        return;
+    const userRef = doc(db, "emeraldOSUsers", username);
+
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
+        throw new Error("User not found");
     }
 
-    if (
-        account.passwordHash !==
-        passwordHash
-    ) {
-        alert(
-            "Incorrect password."
-        );
-        return;
+    const data = snap.data();
+
+    if (data.passwordHash !== passwordHash) {
+        throw new Error("Incorrect password");
     }
 
-    localStorage.setItem(
-        "osLoggedIn",
-        "true"
-    );
+    // update last login
+    await setDoc(userRef, {
+        ...data,
+        lastLogin: Date.now()
+    });
 
-    localStorage.setItem(
-        "osUsername",
-        account.osUsername
-    );
+    // ==========================
+    // OS SESSION STORAGE
+    // ==========================
 
-    localStorage.setItem(
-        "osAccountId",
-        account.id
-    );
+    localStorage.setItem("osLoggedIn", "true");
+    localStorage.setItem("osUsername", username);
+    localStorage.setItem("osRole", data.role);
 
-    location.href = "OS.html";
+    console.log("[OS AUTH] Login success:", username);
+
+    // ✅ redirect after login
+    window.location.href = "../OS.html";
+
+    return data;
 }
 
-// ==========================================
+
+// =======================================
 // LOGOUT
-// ==========================================
+// =======================================
 
-function logoutOS() {
+export function logoutOSUser() {
 
-    localStorage.removeItem(
-        "osLoggedIn"
-    );
+    localStorage.removeItem("osLoggedIn");
+    localStorage.removeItem("osUsername");
+    localStorage.removeItem("osRole");
 
-    localStorage.removeItem(
-        "osUsername"
-    );
-
-    localStorage.removeItem(
-        "osAccountId"
-    );
-
-    location.href = "index.html";
+    window.location.href = "../index.html";
 }
