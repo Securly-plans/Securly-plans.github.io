@@ -122,6 +122,45 @@ const WindowManager = {
 };
 
 // ================================
+// START MENU
+// ================================
+
+function setupStartMenu() {
+
+    const startBtn = document.getElementById("start-btn");
+    const startMenu = document.getElementById("start-menu");
+
+    if (!startBtn || !startMenu) return;
+
+    startBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const open = startMenu.classList.toggle("show");
+
+        if (open) {
+            startBtn.style.borderColor = "#000 #fff #fff #000";
+            startBtn.style.background = "#dfdfdf";
+        } else {
+            startBtn.style.borderColor = "#fff #000 #000 #fff";
+            startBtn.style.background = "#c0c0c0";
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+
+        if (
+            startMenu.classList.contains("show") &&
+            !startMenu.contains(e.target)
+        ) {
+            startMenu.classList.remove("show");
+
+            startBtn.style.borderColor = "#fff #000 #000 #fff";
+            startBtn.style.background = "#c0c0c0";
+        }
+    });
+}
+
+// ================================
 // GLOBAL FILE STATE
 // ================================
 
@@ -356,6 +395,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     Session.check();
     Clock.start();
+
+    setupStartMenu(); // ✅ ADD THIS
 
     addDesktopIcon("📁", "Files", () => Applications.files());
     addDesktopIcon("📝", "Notes", () => Applications.notes());
