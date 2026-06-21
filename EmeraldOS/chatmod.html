@@ -9,7 +9,327 @@
 
 <script type="module" src="js/playtime.js"></script>
 
-v
+<style>
+
+:root{
+  --win-bg:#008080;
+  --win-face:#c0c0c0;
+  --win-light:#ffffff;
+  --win-shadow:#808080;
+  --win-dark:#000000;
+  --title:#000080;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  height:100%;
+}
+
+body{
+  margin:0;
+  font-family:"MS Sans Serif",Tahoma,sans-serif;
+  background:var(--win-bg);
+  color:black;
+  overflow:hidden;
+}
+
+/* ================= HEADER ================= */
+
+.header{
+  background:linear-gradient(to right,#000080,#1084d0);
+  color:white;
+  padding:5px 10px;
+  border-bottom:2px solid black;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  height:34px;
+  font-weight:bold;
+}
+
+.header h1{
+  margin:0;
+  font-size:15px;
+  color:white;
+}
+
+.status{
+  font-size:12px;
+  color:white;
+}
+
+/* ================= LAYOUT ================= */
+
+.container{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  height:calc(100vh - 34px);
+  overflow:hidden;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+  background:var(--win-face);
+  border-right:2px solid var(--win-shadow);
+  padding:10px;
+  overflow-y:auto;
+  min-height:0;
+}
+
+.sidebar h2{
+  margin-top:0;
+  font-size:14px;
+}
+
+/* ================= STATS ================= */
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  margin-bottom:10px;
+}
+
+.stat{
+  background:var(--win-face);
+  border-top:2px solid var(--win-light);
+  border-left:2px solid var(--win-light);
+  border-right:2px solid var(--win-shadow);
+  border-bottom:2px solid var(--win-shadow);
+  padding:8px;
+}
+
+.stat .label{
+  font-size:11px;
+}
+
+.stat .value{
+  font-size:18px;
+  font-weight:bold;
+  margin-top:5px;
+}
+
+/* ================= CHAT LIST ================= */
+
+.chat-list{
+  margin-top:10px;
+}
+
+.chat-item{
+  background:var(--win-face);
+  border-top:2px solid var(--win-light);
+  border-left:2px solid var(--win-light);
+  border-right:2px solid var(--win-shadow);
+  border-bottom:2px solid var(--win-shadow);
+  padding:10px;
+  margin-bottom:6px;
+  cursor:pointer;
+  word-break:break-word;
+}
+
+.chat-item:hover{
+  background:#d8d8d8;
+}
+
+.chat-item.active{
+  background:#000080;
+  color:white;
+}
+
+/* ================= MAIN ================= */
+
+.main{
+  display:flex;
+  flex-direction:column;
+  background:#c0c0c0;
+  min-height:0;
+  overflow:hidden;
+}
+
+/* ================= TOOLBAR ================= */
+
+.toolbar{
+  background:var(--win-face);
+  border-bottom:2px solid var(--win-shadow);
+  padding:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  flex-shrink:0;
+}
+
+.toolbar input{
+  padding:5px;
+  border:2px inset white;
+  background:white;
+  color:black;
+  font-family:Tahoma,sans-serif;
+}
+
+/* ================= BUTTONS ================= */
+
+button{
+  padding:5px 14px;
+  font-family:"MS Sans Serif",Tahoma,sans-serif;
+  font-size:12px;
+  background:var(--win-face);
+  border-top:2px solid var(--win-light);
+  border-left:2px solid var(--win-light);
+  border-right:2px solid var(--win-shadow);
+  border-bottom:2px solid var(--win-shadow);
+  cursor:pointer;
+}
+
+button:active{
+  border-top:2px solid var(--win-shadow);
+  border-left:2px solid var(--win-shadow);
+  border-right:2px solid var(--win-light);
+  border-bottom:2px solid var(--win-light);
+}
+
+.primary,
+.success,
+.warning,
+.danger{
+  background:#d4d0c8;
+}
+
+/* ================= MESSAGE AREA ================= */
+
+.messages{
+  flex:1;
+  height:0;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:10px;
+  background:#808080;
+}
+
+/* ================= MESSAGE WINDOWS ================= */
+
+.message{
+  background:var(--win-face);
+  border-top:2px solid var(--win-light);
+  border-left:2px solid var(--win-light);
+  border-right:2px solid var(--win-shadow);
+  border-bottom:2px solid var(--win-shadow);
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.server-msg{
+  background:#dbe7ff;
+}
+
+.meta{
+  font-size:11px;
+  color:#404040;
+  margin-bottom:8px;
+}
+
+.message img{
+  max-width:220px;
+  margin-top:10px;
+  border:2px inset white;
+}
+
+.message a{
+  color:#0000cc;
+  text-decoration:underline;
+}
+
+.actions{
+  margin-top:10px;
+}
+
+.actions button{
+  margin-right:6px;
+}
+
+/* ================= SERVER BOX ================= */
+
+.server-box{
+  background:var(--win-face);
+  border-top:2px solid var(--win-shadow);
+  padding:8px;
+  display:flex;
+  gap:6px;
+  flex-shrink:0;
+}
+
+.server-box input{
+  flex:1;
+  padding:5px;
+  border:2px inset white;
+  background:white;
+  color:black;
+}
+
+.server-box button{
+  min-width:80px;
+}
+
+/* ================= EMPTY STATES ================= */
+
+.empty{
+  text-align:center;
+  color:#303030;
+  padding:40px;
+  background:var(--win-face);
+  border:2px inset white;
+}
+
+/* ================= SCROLLBARS ================= */
+
+::-webkit-scrollbar{
+  width:16px;
+  height:16px;
+}
+
+::-webkit-scrollbar-track{
+  background:#c0c0c0;
+}
+
+::-webkit-scrollbar-thumb{
+  background:#a0a0a0;
+  border:2px solid #c0c0c0;
+}
+
+::-webkit-scrollbar-button{
+  background:#c0c0c0;
+  border:1px solid #808080;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:900px){
+
+  .container{
+    grid-template-columns:1fr;
+    grid-template-rows:240px 1fr;
+  }
+
+  .sidebar{
+    overflow-y:auto;
+  }
+
+  .toolbar{
+    flex-direction:column;
+  }
+
+  .toolbar input{
+    width:100%;
+  }
+
+}
+
+</style>
 </head>
 
 <script type="module" src="./js/session.js"></script>
