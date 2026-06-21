@@ -24,7 +24,6 @@ window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
-
     loadSystem();
 });
 
@@ -69,7 +68,7 @@ function initClock() {
 }
 
 /* =========================
-   LOAD / SAVE (LOCAL ONLY HERE)
+   LOAD SYSTEM (LOCAL ONLY HERE)
 ========================= */
 
 function loadSystem() {
@@ -86,11 +85,13 @@ function saveSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM (DRAG + RESIZE)
+   WINDOW SYSTEM (FIXED DRAG + RESIZE)
 ========================= */
 
-/* GLOBAL DRAG */
+/* DRAG + RESIZE GLOBAL HANDLER */
 document.addEventListener("mousemove", (e) => {
+
+    /* ================= DRAG ================= */
     if (dragState) {
         const win = dragState.win;
 
@@ -98,25 +99,26 @@ document.addEventListener("mousemove", (e) => {
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
-    /* GLOBAL RESIZE */
+    /* ================= RESIZE (FIXED) ================= */
     if (resizeState) {
         const win = resizeState.win;
 
-        const newWidth = e.clientX - resizeState.startX;
-        const newHeight = e.clientY - resizeState.startY;
+        const dx = e.clientX - resizeState.startX;
+        const dy = e.clientY - resizeState.startY;
 
-        win.style.width = Math.max(220, newWidth) + "px";
-        win.style.height = Math.max(160, newHeight) + "px";
+        win.style.width = Math.max(220, resizeState.startWidth + dx) + "px";
+        win.style.height = Math.max(160, resizeState.startHeight + dy) + "px";
     }
 });
 
+/* STOP DRAG / RESIZE */
 document.addEventListener("mouseup", () => {
     dragState = null;
     resizeState = null;
 });
 
 /* =========================
-   CORE WINDOW FUNCTION
+   CORE WINDOW SYSTEM
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -149,7 +151,7 @@ window.openWindow = function (title, contentHTML) {
     const closeBtn = win.querySelector(".close-btn");
     const resizeHandle = win.querySelector(".resize-handle");
 
-    /* focus */
+    /* bring to front */
     win.addEventListener("mousedown", () => {
         win.style.zIndex = ++zIndexCounter;
     });
@@ -157,9 +159,7 @@ window.openWindow = function (title, contentHTML) {
     /* close */
     closeBtn.onclick = () => win.remove();
 
-    /* =========================
-       DRAG
-    ========================= */
+    /* ================= DRAG ================= */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
@@ -170,16 +170,19 @@ window.openWindow = function (title, contentHTML) {
         win.style.zIndex = ++zIndexCounter;
     });
 
-    /* =========================
-       RESIZE (NEW)
-    ========================= */
+    /* ================= RESIZE (FIXED VERSION) ================= */
     resizeHandle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
         e.stopPropagation();
+
+        const rect = win.getBoundingClientRect();
 
         resizeState = {
             win,
-            startX: win.offsetLeft + win.offsetWidth,
-            startY: win.offsetTop + win.offsetHeight
+            startX: e.clientX,
+            startY: e.clientY,
+            startWidth: rect.width,
+            startHeight: rect.height
         };
 
         win.style.zIndex = ++zIndexCounter;
@@ -297,7 +300,7 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES / OTHER APPS
+   NOTES + STUB APPS
 ========================= */
 
 window.openNotes = function () {
@@ -309,7 +312,7 @@ window.openAppStore = function () {
 };
 
 /* =========================
-   REFRESH WINDOWS
+   REFRESH
 ========================= */
 
 function refresh() {
@@ -317,7 +320,7 @@ function refresh() {
 }
 
 /* =========================
-   LEGACY
+   LEGACY API
 ========================= */
 
 function exposeLegacyAPI() {
