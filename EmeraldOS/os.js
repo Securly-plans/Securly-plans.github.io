@@ -5,47 +5,28 @@
 ========================= */
 
 let zIndexCounter = 100;
+
 let dragState = null;
+let resizeState = null;
 
 let fileSystem = {
-    files: {}
+    files: {},
+    notes: {}
 };
 
-/* =========================
-   FIREBASE IMPORTS (must exist in firebase.js)
-========================= */
-
-import {
-    db
-} from "./firebase.js";
-
-import {
-    collection,
-    doc,
-    setDoc,
-    getDocs,
-    deleteDoc
-} from "firebase/firestore";
+let currentFile = null;
 
 /* =========================
    BOOT
 ========================= */
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
     initStartMenu();
     initClock();
-    exposeAPI();
+    exposeLegacyAPI();
 
-    await loadCloudFiles();   // IMPORTANT: loads per user
+    loadSystem();
 });
-
-/* =========================
-   USER ID
-========================= */
-
-function getUserId() {
-    return localStorage.getItem("userId");
-}
 
 /* =========================
    START MENU
@@ -88,66 +69,54 @@ function initClock() {
 }
 
 /* =========================
-   CLOUD LOAD FILES
+   LOAD / SAVE (LOCAL ONLY HERE)
 ========================= */
 
-async function loadCloudFiles() {
-    const userId = getUserId();
-    if (!userId) return;
+function loadSystem() {
+    try {
+        const saved = JSON.parse(localStorage.getItem("fileSystem"));
+        if (saved) fileSystem = saved;
+    } catch {
+        fileSystem = { files: {}, notes: {} };
+    }
+}
 
-    const snap = await getDocs(collection(db, "users", userId, "files"));
-
-    fileSystem.files = {};
-
-    snap.forEach(docSnap => {
-        fileSystem.files[docSnap.id] = docSnap.data();
-    });
+function saveSystem() {
+    localStorage.setItem("fileSystem", JSON.stringify(fileSystem));
 }
 
 /* =========================
-   CLOUD SAVE FILE
+   WINDOW SYSTEM (DRAG + RESIZE)
 ========================= */
 
-async function saveCloudFile(id, file) {
-    const userId = getUserId();
-    if (!userId) return;
-
-    await setDoc(doc(db, "users", userId, "files", id), {
-        ...file,
-        updatedAt: Date.now()
-    });
-}
-
-/* =========================
-   DELETE CLOUD FILE
-========================= */
-
-async function deleteCloudFile(id) {
-    const userId = getUserId();
-    if (!userId) return;
-
-    await deleteDoc(doc(db, "users", userId, "files", id));
-}
-
-/* =========================
-   WINDOW SYSTEM (FIXED DRAG)
-========================= */
-
+/* GLOBAL DRAG */
 document.addEventListener("mousemove", (e) => {
-    if (!dragState) return;
+    if (dragState) {
+        const win = dragState.win;
 
-    const win = dragState.win;
+        win.style.left = (e.clientX - dragState.offsetX) + "px";
+        win.style.top = (e.clientY - dragState.offsetY) + "px";
+    }
 
-    win.style.left = (e.clientX - dragState.offsetX) + "px";
-    win.style.top = (e.clientY - dragState.offsetY) + "px";
+    /* GLOBAL RESIZE */
+    if (resizeState) {
+        const win = resizeState.win;
+
+        const newWidth = e.clientX - resizeState.startX;
+        const newHeight = e.clientY - resizeState.startY;
+
+        win.style.width = Math.max(220, newWidth) + "px";
+        win.style.height = Math.max(160, newHeight) + "px";
+    }
 });
 
 document.addEventListener("mouseup", () => {
     dragState = null;
+    resizeState = null;
 });
 
 /* =========================
-   OPEN WINDOW CORE
+   CORE WINDOW FUNCTION
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -166,27 +135,51 @@ window.openWindow = function (title, contentHTML) {
             <span>${title}</span>
             <button class="close-btn">X</button>
         </div>
+
         <div class="window-content">
             ${contentHTML}
         </div>
+
+        <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
     const titlebar = win.querySelector(".title-bar");
     const closeBtn = win.querySelector(".close-btn");
+    const resizeHandle = win.querySelector(".resize-handle");
 
+    /* focus */
     win.addEventListener("mousedown", () => {
         win.style.zIndex = ++zIndexCounter;
     });
 
+    /* close */
     closeBtn.onclick = () => win.remove();
 
+    /* =========================
+       DRAG
+    ========================= */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
+        };
+
+        win.style.zIndex = ++zIndexCounter;
+    });
+
+    /* =========================
+       RESIZE (NEW)
+    ========================= */
+    resizeHandle.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+
+        resizeState = {
+            win,
+            startX: win.offsetLeft + win.offsetWidth,
+            startY: win.offsetTop + win.offsetHeight
         };
 
         win.style.zIndex = ++zIndexCounter;
@@ -228,7 +221,7 @@ function renderFilesApp() {
 }
 
 /* =========================
-   FILE ACTIONS (CLOUD READY)
+   FILE ACTIONS
 ========================= */
 
 window.createFile = function () {
@@ -239,7 +232,7 @@ window.createFile = function () {
         content: ""
     };
 
-    saveCloudFile(id, fileSystem.files[id]);
+    saveSystem();
     refresh();
 };
 
@@ -258,20 +251,16 @@ window.openFile = function (id) {
     );
 };
 
-window.saveFile = async function (id) {
+window.saveFile = function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
     fileSystem.files[id].content = el.value;
-
-    await saveCloudFile(id, fileSystem.files[id]);
+    saveSystem();
 };
 
-window.deleteFile = async function (id) {
+window.deleteFile = function (id) {
     delete fileSystem.files[id];
-
-    await deleteCloudFile(id);
-
     refresh();
 };
 
@@ -289,7 +278,7 @@ window.uploadFile = function () {
 
         const reader = new FileReader();
 
-        reader.onload = async () => {
+        reader.onload = () => {
             const id = "file_" + Date.now();
 
             fileSystem.files[id] = {
@@ -297,7 +286,7 @@ window.uploadFile = function () {
                 content: reader.result
             };
 
-            await saveCloudFile(id, fileSystem.files[id]);
+            saveSystem();
             refresh();
         };
 
@@ -308,7 +297,19 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   HELPERS
+   NOTES / OTHER APPS
+========================= */
+
+window.openNotes = function () {
+    openWindow("Notes", "<p>Notes app placeholder</p>");
+};
+
+window.openAppStore = function () {
+    openWindow("App Store", "<p>App Store placeholder</p>");
+};
+
+/* =========================
+   REFRESH WINDOWS
 ========================= */
 
 function refresh() {
@@ -319,6 +320,6 @@ function refresh() {
    LEGACY
 ========================= */
 
-function exposeAPI() {
+function exposeLegacyAPI() {
     window.launchApp = openWindow;
 }
