@@ -1,5 +1,9 @@
 "use strict";
 
+/* =========================
+   FIREBASE IMPORTS
+========================= */
+
 import {
     db,
     doc,
@@ -10,16 +14,28 @@ import {
     getDoc
 } from "./firebase.js";
 
+import {
+    getStorage,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
 /* =========================
-   USER IDENTITY (USERNAME ONLY)
+   USER HELPERS
 ========================= */
 
 function getUsername() {
-    return localStorage.getItem("username");
+    return (
+        localStorage.getItem("username") ||
+        localStorage.getItem("os_session") ||
+        null
+    );
 }
 
 /* =========================
-   USER DOC (emeraldOSUsers/{username})
+   USER ROOT DOC (emeraldOSUsers/{username})
 ========================= */
 
 function userDoc() {
@@ -48,150 +64,140 @@ function fileDoc(fileId) {
 }
 
 /* =========================
-   ENSURE USER EXISTS
+   ENSURE USER EXISTS (IMPORTANT FIX)
 ========================= */
 
 export async function ensureUser() {
     const username = getUsername();
-    if (!username) {
-        console.warn("No username found in localStorage");
-        return false;
-    }
+    if (!username) return false;
 
     const ref = userDoc();
     if (!ref) return false;
 
-    try {
-        const snap = await getDoc(ref);
+    const snap = await getDoc(ref);
 
-        if (!snap.exists()) {
-            await setDoc(ref, {
-                username,
-                createdAt: Date.now(),
-                locked: false
-            });
-        }
-
-        return true;
-    } catch (err) {
-        console.error("ensureUser failed:", err);
-        return false;
+    if (!snap.exists()) {
+        await setDoc(ref, {
+            username,
+            createdAt: Date.now(),
+            locked: false
+        });
     }
+
+    return true;
 }
 
 /* =========================
-   LOAD DRIVE (NORMALIZED)
+   LOAD DRIVE (METADATA ONLY)
 ========================= */
 
 export async function loadDrive() {
     const col = driveCollection();
     if (!col) return {};
 
-    try {
-        const snap = await getDocs(col);
+    const snap = await getDocs(col);
 
-        const files = {};
+    const files = {};
 
-        snap.forEach(d => {
-            const data = d.data();
+    snap.forEach(d => {
+        files[d.id] = d.data();
+    });
 
-            files[d.id] = {
-                name: data.name || "Untitled",
-                content: data.content || "",
-                type: data.type || "text", // text | image | video
-                createdAt: data.createdAt || 0,
-                updatedAt: data.updatedAt || 0
-            };
-        });
-
-        return files;
-    } catch (err) {
-        console.error("loadDrive failed:", err);
-        return {};
-    }
+    return files;
 }
 
 /* =========================
-   GET SINGLE FILE
+   GET FILE
 ========================= */
 
 export async function getFile(fileId) {
     const ref = fileDoc(fileId);
     if (!ref) return null;
 
-    try {
-        const snap = await getDoc(ref);
-        return snap.exists() ? snap.data() : null;
-    } catch (err) {
-        console.error("getFile failed:", err);
-        return null;
-    }
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
 }
 
 /* =========================
-   CREATE FILE (TYPE SUPPORT)
+   CREATE FILE (META ONLY)
 ========================= */
 
-export async function createFile(
-    name = "New File",
-    content = "",
-    type = "text"
-) {
+export async function createFile(name = "New File", type = "text/plain") {
     const username = getUsername();
-    if (!username) {
-        console.warn("No username found");
-        return null;
-    }
+    if (!username) return null;
 
     const id = "file_" + Date.now();
 
-    try {
-        await setDoc(fileDoc(id), {
-            name,
-            content,
-            type, // IMPORTANT for media support
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        });
+    await setDoc(fileDoc(id), {
+        name,
+        type,
+        storagePath: `emeraldOS/${username}/${id}`,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    });
 
-        return id;
-    } catch (err) {
-        console.error("createFile failed:", err);
-        return null;
-    }
+    return id;
 }
 
 /* =========================
-   SAVE FILE (MERGE SAFE)
+   SAVE TEXT FILE
 ========================= */
 
 export async function saveFile(fileId, data) {
     const ref = fileDoc(fileId);
     if (!ref) return;
 
-    try {
-        await setDoc(ref, {
-            ...data,
-            updatedAt: Date.now()
-        }, { merge: true });
-    } catch (err) {
-        console.error("saveFile failed:", err);
-    }
+    await setDoc(ref, {
+        ...data,
+        updatedAt: Date.now()
+    }, { merge: true });
 }
 
 /* =========================
-   DELETE FILE
+   UPLOAD FILE (BINARY → STORAGE)
+========================= */
+
+export async function uploadToStorage(fileId, fileBlob) {
+    const username = getUsername();
+    if (!username) return null;
+
+    const storage = getStorage();
+
+    const storagePath = `emeraldOS/${username}/${fileId}`;
+    const storageRef = ref(storage, storagePath);
+
+    await uploadBytes(storageRef, fileBlob);
+
+    const url = await getDownloadURL(storageRef);
+
+    await setDoc(fileDoc(fileId), {
+        downloadURL: url,
+        updatedAt: Date.now()
+    }, { merge: true });
+
+    return url;
+}
+
+/* =========================
+   DELETE FILE (CLOUD + STORAGE)
 ========================= */
 
 export async function deleteFile(fileId) {
-    const ref = fileDoc(fileId);
-    if (!ref) return;
+    const username = getUsername();
+    if (!username) return;
+
+    const storage = getStorage();
+
+    const storagePath = `emeraldOS/${username}/${fileId}`;
+    const storageRef = ref(storage, storagePath);
 
     try {
-        await deleteDoc(ref);
-    } catch (err) {
-        console.error("deleteFile failed:", err);
+        await deleteObject(storageRef);
+    } catch (e) {
+        // ignore if not in storage
     }
+
+    await deleteDoc(fileDoc(fileId));
 }
 
 /* =========================
@@ -200,11 +206,6 @@ export async function deleteFile(fileId) {
 
 export async function debugDrive() {
     console.log("USERNAME:", getUsername());
-
-    try {
-        console.log("USER DOC:", await getDoc(userDoc()));
-        console.log("DRIVE:", await loadDrive());
-    } catch (err) {
-        console.error("debugDrive failed:", err);
-    }
+    console.log("USER DOC:", await getDoc(userDoc()));
+    console.log("DRIVE:", await loadDrive());
 }
