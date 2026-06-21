@@ -6,9 +6,9 @@
 
 import {
     loadDrive,
-    createFile,
-    saveFile,
-    deleteFile
+    createFile as cloudCreateFile,
+    saveFile as cloudSaveFile,
+    deleteFile as cloudDeleteFile
 } from "./cloudstorage.js";
 
 /* =========================
@@ -23,8 +23,6 @@ let resizeState = null;
 let fileSystem = {
     files: {}
 };
-
-let currentFile = null;
 
 /* =========================
    BOOT
@@ -88,19 +86,17 @@ async function loadSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM (UNCHANGED CORE)
+   WINDOW SYSTEM
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
 
-    /* DRAG */
     if (dragState) {
         const win = dragState.win;
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
-    /* RESIZE */
     if (resizeState) {
         const win = resizeState.win;
 
@@ -157,17 +153,18 @@ window.openWindow = function (title, contentHTML) {
 
     closeBtn.onclick = () => win.remove();
 
-    /* DRAG */
+    /* drag */
     titlebar.addEventListener("mousedown", (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
+
         win.style.zIndex = ++zIndexCounter;
     });
 
-    /* RESIZE */
+    /* resize */
     resizeHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -189,7 +186,7 @@ window.openWindow = function (title, contentHTML) {
 };
 
 /* =========================
-   FILE EXPLORER (CLOUD)
+   FILE EXPLORER
 ========================= */
 
 window.openFileExplorer = function () {
@@ -201,7 +198,7 @@ function renderFilesApp() {
 
     return `
         <div style="padding:6px;">
-            <button onclick="createFile()">New File</button>
+            <button onclick="createNewFile()">New File</button>
             <button onclick="uploadFile()">Upload File</button>
 
             <hr>
@@ -212,7 +209,7 @@ function renderFilesApp() {
 
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="deleteFile('${id}')">Delete</button>
+                        <button onclick="removeFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
@@ -221,14 +218,12 @@ function renderFilesApp() {
 }
 
 /* =========================
-   CLOUD FILE ACTIONS
+   FILE ACTIONS (FIXED NO COLLISION)
 ========================= */
 
-window.createFile = async function () {
-    const id = await createFile("New File", "");
-
+window.createNewFile = async function () {
+    await cloudCreateFile("New File", "");
     await loadSystem();
-    refresh();
 };
 
 window.openFile = function (id) {
@@ -240,17 +235,17 @@ window.openFile = function (id) {
         `
         <div style="display:flex;flex-direction:column;height:100%;">
             <textarea id="file_${id}" style="flex:1;width:100%;">${file.content || ""}</textarea>
-            <button onclick="saveFile('${id}')">Save</button>
+            <button onclick="saveOpenedFile('${id}')">Save</button>
         </div>
         `
     );
 };
 
-window.saveFile = async function (id) {
+window.saveOpenedFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
-    await saveFile(id, {
+    await cloudSaveFile(id, {
         name: fileSystem.files[id].name,
         content: el.value
     });
@@ -258,14 +253,13 @@ window.saveFile = async function (id) {
     await loadSystem();
 };
 
-window.deleteFile = async function (id) {
-    await deleteFile(id);
+window.removeFile = async function (id) {
+    await cloudDeleteFile(id);
     await loadSystem();
-    refresh();
 };
 
 /* =========================
-   FILE UPLOAD (CLOUD)
+   UPLOAD FILE
 ========================= */
 
 window.uploadFile = function () {
@@ -279,10 +273,8 @@ window.uploadFile = function () {
         const reader = new FileReader();
 
         reader.onload = async () => {
-            await createFile(file.name, reader.result);
-
+            await cloudCreateFile(file.name, reader.result);
             await loadSystem();
-            refresh();
         };
 
         reader.readAsText(file);
