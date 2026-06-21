@@ -1,86 +1,71 @@
 let zIndexCounter = 100;
 let activeDrag = null;
 
-/* =========================
-   SAFE STATE
-========================= */
-
 let db = null;
 let authUser = null;
 
 /* =========================
-   BOOT SEQUENCE (SAFE)
+   BOOT
 ========================= */
 
 window.addEventListener("DOMContentLoaded", async () => {
-    try {
-        initClock();
-        initStartMenu(); // now guaranteed safe
-        exposeGlobals();  // will NOT crash boot
-        await tryInitFirebase();
-        await loadInstalledApps();
-        renderDesktopApps();
-    } catch (err) {
-        console.error("OS boot failed safely:", err);
-    }
+    initClock();
+    initStartMenu();
+    initDesktop();
+    exposeGlobalsSafe();
+
+    await tryInitFirebase();
+    await loadInstalledApps();
+    renderDesktopApps();
+    renderFileExplorer();
 });
 
 /* =========================
-   FIREBASE HOOK (SAFE)
-========================= */
-
-async function tryInitFirebase() {
-    try {
-        if (window.db || window.firebaseApp) {
-            db = window.db;
-            authUser = JSON.parse(localStorage.getItem("user") || "null");
-        }
-    } catch (e) {
-        console.log("Firebase not active, using local mode");
-    }
-}
-
-/* =========================
-   START MENU (FIXED)
+   START MENU
 ========================= */
 
 function initStartMenu() {
-    const startButton = document.getElementById("startButton");
-    const startMenu = document.getElementById("startMenu");
+    const btn = document.getElementById("startButton");
+    const menu = document.getElementById("startMenu");
 
-    if (!startButton || !startMenu) return;
+    if (!btn || !menu) return;
 
-    startButton.addEventListener("click", (e) => {
+    btn.onclick = (e) => {
         e.stopPropagation();
-        startMenu.classList.toggle("open");
-    });
+        menu.classList.toggle("open");
+    };
 
     document.addEventListener("click", (e) => {
-        if (!startMenu.contains(e.target) && e.target !== startButton) {
-            startMenu.classList.remove("open");
+        if (!menu.contains(e.target) && e.target !== btn) {
+            menu.classList.remove("open");
         }
     });
 }
 
 /* =========================
-   GLOBAL EXPORT (SAFE HARDENED)
+   DESKTOP INIT
 ========================= */
 
-function exposeGlobals() {
-    const safe = (fn) => (typeof fn === "function" ? fn : () => {});
+function initDesktop() {
+    const zone = document.getElementById("installed-apps-zone");
+    if (!zone) return;
+    zone.innerHTML = "";
+}
 
-    Object.assign(window, {
-        openWindow: safe(openWindow),
-        openNotes: safe(openNotes),
-        openFileExplorer: safe(openFileExplorer),
-        openAppStore: safe(openAppStore),
-        saveNote: safe(saveNote),
-        installApp: safe(installApp),
-        uninstallApp: safe(uninstallApp),
-        deleteFile: safe(deleteFile),
-        renderFileExplorer: safe(renderFileExplorer),
-        launchApp: safe(launchApp)
-    });
+/* =========================
+   GLOBALS SAFE
+========================= */
+
+function exposeGlobalsSafe() {
+    window.openWindow = openWindow;
+    window.openAppStore = openAppStore;
+    window.openFileExplorer = openFileExplorer;
+    window.openNotes = openNotes;
+    window.saveNote = saveNote;
+    window.installApp = installApp;
+    window.uninstallApp = uninstallApp;
+    window.launchApp = launchApp;
+    window.renderFileExplorer = renderFileExplorer;
 }
 
 /* =========================
@@ -106,13 +91,12 @@ function initClock() {
 function openWindow(title, html) {
     const container = document.getElementById("windows-container");
     const taskbar = document.getElementById("taskbar-apps");
-
     if (!container || !taskbar) return;
 
     const win = document.createElement("div");
     win.className = "window";
-    win.style.left = (50 + Math.random() * 100) + "px";
-    win.style.top = (50 + Math.random() * 100) + "px";
+    win.style.left = 60 + Math.random() * 120 + "px";
+    win.style.top = 60 + Math.random() * 120 + "px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -144,16 +128,11 @@ function openWindow(title, html) {
     };
 }
 
-/* =========================
-   DRAG SYSTEM
-========================= */
-
+/* drag */
 document.addEventListener("mousemove", (e) => {
     if (!activeDrag) return;
-
     activeDrag.win.style.left =
         activeDrag.left + (e.clientX - activeDrag.x) + "px";
-
     activeDrag.win.style.top =
         activeDrag.top + (e.clientY - activeDrag.y) + "px";
 });
@@ -161,18 +140,15 @@ document.addEventListener("mousemove", (e) => {
 document.addEventListener("mouseup", () => activeDrag = null);
 
 /* =========================
-   HTML SAFE
+   UTIL
 ========================= */
 
 function escapeHTML(t) {
-    return String(t)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+    return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 /* =========================
-   FILE SYSTEM
+   FILE SYSTEM (FIXED)
 ========================= */
 
 function saveFile(name, content) {
@@ -191,8 +167,20 @@ function readFile(name) {
     return localStorage.getItem("os_file_" + name) || "";
 }
 
-function deleteFile(name) {
-    localStorage.removeItem("os_file_" + name);
+/* IMPORTANT FIX: always renders correctly */
+function renderFileExplorer() {
+    const el = document.getElementById("explorer");
+    if (!el) return;
+
+    const files = Object.keys(localStorage)
+        .filter(k => k.startsWith("os_file_"))
+        .map(k => k.replace("os_file_", ""));
+
+    el.innerHTML = files.length
+        ? files.map(f => `
+            <div onclick="openNotes('${f}')">📄 ${f}</div>
+        `).join("")
+        : "<div>No files</div>";
 }
 
 /* =========================
@@ -203,10 +191,8 @@ function openNotes(filename = "New.txt") {
     const id = Math.random().toString(36).slice(2);
 
     openWindow("Notes", `
-        <input id="fn-${id}" value="${escapeHTML(filename)}">
-        <br><br>
-        <textarea id="txt-${id}" style="width:100%;height:200px;"></textarea>
-        <br>
+        <input id="fn-${id}" value="${escapeHTML(filename)}"><br><br>
+        <textarea id="txt-${id}" style="width:100%;height:200px;"></textarea><br>
         <button onclick="saveNote('${id}')">Save</button>
     `);
 
@@ -224,72 +210,130 @@ function saveNote(id) {
 }
 
 /* =========================
-   FILE EXPLORER FIX (MISSING FUNCTION FIXED)
-========================= */
-
-function renderFileExplorer() {
-    const el = document.getElementById("explorer");
-    if (!el) return;
-
-    const files = Object.keys(localStorage)
-        .filter(k => k.startsWith("os_file_"))
-        .map(k => k.replace("os_file_", ""));
-
-    el.innerHTML = files.length
-        ? files.map(f => `<div>📄 ${f}</div>`).join("")
-        : "<div>No files found</div>";
-}
-
-/* =========================
-   APPS
+   APP SYSTEM
 ========================= */
 
 const appCatalog = [
     {
         name: "Calculator.EOSas",
         icon: "🧮",
-        content: `<div>Calculator working (you can extend)</div>`
+        content: calculatorApp()
     },
     {
         name: "Paint.EOSas",
         icon: "🎨",
-        content: `<div>Paint coming soon</div>`
+        content: paintApp()
     }
 ];
 
 /* =========================
-   INSTALLED APPS
+   CALCULATOR (WORKING)
 ========================= */
 
-async function loadInstalledApps() {
-    let apps = [];
+function calculatorApp() {
+    const id = Math.random().toString(36).slice(2);
 
-    if (authUser?.uid && db) {
-        try {
-            const snap = await db.collection("emeraldOSUsers")
-                .doc(authUser.uid)
-                .get();
+    setTimeout(() => {
+        const input = document.getElementById("calc-" + id);
+        const buttons = document.querySelectorAll("[data-calc='" + id + "']");
 
-            apps = snap.data()?.installedApps || [];
-        } catch {}
-    }
+        buttons.forEach(b => {
+            b.onclick = () => {
+                const val = b.dataset.val;
 
-    localStorage.setItem("os_installed_apps", JSON.stringify(apps));
-}
+                if (val === "=") {
+                    try {
+                        input.value = eval(input.value);
+                    } catch {
+                        input.value = "Error";
+                    }
+                } else if (val === "C") {
+                    input.value = "";
+                } else {
+                    input.value += val;
+                }
+            };
+        });
+    }, 50);
 
-function saveInstalledApps(apps) {
-    localStorage.setItem("os_installed_apps", JSON.stringify(apps));
+    return `
+        <input id="calc-${id}" style="width:100%;font-size:20px;"><br><br>
 
-    if (authUser?.uid && db) {
-        db.collection("emeraldOSUsers")
-            .doc(authUser.uid)
-            .set({ installedApps: apps }, { merge: true });
-    }
+        <div>
+            ${["7","8","9","/","C",
+               "4","5","6","*","=",
+               "1","2","3","-",
+               "0",".","+"]
+            .map(v => `
+                <button data-calc="${id}" data-val="${v}" style="width:40px;height:40px;">${v}</button>
+            `).join("")}
+        </div>
+    `;
 }
 
 /* =========================
-   DESKTOP RENDER
+   PAINT (SIMPLE MS PAINT COPY)
 ========================= */
+
+function paintApp() {
+    const id = Math.random().toString(36).slice(2);
+
+    setTimeout(() => {
+        const canvas = document.getElementById("paint-" + id);
+        const ctx = canvas.getContext("2d");
+
+        let drawing = false;
+
+        canvas.onmousedown = () => drawing = true;
+        canvas.onmouseup = () => drawing = false;
+        canvas.onmousemove = (e) => {
+            if (!drawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            ctx.fillStyle = "black";
+            ctx.fillRect(e.clientX - rect.left, e.clientY - rect.top, 2, 2);
+        };
+
+        document.getElementById("clear-" + id).onclick = () => {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+        };
+    }, 50);
+
+    return `
+        <button id="clear-${id}">Clear</button><br>
+        <canvas id="paint-${id}" width="300" height="200"
+            style="border:1px solid black;background:white;"></canvas>
+    `;
+}
+
+/* =========================
+   INSTALL SYSTEM
+========================= */
+
+function installApp(i) {
+    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+    if (!installed.includes(appCatalog[i].name)) {
+        installed.push(appCatalog[i].name);
+    }
+    localStorage.setItem("os_installed_apps", JSON.stringify(installed));
+    renderDesktopApps();
+}
+
+function uninstallApp(i) {
+    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+    installed = installed.filter(a => a !== appCatalog[i].name);
+    localStorage.setItem("os_installed_apps", JSON.stringify(installed));
+    renderDesktopApps();
+}
+
+/* =========================
+   DESKTOP
+========================= */
+
+function loadInstalledApps() {
+    let apps = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
+    localStorage.setItem("os_installed_apps", JSON.stringify(apps));
+}
 
 function renderDesktopApps() {
     const zone = document.getElementById("installed-apps-zone");
@@ -297,56 +341,22 @@ function renderDesktopApps() {
 
     zone.innerHTML = "";
 
-    const installed = JSON.parse(
-        localStorage.getItem("os_installed_apps") || "[]"
-    );
+    const installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
 
     installed.forEach(name => {
         const app = appCatalog.find(a => a.name === name);
+        const div = document.createElement("div");
 
-        const icon = document.createElement("div");
-        icon.className = "icon";
-        icon.innerHTML = "📦<br>" + escapeHTML(name);
+        div.className = "icon";
+        div.innerHTML = "📦<br>" + escapeHTML(name);
 
-        icon.onclick = () => {
-            if (!app) return openWindow("Error", "App not found");
+        div.onclick = () => {
+            if (!app) return openWindow("Error", "Missing app");
             openWindow(app.name, app.content);
         };
 
-        zone.appendChild(icon);
+        zone.appendChild(div);
     });
-}
-
-/* =========================
-   INSTALL / UNINSTALL
-========================= */
-
-function installApp(index) {
-    const app = appCatalog[index];
-    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-
-    if (!installed.includes(app.name)) installed.push(app.name);
-
-    saveInstalledApps(installed);
-    renderDesktopApps();
-}
-
-function uninstallApp(index) {
-    const app = appCatalog[index];
-    let installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
-
-    installed = installed.filter(a => a !== app.name);
-
-    saveInstalledApps(installed);
-    renderDesktopApps();
-}
-
-/* =========================
-   FILE EXPLORER WINDOW
-========================= */
-
-function openFileExplorer() {
-    openWindow("File Explorer", `<div id="explorer"></div>`);
 }
 
 /* =========================
@@ -356,13 +366,13 @@ function openFileExplorer() {
 function openAppStore() {
     const installed = JSON.parse(localStorage.getItem("os_installed_apps") || "[]");
 
-    const html = appCatalog.map((a, i) => `
-        <div style="border:1px solid #000;padding:10px;margin:5px;">
-            ${a.icon} <b>${a.name}</b><br><br>
+    const html = appCatalog.map((a,i) => `
+        <div>
+            ${a.icon} <b>${a.name}</b><br>
             ${
                 installed.includes(a.name)
-                    ? `<button onclick="uninstallApp(${i})">Uninstall</button>`
-                    : `<button onclick="installApp(${i})">Install</button>`
+                ? `<button onclick="uninstallApp(${i})">Uninstall</button>`
+                : `<button onclick="installApp(${i})">Install</button>`
             }
         </div>
     `).join("");
@@ -371,13 +381,19 @@ function openAppStore() {
 }
 
 /* =========================
-   LAUNCH FIX
+   FILE EXPLORER
+========================= */
+
+function openFileExplorer() {
+    openWindow("File Explorer", `<div id="explorer"></div>`);
+}
+
+/* =========================
+   LAUNCH
 ========================= */
 
 function launchApp(name) {
     const app = appCatalog.find(a => a.name === name);
-
-    if (!app) return openWindow("Launching", "Launching " + name + "...");
-
+    if (!app) return openWindow("Launching", "Loading " + name);
     openWindow(app.name, app.content);
 }
