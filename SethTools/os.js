@@ -1,3 +1,22 @@
+(function () {
+
+    const siteLoggedIn =
+        localStorage.getItem("loggedIn") === "true";
+
+    const osLoggedIn =
+        localStorage.getItem("osLoggedIn") === "true";
+
+    if (!siteLoggedIn) {
+        window.location.href = "../index.html";
+        return;
+    }
+
+    if (!osLoggedIn) {
+        window.location.href = "index.html";
+        return;
+    }
+
+})();
 // ==========================================
 // EMERALD OS
 // CORE SYSTEM
