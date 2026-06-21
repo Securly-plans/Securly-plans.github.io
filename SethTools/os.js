@@ -75,6 +75,22 @@ const Session = {
     }
 };
 
+const Desktop = {
+
+    initialize() {
+
+        const desktop =
+            document.getElementById("desktop");
+
+        if (!desktop) return;
+
+        // Example: click-to-focus windows behind desktop
+        desktop.addEventListener("mousedown", () => {
+            console.log("Desktop clicked");
+        });
+    }
+};
+
 // ==========================================
 // CLOCK
 // ==========================================
