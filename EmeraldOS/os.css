@@ -1,4 +1,4 @@
-/* =========================
+ /* =========================
    WIN95 GLOBAL BASE
 ========================= */
 
@@ -38,11 +38,6 @@ html, body {
     color: white;
     cursor: pointer;
     padding: 4px;
-}
-
-.icon img, .icon span {
-    display: block;
-    margin: 0 auto;
 }
 
 .icon:hover {
@@ -87,7 +82,6 @@ html, body {
     border-color: #000000 #ffffff #ffffff #000000;
 }
 
-/* Clock */
 #clock {
     margin-left: auto;
     padding: 0 8px;
@@ -102,7 +96,8 @@ html, body {
     bottom: 40px;
     left: 0;
 
-    width: 220px;
+    width: 240px;
+
     background: #c0c0c0;
 
     border: 2px solid;
@@ -116,7 +111,7 @@ html, body {
 }
 
 .start-item {
-    padding: 6px 10px;
+    padding: 8px 10px;
     cursor: pointer;
 }
 
@@ -126,20 +121,29 @@ html, body {
 }
 
 /* =========================
-   WINDOW SYSTEM
+   WINDOW SYSTEM (FIXED CORE)
 ========================= */
 
 #windows-container {
     position: absolute;
     inset: 0 0 40px 0;
+
     pointer-events: none;
+    overflow: hidden;
 }
 
-/* Window */
+/* =========================
+   WINDOW (CRITICAL FIXED LAYER)
+========================= */
+
 .window {
     position: absolute;
+
     width: 420px;
     height: 300px;
+
+    min-width: 200px;
+    min-height: 150px;
 
     background: #c0c0c0;
 
@@ -151,13 +155,16 @@ html, body {
 
     pointer-events: auto;
 
-    min-width: 200px;
-    min-height: 150px;
+    box-sizing: border-box;
 }
 
-/* Title bar */
+/* =========================
+   TITLE BAR
+========================= */
+
 .title-bar {
     height: 24px;
+
     background: #000080;
     color: white;
 
@@ -166,14 +173,14 @@ html, body {
     justify-content: space-between;
 
     padding: 0 6px;
+
     font-weight: bold;
 }
 
-.title-bar:active {
-    cursor: grabbing;
-}
+/* =========================
+   CLOSE BUTTON
+========================= */
 
-/* Close button */
 .close-btn {
     width: 18px;
     height: 18px;
@@ -183,16 +190,22 @@ html, body {
     border: 2px solid;
     border-color: #ffffff #000000 #000000 #ffffff;
 
-    font-weight: bold;
     font-size: 10px;
-
     cursor: pointer;
 }
 
-/* Content */
+.close-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   WINDOW CONTENT (FIXED)
+========================= */
+
 .window-content {
     flex: 1;
-    margin: 4px;
+
+    margin: 0;               /* IMPORTANT FIX */
     padding: 6px;
 
     background: white;
@@ -200,6 +213,33 @@ html, body {
     border: 2px inset #c0c0c0;
 
     overflow: auto;
+
+    box-sizing: border-box;
+}
+
+/* =========================
+   RESIZE HANDLE (CRITICAL)
+========================= */
+
+.resize-handle {
+    position: absolute;
+
+    width: 12px;
+    height: 12px;
+
+    right: 0;
+    bottom: 0;
+
+    cursor: se-resize;
+
+    background: #c0c0c0;
+
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+
+    box-sizing: border-box;
 }
 
 /* =========================
@@ -213,6 +253,7 @@ button, input, textarea {
 
 button {
     background: #c0c0c0;
+
     border: 2px solid;
     border-color: #ffffff #000000 #000000 #ffffff;
 }
@@ -222,7 +263,7 @@ button:active {
 }
 
 /* =========================
-   UTILITY (IMPORTANT)
+   UTILITY
 ========================= */
 
 .win95-outset {
@@ -233,4 +274,12 @@ button:active {
 .win95-inset {
     border: 2px solid;
     border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   FINAL STABILITY FIX
+========================= */
+
+* {
+    box-sizing: border-box;
 }
