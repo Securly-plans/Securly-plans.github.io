@@ -3,43 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emerald OS</title>
+    <title>EmeraldOS</title>
+
     <link rel="stylesheet" href="os.css">
 </head>
+
 <body>
-    <div id="desktop">
-        <div class="icon" onclick="openNotes()">📄<br>Notes</div>
-        <div class="icon" onclick="openFileExplorer()">📁<br>Files</div>
-        <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
-        <div class="icon" onclick="openWindow('System Info', '<h2>Emerald OS v1.0</h2><p>Built with 100% pure HTML, CSS, and JS.</p>')">💻<br>System</div>
-        <div class="icon" onclick="openWindow('Chat', '<iframe src=\'chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬<br>Chat</div>
 
-        <div id="installed-apps-zone" style="display: contents;"></div>
-    </div>
+    <!-- ======================================
+         DESKTOP
+    ======================================= -->
 
-    <div id="start-menu">
-        <div style="background: #000080; color: white; writing-mode: vertical-rl; transform: rotate(180deg); padding: 5px; font-weight: bold;">
-            Emerald OS
+    <main id="desktop">
+
+        <div id="desktop-icons">
+
+            <div class="icon" onclick="openNotes()">
+                📄
+                <span>Notes</span>
+            </div>
+
+            <div class="icon" onclick="openFileExplorer()">
+                📁
+                <span>Files</span>
+            </div>
+
+            <div class="icon" onclick="openAppStore()">
+                🛒
+                <span>Store</span>
+            </div>
+
+            <div class="icon" onclick="Applications.system()">
+                💻
+                <span>System</span>
+            </div>
+
+            <div class="icon" onclick="Applications.chat()">
+                💬
+                <span>Chat</span>
+            </div>
+
         </div>
-        <div style="flex: 1; display: flex; flex-direction: column; padding: 2px;">
-            <div class="start-menu-item" onclick="openAppStore()">🛒 App Store</div>
-            <div class="start-menu-item" onclick="openFileExplorer()">📁 File Explorer</div>
-            <div class="start-menu-item" onclick="openNotes()">📄 Notes</div>
-            <div class="start-menu-item" onclick="openWindow('Chat', '<iframe src=\'https://securly-plans.github.io/chat.html\' style=\'width:100%; height:98%; border:none;\'></iframe>')">💬 Chat</div>
-            <div class="start-menu-item" onclick="openWindow('System Info', '<h2>Vanilla OS v1.0</h2>')">💻 System</div>
+
+        <!-- Installed apps appear here -->
+        <div id="installed-apps-zone"></div>
+
+    </main>
+
+    <!-- ======================================
+         START MENU
+    ======================================= -->
+
+    <aside id="start-menu">
+
+        <div id="start-banner">
+            EmeraldOS
+        </div>
+
+        <div id="start-items">
+
+            <div
+                class="start-menu-item"
+                onclick="openNotes()">
+                📄 Notes
+            </div>
+
+            <div
+                class="start-menu-item"
+                onclick="openFileExplorer()">
+                📁 File Explorer
+            </div>
+
+            <div
+                class="start-menu-item"
+                onclick="openAppStore()">
+                🛒 App Store
+            </div>
+
+            <div
+                class="start-menu-item"
+                onclick="Applications.chat()">
+                💬 Chat
+            </div>
+
+            <div
+                class="start-menu-item"
+                onclick="Applications.system()">
+                💻 System
+            </div>
+
             <div class="start-menu-divider"></div>
-            <div class="start-menu-item" onclick="location.reload()">🔄 Restart</div>
-        </div>
-    </div>
 
-    <div id="taskbar">
-        <button id="start-btn">Start</button>
-        <div id="taskbar-apps" style="flex: 1; display: flex; gap: 5px; margin: 0 15px; overflow-x: auto;"></div>
-        <div id="clock">00:00 PM</div>
-    </div>
+            <div
+                class="start-menu-item"
+                onclick="location.reload()">
+                🔄 Restart
+            </div>
+
+            <div
+                class="start-menu-item"
+                onclick="Session.logout()">
+                🚪 Log Out
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- ======================================
+         WINDOWS
+    ======================================= -->
 
     <div id="windows-container"></div>
 
+    <!-- ======================================
+         NOTIFICATIONS
+    ======================================= -->
+
+    <div id="notification-area"></div>
+
+    <!-- ======================================
+         TASKBAR
+    ======================================= -->
+
+    <footer id="taskbar">
+
+        <button id="start-btn">
+            Start
+        </button>
+
+        <div id="taskbar-apps"></div>
+
+        <div id="taskbar-right">
+
+            <div id="os-user">
+                User
+            </div>
+
+            <div id="clock">
+                00:00 PM
+            </div>
+
+        </div>
+
+    </footer>
+
+    <!-- ======================================
+         SCRIPTS
+    ======================================= -->
+
+    <script src="os-storage.js"></script>
     <script src="os.js"></script>
+
 </body>
 </html>
