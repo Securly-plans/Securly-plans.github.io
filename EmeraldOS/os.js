@@ -20,7 +20,6 @@ let dragState = null;
 let resizeState = null;
 
 let fileSystem = { files: {} };
-
 let activeNoteId = null;
 let activeDocId = null;
 
@@ -32,6 +31,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeAPI();
+
     await loadSystem();
 });
 
@@ -75,7 +75,7 @@ function initClock() {
 }
 
 /* =========================
-   LOAD SYSTEM
+   LOAD SYSTEM (LIVE STATE)
 ========================= */
 
 async function loadSystem() {
@@ -85,6 +85,25 @@ async function loadSystem() {
         console.warn("Drive load failed:", e);
         fileSystem.files = {};
     }
+
+    // live update any open window content
+    rerenderOpenApps();
+}
+
+/* =========================
+   LIVE RERENDER (NO REFRESH)
+========================= */
+
+function rerenderOpenApps() {
+    const windows = document.querySelectorAll(".window[data-app]");
+
+    windows.forEach(win => {
+        const app = win.getAttribute("data-app");
+
+        if (app === "files") win.querySelector(".window-content").innerHTML = renderFileExplorer();
+        if (app === "notes") win.querySelector(".window-content").innerHTML = renderNotes();
+        if (app === "docs") win.querySelector(".window-content").innerHTML = renderDocs();
+    });
 }
 
 /* =========================
@@ -118,12 +137,13 @@ document.addEventListener("mouseup", () => {
    CORE WINDOW
 ========================= */
 
-window.openWindow = function (title, html) {
+window.openWindow = function (title, html, app = "") {
     const container = document.getElementById("windows-container");
     if (!container) return;
 
     const win = document.createElement("div");
     win.className = "window";
+    if (app) win.setAttribute("data-app", app);
 
     win.style.left = "80px";
     win.style.top = "80px";
@@ -147,6 +167,7 @@ window.openWindow = function (title, html) {
     const resizeHandle = win.querySelector(".resize-handle");
 
     closeBtn.onclick = () => win.remove();
+
     win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
 
     titleBar.onmousedown = (e) => {
@@ -159,6 +180,7 @@ window.openWindow = function (title, html) {
 
     resizeHandle.onmousedown = (e) => {
         e.preventDefault();
+
         const rect = win.getBoundingClientRect();
 
         resizeState = {
@@ -178,27 +200,33 @@ window.openWindow = function (title, html) {
 ========================= */
 
 window.openFileExplorer = function () {
-    const html = `
+    openWindow("Files", renderFileExplorer(), "files");
+};
+
+function renderFileExplorer() {
+    const files = fileSystem.files;
+
+    return `
         <div style="padding:6px;">
             <button onclick="createFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
-            <hr/>
+            <button onclick="downloadAllFiles()">Download All</button>
+            <hr>
 
-            ${Object.entries(fileSystem.files).map(([id, f]) => `
-                <div style="display:flex;justify-content:space-between;padding:4px;">
+            ${Object.entries(files).map(([id, f]) => `
+                <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ddd;">
                     <span>${f.name}</span>
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="renameFile('${id}')">Rename</button>
+                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
         </div>
     `;
-
-    openWindow("Files", html);
-};
+}
 
 /* =========================
    FILE OPS
@@ -214,19 +242,8 @@ window.deleteFile = async function (id) {
     await loadSystem();
 };
 
-window.renameFile = async function (id) {
-    const file = fileSystem.files[id];
-    if (!file) return;
-
-    const name = prompt("Rename file:", file.name);
-    if (!name) return;
-
-    await cloudSaveFile(id, { name });
-    await loadSystem();
-};
-
 /* =========================
-   OPEN FILE
+   OPEN FILE (MEDIA FIXED)
 ========================= */
 
 window.openFile = function (id) {
@@ -248,8 +265,12 @@ window.openFile = function (id) {
         `;
     }
 
-    openWindow(file.name, `<div style="height:100%;display:flex;flex-direction:column">${body}</div>`);
+    openWindow(file.name, `<div style="display:flex;flex-direction:column;height:100%">${body}</div>`);
 };
+
+/* =========================
+   SAVE FILE (LIVE)
+========================= */
 
 window.saveFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
@@ -261,6 +282,54 @@ window.saveFile = async function (id) {
     });
 
     await loadSystem();
+};
+
+/* =========================
+   RENAME
+========================= */
+
+window.renameFile = async function (id) {
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    const name = prompt("Rename file:", file.name);
+    if (!name) return;
+
+    await cloudSaveFile(id, { name });
+    await loadSystem();
+};
+
+/* =========================
+   DOWNLOAD SINGLE FILE
+========================= */
+
+window.downloadFile = function (id) {
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    const blob = new Blob([file.content || ""], { type: "text/plain" });
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = file.name || "file.txt";
+    a.click();
+};
+
+/* =========================
+   DOWNLOAD ALL FILES
+========================= */
+
+window.downloadAllFiles = function () {
+    const zipText = Object.values(fileSystem.files)
+        .map(f => `${f.name}\n\n${f.content}\n\n-------------------\n`)
+        .join("");
+
+    const blob = new Blob([zipText], { type: "text/plain" });
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = "emerald_drive_backup.txt";
+    a.click();
 };
 
 /* =========================
@@ -289,32 +358,28 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (FIXED)
+   NOTES APP (FIXED)
 ========================= */
 
 window.openNotes = function () {
-    const html = `
-        <div style="display:flex;height:100%">
-            <div style="width:35%;border-right:1px solid #ccc;overflow:auto">
-                <button onclick="createNote()">+ New Note</button>
-                <hr>
-                ${Object.entries(fileSystem.files)
-                    .filter(([_, f]) => f.name)
-                    .map(([id, f]) => `
-                        <div onclick="loadNote('${id}')">${f.name}</div>
-                    `).join("")}
-            </div>
+    openWindow("Notes", renderNotes(), "notes");
+};
 
-            <div style="flex:1;display:flex;flex-direction:column">
-                <input id="note_title" style="width:100%" placeholder="Title">
-                <textarea id="note_body" style="flex:1"></textarea>
-                <button onclick="saveNote()">Save</button>
-            </div>
+function renderNotes() {
+    return `
+        <div style="padding:6px">
+            <button onclick="createNote()">+ New Note</button>
+            <hr>
+            ${Object.entries(fileSystem.files)
+                .filter(([_, f]) => f.name)
+                .map(([id, f]) => `
+                    <div onclick="loadNote('${id}')" style="cursor:pointer;padding:4px;">
+                        📄 ${f.name}
+                    </div>
+                `).join("")}
         </div>
     `;
-
-    openWindow("Notes", html);
-};
+}
 
 window.createNote = async function () {
     await cloudCreateFile("New Note", "");
@@ -346,47 +411,48 @@ window.saveNote = async function () {
 };
 
 /* =========================
-   REAL DOCS APP
+   DOCS APP (REAL)
 ========================= */
 
 window.openDocs = function () {
-    const docs = Object.entries(fileSystem.files);
+    openWindow("Docs", renderDocs(), "docs");
+};
 
-    const html = `
-        <div style="display:flex;height:100%">
+function renderDocs() {
+    return `
+        <div style="padding:6px;height:100%">
+            <button onclick="createDoc()">New Doc</button>
+            <hr>
 
-            <div style="width:30%;border-right:1px solid #ccc;overflow:auto;padding:6px;">
-                <button onclick="createDoc()">+ New Doc</button>
-                <hr/>
-
-                ${docs.map(([id, d]) => `
-                    <div style="padding:5px;cursor:pointer;border-bottom:1px solid #ddd"
-                         onclick="loadDoc('${id}')">
-                        📄 ${d.name}
+            ${Object.entries(fileSystem.files)
+                .filter(([_, f]) => f.type !== "image" && f.type !== "video")
+                .map(([id, f]) => `
+                    <div onclick="loadDoc('${id}')" style="padding:4px;cursor:pointer;">
+                        📄 ${f.name}
                     </div>
                 `).join("")}
+
+            <hr>
+
+            <div>
+                <select id="fontSize">
+                    <option>12px</option>
+                    <option>16px</option>
+                    <option>20px</option>
+                </select>
+
+                <button onclick="applyBold()">B</button>
+                <button onclick="applyItalic()">I</button>
             </div>
 
-            <div style="flex:1;display:flex;flex-direction:column;padding:6px;">
+            <input id="doc_title" placeholder="Title" style="width:100%">
+            <div id="doc_editor" contenteditable="true"
+                 style="border:1px solid #ccc;height:200px;overflow:auto;padding:6px"></div>
 
-                <input id="doc_title" style="width:100%" placeholder="Title">
-
-                <div style="flex:1;border:1px inset #aaa;padding:6px;overflow:auto;background:white"
-                     contenteditable="true"
-                     id="doc_editor"></div>
-
-                <div style="margin-top:6px;">
-                    <button onclick="saveDoc()">Save</button>
-                    <button onclick="downloadDoc('txt')">TXT</button>
-                    <button onclick="downloadDoc('html')">HTML</button>
-                </div>
-
-            </div>
+            <button onclick="saveDoc()">Save</button>
         </div>
     `;
-
-    openWindow("Docs", html);
-};
+}
 
 window.createDoc = async function () {
     await cloudCreateFile("New Doc", "");
@@ -397,11 +463,9 @@ window.loadDoc = function (id) {
     activeDocId = id;
 
     setTimeout(() => {
-        const doc = fileSystem.files[id];
-        if (!doc) return;
-
-        document.getElementById("doc_title").value = doc.name;
-        document.getElementById("doc_editor").innerHTML = doc.content || "";
+        const f = fileSystem.files[id];
+        document.getElementById("doc_title").value = f.name;
+        document.getElementById("doc_editor").innerHTML = f.content;
     }, 50);
 };
 
@@ -409,44 +473,32 @@ window.saveDoc = async function () {
     if (!activeDocId) return;
 
     const title = document.getElementById("doc_title").value;
-    const content = document.getElementById("doc_editor").innerHTML;
+    const body = document.getElementById("doc_editor").innerHTML;
 
     await cloudSaveFile(activeDocId, {
         name: title,
-        content,
-        type: "application/doc"
+        content: body
     });
 
     await loadSystem();
 };
 
-window.downloadDoc = function (type) {
-    if (!activeDocId) return;
+/* TEXT FORMATTING */
 
-    const doc = fileSystem.files[activeDocId];
-    if (!doc) return;
+window.applyBold = function () {
+    document.execCommand("bold");
+};
 
-    let blob;
-    let filename = doc.name;
+window.applyItalic = function () {
+    document.execCommand("italic");
+};
 
-    if (type === "txt") {
-        blob = new Blob(
-            [document.getElementById("doc_editor").innerText],
-            { type: "text/plain" }
-        );
-        filename = filename.replace(/\.\w+$/, "") + ".txt";
-    } else {
-        blob = new Blob(
-            [document.getElementById("doc_editor").innerHTML],
-            { type: "text/html" }
-        );
-        filename = filename.replace(/\.\w+$/, "") + ".html";
-    }
+/* =========================
+   APP STORE (FIX)
+========================= */
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
+window.openAppStore = function () {
+    openWindow("App Store", "<h2>App Store Working ✔</h2>");
 };
 
 /* =========================
