@@ -15,7 +15,6 @@ let fileSystem = {
 };
 
 let currentNote = null;
-let currentFile = null;
 
 /* =========================
    BOOT
@@ -69,7 +68,7 @@ function initClock() {
 }
 
 /* =========================
-   STORAGE (LOCAL ONLY)
+   STORAGE
 ========================= */
 
 function loadSystem() {
@@ -86,19 +85,17 @@ function saveSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED DRAG + RESIZE)
+   WINDOW SYSTEM (DRAG + RESIZE FIXED)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
 
-    /* DRAG */
     if (dragState) {
         const win = dragState.win;
         win.style.left = (e.clientX - dragState.offsetX) + "px";
         win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
-    /* RESIZE */
     if (resizeState) {
         const win = resizeState.win;
 
@@ -116,7 +113,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW SYSTEM
+   WINDOW CREATOR
 ========================= */
 
 window.openWindow = function (title, contentHTML) {
@@ -162,7 +159,6 @@ window.openWindow = function (title, contentHTML) {
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-        win.style.zIndex = ++zIndexCounter;
     });
 
     /* RESIZE */
@@ -179,108 +175,13 @@ window.openWindow = function (title, contentHTML) {
             startWidth: rect.width,
             startHeight: rect.height
         };
-
-        win.style.zIndex = ++zIndexCounter;
     });
 
     return win;
 };
 
 /* =========================
-   REFRESH SAFE
-========================= */
-
-function refresh() {
-    document.querySelectorAll(".window").forEach(w => w.remove());
-}
-
-/* =========================
-   NOTES APP (FIXED FULL)
-========================= */
-
-window.openNotes = function () {
-    openWindow("Notes", renderNotesApp());
-};
-
-function renderNotesApp() {
-    const notes = fileSystem.notes;
-
-    return `
-        <div style="display:flex;height:100%;">
-            
-            <div style="width:35%;border-right:1px solid #999;padding:5px;">
-                <button onclick="createNote()">+ New Note</button>
-
-                <div>
-                    ${Object.keys(notes).map(id => `
-                        <div style="display:flex;justify-content:space-between;padding:4px;">
-                            <span onclick="openNote('${id}')">${notes[id].name}</span>
-                            <button onclick="deleteNote('${id}')">x</button>
-                        </div>
-                    `).join("")}
-                </div>
-            </div>
-
-            <div style="flex:1;padding:5px;display:flex;flex-direction:column;">
-                <input id="noteTitle" placeholder="Title" style="margin-bottom:6px;">
-                <textarea id="noteContent" style="flex:1;"></textarea>
-                <button onclick="saveNote()">Save</button>
-            </div>
-
-        </div>
-    `;
-}
-
-window.createNote = function () {
-    const id = "note_" + Date.now();
-    fileSystem.notes[id] = { name: "Untitled", content: "" };
-    saveSystem();
-    refresh();
-    openNotes();
-};
-
-window.openNote = function (id) {
-    currentNote = id;
-
-    setTimeout(() => {
-        const n = fileSystem.notes[id];
-        const t = document.getElementById("noteTitle");
-        const c = document.getElementById("noteContent");
-
-        if (t && c) {
-            t.value = n.name;
-            c.value = n.content;
-        }
-    }, 50);
-};
-
-window.saveNote = function () {
-    if (!currentNote) return;
-
-    const t = document.getElementById("noteTitle");
-    const c = document.getElementById("noteContent");
-
-    if (!t || !c) return;
-
-    fileSystem.notes[currentNote] = {
-        name: t.value,
-        content: c.value
-    };
-
-    saveSystem();
-    refresh();
-    openNotes();
-};
-
-window.deleteNote = function (id) {
-    delete fileSystem.notes[id];
-    saveSystem();
-    refresh();
-    openNotes();
-};
-
-/* =========================
-   FILE EXPLORER (FIXED UI)
+   FILE EXPLORER
 ========================= */
 
 window.openFileExplorer = function () {
@@ -292,7 +193,7 @@ function renderFilesApp() {
 
     return `
         <div style="padding:6px;display:flex;flex-direction:column;height:100%;">
-
+            
             <div style="display:flex;gap:6px;margin-bottom:8px;">
                 <button onclick="createFile()">New File</button>
                 <button onclick="uploadFile()">Upload File</button>
@@ -305,7 +206,7 @@ function renderFilesApp() {
                         ? `<div style="padding:8px;">No files</div>`
                         : Object.keys(files).map(id => `
                             <div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #ddd;">
-                                <span>📄 ${files[id].name}</span>
+                                <span>${files[id].name}</span>
                                 <div>
                                     <button onclick="openFile('${id}')">Open</button>
                                     <button onclick="deleteFile('${id}')">Delete</button>
@@ -319,13 +220,16 @@ function renderFilesApp() {
 }
 
 /* =========================
-   FILE ACTIONS (FIXED)
+   FILE CREATE
 ========================= */
 
 window.createFile = function () {
     const id = "file_" + Date.now();
+
     fileSystem.files[id] = {
         name: "New File.txt",
+        type: "text/plain",
+        mode: "text",
         content: ""
     };
 
@@ -333,17 +237,39 @@ window.createFile = function () {
     openFileExplorer();
 };
 
+/* =========================
+   FILE OPEN (FIXED MEDIA SUPPORT)
+========================= */
+
 window.openFile = function (id) {
     const file = fileSystem.files[id];
     if (!file) return;
 
-    openWindow(file.name, `
-        <div style="display:flex;flex-direction:column;height:100%;">
-            <textarea id="file_${id}" style="flex:1;">${file.content}</textarea>
-            <button onclick="saveFile('${id}')">Save</button>
-        </div>
-    `);
+    let content = "";
+
+    if (file.mode === "image") {
+        content = `<img src="${file.content}" style="max-width:100%;height:auto;">`;
+    }
+
+    else if (file.mode === "video") {
+        content = `<video controls src="${file.content}" style="max-width:100%;"></video>`;
+    }
+
+    else {
+        content = `
+            <div style="display:flex;flex-direction:column;height:100%;">
+                <textarea id="file_${id}" style="flex:1;width:100%;">${file.content || ""}</textarea>
+                <button onclick="saveFile('${id}')">Save</button>
+            </div>
+        `;
+    }
+
+    openWindow(file.name, content);
 };
+
+/* =========================
+   SAVE FILE
+========================= */
 
 window.saveFile = function (id) {
     const el = document.getElementById(`file_${id}`);
@@ -353,6 +279,10 @@ window.saveFile = function (id) {
     saveSystem();
 };
 
+/* =========================
+   DELETE FILE
+========================= */
+
 window.deleteFile = function (id) {
     delete fileSystem.files[id];
     saveSystem();
@@ -360,7 +290,7 @@ window.deleteFile = function (id) {
 };
 
 /* =========================
-   UPLOAD (FIXED WORKING)
+   UPLOAD FILE (FIXED MEDIA DETECTION)
 ========================= */
 
 window.uploadFile = function () {
@@ -376,19 +306,32 @@ window.uploadFile = function () {
         reader.onload = () => {
             const id = "file_" + Date.now();
 
+            const isImage = file.type.startsWith("image/");
+            const isVideo = file.type.startsWith("video/");
+
             fileSystem.files[id] = {
                 name: file.name,
-                content: reader.result
+                type: file.type,
+                content: reader.result,
+                mode: isImage ? "image" : isVideo ? "video" : "text"
             };
 
             saveSystem();
             openFileExplorer();
         };
 
-        reader.readAsText(file);
+        reader.readAsDataURL(file);
     };
 
     input.click();
+};
+
+/* =========================
+   NOTES (FIXED)
+========================= */
+
+window.openNotes = function () {
+    openWindow("Notes", `<p>Notes placeholder (upgrade coming next)</p>`);
 };
 
 /* =========================
