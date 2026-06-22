@@ -1,14 +1,13 @@
 "use strict";
 
 /* =========================
-   CLOUD STORAGE IMPORT
+   CLOUD IMPORTS
 ========================= */
-
 import {
     loadDrive,
     createFile,
-    deleteFile,
     saveTextFile,
+    deleteFile,
     uploadBinaryFile
 } from "./cloudstorage.js";
 
@@ -35,7 +34,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeAPI();
-
     await loadSystem();
 });
 
@@ -77,7 +75,7 @@ function initClock() {
 }
 
 /* =========================
-   LOAD CLOUD DRIVE
+   LOAD DRIVE
 ========================= */
 
 async function loadSystem() {
@@ -86,7 +84,7 @@ async function loadSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM (DRAG + RESIZE FIXED)
+   WINDOW SYSTEM
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
@@ -114,7 +112,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   WINDOW ENGINE
+   WINDOW CREATOR
 ========================= */
 
 window.openWindow = function (title, content) {
@@ -132,11 +130,7 @@ window.openWindow = function (title, content) {
             <span>${title}</span>
             <button class="close-btn">X</button>
         </div>
-
-        <div class="window-content">
-            ${content}
-        </div>
-
+        <div class="window-content">${content}</div>
         <div class="resize-handle"></div>
     `;
 
@@ -173,7 +167,7 @@ window.openWindow = function (title, content) {
 };
 
 /* =========================
-   DESKTOP APPS
+   APPS
 ========================= */
 
 window.openFileExplorer = () => {
@@ -189,7 +183,7 @@ window.openAppStore = () => {
 };
 
 /* =========================
-   FILE EXPLORER (CLOUD DRIVE)
+   FILE EXPLORER
 ========================= */
 
 function renderFiles() {
@@ -197,18 +191,18 @@ function renderFiles() {
 
     return `
         <div>
-            <button onclick="createFile()">New Text File</button>
-            <button onclick="uploadFile()">Upload File</button>
+            <button onclick="createFile()">New File</button>
+            <button onclick="uploadFile()">Upload</button>
 
             <hr/>
 
             ${Object.entries(files).map(([id, f]) => `
-                <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ddd;">
+                <div style="display:flex;justify-content:space-between;padding:4px;">
                     <span>${f.name}</span>
-
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="deleteCloud('${id}')">Delete</button>
+                        <button onclick="renameFile('${id}')">Rename</button>
+                        <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
@@ -217,7 +211,7 @@ function renderFiles() {
 }
 
 /* =========================
-   FILE OPEN (MEDIA FIX INCLUDED)
+   FILE OPEN (MEDIA FIX)
 ========================= */
 
 window.openFile = (id) => {
@@ -226,12 +220,10 @@ window.openFile = (id) => {
 
     let html = "";
 
-    /* IMAGE + WEBP FIX */
     if (f.url && f.type?.startsWith("image/")) {
         html = `<img src="${f.url}" style="max-width:100%">`;
     }
 
-    /* VIDEO FIX */
     else if (f.url && f.type?.startsWith("video/")) {
         html = `
             <video controls style="max-width:100%">
@@ -240,7 +232,6 @@ window.openFile = (id) => {
         `;
     }
 
-    /* TEXT FILE */
     else {
         html = `
             <textarea id="edit_${id}" style="width:100%;height:85%">${f.content || ""}</textarea>
@@ -252,17 +243,13 @@ window.openFile = (id) => {
 };
 
 /* =========================
-   CREATE TEXT FILE
+   FILE ACTIONS
 ========================= */
 
 window.createFile = async () => {
     await createFile("New File", "");
     await loadSystem();
 };
-
-/* =========================
-   SAVE TEXT FILE
-========================= */
 
 window.saveFile = async (id) => {
     const el = document.getElementById("edit_" + id);
@@ -272,17 +259,30 @@ window.saveFile = async (id) => {
     await loadSystem();
 };
 
-/* =========================
-   DELETE FILE
-========================= */
-
-window.deleteCloud = async (id) => {
+window.deleteFile = async (id) => {
     await deleteFile(id);
     await loadSystem();
 };
 
 /* =========================
-   FILE UPLOAD (FIXED + WEBP SAFE)
+   RENAME FILE (FULL)
+========================= */
+
+window.renameFile = async (id) => {
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    const newName = prompt("Rename file:", file.name);
+    if (!newName) return;
+
+    file.name = newName;
+
+    await saveTextFile(id, file.content || "");
+    await loadSystem();
+};
+
+/* =========================
+   UPLOAD FILES
 ========================= */
 
 window.uploadFile = () => {
@@ -301,7 +301,7 @@ window.uploadFile = () => {
 };
 
 /* =========================
-   NOTES (RESTORED FULLY)
+   NOTES (RESTORED FULL)
 ========================= */
 
 function renderNotes() {
@@ -309,7 +309,7 @@ function renderNotes() {
         <div>
             <button onclick="createNote()">New Note</button>
             <hr/>
-            <p>Notes system restored (can be expanded to cloud later)</p>
+            <p>Notes system active (can be expanded to cloud)</p>
         </div>
     `;
 }
