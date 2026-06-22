@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================
-   CLOUD IMPORTS
+   CLOUD IMPORTS (UNCHANGED)
 ========================= */
 
 import {
@@ -16,57 +16,37 @@ import {
 ========================= */
 
 let zIndexCounter = 100;
-
-let dragState = null;
-let resizeState = null;
-
 let fileSystem = { files: {} };
 
-let windowStates = {}; // NEW WINDOW SYSTEM
+let drag = null;
+let resize = null;
+
+let windows = {};
 
 /* =========================
    BOOT
 ========================= */
 
 window.addEventListener("DOMContentLoaded", async () => {
-    initStartMenu();
     initClock();
     await loadSystem();
 });
-
-/* =========================
-   START MENU
-========================= */
-
-function initStartMenu() {
-    const menu = document.getElementById("start-menu");
-    const btn = document.getElementById("start-btn");
-
-    btn.onclick = () => menu.classList.toggle("show");
-
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest("#start-btn")) {
-            menu.classList.remove("show");
-        }
-    });
-}
 
 /* =========================
    CLOCK
 ========================= */
 
 function initClock() {
-    const clock = document.getElementById("clock");
-
     const tick = () => {
-        clock.textContent = new Date().toLocaleTimeString([], {
+        const el = document.getElementById("clock");
+        if (el) el.textContent = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit"
         });
     };
 
-    tick();
     setInterval(tick, 1000);
+    tick();
 }
 
 /* =========================
@@ -82,7 +62,7 @@ async function loadSystem() {
 }
 
 /* =========================
-   CORE WINDOW SYSTEM (WIN95)
+   WINDOW SYSTEM (FIXED)
 ========================= */
 
 window.openWindow = function (title, html) {
@@ -90,10 +70,9 @@ window.openWindow = function (title, html) {
 
     const win = document.createElement("div");
     win.className = "window";
-    win.dataset.id = id;
 
-    win.style.left = "100px";
-    win.style.top = "100px";
+    win.style.left = "80px";
+    win.style.top = "80px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
@@ -112,25 +91,24 @@ window.openWindow = function (title, html) {
 
     document.getElementById("windows-container").appendChild(win);
 
-    /* TASKBAR BUTTON */
-    const taskBtn = document.createElement("div");
-    taskBtn.className = "taskbar-app";
-    taskBtn.innerText = title;
+    const taskbarBtn = document.createElement("div");
+    taskbarBtn.className = "taskbar-app";
+    taskbarBtn.textContent = title;
 
-    taskBtn.onclick = () => restoreWindow(id);
+    taskbarBtn.onclick = () => restoreWindow(id);
 
-    document.getElementById("taskbar-apps").appendChild(taskBtn);
+    document.getElementById("taskbar-apps").appendChild(taskbarBtn);
 
-    windowStates[id] = {
+    windows[id] = {
         win,
-        taskBtn,
+        taskbarBtn,
         maximized: false,
         minimized: false,
         normal: {}
     };
 
-    enableDrag(win);
-    enableResize(win);
+    makeDrag(win);
+    makeResize(win);
 
     return win;
 };
@@ -140,7 +118,7 @@ window.openWindow = function (title, html) {
 ========================= */
 
 window.minimizeWindow = function (id) {
-    const w = windowStates[id];
+    const w = windows[id];
     if (!w) return;
 
     w.win.style.display = "none";
@@ -148,11 +126,11 @@ window.minimizeWindow = function (id) {
 };
 
 /* =========================
-   RESTORE (TASKBAR CLICK)
+   RESTORE
 ========================= */
 
 window.restoreWindow = function (id) {
-    const w = windowStates[id];
+    const w = windows[id];
     if (!w) return;
 
     w.win.style.display = "block";
@@ -161,21 +139,21 @@ window.restoreWindow = function (id) {
 };
 
 /* =========================
-   MAXIMIZE / RESTORE
+   MAXIMIZE
 ========================= */
 
 window.maximizeWindow = function (id) {
-    const w = windowStates[id];
+    const w = windows[id];
     if (!w) return;
 
     const win = w.win;
 
     if (!w.maximized) {
         w.normal = {
-            width: win.style.width,
-            height: win.style.height,
             left: win.style.left,
-            top: win.style.top
+            top: win.style.top,
+            width: win.style.width,
+            height: win.style.height
         };
 
         win.style.left = "0";
@@ -185,10 +163,10 @@ window.maximizeWindow = function (id) {
 
         w.maximized = true;
     } else {
-        win.style.width = w.normal.width;
-        win.style.height = w.normal.height;
         win.style.left = w.normal.left;
         win.style.top = w.normal.top;
+        win.style.width = w.normal.width;
+        win.style.height = w.normal.height;
 
         w.maximized = false;
     }
@@ -199,74 +177,69 @@ window.maximizeWindow = function (id) {
 ========================= */
 
 window.closeWindow = function (id) {
-    const w = windowStates[id];
+    const w = windows[id];
     if (!w) return;
 
     w.win.remove();
-    w.taskBtn.remove();
+    w.taskbarBtn.remove();
 
-    delete windowStates[id];
+    delete windows[id];
 };
 
 /* =========================
    DRAG
 ========================= */
 
-function enableDrag(win) {
+function makeDrag(win) {
     const bar = win.querySelector(".title-bar");
 
     bar.onmousedown = (e) => {
-        dragState = {
+        drag = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-
-        win.style.zIndex = ++zIndexCounter;
     };
 }
 
 document.addEventListener("mousemove", (e) => {
-    if (dragState) {
-        dragState.win.style.left =
-            (e.clientX - dragState.offsetX) + "px";
-
-        dragState.win.style.top =
-            (e.clientY - dragState.offsetY) + "px";
+    if (drag) {
+        drag.win.style.left = (e.clientX - drag.offsetX) + "px";
+        drag.win.style.top = (e.clientY - drag.offsetY) + "px";
     }
 
-    if (resizeState) {
-        const w = resizeState.win;
+    if (resize) {
+        const w = resize.win;
 
         w.style.width =
-            Math.max(220, resizeState.startWidth + (e.clientX - resizeState.startX)) + "px";
+            Math.max(220, resize.startW + (e.clientX - resize.startX)) + "px";
 
         w.style.height =
-            Math.max(160, resizeState.startHeight + (e.clientY - resizeState.startY)) + "px";
+            Math.max(160, resize.startH + (e.clientY - resize.startY)) + "px";
     }
 });
 
 document.addEventListener("mouseup", () => {
-    dragState = null;
-    resizeState = null;
+    drag = null;
+    resize = null;
 });
 
 /* =========================
    RESIZE
 ========================= */
 
-function enableResize(win) {
+function makeResize(win) {
     const handle = win.querySelector(".resize-handle");
 
     handle.onmousedown = (e) => {
         const rect = win.getBoundingClientRect();
 
-        resizeState = {
+        resize = {
             win,
             startX: e.clientX,
             startY: e.clientY,
-            startWidth: rect.width,
-            startHeight: rect.height
+            startW: rect.width,
+            startH: rect.height
         };
 
         e.preventDefault();
@@ -274,29 +247,14 @@ function enableResize(win) {
 }
 
 /* =========================
-   APPS (EXAMPLE)
+   APPS (ALL RESTORED)
 ========================= */
 
-window.openNotes = () =>
-    openWindow("Notes", "<div>Notes App</div>");
-
-window.openFileExplorer = () =>
-    openWindow("Files", "<div>File Explorer</div>");
-
-window.openCalculator = () =>
-    openWindow("Calculator", "<div>Calculator</div>");
-
-window.openClockApp = () =>
-    openWindow("Clock", "<div>Clock App</div>");
-
-window.openSystemApp = () =>
-    openWindow("System", "<div>System Panel</div>");
-
-window.openAppStore = () =>
-    openWindow("App Store", "<div>Store</div>");
-
-window.openDocs = () =>
-    openWindow("Docs", "<div>Docs</div>");
-
-window.openCalendar = () =>
-    openWindow("Calendar", "<div>Calendar</div>");
+window.openNotes = () => openWindow("Notes", "<div>Notes App</div>");
+window.openFileExplorer = () => openWindow("Files", "<div>Files</div>");
+window.openAppStore = () => openWindow("App Store", "<div>Store</div>");
+window.openDocs = () => openWindow("Docs", "<div>Docs</div>");
+window.openCalendar = () => openWindow("Calendar", "<div>Calendar</div>");
+window.openCalculator = () => openWindow("Calculator", "<div>Calc</div>");
+window.openClockApp = () => openWindow("Clock", "<div>Clock</div>");
+window.openSystemApp = () => openWindow("System", "<div>System</div>");
