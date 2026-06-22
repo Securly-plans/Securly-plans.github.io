@@ -1,143 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmeraldOS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmeraldOS</title>
 
-    <link rel="icon" type="image/png" href="assets/EmeraldOS.png">
-    <link rel="stylesheet" href="os.css">
+<link rel="icon" type="image/png" href="assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
 
-    <style>
-        /* WIN95 CORE PATCH (minimal required UI base) */
+<style>
+body {
+    margin: 0;
+    font-family: "MS Sans Serif", Tahoma, sans-serif;
+    background: #008080;
+    overflow: hidden;
+}
 
-        body {
-            margin: 0;
-            font-family: "MS Sans Serif", Tahoma, sans-serif;
-            background: #008080;
-            overflow: hidden;
-        }
+#desktop {
+    position: absolute;
+    inset: 0;
+}
 
-        #desktop {
-            position: absolute;
-            inset: 0;
-        }
+.icon {
+    width: 80px;
+    text-align: center;
+    color: white;
+    margin: 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
 
-        .icon {
-            width: 80px;
-            text-align: center;
-            color: white;
-            margin: 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
+.window {
+    position: absolute;
+    width: 420px;
+    height: 320px;
+    background: #c0c0c0;
+    border: 2px solid #808080;
+}
 
-        .window {
-            position: absolute;
-            width: 400px;
-            height: 300px;
-            background: #c0c0c0;
-            border: 2px solid #808080;
-        }
+.title-bar {
+    height: 26px;
+    background: #000080;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px;
+    cursor: move;
+}
 
-        .title-bar {
-            height: 26px;
-            background: #000080;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 2px 4px;
-            cursor: move;
-            font-size: 13px;
-        }
+.win-controls button {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    margin-left: 2px;
+    cursor: pointer;
+}
 
-        .win-controls button {
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            margin-left: 2px;
-            cursor: pointer;
-            background: #c0c0c0;
-            border: 1px solid #808080;
-        }
+.window-content {
+    height: calc(100% - 26px);
+    overflow: auto;
+    padding: 6px;
+}
 
-        .window-content {
-            height: calc(100% - 26px);
-            overflow: auto;
-            padding: 6px;
-        }
+.resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    cursor: se-resize;
+}
 
-        .resize-handle {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 10px;
-            height: 10px;
-            cursor: se-resize;
-        }
+#taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: #c0c0c0;
+    display: flex;
+    align-items: center;
+    border-top: 2px solid white;
+}
 
-        #taskbar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: #c0c0c0;
-            display: flex;
-            align-items: center;
-            border-top: 2px solid white;
-        }
+#taskbar-apps {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+}
 
-        #start-btn {
-            width: 80px;
-            height: 30px;
-            margin: 4px;
-        }
-
-        #taskbar-apps {
-            flex: 1;
-            display: flex;
-            gap: 5px;
-        }
-
-        .taskbar-app {
-            padding: 3px 6px;
-            background: #c0c0c0;
-            border: 2px solid #808080;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        #start-menu {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            width: 200px;
-            background: #c0c0c0;
-            display: none;
-            border: 2px solid #808080;
-        }
-
-        #start-menu.show {
-            display: flex;
-        }
-
-        .start-item {
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        .start-item:hover {
-            background: #000080;
-            color: white;
-        }
-    </style>
+.taskbar-app {
+    padding: 3px 6px;
+    background: #c0c0c0;
+    border: 2px solid #808080;
+    cursor: pointer;
+    font-size: 12px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- DESKTOP -->
 <div id="desktop">
 
     <div class="icon" onclick="openNotes()">📄<br>Notes</div>
@@ -149,24 +113,24 @@
     <div class="icon" onclick="openClockApp()">⏰<br>Clock</div>
     <div class="icon" onclick="openSystemApp()">💻<br>System</div>
 
+    <div class="icon" onclick="openWindow('Chat','<iframe src=\'chat.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+        💬<br>Chat
+    </div>
+
+    <div class="icon" onclick="openWindow('Games','<iframe src=\'home.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+        🌐<br>Games
+    </div>
+
+    <div class="icon" onclick="openWindow('Media Player','<iframe src=\'mediaplayer.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
+        📀<br>Media
+    </div>
+
 </div>
 
-<!-- START MENU -->
-<div id="start-menu">
-    <div class="start-item" onclick="openNotes()">Notes</div>
-    <div class="start-item" onclick="openFileExplorer()">Files</div>
-    <div class="start-item" onclick="openAppStore()">App Store</div>
-    <div class="start-item" onclick="location.reload()">Restart</div>
-</div>
-
-<!-- TASKBAR -->
 <div id="taskbar">
-    <button id="start-btn">Start</button>
     <div id="taskbar-apps"></div>
-    <div id="clock"></div>
 </div>
 
-<!-- WINDOWS -->
 <div id="windows-container"></div>
 
 <script type="module" src="os.js"></script>
