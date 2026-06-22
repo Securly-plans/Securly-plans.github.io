@@ -34,14 +34,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* =========================
-   SYSTEM LOAD (SAFE NORMALIZER)
+   LOAD SYSTEM
 ========================= */
 
 async function loadSystem() {
     try {
         const data = await loadDrive();
-
-        // normalize (prevents undefined crashes)
         fileSystem.files = data && typeof data === "object" ? data : {};
     } catch (e) {
         console.warn("Drive load failed:", e);
@@ -101,7 +99,6 @@ document.addEventListener("mousemove", (e) => {
 
     if (resizeState) {
         const w = resizeState.win;
-
         const dx = e.clientX - resizeState.startX;
         const dy = e.clientY - resizeState.startY;
 
@@ -116,7 +113,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW
+   WINDOW CORE
 ========================= */
 
 window.openWindow = function (title, html) {
@@ -135,9 +132,7 @@ window.openWindow = function (title, html) {
             <span>${title}</span>
             <button class="close-btn">X</button>
         </div>
-
         <div class="window-content">${html}</div>
-
         <div class="resize-handle"></div>
     `;
 
@@ -175,6 +170,36 @@ window.openWindow = function (title, html) {
 };
 
 /* =========================
+   EXPOSE APPS (FIXES ALL ERRORS)
+========================= */
+
+function exposeAPI() {
+    window.launchApp = openWindow;
+
+    window.openFileExplorer = () => {
+        loadSystem().then(() => {
+            openWindow("Files", renderFileExplorer());
+        });
+    };
+
+    window.openNotes = () => {
+        loadSystem().then(() => {
+            openWindow("Notes", renderNotes());
+        });
+    };
+
+    window.openDocs = () => {
+        loadSystem().then(() => {
+            openWindow("Docs", renderDocs());
+        });
+    };
+
+    window.openAppStore = () => {
+        openWindow("App Store", "<div style='padding:10px'>Coming soon</div>");
+    };
+}
+
+/* =========================
    FILE EXPLORER
 ========================= */
 
@@ -193,6 +218,7 @@ function renderFileExplorer() {
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="renameFile('${id}')">Rename</button>
+                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
@@ -201,29 +227,18 @@ function renderFileExplorer() {
     `;
 }
 
-window.openFileExplorer = async function () {
-    await loadSystem();
-    openWindow("Files", renderFileExplorer());
-};
-
-/* =========================
-   FILE OPS
-========================= */
-
 window.createFile = async function () {
     await cloudCreateFile("New File", "");
     await loadSystem();
-    openFileExplorer();
 };
 
 window.deleteFile = async function (id) {
     await cloudDeleteFile(id);
     await loadSystem();
-    openFileExplorer();
 };
 
 /* =========================
-   OPEN FILE (MEDIA SAFE)
+   OPEN FILE (MEDIA FIXED)
 ========================= */
 
 window.openFile = function (id) {
@@ -234,11 +249,9 @@ window.openFile = function (id) {
 
     if (file.content?.startsWith("data:image")) {
         body = `<img src="${file.content}" style="max-width:100%">`;
-    }
-    else if (file.content?.startsWith("data:video")) {
+    } else if (file.content?.startsWith("data:video")) {
         body = `<video controls style="max-width:100%"><source src="${file.content}"></video>`;
-    }
-    else {
+    } else {
         body = `
             <textarea id="file_${id}" style="width:100%;height:90%">${file.content || ""}</textarea>
             <button onclick="saveFile('${id}')">Save</button>
@@ -248,16 +261,12 @@ window.openFile = function (id) {
     openWindow(file.name || "File", `<div style="display:flex;flex-direction:column;height:100%">${body}</div>`);
 };
 
-/* =========================
-   SAVE FILE
-========================= */
-
 window.saveFile = async function (id) {
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
     await cloudSaveFile(id, {
-        name: fileSystem.files[id]?.name || "Untitled",
+        name: fileSystem.files[id]?.name,
         content: el.value
     });
 
@@ -305,19 +314,40 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (FIXED STATE SYNC)
+   DOWNLOAD (FIXED FEATURE YOU WERE MISSING)
 ========================= */
 
-window.openNotes = async function () {
-    await loadSystem();
+window.downloadFile = function (id) {
+    const file = fileSystem.files?.[id];
+    if (!file) return;
 
-    const html = `
+    const blob = new Blob([file.content || ""], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name || "file.txt";
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    URL.revokeObjectURL(url);
+};
+
+/* =========================
+   NOTES
+========================= */
+
+function renderNotes() {
+    const files = fileSystem.files || {};
+
+    return `
         <div style="display:flex;height:100%">
             <div style="width:35%;border-right:1px solid #ccc;overflow:auto">
                 <button onclick="createNote()">+ New Note</button>
                 <hr>
 
-                ${Object.entries(fileSystem.files)
+                ${Object.entries(files)
                     .filter(([_, f]) => f)
                     .map(([id, f]) => `
                         <div onclick="loadNote('${id}')">${f.name || "Note"}</div>
@@ -331,9 +361,7 @@ window.openNotes = async function () {
             </div>
         </div>
     `;
-
-    openWindow("Notes", html);
-};
+}
 
 window.createNote = async function () {
     const id = await cloudCreateFile("New Note", "");
@@ -345,7 +373,7 @@ window.loadNote = function (id) {
     activeNoteId = id;
 
     setTimeout(() => {
-        const f = fileSystem.files?.[id];
+        const f = fileSystem.files[id];
         if (!f) return;
 
         document.getElementById("note_title").value = f.name || "";
@@ -368,18 +396,27 @@ window.saveNote = async function () {
 };
 
 /* =========================
-   APP REGISTRY (FIXES openDocs ERROR)
+   DOCS APP (REAL)
 ========================= */
 
-function exposeAPI() {
-    window.launchApp = openWindow;
+function renderDocs() {
+    const files = fileSystem.files || {};
 
-    window.openFileExplorer = openFileExplorer;
-    window.openNotes = openNotes;
+    return `
+        <div style="display:flex;height:100%">
+            <div style="width:30%;border-right:1px solid #ccc;overflow:auto;padding:6px;">
+                <button onclick="createNote()">+ New Doc</button>
+                <hr>
+                ${Object.entries(files).map(([id, f]) => `
+                    <div onclick="loadNote('${id}')">📄 ${f.name || "Doc"}</div>
+                `).join("")}
+            </div>
 
-    window.openAppStore = () => openWindow("App Store", "<div>Coming soon</div>");
-
-    window.openDocs = () => {
-        openWindow("Docs", "<div>Docs app working ✔</div>");
-    };
+            <div style="flex:1;display:flex;flex-direction:column;padding:6px;">
+                <input id="note_title" style="width:100%" placeholder="Title">
+                <textarea id="note_body" style="flex:1"></textarea>
+                <button onclick="saveNote()">Save</button>
+            </div>
+        </div>
+    `;
 }
