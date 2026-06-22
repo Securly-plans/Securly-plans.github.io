@@ -63,6 +63,7 @@ html, body {
     padding: 3px;
 
     border-top: 2px solid #ffffff;
+    z-index: 10000;
 }
 
 #start-btn {
@@ -96,7 +97,7 @@ html, body {
     bottom: 40px;
     left: 0;
 
-    width: 260px;   /* slightly bigger = nicer UX */
+    width: 280px;
 
     background: #c0c0c0;
 
@@ -105,7 +106,7 @@ html, body {
 
     display: none;
 
-    z-index: 10000;
+    z-index: 20000;
 }
 
 #start-menu.show {
@@ -143,8 +144,8 @@ html, body {
 .window {
     position: absolute;
 
-    width: 420px;
-    height: 300px;
+    width: 460px;
+    height: 320px;
 
     min-width: 220px;
     min-height: 160px;
@@ -214,7 +215,7 @@ html, body {
 }
 
 /* =========================
-   WINDOW CONTENT
+   WINDOW CONTENT (CRITICAL FIX)
 ========================= */
 
 .window-content {
@@ -231,11 +232,11 @@ html, body {
 
     box-sizing: border-box;
 
-    user-select: text; /* IMPORTANT FIX so text apps work */
+    user-select: text;
 }
 
 /* =========================
-   RESIZE HANDLE (FIXED + STABLE)
+   RESIZE HANDLE
 ========================= */
 
 .resize-handle {
@@ -260,19 +261,31 @@ html, body {
 }
 
 /* =========================
-   INPUTS / BUTTONS (WIN95 STYLE)
+   INPUTS / TEXT SYSTEMS
 ========================= */
 
-button, input, textarea {
+button, input, textarea, select {
     font-family: inherit;
     font-size: 12px;
 }
+
+input, textarea {
+    border: 2px inset #c0c0c0;
+    padding: 4px;
+    outline: none;
+}
+
+/* =========================
+   BUTTON STYLE
+========================= */
 
 button {
     background: #c0c0c0;
 
     border: 2px solid;
     border-color: #ffffff #000000 #000000 #ffffff;
+
+    cursor: pointer;
 }
 
 button:active {
@@ -280,7 +293,92 @@ button:active {
 }
 
 /* =========================
-   BRIGHTNESS SUPPORT LAYER
+   DOCS / WORD-LIKE TOOLBAR SUPPORT
+========================= */
+
+.toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #ddd;
+    border-bottom: 1px solid #999;
+}
+
+.toolbar button {
+    padding: 2px 6px;
+}
+
+/* =========================
+   SPLIT PANES (Notes/Files/Docs)
+========================= */
+
+.split {
+    display: flex;
+    height: 100%;
+}
+
+.sidebar {
+    width: 35%;
+    border-right: 1px solid #aaa;
+    overflow: auto;
+    padding: 6px;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   CALCULATOR UI SUPPORT
+========================= */
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.calc-display {
+    width: 100%;
+    font-size: 16px;
+    padding: 6px;
+    margin-bottom: 6px;
+}
+
+/* =========================
+   CALENDAR SUPPORT
+========================= */
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    padding: 6px;
+    text-align: center;
+    border: 1px solid #aaa;
+    cursor: pointer;
+}
+
+.calendar-day:hover {
+    background: #000080;
+    color: white;
+}
+
+/* =========================
+   SYSTEM PANEL SLIDERS
+========================= */
+
+.slider {
+    width: 100%;
+}
+
+/* =========================
+   BRIGHTNESS SUPPORT
 ========================= */
 
 body {
