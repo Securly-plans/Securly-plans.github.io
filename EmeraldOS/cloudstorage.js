@@ -4,141 +4,197 @@ import {
     db,
     doc,
     setDoc,
-    getDoc,
     getDocs,
+    getDoc,
     collection,
     deleteDoc
 } from "./firebase.js";
 
-import {
-    getStorage,
-    ref,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
 /* =========================
-   USER
+   USER HELPERS
 ========================= */
 
 function getUsername() {
-    return localStorage.getItem("username") || localStorage.getItem("os_session");
+    const username =
+        localStorage.getItem("username") ||
+        localStorage.getItem("os_session");
+
+    if (!username) {
+        console.warn("No username found in localStorage");
+        return null;
+    }
+
+    return username;
 }
 
 /* =========================
-   PATHS
+   FIRESTORE PATHS
 ========================= */
 
-function driveCollection() {
-    const user = getUsername();
-    if (!user) return null;
-    return collection(db, "emeraldOSUsers", user, "drive");
+function userDoc() {
+    const username = getUsername();
+    if (!username) return null;
+
+    return doc(db, "emeraldOSUsers", username);
 }
 
-function fileDoc(id) {
-    const user = getUsername();
-    if (!user) return null;
-    return doc(db, "emeraldOSUsers", user, "drive", id);
+function driveCol() {
+    const username = getUsername();
+    if (!username) return null;
+
+    return collection(db, "emeraldOSUsers", username, "drive");
+}
+
+function fileDoc(fileId) {
+    const username = getUsername();
+    if (!username) return null;
+
+    return doc(db, "emeraldOSUsers", username, "drive", fileId);
 }
 
 /* =========================
-   STORAGE INIT
+   ENSURE USER EXISTS
 ========================= */
 
-const storage = getStorage();
+export async function ensureUser() {
+    const username = getUsername();
+    if (!username) return false;
+
+    try {
+        const ref = userDoc();
+        if (!ref) return false;
+
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+            await setDoc(ref, {
+                username,
+                createdAt: Date.now()
+            });
+        }
+
+        return true;
+    } catch (err) {
+        console.warn("ensureUser failed:", err);
+        return false;
+    }
+}
 
 /* =========================
-   LOAD DRIVE (metadata only)
+   LOAD DRIVE
 ========================= */
 
 export async function loadDrive() {
-    const col = driveCollection();
+    const col = driveCol();
     if (!col) return {};
 
-    const snap = await getDocs(col);
-    const out = {};
+    try {
+        const snap = await getDocs(col);
 
-    snap.forEach(d => {
-        out[d.id] = d.data();
-    });
+        const files = {};
+        snap.forEach(d => {
+            files[d.id] = d.data();
+        });
 
-    return out;
+        return files;
+    } catch (err) {
+        console.warn("loadDrive failed:", err);
+        return {};
+    }
 }
 
 /* =========================
-   CREATE FILE (TEXT DEFAULT)
+   GET FILE
 ========================= */
 
-export async function createFile(name, content = "", type = "text/plain") {
+export async function getFile(fileId) {
+    const ref = fileDoc(fileId);
+    if (!ref) return null;
+
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+}
+
+/* =========================
+   CREATE FILE
+========================= */
+
+export async function createFile(name = "New File", content = "") {
+    const username = getUsername();
+    if (!username) return null;
+
     const id = "file_" + Date.now();
 
-    await setDoc(fileDoc(id), {
-        name,
-        type,
-        storagePath: null,
-        content: type === "text/plain" ? content : null,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    });
+    try {
+        await setDoc(fileDoc(id), {
+            name,
+            content,
+            type: detectType(name, content),
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        });
 
-    return id;
+        return id;
+    } catch (err) {
+        console.warn("createFile failed:", err);
+        return null;
+    }
 }
 
 /* =========================
-   UPLOAD BINARY FILES (IMAGES/VIDEO/WEBP)
+   SAVE FILE (FIXED EXPORT)
 ========================= */
 
-export async function uploadBinaryFile(file) {
-    const user = getUsername();
-    if (!user) return null;
+export async function saveFile(fileId, data) {
+    const ref = fileDoc(fileId);
+    if (!ref) return;
 
-    const id = "file_" + Date.now();
-    const path = `${user}/${id}-${file.name}`;
-
-    const storageRef = ref(storage, path);
-
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-
-    await setDoc(fileDoc(id), {
-        name: file.name,
-        type: file.type,
-        storagePath: path,
-        url,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    });
-
-    return id;
-}
-
-/* =========================
-   SAVE TEXT FILE
-========================= */
-
-export async function saveTextFile(id, content) {
-    await setDoc(fileDoc(id), {
-        content,
-        updatedAt: Date.now()
-    }, { merge: true });
+    try {
+        await setDoc(ref, {
+            ...data,
+            updatedAt: Date.now()
+        }, { merge: true });
+    } catch (err) {
+        console.warn("saveFile failed:", err);
+    }
 }
 
 /* =========================
    DELETE FILE
 ========================= */
 
-export async function deleteFile(id) {
-    const snap = await getDoc(fileDoc(id));
+export async function deleteFile(fileId) {
+    const ref = fileDoc(fileId);
+    if (!ref) return;
 
-    if (snap.exists()) {
-        const data = snap.data();
-
-        // delete storage file if exists
-        if (data.storagePath) {
-            await deleteObject(ref(storage, data.storagePath)).catch(() => {});
-        }
+    try {
+        await deleteDoc(ref);
+    } catch (err) {
+        console.warn("deleteFile failed:", err);
     }
+}
 
-    await deleteDoc(fileDoc(id));
+/* =========================
+   TYPE DETECTION
+========================= */
+
+function detectType(name = "", content = "") {
+    if (!content) return "text/plain";
+
+    if (content.startsWith("data:image")) return "image";
+    if (content.startsWith("data:video")) return "video";
+
+    if (name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) return "image";
+    if (name.match(/\.(mp4|webm|ogg)$/i)) return "video";
+
+    return "text/plain";
+}
+
+/* =========================
+   DEBUG
+========================= */
+
+export async function debugDrive() {
+    console.log("USERNAME:", getUsername());
+    console.log("DRIVE:", await loadDrive());
 }
