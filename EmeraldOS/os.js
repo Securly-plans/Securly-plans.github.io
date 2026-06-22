@@ -195,6 +195,213 @@ window.openWindow = function (title, html, app = "") {
     return win;
 };
 
+let calendarData = {};
+let selectedDate = null;
+
+window.openCalendar = function () {
+    openWindow("Calendar", renderCalendar(), "calendar");
+};
+
+function renderCalendar() {
+    const today = new Date().toISOString().split("T")[0];
+
+    return `
+        <div style="padding:10px">
+
+            <input type="date" id="cal_date" value="${today}" onchange="selectDate(this.value)">
+
+            <button onclick="saveCalendarNote()">Save Note</button>
+
+            <hr>
+
+            <textarea id="cal_note" style="width:100%;height:150px"
+                placeholder="Write notes for this day..."></textarea>
+
+            <hr>
+
+            <div>
+                <b>Saved Entries:</b>
+                <div style="max-height:120px;overflow:auto">
+                    ${Object.entries(fileSystem.files || {})
+                        .filter(([_, f]) => f.type === "calendar")
+                        .map(([id, f]) => `
+                            <div style="padding:4px;border-bottom:1px solid #ddd">
+                                📅 ${f.name}
+                                <button onclick="openCalendarEntry('${id}')">Open</button>
+                            </div>
+                        `).join("")}
+                </div>
+            </div>
+
+        </div>
+    `;
+}
+
+window.selectDate = function (date) {
+    selectedDate = date;
+
+    const entry = Object.values(fileSystem.files || {})
+        .find(f => f.calendarDate === date);
+
+    document.getElementById("cal_note").value = entry?.content || "";
+};
+
+window.saveCalendarNote = async function () {
+    const date = document.getElementById("cal_date").value;
+    const note = document.getElementById("cal_note").value;
+
+    await cloudCreateFile(`Calendar ${date}`, note);
+
+    await loadSystem();
+};
+
+window.openCalendarEntry = function (id) {
+    const f = fileSystem.files[id];
+    openWindow(f.name, `<pre>${f.content}</pre>`);
+};
+
+window.openCalculator = function () {
+    openWindow("Calculator", renderCalculator(), "calculator");
+};
+
+function renderCalculator() {
+    return `
+        <div style="padding:10px">
+
+            <input id="calc_display" style="width:100%;font-size:20px;text-align:right" disabled>
+
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px">
+
+                ${[
+                    "7","8","9","/",
+                    "4","5","6","*",
+                    "1","2","3","-",
+                    "0",".","=","+"
+                ].map(v => `
+                    <button onclick="calcPress('${v}')">${v}</button>
+                `).join("")}
+
+                <button onclick="clearCalc()" style="grid-column:span 4">Clear</button>
+            </div>
+
+        </div>
+    `;
+}
+
+let calcInput = "";
+
+window.calcPress = function (v) {
+    if (v === "=") {
+        try {
+            calcInput = eval(calcInput).toString();
+        } catch {
+            calcInput = "Error";
+        }
+    } else {
+        calcInput += v;
+    }
+
+    document.getElementById("calc_display").value = calcInput;
+};
+
+window.clearCalc = function () {
+    calcInput = "";
+    document.getElementById("calc_display").value = "";
+};
+
+let stopwatchInterval;
+let stopwatchTime = 0;
+let alarmTime = null;
+
+window.openClockApp = function () {
+    openWindow("Clock Suite", renderClock(), "clockapp");
+};
+
+function renderClock() {
+    return `
+        <div style="padding:10px">
+
+            <h3>🕒 Live Time</h3>
+            <div id="live_time"></div>
+
+            <hr>
+
+            <h3>⏱ Stopwatch</h3>
+
+            <div id="stopwatch">0:00</div>
+
+            <button onclick="startStopwatch()">Start</button>
+            <button onclick="pauseStopwatch()">Pause</button>
+            <button onclick="resetStopwatch()">Reset</button>
+
+            <hr>
+
+            <h3>⏰ Alarm</h3>
+
+            <input type="time" id="alarm_input">
+            <button onclick="setAlarm()">Set Alarm</button>
+
+        </div>
+    `;
+}
+
+function updateClockLive() {
+    const el = document.getElementById("live_time");
+    if (el) el.textContent = new Date().toLocaleTimeString();
+
+    checkAlarm();
+}
+
+setInterval(updateClockLive, 1000);
+
+/* STOPWATCH */
+
+window.startStopwatch = function () {
+    if (stopwatchInterval) return;
+
+    stopwatchInterval = setInterval(() => {
+        stopwatchTime++;
+        const el = document.getElementById("stopwatch");
+        if (el) el.textContent = formatTime(stopwatchTime);
+    }, 1000);
+};
+
+window.pauseStopwatch = function () {
+    clearInterval(stopwatchInterval);
+    stopwatchInterval = null;
+};
+
+window.resetStopwatch = function () {
+    stopwatchTime = 0;
+    pauseStopwatch();
+    const el = document.getElementById("stopwatch");
+    if (el) el.textContent = "0:00";
+};
+
+/* ALARM */
+
+window.setAlarm = function () {
+    alarmTime = document.getElementById("alarm_input").value;
+    alert("Alarm set for " + alarmTime);
+};
+
+function checkAlarm() {
+    if (!alarmTime) return;
+
+    const now = new Date().toTimeString().slice(0,5);
+
+    if (now === alarmTime) {
+        alert("⏰ Alarm!");
+        alarmTime = null;
+    }
+}
+
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2,"0")}`;
+}
+
 /* =========================
    SYSTEM APP (CONTROL PANEL)
 ========================= */
