@@ -20,7 +20,9 @@ let dragState = null;
 let resizeState = null;
 
 let fileSystem = { files: {} };
+
 let activeNoteId = null;
+let activeDocId = null;
 
 /* =========================
    BOOT
@@ -32,20 +34,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     exposeAPI();
     await loadSystem();
 });
-
-/* =========================
-   LOAD SYSTEM
-========================= */
-
-async function loadSystem() {
-    try {
-        const data = await loadDrive();
-        fileSystem.files = data && typeof data === "object" ? data : {};
-    } catch (e) {
-        console.warn("Drive load failed:", e);
-        fileSystem.files = {};
-    }
-}
 
 /* =========================
    START MENU
@@ -87,6 +75,19 @@ function initClock() {
 }
 
 /* =========================
+   LOAD SYSTEM
+========================= */
+
+async function loadSystem() {
+    try {
+        fileSystem.files = await loadDrive() || {};
+    } catch (e) {
+        console.warn("Drive load failed:", e);
+        fileSystem.files = {};
+    }
+}
+
+/* =========================
    WINDOW SYSTEM
 ========================= */
 
@@ -99,6 +100,7 @@ document.addEventListener("mousemove", (e) => {
 
     if (resizeState) {
         const w = resizeState.win;
+
         const dx = e.clientX - resizeState.startX;
         const dy = e.clientY - resizeState.startY;
 
@@ -113,7 +115,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   WINDOW CORE
+   CORE WINDOW
 ========================= */
 
 window.openWindow = function (title, html) {
@@ -132,7 +134,9 @@ window.openWindow = function (title, html) {
             <span>${title}</span>
             <button class="close-btn">X</button>
         </div>
+
         <div class="window-content">${html}</div>
+
         <div class="resize-handle"></div>
     `;
 
@@ -170,62 +174,35 @@ window.openWindow = function (title, html) {
 };
 
 /* =========================
-   EXPOSE APPS (FIXES ALL ERRORS)
-========================= */
-
-function exposeAPI() {
-    window.launchApp = openWindow;
-
-    window.openFileExplorer = () => {
-        loadSystem().then(() => {
-            openWindow("Files", renderFileExplorer());
-        });
-    };
-
-    window.openNotes = () => {
-        loadSystem().then(() => {
-            openWindow("Notes", renderNotes());
-        });
-    };
-
-    window.openDocs = () => {
-        loadSystem().then(() => {
-            openWindow("Docs", renderDocs());
-        });
-    };
-
-    window.openAppStore = () => {
-        openWindow("App Store", "<div style='padding:10px'>Coming soon</div>");
-    };
-}
-
-/* =========================
    FILE EXPLORER
 ========================= */
 
-function renderFileExplorer() {
-    const files = fileSystem.files || {};
-
-    return `
+window.openFileExplorer = function () {
+    const html = `
         <div style="padding:6px;">
             <button onclick="createFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
-            <hr>
+            <hr/>
 
-            ${Object.entries(files).map(([id, f]) => `
+            ${Object.entries(fileSystem.files).map(([id, f]) => `
                 <div style="display:flex;justify-content:space-between;padding:4px;">
-                    <span>${f?.name || "Untitled"}</span>
+                    <span>${f.name}</span>
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="renameFile('${id}')">Rename</button>
-                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
         </div>
     `;
-}
+
+    openWindow("Files", html);
+};
+
+/* =========================
+   FILE OPS
+========================= */
 
 window.createFile = async function () {
     await cloudCreateFile("New File", "");
@@ -237,46 +214,6 @@ window.deleteFile = async function (id) {
     await loadSystem();
 };
 
-/* =========================
-   OPEN FILE (MEDIA FIXED)
-========================= */
-
-window.openFile = function (id) {
-    const file = fileSystem.files?.[id];
-    if (!file) return;
-
-    let body = "";
-
-    if (file.content?.startsWith("data:image")) {
-        body = `<img src="${file.content}" style="max-width:100%">`;
-    } else if (file.content?.startsWith("data:video")) {
-        body = `<video controls style="max-width:100%"><source src="${file.content}"></video>`;
-    } else {
-        body = `
-            <textarea id="file_${id}" style="width:100%;height:90%">${file.content || ""}</textarea>
-            <button onclick="saveFile('${id}')">Save</button>
-        `;
-    }
-
-    openWindow(file.name || "File", `<div style="display:flex;flex-direction:column;height:100%">${body}</div>`);
-};
-
-window.saveFile = async function (id) {
-    const el = document.getElementById(`file_${id}`);
-    if (!el) return;
-
-    await cloudSaveFile(id, {
-        name: fileSystem.files[id]?.name,
-        content: el.value
-    });
-
-    await loadSystem();
-};
-
-/* =========================
-   RENAME
-========================= */
-
 window.renameFile = async function (id) {
     const file = fileSystem.files[id];
     if (!file) return;
@@ -285,6 +222,44 @@ window.renameFile = async function (id) {
     if (!name) return;
 
     await cloudSaveFile(id, { name });
+    await loadSystem();
+};
+
+/* =========================
+   OPEN FILE
+========================= */
+
+window.openFile = function (id) {
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    let body = "";
+
+    if (file.content?.startsWith("data:image")) {
+        body = `<img src="${file.content}" style="max-width:100%">`;
+    }
+    else if (file.content?.startsWith("data:video")) {
+        body = `<video controls style="max-width:100%"><source src="${file.content}"></video>`;
+    }
+    else {
+        body = `
+            <textarea id="file_${id}" style="width:100%;height:90%">${file.content || ""}</textarea>
+            <button onclick="saveFile('${id}')">Save</button>
+        `;
+    }
+
+    openWindow(file.name, `<div style="height:100%;display:flex;flex-direction:column">${body}</div>`);
+};
+
+window.saveFile = async function (id) {
+    const el = document.getElementById(`file_${id}`);
+    if (!el) return;
+
+    await cloudSaveFile(id, {
+        name: fileSystem.files[id].name,
+        content: el.value
+    });
+
     await loadSystem();
 };
 
@@ -314,43 +289,19 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   DOWNLOAD (FIXED FEATURE YOU WERE MISSING)
+   NOTES (FIXED)
 ========================= */
 
-window.downloadFile = function (id) {
-    const file = fileSystem.files?.[id];
-    if (!file) return;
-
-    const blob = new Blob([file.content || ""], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name || "file.txt";
-    document.body.appendChild(a);
-    a.click();
-
-    a.remove();
-    URL.revokeObjectURL(url);
-};
-
-/* =========================
-   NOTES
-========================= */
-
-function renderNotes() {
-    const files = fileSystem.files || {};
-
-    return `
+window.openNotes = function () {
+    const html = `
         <div style="display:flex;height:100%">
             <div style="width:35%;border-right:1px solid #ccc;overflow:auto">
                 <button onclick="createNote()">+ New Note</button>
                 <hr>
-
-                ${Object.entries(files)
-                    .filter(([_, f]) => f)
+                ${Object.entries(fileSystem.files)
+                    .filter(([_, f]) => f.name)
                     .map(([id, f]) => `
-                        <div onclick="loadNote('${id}')">${f.name || "Note"}</div>
+                        <div onclick="loadNote('${id}')">${f.name}</div>
                     `).join("")}
             </div>
 
@@ -361,12 +312,13 @@ function renderNotes() {
             </div>
         </div>
     `;
-}
+
+    openWindow("Notes", html);
+};
 
 window.createNote = async function () {
-    const id = await cloudCreateFile("New Note", "");
+    await cloudCreateFile("New Note", "");
     await loadSystem();
-    activeNoteId = id;
 };
 
 window.loadNote = function (id) {
@@ -374,10 +326,8 @@ window.loadNote = function (id) {
 
     setTimeout(() => {
         const f = fileSystem.files[id];
-        if (!f) return;
-
-        document.getElementById("note_title").value = f.name || "";
-        document.getElementById("note_body").value = f.content || "";
+        document.getElementById("note_title").value = f.name;
+        document.getElementById("note_body").value = f.content;
     }, 50);
 };
 
@@ -396,27 +346,113 @@ window.saveNote = async function () {
 };
 
 /* =========================
-   DOCS APP (REAL)
+   REAL DOCS APP
 ========================= */
 
-function renderDocs() {
-    const files = fileSystem.files || {};
+window.openDocs = function () {
+    const docs = Object.entries(fileSystem.files);
 
-    return `
+    const html = `
         <div style="display:flex;height:100%">
+
             <div style="width:30%;border-right:1px solid #ccc;overflow:auto;padding:6px;">
-                <button onclick="createNote()">+ New Doc</button>
-                <hr>
-                ${Object.entries(files).map(([id, f]) => `
-                    <div onclick="loadNote('${id}')">📄 ${f.name || "Doc"}</div>
+                <button onclick="createDoc()">+ New Doc</button>
+                <hr/>
+
+                ${docs.map(([id, d]) => `
+                    <div style="padding:5px;cursor:pointer;border-bottom:1px solid #ddd"
+                         onclick="loadDoc('${id}')">
+                        📄 ${d.name}
+                    </div>
                 `).join("")}
             </div>
 
             <div style="flex:1;display:flex;flex-direction:column;padding:6px;">
-                <input id="note_title" style="width:100%" placeholder="Title">
-                <textarea id="note_body" style="flex:1"></textarea>
-                <button onclick="saveNote()">Save</button>
+
+                <input id="doc_title" style="width:100%" placeholder="Title">
+
+                <div style="flex:1;border:1px inset #aaa;padding:6px;overflow:auto;background:white"
+                     contenteditable="true"
+                     id="doc_editor"></div>
+
+                <div style="margin-top:6px;">
+                    <button onclick="saveDoc()">Save</button>
+                    <button onclick="downloadDoc('txt')">TXT</button>
+                    <button onclick="downloadDoc('html')">HTML</button>
+                </div>
+
             </div>
         </div>
     `;
+
+    openWindow("Docs", html);
+};
+
+window.createDoc = async function () {
+    await cloudCreateFile("New Doc", "");
+    await loadSystem();
+};
+
+window.loadDoc = function (id) {
+    activeDocId = id;
+
+    setTimeout(() => {
+        const doc = fileSystem.files[id];
+        if (!doc) return;
+
+        document.getElementById("doc_title").value = doc.name;
+        document.getElementById("doc_editor").innerHTML = doc.content || "";
+    }, 50);
+};
+
+window.saveDoc = async function () {
+    if (!activeDocId) return;
+
+    const title = document.getElementById("doc_title").value;
+    const content = document.getElementById("doc_editor").innerHTML;
+
+    await cloudSaveFile(activeDocId, {
+        name: title,
+        content,
+        type: "application/doc"
+    });
+
+    await loadSystem();
+};
+
+window.downloadDoc = function (type) {
+    if (!activeDocId) return;
+
+    const doc = fileSystem.files[activeDocId];
+    if (!doc) return;
+
+    let blob;
+    let filename = doc.name;
+
+    if (type === "txt") {
+        blob = new Blob(
+            [document.getElementById("doc_editor").innerText],
+            { type: "text/plain" }
+        );
+        filename = filename.replace(/\.\w+$/, "") + ".txt";
+    } else {
+        blob = new Blob(
+            [document.getElementById("doc_editor").innerHTML],
+            { type: "text/html" }
+        );
+        filename = filename.replace(/\.\w+$/, "") + ".html";
+    }
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+};
+
+/* =========================
+   LEGACY
+========================= */
+
+function exposeAPI() {
+    window.launchApp = openWindow;
 }
