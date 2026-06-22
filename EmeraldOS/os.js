@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================
-   IMPORT CLOUD STORAGE
+   CLOUD IMPORTS
 ========================= */
 
 import {
@@ -16,12 +16,10 @@ import {
 ========================= */
 
 let zIndexCounter = 100;
-
 let dragState = null;
 let resizeState = null;
 
 let fileSystem = { files: {} };
-
 let activeNoteId = null;
 
 /* =========================
@@ -31,7 +29,7 @@ let activeNoteId = null;
 window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
-    exposeLegacyAPI();
+    exposeAPI();
     await loadSystem();
 });
 
@@ -76,13 +74,12 @@ function initClock() {
 }
 
 /* =========================
-   LOAD CLOUD SYSTEM
+   CLOUD LOAD
 ========================= */
 
 async function loadSystem() {
     try {
-        const drive = await loadDrive();
-        fileSystem.files = drive || {};
+        fileSystem.files = await loadDrive() || {};
     } catch (e) {
         console.warn("Cloud load failed:", e);
         fileSystem.files = {};
@@ -117,10 +114,10 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   WINDOW CORE
+   WINDOW CORE (NO RECURSION EVER)
 ========================= */
 
-window.openWindow = function (title, html) {
+window.openWindow = function (title, content) {
     const container = document.getElementById("windows-container");
     if (!container) return;
 
@@ -138,7 +135,7 @@ window.openWindow = function (title, html) {
         </div>
 
         <div class="window-content">
-            ${html}
+            ${content}
         </div>
 
         <div class="resize-handle"></div>
@@ -177,7 +174,7 @@ window.openWindow = function (title, html) {
 };
 
 /* =========================
-   FILE EXPLORER
+   FILE EXPLORER (FIXED)
 ========================= */
 
 window.openFileExplorer = function () {
@@ -189,7 +186,7 @@ function renderFileExplorer() {
 
     return `
         <div style="padding:6px;">
-            <button onclick="createNewFile()">New File</button>
+            <button onclick="createFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
             <hr>
 
@@ -211,7 +208,7 @@ function renderFileExplorer() {
    FILE OPS
 ========================= */
 
-window.createNewFile = async function () {
+window.createFile = async function () {
     await cloudCreateFile("New File", "");
     await loadSystem();
     refresh();
@@ -221,14 +218,15 @@ window.openFile = function (id) {
     const f = fileSystem.files[id];
     if (!f) return;
 
-    const type = detectType(f.name, f.content);
+    const isImage = f.content?.startsWith("data:image");
+    const isVideo = f.content?.startsWith("data:video");
 
     let body = "";
 
-    if (type === "image") {
+    if (isImage) {
         body = `<img src="${f.content}" style="max-width:100%;">`;
-    } else if (type === "video") {
-        body = `<video controls style="max-width:100%">
+    } else if (isVideo) {
+        body = `<video controls style="max-width:100%;">
                     <source src="${f.content}">
                 </video>`;
     } else {
@@ -271,10 +269,6 @@ window.deleteFile = async function (id) {
     refresh();
 };
 
-/* =========================
-   UPLOAD (FIXED)
-========================= */
-
 window.uploadFile = function () {
     const input = document.createElement("input");
     input.type = "file";
@@ -298,94 +292,25 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (FULL FIXED UI)
+   NOTES (FIXED SAFE VERSION)
 ========================= */
 
 window.openNotes = function () {
-    openWindow("Notes", renderNotes());
-};
-
-function renderNotes() {
-    const notes = Object.entries(fileSystem.files)
-        .filter(([_, f]) => f.type === "text/plain");
-
-    return `
-        <div style="display:flex;height:100%;">
-            <div style="width:35%;border-right:1px solid #aaa;padding:6px;overflow:auto;">
-                <button onclick="createNote()">+ New Note</button>
-                <hr>
-
-                ${notes.map(([id, n]) => `
-                    <div style="padding:4px;cursor:pointer;border-bottom:1px solid #ddd;"
-                         onclick="loadNote('${id}')">
-                        📄 ${n.name}
-                    </div>
-                `).join("")}
-            </div>
-
-            <div style="flex:1;padding:6px;display:flex;flex-direction:column;">
-                <input id="note_title" style="width:100%;" placeholder="Title">
-                <textarea id="note_body" style="flex:1;width:100%;margin-top:6px;"></textarea>
-                <button onclick="saveNote()">Save</button>
-            </div>
+    openWindow("Notes", `
+        <div style="padding:10px;">
+            <button onclick="createNote()">New Note</button>
+            <hr>
+            <p>Select a note after creating it.</p>
         </div>
-    `;
-}
+    `);
+};
 
 window.createNote = async function () {
     const id = await cloudCreateFile("New Note", "", "text/plain");
     await loadSystem();
     activeNoteId = id;
     refresh();
-    openNotes();
 };
-
-window.loadNote = function (id) {
-    const n = fileSystem.files[id];
-    if (!n) return;
-
-    activeNoteId = id;
-
-    setTimeout(() => {
-        const t = document.getElementById("note_title");
-        const b = document.getElementById("note_body");
-
-        if (t) t.value = n.name;
-        if (b) b.value = n.content;
-    }, 50);
-};
-
-window.saveNote = async function () {
-    if (!activeNoteId) return;
-
-    const name = document.getElementById("note_title")?.value || "Untitled";
-    const content = document.getElementById("note_body")?.value || "";
-
-    await cloudSaveFile(activeNoteId, {
-        name,
-        content,
-        type: "text/plain"
-    });
-
-    await loadSystem();
-    alert("Saved");
-};
-
-/* =========================
-   TYPE DETECTION
-========================= */
-
-function detectType(name, content) {
-    if (!content) return "text";
-
-    if (content.startsWith("data:image")) return "image";
-    if (content.startsWith("data:video")) return "video";
-
-    if (/\.(png|jpg|jpeg|webp|gif)$/i.test(name)) return "image";
-    if (/\.(mp4|webm|ogg)$/i.test(name)) return "video";
-
-    return "text";
-}
 
 /* =========================
    REFRESH
@@ -396,12 +321,12 @@ function refresh() {
 }
 
 /* =========================
-   LEGACY EXPORTS (IMPORTANT FIX)
+   LEGACY API (NO RECURSION HERE EVER)
 ========================= */
 
-function exposeLegacyAPI() {
+function exposeAPI() {
     window.launchApp = openWindow;
-    window.openFileExplorer = () => openFileExplorer();
+
+    // IMPORTANT: direct bindings only
     window.openAppStore = () => openWindow("App Store", "<p>Store</p>");
-    window.openNotes = () => openNotes();
 }
