@@ -196,6 +196,131 @@ window.openWindow = function (title, html, app = "") {
 };
 
 /* =========================
+   SYSTEM APP (CONTROL PANEL)
+========================= */
+
+window.openSystemApp = function () {
+    openWindow("System Control Panel", renderSystemApp(), "system");
+    updateSystemStats();
+};
+
+function renderSystemApp() {
+    return `
+        <div style="padding:10px">
+
+            <h3>👤 User</h3>
+            <div>Logged in as: <b>${localStorage.getItem("username") || "Guest"}</b></div>
+
+            <button onclick="logoutUser()">Logout</button>
+
+            <hr>
+
+            <h3>🖥️ Device Controls</h3>
+
+            <label>Brightness</label>
+            <input type="range" min="10" max="100" value="100"
+                oninput="setBrightness(this.value)">
+
+            <br><br>
+
+            <label>Volume</label>
+            <input type="range" min="0" max="1" step="0.01" value="1"
+                oninput="setVolume(this.value)">
+
+            <br><br>
+
+            <button onclick="toggleFocus()">Focus Mode</button>
+            <button onclick="togglePerf()">Performance Mode</button>
+
+            <hr>
+
+            <h3>📊 System Info</h3>
+
+            <div id="sys_info">Loading...</div>
+
+            <hr>
+
+            <h3>⚡ Quick Actions</h3>
+
+            <button onclick="clearWindows()">Close All Windows</button>
+            <button onclick="restartOS()">Restart OS</button>
+
+        </div>
+    `;
+}
+
+/* =========================
+   SYSTEM CONTROLS
+========================= */
+
+let focusMode = false;
+let perfMode = false;
+
+window.logoutUser = function () {
+    localStorage.removeItem("username");
+    localStorage.removeItem("os_session");
+    location.href = "index.html";
+};
+
+window.setBrightness = function (value) {
+    let overlay = document.getElementById("brightness-overlay");
+
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "brightness-overlay";
+        overlay.style.position = "fixed";
+        overlay.style.inset = "0";
+        overlay.style.pointerEvents = "none";
+        overlay.style.background = "black";
+        overlay.style.zIndex = "999999";
+        document.body.appendChild(overlay);
+    }
+
+    overlay.style.opacity = (100 - value) / 100;
+};
+
+window.setVolume = function (value) {
+    document.querySelectorAll("video, audio").forEach(el => {
+        el.volume = value;
+    });
+};
+
+window.toggleFocus = function () {
+    focusMode = !focusMode;
+
+    document.body.style.filter = focusMode ? "brightness(0.7)" : "";
+};
+
+window.togglePerf = function () {
+    perfMode = !perfMode;
+
+    document.body.style.transition = perfMode ? "none" : "";
+};
+
+window.clearWindows = function () {
+    document.querySelectorAll(".window").forEach(w => w.remove());
+};
+
+window.restartOS = function () {
+    location.reload();
+};
+
+function updateSystemStats() {
+    const el = document.getElementById("sys_info");
+    if (!el) return;
+
+    const fileCount = Object.keys(fileSystem.files || {}).length;
+
+    el.innerHTML = `
+        <div>Files: ${fileCount}</div>
+        <div>Open Windows: ${document.querySelectorAll(".window").length}</div>
+        <div>Session: ${localStorage.getItem("os_session") || "none"}</div>
+        <div>Mode: ${focusMode ? "Focus" : "Normal"}</div>
+    `;
+
+    setTimeout(updateSystemStats, 1000);
+}
+/* =========================
    FILE EXPLORER
 ========================= */
 
