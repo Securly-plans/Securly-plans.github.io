@@ -30,7 +30,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeAPI();
-
     await loadSystem();
 });
 
@@ -87,10 +86,11 @@ async function loadSystem() {
 }
 
 /* =========================
-   WINDOW SYSTEM
+   WINDOW DRAG / RESIZE ENGINE
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
+
     if (dragState) {
         const w = dragState.win;
         w.style.left = (e.clientX - dragState.offsetX) + "px";
@@ -114,10 +114,11 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW (FIXED SAFE)
+   CORE WINDOW SYSTEM
 ========================= */
 
 window.openWindow = function (title, html) {
+
     const container = document.getElementById("windows-container");
     if (!container) return;
 
@@ -134,7 +135,9 @@ window.openWindow = function (title, html) {
             <button class="close-btn">X</button>
         </div>
 
-        <div class="window-content">${html}</div>
+        <div class="window-content">
+            ${html}
+        </div>
 
         <div class="resize-handle"></div>
     `;
@@ -147,7 +150,9 @@ window.openWindow = function (title, html) {
 
     closeBtn.onclick = () => win.remove();
 
-    win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
+    win.onmousedown = () => {
+        win.style.zIndex = ++zIndexCounter;
+    };
 
     titleBar.onmousedown = (e) => {
         dragState = {
@@ -175,34 +180,52 @@ window.openWindow = function (title, html) {
 };
 
 /* =========================
-   FILE EXPLORER (FIXED)
+   LEGACY API
+========================= */
+
+function exposeAPI() {
+    window.launchApp = openWindow;
+}
+
+/* =========================
+   APP SYSTEM (FILES + NOTES)
+========================= */
+
+window.fileSystem = window.fileSystem || { files: {} };
+
+/* =========================
+   FILE EXPLORER
 ========================= */
 
 window.openFileExplorer = function () {
-    const html = renderFileExplorer();
-    openWindow("Files", html);
+    openWindow("Files", renderFileExplorer());
 };
 
 function renderFileExplorer() {
+
     const files = fileSystem.files;
 
     return `
         <div style="padding:6px;">
+
             <button onclick="createFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
+
             <hr>
 
             ${Object.entries(files).map(([id, f]) => `
                 <div style="display:flex;justify-content:space-between;padding:4px;">
                     <span>${f.name}</span>
+
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="renameFile('${id}')">Rename</button>
+                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
                 </div>
             `).join("")}
+
         </div>
     `;
 }
@@ -221,61 +244,24 @@ window.deleteFile = async function (id) {
     await loadSystem();
 };
 
-/* =========================
-   DOWNLOAD FILE
-========================= */
+window.renameFile = async function (id) {
 
-window.downloadFile = async function (id) {
     const file = fileSystem.files[id];
     if (!file) return;
 
-    let url = null;
+    const name = prompt("Rename file:", file.name);
+    if (!name) return;
 
-    /* Firebase Storage URL */
-    if (file.storageURL) {
-        url = file.storageURL;
-    }
-
-    /* Data URL media */
-    else if (
-        file.content &&
-        file.content.startsWith("data:")
-    ) {
-        url = file.content;
-    }
-
-    /* Text files */
-    else {
-        const blob = new Blob(
-            [file.content || ""],
-            {
-                type: file.type || "text/plain"
-            }
-        );
-
-        url = URL.createObjectURL(blob);
-    }
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = file.name || "download";
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    if (url.startsWith("blob:")) {
-        setTimeout(() => {
-            URL.revokeObjectURL(url);
-        }, 1000);
-    }
+    await cloudSaveFile(id, { name });
+    await loadSystem();
 };
 
 /* =========================
-   OPEN FILE (FIXED MEDIA)
+   OPEN FILE (MEDIA FIXED)
 ========================= */
 
 window.openFile = function (id) {
+
     const file = fileSystem.files[id];
     if (!file) return;
 
@@ -285,16 +271,21 @@ window.openFile = function (id) {
         body = `<img src="${file.content}" style="max-width:100%">`;
     }
     else if (file.content?.startsWith("data:video")) {
-        body = `<video controls style="max-width:100%"><source src="${file.content}"></video>`;
+        body = `<video controls style="max-width:100%">
+                    <source src="${file.content}">
+                </video>`;
     }
     else {
         body = `
-            <textarea id="file_${id}" style="width:100%;height:90%">${file.content || ""}</textarea>
+            <textarea id="file_${id}" style="width:100%;height:85%">
+${file.content || ""}
+            </textarea>
+
             <button onclick="saveFile('${id}')">Save</button>
         `;
     }
 
-    openWindow(file.name, `<div style="height:100%;display:flex;flex-direction:column">${body}</div>`);
+    openWindow(file.name, body);
 };
 
 /* =========================
@@ -302,6 +293,7 @@ window.openFile = function (id) {
 ========================= */
 
 window.saveFile = async function (id) {
+
     const el = document.getElementById(`file_${id}`);
     if (!el) return;
 
@@ -314,36 +306,52 @@ window.saveFile = async function (id) {
 };
 
 /* =========================
-   RENAME
+   DOWNLOAD FILE (NEW)
 ========================= */
 
-window.renameFile = async function (id) {
+window.downloadFile = function (id) {
+
     const file = fileSystem.files[id];
     if (!file) return;
 
-    const name = prompt("Rename file:", file.name);
-    if (!name) return;
+    const blob = new Blob(
+        [file.content || ""],
+        { type: "text/plain" }
+    );
 
-    await cloudSaveFile(id, { name });
-    await loadSystem();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name || "file.txt";
+    a.click();
+
+    URL.revokeObjectURL(url);
 };
 
 /* =========================
-   UPLOAD (FIXED MEDIA)
+   UPLOAD
 ========================= */
 
 window.uploadFile = function () {
+
     const input = document.createElement("input");
     input.type = "file";
 
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
+
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
 
         reader.onload = async () => {
-            await cloudCreateFile(file.name, reader.result);
+
+            await cloudCreateFile(
+                file.name,
+                reader.result
+            );
+
             await loadSystem();
         };
 
@@ -354,66 +362,35 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (FIXED FULL UI)
+   NOTES APP (FIXED)
 ========================= */
 
 window.openNotes = function () {
-    const html = `
-        <div style="display:flex;height:100%">
-            <div style="width:35%;border-right:1px solid #ccc;overflow:auto">
-                <button onclick="createNote()">+ New Note</button>
-                <hr>
-                ${Object.entries(fileSystem.files)
-                    .filter(([_, f]) => f.name)
-                    .map(([id, f]) => `
-                        <div onclick="loadNote('${id}')">${f.name}</div>
-                    `).join("")}
-            </div>
 
-            <div style="flex:1;display:flex;flex-direction:column">
-                <input id="note_title" style="width:100%" placeholder="Title">
-                <textarea id="note_body" style="flex:1"></textarea>
-                <button onclick="saveNote()">Save</button>
-            </div>
-        </div>
-    `;
+    openWindow("Notes", `
+        <input id="note_title"
+               placeholder="Title"
+               style="width:100%">
 
-    openWindow("Notes", html);
-};
+        <textarea id="note_body"
+                  style="width:100%;height:75%"></textarea>
 
-window.createNote = async function () {
-    await cloudCreateFile("New Note", "");
-    await loadSystem();
-};
-
-window.loadNote = function (id) {
-    activeNoteId = id;
-
-    setTimeout(() => {
-        const f = fileSystem.files[id];
-        document.getElementById("note_title").value = f.name;
-        document.getElementById("note_body").value = f.content;
-    }, 50);
+        <button onclick="saveNote()">Save</button>
+    `);
 };
 
 window.saveNote = async function () {
-    if (!activeNoteId) return;
 
-    const title = document.getElementById("note_title").value;
-    const body = document.getElementById("note_body").value;
+    const title =
+        document.getElementById("note_title").value;
 
-    await cloudSaveFile(activeNoteId, {
-        name: title,
-        content: body
-    });
+    const body =
+        document.getElementById("note_body").value;
+
+    await cloudCreateFile(
+        title || "New Note",
+        body
+    );
 
     await loadSystem();
 };
-
-/* =========================
-   LEGACY
-========================= */
-
-function exposeAPI() {
-    window.launchApp = openWindow;
-}
