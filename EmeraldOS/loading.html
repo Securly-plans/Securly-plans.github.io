@@ -1,97 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Starting EmeraldOS...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starting EmeraldOS...</title>
 
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            background: #05070a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: Arial, sans-serif;
-            color: #7CFFB2;
-            overflow: hidden;
-        }
+<style>
+/* =========================
+   WIN95 BASE
+========================= */
+body {
+    margin: 0;
+    height: 100vh;
+    background: #008080; /* classic desktop teal */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "MS Sans Serif", Tahoma, sans-serif;
+    color: #000;
+}
 
-        .logo {
-            width: 180px;
-            height: 180px;
-            background: url("assets/EmeraldOS.png") center/contain no-repeat;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite ease-in-out;
-        }
+/* =========================
+   BOOT WINDOW
+========================= */
+.boot-window {
+    width: 420px;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    padding: 14px;
+}
 
-        @keyframes pulse {
-            0% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.05); filter: brightness(1.4); }
-            100% { transform: scale(1); filter: brightness(1); }
-        }
+/* title bar style (Win95 feel) */
+.title {
+    background: #000080;
+    color: white;
+    padding: 4px 6px;
+    font-size: 13px;
+    margin: -14px -14px 10px -14px;
+}
 
-        .text {
-            font-size: 16px;
-            letter-spacing: 2px;
-            opacity: 0.8;
-        }
+/* =========================
+   LOGO AREA
+========================= */
+.logo {
+    width: 64px;
+    height: 64px;
+    background: url("assets/EmeraldOS.png") center/contain no-repeat;
+    margin: 10px auto;
+}
 
-        .dots::after {
-            content: '';
-            animation: dots 1.5s infinite;
-        }
+/* =========================
+   BOOT TEXT
+========================= */
+.text {
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
 
-        @keyframes dots {
-            0% { content: ''; }
-            33% { content: '.'; }
-            66% { content: '..'; }
-            100% { content: '...'; }
-        }
+/* fake BIOS/system log */
+.log {
+    font-size: 11px;
+    background: #ffffff;
+    border: 1px solid #808080;
+    padding: 6px;
+    height: 90px;
+    overflow: hidden;
+    font-family: "MS Sans Serif", Tahoma, sans-serif;
+}
 
-        .bar {
-            width: 220px;
-            height: 4px;
-            background: #0f1a14;
-            margin-top: 25px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
+/* =========================
+   PROGRESS BAR (WIN95 STYLE)
+========================= */
+.bar {
+    margin-top: 10px;
+    height: 16px;
+    background: #ffffff;
+    border: 1px solid #808080;
+    position: relative;
+    overflow: hidden;
+}
 
-        .progress {
-            height: 100%;
-            width: 0%;
-            background: #7CFFB2;
-            animation: load 3.5s linear forwards;
-        }
+/* segmented loading blocks */
+.progress {
+    height: 100%;
+    width: 0%;
+    background: repeating-linear-gradient(
+        90deg,
+        #000080,
+        #000080 10px,
+        #c0c0c0 10px,
+        #c0c0c0 14px
+    );
+    animation: load 3.8s linear forwards;
+}
 
-        @keyframes load {
-            0% { width: 0%; }
-            100% { width: 100%; }
-        }
-    </style>
+@keyframes load {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+/* =========================
+   CURSOR BLINK (retro touch)
+========================= */
+.cursor::after {
+    content: "_";
+    animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+</style>
 </head>
 
 <body>
 
+<div class="boot-window">
+
+    <div class="title">Microsoft Windows 95 Startup</div>
+
     <div class="logo"></div>
 
     <div class="text">
-        Booting EmeraldOS<span class="dots"></span>
+        Starting EmeraldOS system files...
+    </div>
+
+    <div class="log">
+        Loading kernel... OK<br>
+        Initializing display driver... OK<br>
+        Mounting virtual disk... OK<br>
+        Starting UI shell... OK<br>
+        Checking system integrity... OK<br>
+        Launching EmeraldOS...
     </div>
 
     <div class="bar">
         <div class="progress"></div>
     </div>
 
-    <script>
-        // fake boot delay then redirect
-        setTimeout(() => {
-            window.location.href = "OS.html";
-        }, 4000);
-    </script>
+</div>
+
+<script>
+setTimeout(() => {
+    window.location.href = "OS.html";
+}, 4000);
+</script>
 
 </body>
 </html>
