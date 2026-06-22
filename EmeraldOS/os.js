@@ -20,12 +20,9 @@ let zIndexCounter = 100;
 let dragState = null;
 let resizeState = null;
 
-let fileSystem = {
-    files: {},
-    notes: {}
-};
+let fileSystem = { files: {} };
 
-let currentNote = null;
+let activeNoteId = null;
 
 /* =========================
    BOOT
@@ -35,7 +32,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
     exposeLegacyAPI();
-
     await loadSystem();
 });
 
@@ -49,13 +45,13 @@ function initStartMenu() {
 
     if (!menu || !btn) return;
 
-    btn.addEventListener("click", (e) => {
+    btn.onclick = (e) => {
         e.stopPropagation();
-        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-    });
+        menu.classList.toggle("show");
+    };
 
     document.addEventListener("click", () => {
-        menu.style.display = "none";
+        menu.classList.remove("show");
     });
 }
 
@@ -67,7 +63,7 @@ function initClock() {
     const clock = document.getElementById("clock");
     if (!clock) return;
 
-    const update = () => {
+    const tick = () => {
         const d = new Date();
         clock.textContent = d.toLocaleTimeString([], {
             hour: "2-digit",
@@ -75,45 +71,43 @@ function initClock() {
         });
     };
 
-    update();
-    setInterval(update, 1000);
+    tick();
+    setInterval(tick, 1000);
 }
 
 /* =========================
-   LOAD SYSTEM
+   LOAD CLOUD SYSTEM
 ========================= */
 
 async function loadSystem() {
     try {
-        fileSystem.files = await loadDrive() || {};
+        const drive = await loadDrive();
+        fileSystem.files = drive || {};
     } catch (e) {
-        console.warn("Drive load failed:", e);
+        console.warn("Cloud load failed:", e);
         fileSystem.files = {};
     }
-
-    refresh();
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED)
+   WINDOW SYSTEM
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
-
     if (dragState) {
-        const w = dragState.win;
-        w.style.left = (e.clientX - dragState.offsetX) + "px";
-        w.style.top = (e.clientY - dragState.offsetY) + "px";
+        dragState.win.style.left = (e.clientX - dragState.offsetX) + "px";
+        dragState.win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
     if (resizeState) {
-        const w = resizeState.win;
-
         const dx = e.clientX - resizeState.startX;
         const dy = e.clientY - resizeState.startY;
 
-        w.style.width = Math.max(220, resizeState.startWidth + dx) + "px";
-        w.style.height = Math.max(160, resizeState.startHeight + dy) + "px";
+        resizeState.win.style.width =
+            Math.max(240, resizeState.startWidth + dx) + "px";
+
+        resizeState.win.style.height =
+            Math.max(180, resizeState.startHeight + dy) + "px";
     }
 });
 
@@ -123,10 +117,10 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW
+   WINDOW CORE
 ========================= */
 
-window.openWindow = function (title, contentHTML) {
+window.openWindow = function (title, html) {
     const container = document.getElementById("windows-container");
     if (!container) return;
 
@@ -142,53 +136,48 @@ window.openWindow = function (title, contentHTML) {
             <span>${title}</span>
             <button class="close-btn">X</button>
         </div>
+
         <div class="window-content">
-            ${contentHTML}
+            ${html}
         </div>
+
         <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
-    const titleBar = win.querySelector(".title-bar");
-    const closeBtn = win.querySelector(".close-btn");
-    const resizeHandle = win.querySelector(".resize-handle");
+    const bar = win.querySelector(".title-bar");
+    const close = win.querySelector(".close-btn");
+    const resize = win.querySelector(".resize-handle");
 
-    win.addEventListener("mousedown", () => {
-        win.style.zIndex = ++zIndexCounter;
-    });
+    win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
 
-    closeBtn.onclick = () => win.remove();
+    close.onclick = () => win.remove();
 
-    /* DRAG */
-    titleBar.addEventListener("mousedown", (e) => {
+    bar.onmousedown = (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-    });
+    };
 
-    /* RESIZE */
-    resizeHandle.addEventListener("mousedown", (e) => {
+    resize.onmousedown = (e) => {
         e.preventDefault();
-
-        const rect = win.getBoundingClientRect();
-
         resizeState = {
             win,
             startX: e.clientX,
             startY: e.clientY,
-            startWidth: rect.width,
-            startHeight: rect.height
+            startWidth: win.offsetWidth,
+            startHeight: win.offsetHeight
         };
-    });
+    };
 
     return win;
 };
 
 /* =========================
-   FILE EXPLORER (FIXED + SAFE)
+   FILE EXPLORER
 ========================= */
 
 window.openFileExplorer = function () {
@@ -202,12 +191,11 @@ function renderFileExplorer() {
         <div style="padding:6px;">
             <button onclick="createNewFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
-            <hr/>
+            <hr>
 
-            ${Object.entries(files).map(([id, file]) => `
+            ${Object.entries(files).map(([id, f]) => `
                 <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ccc;">
-                    <span>${file.name}</span>
-
+                    <span>${f.name}</span>
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
                         <button onclick="renameFile('${id}')">Rename</button>
@@ -220,7 +208,7 @@ function renderFileExplorer() {
 }
 
 /* =========================
-   FILE ACTIONS (CLOUD)
+   FILE OPS
 ========================= */
 
 window.createNewFile = async function () {
@@ -230,29 +218,27 @@ window.createNewFile = async function () {
 };
 
 window.openFile = function (id) {
-    const file = fileSystem.files[id];
-    if (!file) return;
+    const f = fileSystem.files[id];
+    if (!f) return;
 
-    const type = detectFileType(file.name, file.content);
+    const type = detectType(f.name, f.content);
 
     let body = "";
 
     if (type === "image") {
-        body = `<img src="${file.content}" style="max-width:100%;">`;
-    }
-    else if (type === "video") {
-        body = `<video controls style="max-width:100%;">
-                    <source src="${file.content}">
+        body = `<img src="${f.content}" style="max-width:100%;">`;
+    } else if (type === "video") {
+        body = `<video controls style="max-width:100%">
+                    <source src="${f.content}">
                 </video>`;
-    }
-    else {
+    } else {
         body = `
-            <textarea id="file_${id}" style="width:100%;height:80%;">${file.content || ""}</textarea>
+            <textarea id="file_${id}" style="width:100%;height:80%;">${f.content || ""}</textarea>
             <button onclick="saveFile('${id}')">Save</button>
         `;
     }
 
-    openWindow(file.name, `<div style="height:100%;display:flex;flex-direction:column;">${body}</div>`);
+    openWindow(f.name, `<div style="display:flex;flex-direction:column;height:100%;">${body}</div>`);
 };
 
 window.saveFile = async function (id) {
@@ -267,28 +253,17 @@ window.saveFile = async function (id) {
     await loadSystem();
 };
 
-/* =========================
-   RENAME (FIXED)
-========================= */
-
 window.renameFile = async function (id) {
-    const file = fileSystem.files[id];
-    if (!file) return;
+    const f = fileSystem.files[id];
+    if (!f) return;
 
-    const newName = prompt("Rename file:", file.name);
-    if (!newName) return;
+    const name = prompt("Rename file:", f.name);
+    if (!name) return;
 
-    await cloudSaveFile(id, {
-        name: newName
-    });
-
+    await cloudSaveFile(id, { name });
     await loadSystem();
     refresh();
 };
-
-/* =========================
-   DELETE
-========================= */
 
 window.deleteFile = async function (id) {
     await cloudDeleteFile(id);
@@ -297,7 +272,7 @@ window.deleteFile = async function (id) {
 };
 
 /* =========================
-   UPLOAD (BASE64 SAFE)
+   UPLOAD (FIXED)
 ========================= */
 
 window.uploadFile = function () {
@@ -323,130 +298,91 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (FIXED FULL APP)
+   NOTES (FULL FIXED UI)
 ========================= */
 
 window.openNotes = function () {
-    openWindow("Notes", renderNotesUI());
+    openWindow("Notes", renderNotes());
 };
 
-function renderNotesUI() {
+function renderNotes() {
     const notes = Object.entries(fileSystem.files)
         .filter(([_, f]) => f.type === "text/plain");
 
     return `
         <div style="display:flex;height:100%;">
-        
-            <!-- LEFT: LIST -->
             <div style="width:35%;border-right:1px solid #aaa;padding:6px;overflow:auto;">
                 <button onclick="createNote()">+ New Note</button>
                 <hr>
 
-                ${notes.map(([id, note]) => `
+                ${notes.map(([id, n]) => `
                     <div style="padding:4px;cursor:pointer;border-bottom:1px solid #ddd;"
                          onclick="loadNote('${id}')">
-                        📄 ${note.name}
+                        📄 ${n.name}
                     </div>
                 `).join("")}
             </div>
 
-            <!-- RIGHT: EDITOR -->
             <div style="flex:1;padding:6px;display:flex;flex-direction:column;">
-                
-                <input id="note_title" 
-                       placeholder="Note title"
-                       style="width:100%;margin-bottom:6px;">
-
-                <textarea id="note_body"
-                          style="flex:1;width:100%;resize:none;"></textarea>
-
-                <div style="margin-top:6px;">
-                    <button onclick="saveCurrentNote()">Save</button>
-                </div>
+                <input id="note_title" style="width:100%;" placeholder="Title">
+                <textarea id="note_body" style="flex:1;width:100%;margin-top:6px;"></textarea>
+                <button onclick="saveNote()">Save</button>
             </div>
-
         </div>
     `;
 }
 
-/* CURRENT NOTE STATE */
-let activeNoteId = null;
-
-/* CREATE NOTE */
 window.createNote = async function () {
-    const id = "note_" + Date.now();
-
-    fileSystem.files[id] = {
-        name: "New Note",
-        content: "",
-        type: "text/plain"
-    };
-
-    await saveCloudNote(id);
+    const id = await cloudCreateFile("New Note", "", "text/plain");
+    await loadSystem();
     activeNoteId = id;
-
     refresh();
-    window.openNotes();
+    openNotes();
 };
 
-/* LOAD NOTE INTO EDITOR */
 window.loadNote = function (id) {
-    const note = fileSystem.files[id];
-    if (!note) return;
+    const n = fileSystem.files[id];
+    if (!n) return;
 
     activeNoteId = id;
 
     setTimeout(() => {
-        const title = document.getElementById("note_title");
-        const body = document.getElementById("note_body");
+        const t = document.getElementById("note_title");
+        const b = document.getElementById("note_body");
 
-        if (title) title.value = note.name;
-        if (body) body.value = note.content;
+        if (t) t.value = n.name;
+        if (b) b.value = n.content;
     }, 50);
 };
 
-/* SAVE NOTE */
-window.saveCurrentNote = async function () {
+window.saveNote = async function () {
     if (!activeNoteId) return;
 
-    const title = document.getElementById("note_title")?.value || "Untitled";
-    const body = document.getElementById("note_body")?.value || "";
+    const name = document.getElementById("note_title")?.value || "Untitled";
+    const content = document.getElementById("note_body")?.value || "";
 
-    fileSystem.files[activeNoteId] = {
-        name: title,
-        content: body,
+    await cloudSaveFile(activeNoteId, {
+        name,
+        content,
         type: "text/plain"
-    };
-
-    await saveCloudNote(activeNoteId);
-
-    alert("Saved");
-};
-
-/* CLOUD SAVE WRAPPER */
-async function saveCloudNote(id) {
-    const file = fileSystem.files[id];
-
-    await cloudSaveFile(id, {
-        name: file.name,
-        content: file.content,
-        type: file.type
     });
 
     await loadSystem();
-}
+    alert("Saved");
+};
+
 /* =========================
    TYPE DETECTION
 ========================= */
 
-function detectFileType(name, content) {
+function detectType(name, content) {
     if (!content) return "text";
 
     if (content.startsWith("data:image")) return "image";
     if (content.startsWith("data:video")) return "video";
 
-    if (name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) return "image";
-    if (name.match(/\.(mp4|webm|ogg)$/i)) return "video";
+    if (/\.(png|jpg|jpeg|webp|gif)$/i.test(name)) return "image";
+    if (/\.(mp4|webm|ogg)$/i.test(name)) return "video";
 
     return "text";
 }
@@ -460,9 +396,12 @@ function refresh() {
 }
 
 /* =========================
-   LEGACY API
+   LEGACY EXPORTS (IMPORTANT FIX)
 ========================= */
 
 function exposeLegacyAPI() {
     window.launchApp = openWindow;
+    window.openFileExplorer = () => openFileExplorer();
+    window.openAppStore = () => openWindow("App Store", "<p>Store</p>");
+    window.openNotes = () => openNotes();
 }
