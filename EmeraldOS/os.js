@@ -197,6 +197,7 @@ function renderFileExplorer() {
                     <span>${f.name}</span>
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
+                        <button onclick="downloadFile('${id}')">Download</button>
                         <button onclick="renameFile('${id}')">Rename</button>
                         <button onclick="deleteFile('${id}')">Delete</button>
                     </div>
@@ -218,6 +219,56 @@ window.createFile = async function () {
 window.deleteFile = async function (id) {
     await cloudDeleteFile(id);
     await loadSystem();
+};
+
+/* =========================
+   DOWNLOAD FILE
+========================= */
+
+window.downloadFile = async function (id) {
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    let url = null;
+
+    /* Firebase Storage URL */
+    if (file.storageURL) {
+        url = file.storageURL;
+    }
+
+    /* Data URL media */
+    else if (
+        file.content &&
+        file.content.startsWith("data:")
+    ) {
+        url = file.content;
+    }
+
+    /* Text files */
+    else {
+        const blob = new Blob(
+            [file.content || ""],
+            {
+                type: file.type || "text/plain"
+            }
+        );
+
+        url = URL.createObjectURL(blob);
+    }
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name || "download";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    if (url.startsWith("blob:")) {
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
 };
 
 /* =========================
