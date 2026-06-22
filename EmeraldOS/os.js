@@ -323,33 +323,118 @@ window.uploadFile = function () {
 };
 
 /* =========================
-   NOTES (RESTORED)
+   NOTES (FIXED FULL APP)
 ========================= */
 
 window.openNotes = function () {
-    const id = "note_" + Date.now();
-
-    openWindow("Notes", `
-        <input id="note_title" placeholder="Title" style="width:100%;">
-        <textarea id="note_body" style="width:100%;height:80%;"></textarea>
-        <button onclick="saveNote('${id}')">Save Note</button>
-    `);
+    openWindow("Notes", renderNotesUI());
 };
 
-window.saveNote = function (id) {
-    const title = document.getElementById("note_title").value;
-    const body = document.getElementById("note_body").value;
+function renderNotesUI() {
+    const notes = Object.entries(fileSystem.files)
+        .filter(([_, f]) => f.type === "text/plain");
+
+    return `
+        <div style="display:flex;height:100%;">
+        
+            <!-- LEFT: LIST -->
+            <div style="width:35%;border-right:1px solid #aaa;padding:6px;overflow:auto;">
+                <button onclick="createNote()">+ New Note</button>
+                <hr>
+
+                ${notes.map(([id, note]) => `
+                    <div style="padding:4px;cursor:pointer;border-bottom:1px solid #ddd;"
+                         onclick="loadNote('${id}')">
+                        📄 ${note.name}
+                    </div>
+                `).join("")}
+            </div>
+
+            <!-- RIGHT: EDITOR -->
+            <div style="flex:1;padding:6px;display:flex;flex-direction:column;">
+                
+                <input id="note_title" 
+                       placeholder="Note title"
+                       style="width:100%;margin-bottom:6px;">
+
+                <textarea id="note_body"
+                          style="flex:1;width:100%;resize:none;"></textarea>
+
+                <div style="margin-top:6px;">
+                    <button onclick="saveCurrentNote()">Save</button>
+                </div>
+            </div>
+
+        </div>
+    `;
+}
+
+/* CURRENT NOTE STATE */
+let activeNoteId = null;
+
+/* CREATE NOTE */
+window.createNote = async function () {
+    const id = "note_" + Date.now();
 
     fileSystem.files[id] = {
+        name: "New Note",
+        content: "",
+        type: "text/plain"
+    };
+
+    await saveCloudNote(id);
+    activeNoteId = id;
+
+    refresh();
+    window.openNotes();
+};
+
+/* LOAD NOTE INTO EDITOR */
+window.loadNote = function (id) {
+    const note = fileSystem.files[id];
+    if (!note) return;
+
+    activeNoteId = id;
+
+    setTimeout(() => {
+        const title = document.getElementById("note_title");
+        const body = document.getElementById("note_body");
+
+        if (title) title.value = note.name;
+        if (body) body.value = note.content;
+    }, 50);
+};
+
+/* SAVE NOTE */
+window.saveCurrentNote = async function () {
+    if (!activeNoteId) return;
+
+    const title = document.getElementById("note_title")?.value || "Untitled";
+    const body = document.getElementById("note_body")?.value || "";
+
+    fileSystem.files[activeNoteId] = {
         name: title,
         content: body,
         type: "text/plain"
     };
 
-    cloudCreateFile(title, body);
-    refresh();
+    await saveCloudNote(activeNoteId);
+
+    alert("Saved");
 };
 
+/* CLOUD SAVE WRAPPER */
+async function saveCloudNote(id) {
+    const file = fileSystem.files[id];
+
+    await cloudSaveFile(id, {
+        name: file.name,
+        content: file.content,
+        type: file.type
+    });
+
+    await loadSystem();
+}
 /* =========================
    TYPE DETECTION
 ========================= */
