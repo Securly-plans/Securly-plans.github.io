@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EmeraldOS</title>
 
-<link rel="icon" type="image/png" href="assets/EmeraldOS.png">
+<link rel="icon" href="assets/EmeraldOS.png">
 <link rel="stylesheet" href="os.css">
 
 <style>
@@ -16,6 +16,7 @@ body {
     overflow: hidden;
 }
 
+/* DESKTOP */
 #desktop {
     position: absolute;
     inset: 0;
@@ -23,13 +24,14 @@ body {
 
 .icon {
     width: 80px;
-    text-align: center;
     color: white;
+    text-align: center;
     margin: 10px;
     cursor: pointer;
     font-size: 12px;
 }
 
+/* WINDOW */
 .window {
     position: absolute;
     width: 420px;
@@ -53,16 +55,16 @@ body {
     width: 18px;
     height: 18px;
     font-size: 10px;
-    margin-left: 2px;
-    cursor: pointer;
 }
 
+/* CONTENT */
 .window-content {
     height: calc(100% - 26px);
     overflow: auto;
     padding: 6px;
 }
 
+/* RESIZE */
 .resize-handle {
     position: absolute;
     right: 0;
@@ -72,6 +74,7 @@ body {
     cursor: se-resize;
 }
 
+/* TASKBAR */
 #taskbar {
     position: absolute;
     bottom: 0;
@@ -90,10 +93,37 @@ body {
     gap: 4px;
 }
 
-.taskbar-app {
-    padding: 3px 6px;
+/* START BUTTON */
+#start-btn {
+    width: 90px;
+    height: 100%;
     background: #c0c0c0;
     border: 2px solid #808080;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* START MENU */
+#start-menu {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    width: 220px;
+    height: 300px;
+    background: #c0c0c0;
+    border: 2px solid black;
+    display: none;
+    flex-direction: row;
+}
+
+#start-menu.show {
+    display: flex;
+}
+
+.taskbar-app {
+    padding: 3px 6px;
+    border: 2px solid #808080;
+    background: #c0c0c0;
     cursor: pointer;
     font-size: 12px;
 }
@@ -102,35 +132,51 @@ body {
 
 <body>
 
+<!-- DESKTOP -->
 <div id="desktop">
 
-    <div class="icon" onclick="openNotes()">📄<br>Notes</div>
-    <div class="icon" onclick="openFileExplorer()">📁<br>Files</div>
-    <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
-    <div class="icon" onclick="openDocs()">📘<br>Docs</div>
-    <div class="icon" onclick="openCalendar()">📅<br>Calendar</div>
-    <div class="icon" onclick="openCalculator()">🧮<br>Calculator</div>
-    <div class="icon" onclick="openClockApp()">⏰<br>Clock</div>
-    <div class="icon" onclick="openSystemApp()">💻<br>System</div>
+    <div class="icon" onclick="openNotes()">📄 Notes</div>
+    <div class="icon" onclick="openFileExplorer()">📁 Files</div>
+    <div class="icon" onclick="openAppStore()">🛒 App Store</div>
+    <div class="icon" onclick="openDocs()">📘 Docs</div>
+    <div class="icon" onclick="openCalendar()">📅 Calendar</div>
+    <div class="icon" onclick="openCalculator()">🧮 Calculator</div>
+    <div class="icon" onclick="openClockApp()">⏰ Clock</div>
+    <div class="icon" onclick="openSystemApp()">💻 System</div>
 
-    <div class="icon" onclick="openWindow('Chat','<iframe src=\'chat.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
-        💬<br>Chat
-    </div>
-
-    <div class="icon" onclick="openWindow('Games','<iframe src=\'home.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
-        🌐<br>Games
-    </div>
-
-    <div class="icon" onclick="openWindow('Media Player','<iframe src=\'mediaplayer.html\' style=\'width:100%;height:100%;border:none;\'></iframe>')">
-        📀<br>Media
-    </div>
+    <div class="icon" onclick="openChat()">💬 Chat</div>
+    <div class="icon" onclick="openGames()">🌐 Games</div>
+    <div class="icon" onclick="openMedia()">📀 Media</div>
 
 </div>
 
+<!-- START MENU -->
+<div id="start-menu">
+    <div style="width:40px;background:#000080;color:white;
+        writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;">
+        EmeraldOS
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;padding:4px;">
+        <div onclick="openNotes()">Notes</div>
+        <div onclick="openFileExplorer()">Files</div>
+        <div onclick="openDocs()">Docs</div>
+        <div onclick="openCalendar()">Calendar</div>
+        <div onclick="openCalculator()">Calculator</div>
+        <div onclick="openClockApp()">Clock</div>
+        <div onclick="openSystemApp()">System</div>
+        <hr>
+        <div onclick="location.reload()">Restart</div>
+    </div>
+</div>
+
+<!-- TASKBAR -->
 <div id="taskbar">
+    <button id="start-btn">Start</button>
     <div id="taskbar-apps"></div>
 </div>
 
+<!-- WINDOWS -->
 <div id="windows-container"></div>
 
 <script type="module" src="os.js"></script>
