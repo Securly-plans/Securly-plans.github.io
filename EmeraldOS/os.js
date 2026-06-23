@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================
-   CLOUD STORAGE IMPORTS
+   CLOUD IMPORTS
 ========================= */
 
 import {
@@ -21,12 +21,11 @@ let resizeState = null;
 
 let fileSystem = { files: {} };
 
+let windows = {}; // window registry (IMPORTANT FIX)
+let taskbar = {};
+
 let activeNoteId = null;
 let activeDocId = null;
-
-let windows = {};
-let minimized = new Set();
-let maximized = new Set();
 
 /* =========================
    BOOT
@@ -35,24 +34,9 @@ let maximized = new Set();
 window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
-    exposeGlobals();
+    exposeAPI();
     await loadSystem();
 });
-
-/* =========================
-   GLOBAL FUNCTION FIX (IMPORTANT)
-========================= */
-
-function exposeGlobals() {
-    // desktop icons + start menu safety
-    window.openFileExplorer = openFileExplorer;
-    window.openSystemApp = openSystemApp;
-    window.openAppStore = openAppStore;
-    window.openNotes = openNotes;
-    window.openDocs = openDocs;
-    window.openCalculator = openCalculator;
-    window.openClockApp = openClockApp;
-}
 
 /* =========================
    START MENU
@@ -86,38 +70,46 @@ function initClock() {
 }
 
 /* =========================
-   LOAD DRIVE
+   LOAD SYSTEM
 ========================= */
 
 async function loadSystem() {
-    fileSystem.files = await loadDrive() || {};
+    try {
+        fileSystem.files = await loadDrive() || {};
+    } catch {
+        fileSystem.files = {};
+    }
+
+    rerenderOpenApps();
 }
 
 /* =========================
-   WINDOW SYSTEM (WIN95 CORE)
+   WINDOW MANAGER FIX
 ========================= */
 
 window.openWindow = function (title, html, app = "") {
     const container = document.getElementById("windows-container");
 
-    const id = crypto.randomUUID();
-
     const win = document.createElement("div");
     win.className = "window";
-    win.dataset.id = id;
     win.dataset.app = app;
+    win.dataset.title = title;
 
-    win.style.left = "120px";
+    const id = crypto.randomUUID();
+    win.dataset.id = id;
+
+    win.style.left = "80px";
     win.style.top = "80px";
     win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
         <div class="title-bar">
             <span>${title}</span>
-            <div class="win-controls">
+
+            <div style="display:flex;gap:4px;">
                 <button onclick="minimizeWindow('${id}')">_</button>
-                <button onclick="maximizeWindow('${id}')">[ ]</button>
-                <button onclick="closeWindow('${id}')">X</button>
+                <button onclick="maximizeWindow('${id}')">⬜</button>
+                <button class="close-btn" onclick="closeWindow('${id}')">X</button>
             </div>
         </div>
 
@@ -127,142 +119,133 @@ window.openWindow = function (title, html, app = "") {
 
     container.appendChild(win);
 
-    windows[id] = win;
+    windows[id] = {
+        el: win,
+        minimized: false,
+        maximized: false,
+        prev: {}
+    };
 
-    enableDrag(win);
-    enableResize(win);
-    addTaskbarButton(id, title);
+    enableDragResize(win);
+    createTaskbarButton(id, title);
 
     return win;
 };
+
+/* =========================
+   TASKBAR FIX
+========================= */
+
+function createTaskbarButton(id, title) {
+    const bar = document.getElementById("taskbar-apps");
+
+    const btn = document.createElement("button");
+    btn.textContent = title;
+
+    btn.onclick = () => toggleWindow(id);
+
+    bar.appendChild(btn);
+
+    taskbar[id] = btn;
+}
 
 /* =========================
    WINDOW CONTROLS
 ========================= */
 
 window.closeWindow = function (id) {
-    windows[id]?.remove();
+    windows[id]?.el.remove();
+    taskbar[id]?.remove();
+
     delete windows[id];
-    removeTaskbarButton(id);
+    delete taskbar[id];
 };
 
 window.minimizeWindow = function (id) {
-    const win = windows[id];
-    if (!win) return;
+    const w = windows[id];
+    if (!w) return;
 
-    win.style.display = "none";
-    minimized.add(id);
-};
-
-window.restoreWindow = function (id) {
-    const win = windows[id];
-    if (!win) return;
-
-    win.style.display = "block";
-    win.style.zIndex = ++zIndexCounter;
-    minimized.delete(id);
+    w.el.style.display = "none";
+    w.minimized = true;
 };
 
 window.maximizeWindow = function (id) {
-    const win = windows[id];
-    if (!win) return;
+    const w = windows[id];
+    if (!w) return;
 
-    if (!maximized.has(id)) {
-        win.dataset.prev = JSON.stringify({
-            left: win.style.left,
-            top: win.style.top,
-            width: win.style.width,
-            height: win.style.height
-        });
+    const el = w.el;
 
-        win.style.left = "0";
-        win.style.top = "0";
-        win.style.width = "100vw";
-        win.style.height = "calc(100vh - 40px)";
+    if (!w.maximized) {
+        w.prev = {
+            left: el.style.left,
+            top: el.style.top,
+            width: el.style.width,
+            height: el.style.height
+        };
 
-        maximized.add(id);
+        el.style.left = "0";
+        el.style.top = "0";
+        el.style.width = "100%";
+        el.style.height = "calc(100% - 40px)";
+
+        w.maximized = true;
     } else {
-        const prev = JSON.parse(win.dataset.prev || "{}");
-
-        win.style.left = prev.left;
-        win.style.top = prev.top;
-        win.style.width = prev.width;
-        win.style.height = prev.height;
-
-        maximized.delete(id);
+        Object.assign(el.style, w.prev);
+        w.maximized = false;
     }
 };
 
-/* =========================
-   TASKBAR
-========================= */
+function toggleWindow(id) {
+    const w = windows[id];
+    if (!w) return;
 
-function addTaskbarButton(id, title) {
-    const bar = document.getElementById("taskbar-apps");
-
-    const btn = document.createElement("button");
-    btn.id = "tb_" + id;
-    btn.textContent = title;
-
-    btn.onclick = () => {
-        const win = windows[id];
-        if (!win) return;
-
-        if (win.style.display === "none") restoreWindow(id);
-        else minimizeWindow(id);
-    };
-
-    bar.appendChild(btn);
-}
-
-function removeTaskbarButton(id) {
-    document.getElementById("tb_" + id)?.remove();
+    if (w.el.style.display === "none") {
+        w.el.style.display = "flex";
+        w.minimized = false;
+    } else {
+        minimizeWindow(id);
+    }
 }
 
 /* =========================
    DRAG + RESIZE
 ========================= */
 
-function enableDrag(win) {
-    const bar = win.querySelector(".title-bar");
+function enableDragResize(win) {
+    const titleBar = win.querySelector(".title-bar");
+    const resize = win.querySelector(".resize-handle");
 
-    bar.onmousedown = (e) => {
+    titleBar.onmousedown = (e) => {
         dragState = {
             win,
-            x: e.clientX - win.offsetLeft,
-            y: e.clientY - win.offsetTop
+            offsetX: e.clientX - win.offsetLeft,
+            offsetY: e.clientY - win.offsetTop
         };
     };
-}
 
-function enableResize(win) {
-    const h = win.querySelector(".resize-handle");
-
-    h.onmousedown = (e) => {
-        const r = win.getBoundingClientRect();
-
+    resize.onmousedown = (e) => {
         resizeState = {
             win,
-            x: e.clientX,
-            y: e.clientY,
-            w: r.width,
-            h: r.height
+            startX: e.clientX,
+            startY: e.clientY,
+            width: win.offsetWidth,
+            height: win.offsetHeight
         };
     };
 }
 
 document.addEventListener("mousemove", (e) => {
     if (dragState) {
-        dragState.win.style.left = (e.clientX - dragState.x) + "px";
-        dragState.win.style.top = (e.clientY - dragState.y) + "px";
+        dragState.win.style.left = (e.clientX - dragState.offsetX) + "px";
+        dragState.win.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
     if (resizeState) {
         resizeState.win.style.width =
-            Math.max(220, resizeState.w + (e.clientX - resizeState.x)) + "px";
+            Math.max(220, resizeState.width + (e.clientX - resizeState.startX)) + "px";
 
         resizeState.win.style.height =
-            Math.max(160, resizeState.h + (e.clientY - resizeState.y)) + "px";
+            Math.max(160, resizeState.height + (e.clientY - resizeState.startY)) + "px";
     }
 });
 
@@ -272,157 +255,31 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   FILE EXPLORER (FULL WORKING)
-========================= */
-
-window.openFileExplorer = function () {
-    openWindow("Files", renderFileExplorer(), "files");
-};
-
-function renderFileExplorer() {
-    return `
-        <div style="padding:8px">
-
-            <button onclick="createFile()">New File</button>
-            <button onclick="uploadFile()">Upload</button>
-            <button onclick="downloadAllFiles()">Download All</button>
-
-            <hr>
-
-            ${Object.entries(fileSystem.files).map(([id, f]) => `
-                <div style="display:flex;justify-content:space-between;">
-                    <span>${f.name}</span>
-                    <div>
-                        <button onclick="openFile('${id}')">Open</button>
-                        <button onclick="renameFile('${id}')">Rename</button>
-                        <button onclick="downloadFile('${id}')">Download</button>
-                        <button onclick="deleteFile('${id}')">Delete</button>
-                    </div>
-                </div>
-            `).join("")}
-
-        </div>
-    `;
-}
-
-/* FILE OPS */
-
-window.createFile = async () => {
-    await cloudCreateFile("New File", "");
-    await loadSystem();
-};
-
-window.deleteFile = async (id) => {
-    await cloudDeleteFile(id);
-    await loadSystem();
-};
-
-window.renameFile = async (id) => {
-    const f = fileSystem.files[id];
-    const name = prompt("Rename:", f.name);
-    if (!name) return;
-
-    await cloudSaveFile(id, { name });
-    await loadSystem();
-};
-
-window.downloadFile = (id) => {
-    const f = fileSystem.files[id];
-    const blob = new Blob([f.content || ""], { type: "text/plain" });
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = f.name;
-    a.click();
-};
-
-window.uploadFile = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        const r = new FileReader();
-
-        r.onload = async () => {
-            await cloudCreateFile(file.name, r.result);
-            await loadSystem();
-        };
-
-        r.readAsDataURL(file);
-    };
-
-    input.click();
-};
-
-/* =========================
-   FILE OPEN (WORKING)
-========================= */
-
-window.openFile = function (id) {
-    const f = fileSystem.files[id];
-    if (!f) return;
-
-    let body;
-
-    if (f.content?.startsWith("data:image")) {
-        body = `<img src="${f.content}" style="max-width:100%">`;
-    } else {
-        body = `
-            <input id="t_${id}" value="${f.name}">
-            <textarea id="b_${id}" style="width:100%;height:80%">${f.content}</textarea>
-            <button onclick="saveOpenedFile('${id}')">Save</button>
-        `;
-    }
-
-    openWindow(f.name, body, "file");
-};
-
-window.saveOpenedFile = async (id) => {
-    await cloudSaveFile(id, {
-        name: document.getElementById("t_" + id)?.value,
-        content: document.getElementById("b_" + id)?.value
-    });
-
-    await loadSystem();
-};
-
-/* =========================
-   NOTES (.note)
+   NOTES (.NOTE FIXED)
 ========================= */
 
 window.openNotes = function () {
-    openWindow("Notes", renderNotes(), "notes");
+    openWindow("Notes", `
+        <div class="split">
+            <div class="sidebar">
+                ${Object.entries(fileSystem.files)
+                    .filter(([_, f]) => f.name?.endsWith(".note"))
+                    .map(([id, f]) =>
+                        `<div onclick="loadNote('${id}')">${f.name}</div>`
+                    ).join("")}
+            </div>
+
+            <div class="main">
+                <input id="note_title">
+                <textarea id="note_body" style="flex:1"></textarea>
+                <button onclick="saveNote()">Save</button>
+            </div>
+        </div>
+    `, "notes");
 };
 
-function renderNotes() {
-    const notes = Object.entries(fileSystem.files)
-        .filter(([_, f]) => f.name?.endsWith(".note"));
-
-    return `
-        <div style="padding:8px">
-
-            <button onclick="createNote()">New Note</button>
-
-            <hr>
-
-            ${notes.map(([id, f]) => `
-                <div onclick="loadNote('${id}')">${f.name}</div>
-            `).join("")}
-
-            <hr>
-
-            <input id="note_title">
-            <textarea id="note_body"></textarea>
-
-            <button onclick="saveNote()">Save</button>
-
-        </div>
-    `;
-}
-
-window.createNote = async () => {
-    await cloudCreateFile("New note.note", "");
+window.createNote = async function () {
+    await cloudCreateFile("New.note", "");
     await loadSystem();
 };
 
@@ -436,160 +293,105 @@ window.loadNote = function (id) {
     }, 50);
 };
 
-window.saveNote = async () => {
-    const title = document.getElementById("note_title").value;
+window.saveNote = async function () {
+    const title = document.getElementById("note_title").value + ".note";
+    const body = document.getElementById("note_body").value;
 
     await cloudSaveFile(activeNoteId, {
-        name: title.endsWith(".note") ? title : title + ".note",
-        content: document.getElementById("note_body").value
+        name: title,
+        content: body
     });
 
     await loadSystem();
 };
 
 /* =========================
-   DOCS (.doc + FONT CONTROL)
+   DOCS (.DOC + FONT TOOLBAR FIX)
 ========================= */
 
 window.openDocs = function () {
-    openWindow("Docs", renderDocs(), "docs");
-};
-
-function renderDocs() {
-    const docs = Object.entries(fileSystem.files)
-        .filter(([_, f]) => f.name?.endsWith(".doc"));
-
-    return `
-        <div style="padding:8px">
-
-            <button onclick="createDoc()">New Doc</button>
-
-            <hr>
-
-            ${docs.map(([id, f]) => `
-                <div onclick="loadDoc('${id}')">${f.name}</div>
-            `).join("")}
-
-            <hr>
-
-            <input id="doc_title">
-
-            <select id="fontFamily">
+    openWindow("Docs", `
+        <div>
+            <select id="font">
                 <option>Arial</option>
-                <option>Georgia</option>
-                <option>Courier New</option>
+                <option>Tahoma</option>
                 <option>Times New Roman</option>
-            </select>
-
-            <select id="fontSize">
-                <option>12px</option>
-                <option>14px</option>
-                <option>18px</option>
-                <option>22px</option>
             </select>
 
             <button onclick="document.execCommand('bold')">B</button>
             <button onclick="document.execCommand('italic')">I</button>
 
-            <div id="doc_editor" contenteditable="true"
-                style="height:200px;border:1px solid #aaa;padding:6px"></div>
-
+            <input id="doc_title">
+            <div id="doc_editor" contenteditable="true" style="height:200px;border:1px solid #aaa"></div>
             <button onclick="saveDoc()">Save</button>
-
         </div>
-    `;
-}
-
-window.createDoc = async () => {
-    await cloudCreateFile("New doc.doc", "");
-    await loadSystem();
+    `, "docs");
 };
 
-window.loadDoc = function (id) {
-    activeDocId = id;
-
-    setTimeout(() => {
-        const f = fileSystem.files[id];
-        document.getElementById("doc_title").value = f.name;
-        document.getElementById("doc_editor").innerHTML = f.content;
-    }, 50);
-};
-
-window.saveDoc = async () => {
-    const title = document.getElementById("doc_title").value;
+window.saveDoc = async function () {
+    const title = document.getElementById("doc_title").value + ".doc";
+    const body = document.getElementById("doc_editor").innerHTML;
 
     await cloudSaveFile(activeDocId, {
-        name: title.endsWith(".doc") ? title : title + ".doc",
-        content: document.getElementById("doc_editor").innerHTML
+        name: title,
+        content: body
     });
 
     await loadSystem();
 };
 
 /* =========================
-   SYSTEM PANEL (FULL)
+   FILE EXPLORER FIX
+========================= */
+
+window.openFileExplorer = function () {
+    openWindow("Files", `
+        ${Object.entries(fileSystem.files).map(([id, f]) => `
+            <div>
+                ${f.name}
+                <button onclick="openFile('${id}')">Open</button>
+                <button onclick="deleteFile('${id}')">Delete</button>
+                <button onclick="downloadFile('${id}')">Download</button>
+            </div>
+        `).join("")}
+    `, "files");
+};
+
+/* =========================
+   FILE OPEN FIX
+========================= */
+
+window.openFile = function (id) {
+    const f = fileSystem.files[id];
+
+    openWindow(f.name, `
+        <pre>${f.content}</pre>
+    `);
+};
+
+/* =========================
+   SYSTEM (FIXED FULL)
 ========================= */
 
 window.openSystemApp = function () {
     openWindow("System", `
-        <div style="padding:10px">
+        <div>
+            <div>User: ${localStorage.getItem("username") || "Guest"}</div>
 
-            <button onclick="closeAllWindows()">Close All</button>
-            <button onclick="location.reload()">Refresh OS</button>
-            <button onclick="logout()">Logout</button>
-
-            <br><br>
-
-            <label>Brightness</label>
-            <input type="range" min="10" max="100"
-                oninput="setBrightness(this.value)">
-
-            <br>
-
-            <label>Volume</label>
-            <input type="range" min="0" max="1" step="0.01"
-                oninput="setVolume(this.value)">
-
+            <button onclick="clearWindows()">Close All</button>
+            <button onclick="location.reload()">Restart</button>
         </div>
-    `, "system");
+    `);
 };
 
-window.closeAllWindows = function () {
-    Object.values(windows).forEach(w => w.remove());
+window.clearWindows = function () {
+    Object.values(windows).forEach(w => w.el.remove());
     windows = {};
     document.getElementById("taskbar-apps").innerHTML = "";
 };
 
-window.logout = function () {
-    localStorage.clear();
-    location.href = "index.html";
-};
-
-window.setBrightness = function (v) {
-    let o = document.getElementById("brightness-overlay");
-    if (!o) {
-        o = document.createElement("div");
-        o.id = "brightness-overlay";
-        o.style = "position:fixed;inset:0;background:black;pointer-events:none;z-index:9999;";
-        document.body.appendChild(o);
-    }
-    o.style.opacity = (100 - v) / 100;
-};
-
-window.setVolume = function (v) {
-    document.querySelectorAll("video,audio").forEach(e => e.volume = v);
-};
-
 /* =========================
-   SIMPLE APPS (KEEP SAFE)
-========================= */
-
-window.openCalculator = () => openWindow("Calculator", "<div>Calculator</div>");
-window.openClockApp = () => openWindow("Clock", "<div>Clock</div>");
-window.openAppStore = () => openWindow("App Store", "<div>Store</div>");
-
-/* =========================
-   EXPOSE
+   LEGACY
 ========================= */
 
 function exposeAPI() {
