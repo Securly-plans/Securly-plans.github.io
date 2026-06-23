@@ -129,9 +129,10 @@
   },
  {
    "id": 17,
-   "title": "Welcome to Emerald!",
-   "category": "Video",
-   "url": "EmeraldOS/welcome.html",
+   "title": "EmeraldOS",
+   "category": "OSProject",
+   "thumbnail": "EmeraldOS/assets/EmeraldOS.png",
+   "url": "EmeraldOS",
    "vip": false
   }
 ]
