@@ -1,5 +1,9 @@
 "use strict";
 
+/* =========================
+   CLOUD STORAGE IMPORTS
+========================= */
+
 import {
     loadDrive,
     createFile as cloudCreateFile,
@@ -31,16 +35,16 @@ let maximized = new Set();
 window.addEventListener("DOMContentLoaded", async () => {
     initStartMenu();
     initClock();
-    exposeAPI();
-    exposeAppBindings(); // 🔥 FIX: ensures HTML onclick functions exist
+    exposeGlobals();
     await loadSystem();
 });
 
 /* =========================
-   GLOBAL APP BINDINGS (FIX FOR YOUR ERROR)
+   GLOBAL FUNCTION FIX (IMPORTANT)
 ========================= */
 
-function exposeAppBindings() {
+function exposeGlobals() {
+    // desktop icons + start menu safety
     window.openFileExplorer = openFileExplorer;
     window.openSystemApp = openSystemApp;
     window.openAppStore = openAppStore;
@@ -82,7 +86,7 @@ function initClock() {
 }
 
 /* =========================
-   SYSTEM LOAD
+   LOAD DRIVE
 ========================= */
 
 async function loadSystem() {
@@ -90,7 +94,7 @@ async function loadSystem() {
 }
 
 /* =========================
-   WINDOW CORE (WIN95 FIXED)
+   WINDOW SYSTEM (WIN95 CORE)
 ========================= */
 
 window.openWindow = function (title, html, app = "") {
@@ -268,7 +272,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   FILE EXPLORER (FIXED FULL LOGIC)
+   FILE EXPLORER (FULL WORKING)
 ========================= */
 
 window.openFileExplorer = function () {
@@ -278,12 +282,15 @@ window.openFileExplorer = function () {
 function renderFileExplorer() {
     return `
         <div style="padding:8px">
+
             <button onclick="createFile()">New File</button>
             <button onclick="uploadFile()">Upload</button>
+            <button onclick="downloadAllFiles()">Download All</button>
+
             <hr>
 
             ${Object.entries(fileSystem.files).map(([id, f]) => `
-                <div style="display:flex;justify-content:space-between">
+                <div style="display:flex;justify-content:space-between;">
                     <span>${f.name}</span>
                     <div>
                         <button onclick="openFile('${id}')">Open</button>
@@ -293,6 +300,7 @@ function renderFileExplorer() {
                     </div>
                 </div>
             `).join("")}
+
         </div>
     `;
 }
@@ -348,7 +356,7 @@ window.uploadFile = () => {
 };
 
 /* =========================
-   FILE OPEN (FIXED)
+   FILE OPEN (WORKING)
 ========================= */
 
 window.openFile = function (id) {
@@ -380,17 +388,205 @@ window.saveOpenedFile = async (id) => {
 };
 
 /* =========================
-   NOTES / DOCS / SYSTEM (RESTORED LOGIC HOOKS)
+   NOTES (.note)
 ========================= */
 
-window.openNotes = () => openWindow("Notes", "<div>Notes working</div>", "notes");
+window.openNotes = function () {
+    openWindow("Notes", renderNotes(), "notes");
+};
 
-window.openDocs = () => openWindow("Docs", "<div>Docs working</div>", "docs");
+function renderNotes() {
+    const notes = Object.entries(fileSystem.files)
+        .filter(([_, f]) => f.name?.endsWith(".note"));
 
-window.openSystemApp = () => openWindow("System", "<div>System Panel</div>", "system");
+    return `
+        <div style="padding:8px">
+
+            <button onclick="createNote()">New Note</button>
+
+            <hr>
+
+            ${notes.map(([id, f]) => `
+                <div onclick="loadNote('${id}')">${f.name}</div>
+            `).join("")}
+
+            <hr>
+
+            <input id="note_title">
+            <textarea id="note_body"></textarea>
+
+            <button onclick="saveNote()">Save</button>
+
+        </div>
+    `;
+}
+
+window.createNote = async () => {
+    await cloudCreateFile("New note.note", "");
+    await loadSystem();
+};
+
+window.loadNote = function (id) {
+    activeNoteId = id;
+
+    setTimeout(() => {
+        const f = fileSystem.files[id];
+        document.getElementById("note_title").value = f.name;
+        document.getElementById("note_body").value = f.content;
+    }, 50);
+};
+
+window.saveNote = async () => {
+    const title = document.getElementById("note_title").value;
+
+    await cloudSaveFile(activeNoteId, {
+        name: title.endsWith(".note") ? title : title + ".note",
+        content: document.getElementById("note_body").value
+    });
+
+    await loadSystem();
+};
+
+/* =========================
+   DOCS (.doc + FONT CONTROL)
+========================= */
+
+window.openDocs = function () {
+    openWindow("Docs", renderDocs(), "docs");
+};
+
+function renderDocs() {
+    const docs = Object.entries(fileSystem.files)
+        .filter(([_, f]) => f.name?.endsWith(".doc"));
+
+    return `
+        <div style="padding:8px">
+
+            <button onclick="createDoc()">New Doc</button>
+
+            <hr>
+
+            ${docs.map(([id, f]) => `
+                <div onclick="loadDoc('${id}')">${f.name}</div>
+            `).join("")}
+
+            <hr>
+
+            <input id="doc_title">
+
+            <select id="fontFamily">
+                <option>Arial</option>
+                <option>Georgia</option>
+                <option>Courier New</option>
+                <option>Times New Roman</option>
+            </select>
+
+            <select id="fontSize">
+                <option>12px</option>
+                <option>14px</option>
+                <option>18px</option>
+                <option>22px</option>
+            </select>
+
+            <button onclick="document.execCommand('bold')">B</button>
+            <button onclick="document.execCommand('italic')">I</button>
+
+            <div id="doc_editor" contenteditable="true"
+                style="height:200px;border:1px solid #aaa;padding:6px"></div>
+
+            <button onclick="saveDoc()">Save</button>
+
+        </div>
+    `;
+}
+
+window.createDoc = async () => {
+    await cloudCreateFile("New doc.doc", "");
+    await loadSystem();
+};
+
+window.loadDoc = function (id) {
+    activeDocId = id;
+
+    setTimeout(() => {
+        const f = fileSystem.files[id];
+        document.getElementById("doc_title").value = f.name;
+        document.getElementById("doc_editor").innerHTML = f.content;
+    }, 50);
+};
+
+window.saveDoc = async () => {
+    const title = document.getElementById("doc_title").value;
+
+    await cloudSaveFile(activeDocId, {
+        name: title.endsWith(".doc") ? title : title + ".doc",
+        content: document.getElementById("doc_editor").innerHTML
+    });
+
+    await loadSystem();
+};
+
+/* =========================
+   SYSTEM PANEL (FULL)
+========================= */
+
+window.openSystemApp = function () {
+    openWindow("System", `
+        <div style="padding:10px">
+
+            <button onclick="closeAllWindows()">Close All</button>
+            <button onclick="location.reload()">Refresh OS</button>
+            <button onclick="logout()">Logout</button>
+
+            <br><br>
+
+            <label>Brightness</label>
+            <input type="range" min="10" max="100"
+                oninput="setBrightness(this.value)">
+
+            <br>
+
+            <label>Volume</label>
+            <input type="range" min="0" max="1" step="0.01"
+                oninput="setVolume(this.value)">
+
+        </div>
+    `, "system");
+};
+
+window.closeAllWindows = function () {
+    Object.values(windows).forEach(w => w.remove());
+    windows = {};
+    document.getElementById("taskbar-apps").innerHTML = "";
+};
+
+window.logout = function () {
+    localStorage.clear();
+    location.href = "index.html";
+};
+
+window.setBrightness = function (v) {
+    let o = document.getElementById("brightness-overlay");
+    if (!o) {
+        o = document.createElement("div");
+        o.id = "brightness-overlay";
+        o.style = "position:fixed;inset:0;background:black;pointer-events:none;z-index:9999;";
+        document.body.appendChild(o);
+    }
+    o.style.opacity = (100 - v) / 100;
+};
+
+window.setVolume = function (v) {
+    document.querySelectorAll("video,audio").forEach(e => e.volume = v);
+};
+
+/* =========================
+   SIMPLE APPS (KEEP SAFE)
+========================= */
 
 window.openCalculator = () => openWindow("Calculator", "<div>Calculator</div>");
 window.openClockApp = () => openWindow("Clock", "<div>Clock</div>");
+window.openAppStore = () => openWindow("App Store", "<div>Store</div>");
 
 /* =========================
    EXPOSE
