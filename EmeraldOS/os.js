@@ -243,6 +243,7 @@ window.openWindow = function (
         id: windowId,
         title,
         app,
+        html,
         x: 80,
         y: 80,
         width: 500,
@@ -265,6 +266,9 @@ window.openWindow = function (
         );
 
     closeBtn.onclick = () => {
+        unregisterWindow(win.dataset.windowId);
+        win.remove();
+    };
 
         unregisterWindow(
             windowId
