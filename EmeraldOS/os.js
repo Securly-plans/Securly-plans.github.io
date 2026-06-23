@@ -55,9 +55,7 @@ function initStartMenu() {
         menu.classList.toggle("show");
     };
 
-    document.addEventListener("click", () => {
-        menu.classList.remove("show");
-    });
+    document.addEventListener("click", () => menu.classList.remove("show"));
 }
 
 /* =========================
@@ -110,7 +108,6 @@ async function loadSystem() {
                 ];
             })
         );
-
     } catch (e) {
         console.warn("Drive load failed:", e);
         fileSystem.files = {};
@@ -120,15 +117,14 @@ async function loadSystem() {
 }
 
 /* =========================
-   LIVE RERENDER (SAFE)
+   LIVE RERENDER
 ========================= */
 
 function rerenderOpenApps() {
-    const windows = document.querySelectorAll(".window[data-app]");
-
-    windows.forEach(win => {
+    document.querySelectorAll(".window[data-app]").forEach(win => {
         const app = win.getAttribute("data-app");
         const content = win.querySelector(".window-content");
+
         if (!content) return;
 
         if (app === "files") content.innerHTML = renderFileExplorer();
@@ -138,7 +134,7 @@ function rerenderOpenApps() {
 }
 
 /* =========================
-   WINDOW SYSTEM (FIXED)
+   WINDOW SYSTEM
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
@@ -183,7 +179,6 @@ window.openWindow = function (title, html, app = "") {
     win.innerHTML = `
         <div class="title-bar">
             <span>${title}</span>
-
             <div class="window-controls">
                 <button class="min-btn">_</button>
                 <button class="max-btn">□</button>
@@ -191,75 +186,61 @@ window.openWindow = function (title, html, app = "") {
                 <button class="close-btn">X</button>
             </div>
         </div>
-
         <div class="window-content">${html}</div>
         <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
-    const content = win.querySelector(".window-content");
     const titleBar = win.querySelector(".title-bar");
     const closeBtn = win.querySelector(".close-btn");
     const minBtn = win.querySelector(".min-btn");
     const maxBtn = win.querySelector(".max-btn");
     const hideBtn = win.querySelector(".hide-btn");
+    const content = win.querySelector(".window-content");
     const resizeHandle = win.querySelector(".resize-handle");
 
-    let state = {
-        minimized: false,
-        maximized: false,
-        backup: null
-    };
+    let state = { minimized: false, maximized: false, saved: null };
 
-    /* CLOSE */
     closeBtn.onclick = () => {
         hiddenWindows.delete(title);
         win.remove();
     };
 
-    /* MINIMIZE */
     minBtn.onclick = () => {
         state.minimized = !state.minimized;
 
         if (state.minimized) {
-            if (!state.backup) state.backup = { height: win.style.height || "400px" };
-
+            if (!state.saved) state.saved = { height: win.style.height || "400px" };
             content.style.display = "none";
             win.style.height = "32px";
         } else {
             content.style.display = "block";
-            win.style.height = state.backup?.height || "400px";
+            win.style.height = state.saved?.height || "400px";
         }
     };
 
-    /* MAXIMIZE */
     maxBtn.onclick = () => {
         state.maximized = !state.maximized;
 
         if (state.maximized) {
-            const rect = win.getBoundingClientRect();
-
-            state.backup = {
-                left: rect.left + "px",
-                top: rect.top + "px",
-                width: rect.width + "px",
-                height: rect.height + "px"
+            const r = win.getBoundingClientRect();
+            state.saved = {
+                left: r.left + "px",
+                top: r.top + "px",
+                width: r.width + "px",
+                height: r.height + "px"
             };
 
             win.style.left = "0px";
             win.style.top = "0px";
             win.style.width = "100%";
             win.style.height = "calc(100% - 30px)";
-        } else if (state.backup) {
-            win.style.left = state.backup.left;
-            win.style.top = state.backup.top;
-            win.style.width = state.backup.width;
-            win.style.height = state.backup.height;
+        } else if (state.saved) {
+            Object.assign(win.style, state.saved);
         }
     };
 
-    /* HIDE */
     hideBtn.onclick = () => {
         win.style.display = "none";
         hiddenWindows.set(title, win);
@@ -268,105 +249,215 @@ window.openWindow = function (title, html, app = "") {
     window.restoreWindow = function (name) {
         const w = hiddenWindows.get(name);
         if (!w) return;
-
         w.style.display = "block";
         w.style.zIndex = ++zIndexCounter;
         hiddenWindows.delete(name);
     };
 
-    /* DRAG */
     titleBar.onmousedown = (e) => {
         dragState = {
             win,
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
-
         win.style.zIndex = ++zIndexCounter;
     };
 
-    /* RESIZE */
     resizeHandle.onmousedown = (e) => {
         e.preventDefault();
-
-        const rect = win.getBoundingClientRect();
+        const r = win.getBoundingClientRect();
 
         resizeState = {
             win,
             startX: e.clientX,
             startY: e.clientY,
-            startWidth: rect.width,
-            startHeight: rect.height
+            startWidth: r.width,
+            startHeight: r.height
         };
     };
 
-    /* FOCUS */
-    win.onmousedown = () => {
-        win.style.zIndex = ++zIndexCounter;
-    };
+    win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
 
     return win;
+};
+
+/* =========================
+   FILE OPS
+========================= */
+
+window.createFile = async () => {
+    let name = prompt("File name:", "New Note.note");
+    if (!name) return;
+    if (!name.includes(".")) name += ".note";
+
+    await cloudCreateFile(name, "");
+    await loadSystem();
+};
+
+window.deleteFile = async (id) => {
+    await cloudDeleteFile(id);
+    await loadSystem();
+};
+
+/* =========================
+   FILE OPEN FIX
+========================= */
+
+window.openFile = (id) => {
+    const f = fileSystem.files[id];
+    if (!f) return;
+
+    let body = "";
+
+    if (f.content?.startsWith("data:image")) {
+        body = `<img src="${f.content}" style="max-width:100%">`;
+    } else if (f.content?.startsWith("data:video")) {
+        body = `<video controls style="max-width:100%"><source src="${f.content}"></video>`;
+    } else {
+        body = `
+            <textarea id="file_${id}" style="width:100%;height:90%">${f.content || ""}</textarea>
+            <button onclick="saveFile('${id}')">Save</button>
+        `;
+    }
+
+    openWindow(f.name, `<div style="height:100%;display:flex;flex-direction:column">${body}</div>`);
+};
+
+window.saveFile = async (id) => {
+    const el = document.getElementById(`file_${id}`);
+    if (!el) return;
+
+    await cloudSaveFile(id, {
+        name: fileSystem.files[id].name,
+        content: el.value
+    });
+
+    await loadSystem();
 };
 
 /* =========================
    NOTES (SAFE)
 ========================= */
 
+window.openNotes = () => openWindow("Notes", renderNotes(), "notes");
+
 function renderNotes() {
     return `
-        <div style="padding:6px;height:100%;display:flex;flex-direction:column;gap:6px">
+        <div style="padding:6px">
             <button onclick="createNote()">+ New Note</button>
-
-            <div style="flex:1;overflow:auto">
-                ${Object.entries(fileSystem.files)
-                    .filter(([_, f]) => f.name?.toLowerCase().endsWith(".note"))
-                    .map(([id, f]) => `
-                        <div onclick="loadNote('${id}')" style="cursor:pointer;padding:4px;">
-                            📄 ${f.name}
-                        </div>
-                    `).join("")}
-            </div>
-
-            <input id="note_title" placeholder="Title" style="width:100%">
-            <textarea id="note_body" style="width:100%;height:120px"></textarea>
-
-            <button onclick="saveNote()">Save</button>
+            <hr>
+            ${Object.entries(fileSystem.files)
+                .filter(([_, f]) => f.name.endsWith(".note"))
+                .map(([id, f]) => `
+                    <div onclick="loadNote('${id}')">📄 ${f.name}</div>
+                `).join("")}
         </div>
     `;
 }
+
+window.createNote = async () => {
+    await cloudCreateFile("New Note.note", "");
+    await loadSystem();
+};
+
+window.loadNote = (id) => {
+    activeNoteId = id;
+
+    setTimeout(() => {
+        const f = fileSystem.files[id];
+        const t = document.getElementById("note_title");
+        const b = document.getElementById("note_body");
+
+        if (t && b && f) {
+            t.value = f.name;
+            b.value = f.content;
+        }
+    }, 50);
+};
+
+window.saveNote = async () => {
+    if (!activeNoteId) return;
+
+    const t = document.getElementById("note_title");
+    const b = document.getElementById("note_body");
+
+    if (!t || !b) return;
+
+    await cloudSaveFile(activeNoteId, {
+        name: t.value,
+        content: b.value
+    });
+
+    await loadSystem();
+};
 
 /* =========================
    DOCS (SAFE)
 ========================= */
 
+window.openDocs = () => openWindow("Docs", renderDocs(), "docs");
+
 function renderDocs() {
     return `
-        <div style="padding:6px;height:100%;display:flex;flex-direction:column;gap:6px">
+        <div style="padding:6px">
             <button onclick="createDoc()">New Doc</button>
+            <hr>
+            ${Object.entries(fileSystem.files)
+                .filter(([_, f]) => f.name.endsWith(".doc"))
+                .map(([id, f]) => `
+                    <div onclick="loadDoc('${id}')">📄 ${f.name}</div>
+                `).join("")}
 
-            <div style="flex:1;overflow:auto">
-                ${Object.entries(fileSystem.files)
-                    .filter(([_, f]) => f.name?.toLowerCase().endsWith(".doc"))
-                    .map(([id, f]) => `
-                        <div onclick="loadDoc('${id}')" style="cursor:pointer;padding:4px;">
-                            📄 ${f.name}
-                        </div>
-                    `).join("")}
-            </div>
-
-            <input id="doc_title" placeholder="Title" style="width:100%">
-            <div id="doc_editor" contenteditable="true"
-                style="border:1px solid #ccc;height:160px;overflow:auto;padding:6px"></div>
-
+            <input id="doc_title">
+            <div id="doc_editor" contenteditable="true"></div>
             <button onclick="saveDoc()">Save</button>
         </div>
     `;
 }
 
+window.createDoc = async () => {
+    await cloudCreateFile("New Doc.doc", "");
+    await loadSystem();
+};
+
+window.loadDoc = (id) => {
+    activeDocId = id;
+
+    setTimeout(() => {
+        const f = fileSystem.files[id];
+        const t = document.getElementById("doc_title");
+        const e = document.getElementById("doc_editor");
+
+        if (t && e && f) {
+            t.value = f.name;
+            e.innerHTML = f.content;
+        }
+    }, 50);
+};
+
+window.saveDoc = async () => {
+    if (!activeDocId) return;
+
+    const t = document.getElementById("doc_title");
+    const e = document.getElementById("doc_editor");
+
+    if (!t || !e) return;
+
+    await cloudSaveFile(activeDocId, {
+        name: t.value,
+        content: e.innerHTML
+    });
+
+    await loadSystem();
+};
+
 /* =========================
-   LEGACY
+   LEGACY EXPORT
 ========================= */
 
 function exposeAPI() {
     window.launchApp = openWindow;
+
+    // IMPORTANT FIX: app launcher bindings
+    window.openFileExplorer = window.openFileExplorer || (() => openWindow("Files", renderFileExplorer(), "files"));
 }
