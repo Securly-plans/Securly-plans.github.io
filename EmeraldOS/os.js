@@ -1,12 +1,5 @@
 "use strict";
 
-import {
-    initDesktop,
-    registerWindow,
-    unregisterWindow,
-    updateWindowState
-} from "./desktop.js";
-
 /* =========================
    CLOUD IMPORTS
 ========================= */
@@ -40,8 +33,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     exposeAPI();
 
     await loadSystem();
-
-    initDesktop();
 });
 
 /* =========================
@@ -120,58 +111,20 @@ function rerenderOpenApps() {
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
-
     if (dragState) {
         const w = dragState.win;
-
-        w.style.left =
-            (e.clientX - dragState.offsetX) + "px";
-
-        w.style.top =
-            (e.clientY - dragState.offsetY) + "px";
-
-        if (w.dataset.windowId) {
-            updateWindowState(
-                w.dataset.windowId,
-                {
-                    x: w.offsetLeft,
-                    y: w.offsetTop
-                }
-            );
-        }
+        w.style.left = (e.clientX - dragState.offsetX) + "px";
+        w.style.top = (e.clientY - dragState.offsetY) + "px";
     }
 
     if (resizeState) {
-
         const w = resizeState.win;
 
-        const dx =
-            e.clientX - resizeState.startX;
+        const dx = e.clientX - resizeState.startX;
+        const dy = e.clientY - resizeState.startY;
 
-        const dy =
-            e.clientY - resizeState.startY;
-
-        w.style.width =
-            Math.max(
-                220,
-                resizeState.startWidth + dx
-            ) + "px";
-
-        w.style.height =
-            Math.max(
-                160,
-                resizeState.startHeight + dy
-            ) + "px";
-
-        if (w.dataset.windowId) {
-            updateWindowState(
-                w.dataset.windowId,
-                {
-                    width: w.offsetWidth,
-                    height: w.offsetHeight
-                }
-            );
-        }
+        w.style.width = Math.max(220, resizeState.startWidth + dx) + "px";
+        w.style.height = Math.max(160, resizeState.startHeight + dy) + "px";
     }
 });
 
@@ -184,144 +137,64 @@ document.addEventListener("mouseup", () => {
    CORE WINDOW
 ========================= */
 
-window.openWindow = function (
-    title,
-    html,
-    app = ""
-) {
-    const container =
-        document.getElementById(
-            "windows-container"
-        );
-
+window.openWindow = function (title, html, app = "") {
+    const container = document.getElementById("windows-container");
     if (!container) return;
 
-    const win =
-        document.createElement("div");
-
-    const windowId =
-        crypto.randomUUID();
-
+    const win = document.createElement("div");
     win.className = "window";
-
-    win.dataset.windowId =
-        windowId;
-
-    if (app) {
-        win.setAttribute(
-            "data-app",
-            app
-        );
-    }
+    if (app) win.setAttribute("data-app", app);
 
     win.style.left = "80px";
     win.style.top = "80px";
-    win.style.width = "500px";
-    win.style.height = "350px";
-    win.style.zIndex =
-        ++zIndexCounter;
+    win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
         <div class="title-bar">
             <span>${title}</span>
-
-            <button class="close-btn">
-                X
-            </button>
+            <button class="close-btn">X</button>
         </div>
 
-        <div class="window-content">
-            ${html}
-        </div>
+        <div class="window-content">${html}</div>
 
         <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
-    registerWindow({
-        id: windowId,
-        title,
-        app,
-        html,
-        x: 80,
-        y: 80,
-        width: 500,
-        height: 350
-    });
+    const titleBar = win.querySelector(".title-bar");
+    const closeBtn = win.querySelector(".close-btn");
+    const resizeHandle = win.querySelector(".resize-handle");
 
-    const titleBar =
-        win.querySelector(
-            ".title-bar"
-        );
+    closeBtn.onclick = () => win.remove();
 
-    const closeBtn =
-        win.querySelector(
-            ".close-btn"
-        );
-
-    const resizeHandle =
-        win.querySelector(
-            ".resize-handle"
-        );
-
-    closeBtn.onclick = () => {
-        unregisterWindow(win.dataset.windowId);
-        win.remove();
-    };
-
-        unregisterWindow(
-            windowId
-        );
-
-        win.remove();
-    };
-
-    win.onmousedown = () => {
-        win.style.zIndex =
-            ++zIndexCounter;
-    };
+    win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
 
     titleBar.onmousedown = (e) => {
-
         dragState = {
             win,
-            offsetX:
-                e.clientX -
-                win.offsetLeft,
-
-            offsetY:
-                e.clientY -
-                win.offsetTop
+            offsetX: e.clientX - win.offsetLeft,
+            offsetY: e.clientY - win.offsetTop
         };
     };
 
     resizeHandle.onmousedown = (e) => {
-
         e.preventDefault();
 
-        const rect =
-            win.getBoundingClientRect();
+        const rect = win.getBoundingClientRect();
 
         resizeState = {
             win,
-
-            startX:
-                e.clientX,
-
-            startY:
-                e.clientY,
-
-            startWidth:
-                rect.width,
-
-            startHeight:
-                rect.height
+            startX: e.clientX,
+            startY: e.clientY,
+            startWidth: rect.width,
+            startHeight: rect.height
         };
     };
 
     return win;
 };
+
 let calendarData = {};
 let selectedDate = null;
 
@@ -957,7 +830,7 @@ window.applyItalic = function () {
 ========================= */
 
 window.openAppStore = function () {
-    openWindow("App Store", "<h2>The EmeraldOS Application Store is currently unavaliable at the momment. Please check again later...</h2>");
+    openWindow("App Store", "<h2>The EmeraldOS Appstore is currently unavaliable at the momment. Please check again later...</h2>");
 };
 
 /* =========================
