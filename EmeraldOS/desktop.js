@@ -49,7 +49,7 @@ function loadDesktop() {
 
 /* =========================
    WALLPAPER
-========================= */
+======================== */
 
 export function setWallpaper(url) {
     desktopState.wallpaper = url;
