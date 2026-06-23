@@ -129,10 +129,9 @@
   },
  {
    "id": 17,
-   "title": "buildnow.gg (wip)",
-   "thumbnail": "https://th.bing.com/th/id/OIP.Bww5sYhPAVK_Yx5BN3mU2QHaHa?w=180&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3",
-   "category": "FPS game",
-   "url": "games/BretT1/index.html",
+   "title": "Welcome to Emerald!",
+   "category": "Video",
+   "url": "EmeraldOS/welcome.html",
    "vip": false
   }
 ]
