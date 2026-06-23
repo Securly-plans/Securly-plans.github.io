@@ -6,13 +6,10 @@
 <title>Starting EmeraldOS...</title>
 
 <style>
-/* =========================
-   WIN95 BASE
-========================= */
 body {
     margin: 0;
     height: 100vh;
-    background: #008080; /* classic desktop teal */
+    background: #008080;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -20,9 +17,7 @@ body {
     color: #000;
 }
 
-/* =========================
-   BOOT WINDOW
-========================= */
+/* Boot Window */
 .boot-window {
     width: 420px;
     background: #c0c0c0;
@@ -33,7 +28,6 @@ body {
     padding: 14px;
 }
 
-/* title bar style (Win95 feel) */
 .title {
     background: #000080;
     color: white;
@@ -42,9 +36,6 @@ body {
     margin: -14px -14px 10px -14px;
 }
 
-/* =========================
-   LOGO AREA
-========================= */
 .logo {
     width: 64px;
     height: 64px;
@@ -52,16 +43,12 @@ body {
     margin: 10px auto;
 }
 
-/* =========================
-   BOOT TEXT
-========================= */
 .text {
     font-size: 12px;
     line-height: 1.4;
     margin-bottom: 10px;
 }
 
-/* fake BIOS/system log */
 .log {
     font-size: 11px;
     background: #ffffff;
@@ -69,22 +56,16 @@ body {
     padding: 6px;
     height: 90px;
     overflow: hidden;
-    font-family: "MS Sans Serif", Tahoma, sans-serif;
 }
 
-/* =========================
-   PROGRESS BAR (WIN95 STYLE)
-========================= */
 .bar {
     margin-top: 10px;
     height: 16px;
     background: #ffffff;
     border: 1px solid #808080;
-    position: relative;
     overflow: hidden;
 }
 
-/* segmented loading blocks */
 .progress {
     height: 100%;
     width: 0%;
@@ -99,20 +80,8 @@ body {
 }
 
 @keyframes load {
-    0% { width: 0%; }
-    100% { width: 100%; }
-}
-
-/* =========================
-   CURSOR BLINK (retro touch)
-========================= */
-.cursor::after {
-    content: "_";
-    animation: blink 1s steps(2, start) infinite;
-}
-
-@keyframes blink {
-    50% { opacity: 0; }
+    from { width: 0%; }
+    to { width: 100%; }
 }
 </style>
 </head>
@@ -120,7 +89,6 @@ body {
 <body>
 
 <div class="boot-window">
-
     <div class="title">Microsoft Windows 95 Startup</div>
 
     <div class="logo"></div>
@@ -139,15 +107,33 @@ body {
     </div>
 
     <div class="bar">
-        <div class="progress"></div>
+        <div class="progress" id="progress"></div>
     </div>
-
 </div>
 
 <script>
-setTimeout(() => {
-    window.location.href = "OS.html";
-}, 4000);
+(function () {
+    const progress = document.getElementById("progress");
+
+    let hasBooted = false;
+
+    function bootOS() {
+        if (hasBooted) return;
+        hasBooted = true;
+
+        // IMPORTANT: force navigation (works on GitHub Pages + local servers)
+        window.location.replace("./OS.html");
+    }
+
+    // Primary: animation finished
+    progress.addEventListener("animationend", bootOS);
+
+    // Fallback 1: timer safety
+    setTimeout(bootOS, 4500);
+
+    // Fallback 2: ensure even slow devices don't get stuck
+    setTimeout(bootOS, 6000);
+})();
 </script>
 
 </body>
