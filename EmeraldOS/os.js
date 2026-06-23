@@ -40,6 +40,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     exposeAPI();
 
     await loadSystem();
+
+    initDesktop();
 });
 
 /* =========================
