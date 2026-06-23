@@ -45,6 +45,25 @@ html, body {
     color: white;
 }
 
+#taskbar-items {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+    flex: 1;
+}
+
+.taskbar-item {
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.taskbar-item:active {
+    border: 2px inset #fff;
+}
+
 /* =========================
    TASKBAR
 ========================= */
