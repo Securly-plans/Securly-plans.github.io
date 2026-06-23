@@ -1,5 +1,12 @@
 "use strict";
 
+import {
+    initDesktop,
+    registerWindow,
+    unregisterWindow,
+    updateWindowState
+} from "./desktop.js";
+
 /* =========================
    CLOUD IMPORTS
 ========================= */
