@@ -1,3 +1,7 @@
+/* =========================
+   WIN95 GLOBAL BASE
+========================= */
+
 html, body {
     margin: 0;
     padding: 0;
@@ -11,122 +15,296 @@ html, body {
     user-select: none;
 }
 
-/* desktop */
+/* =========================
+   DESKTOP
+========================= */
+
 #desktop {
     position: absolute;
     inset: 0 0 40px 0;
     padding: 10px;
+
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    gap: 14px;
     align-content: flex-start;
+    gap: 14px;
 }
 
+/* Desktop Icons */
 .icon {
     width: 70px;
     text-align: center;
     color: white;
     cursor: pointer;
+    padding: 4px;
 }
 
 .icon:hover {
     background: #000080;
+    color: white;
 }
 
-/* taskbar */
+/* =========================
+   TASKBAR
+========================= */
+
 #taskbar {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
+
     height: 40px;
     background: #c0c0c0;
+
     display: flex;
     align-items: center;
     padding: 3px;
-    border-top: 2px solid white;
+
+    border-top: 2px solid #ffffff;
 }
 
 #start-btn {
     height: 30px;
-    border: 2px solid;
-    border-color: white black black white;
+    padding: 2px 10px;
+    font-weight: bold;
+
     background: #c0c0c0;
+
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+
     cursor: pointer;
+}
+
+#start-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
 }
 
 #clock {
     margin-left: auto;
-    padding-right: 10px;
+    padding: 0 8px;
 }
 
-/* start menu */
+/* =========================
+   START MENU
+========================= */
+
 #start-menu {
     position: absolute;
     bottom: 40px;
     left: 0;
-    width: 260px;
+
+    width: 260px;   /* slightly bigger = nicer UX */
+
     background: #c0c0c0;
+
     border: 2px solid;
-    border-color: white black black white;
+    border-color: #ffffff #000000 #000000 #ffffff;
+
     display: none;
+
     z-index: 10000;
 }
 
 #start-menu.show {
-    display: flex;
+    display: block;
 }
 
-/* windows */
+.start-item {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.start-item:hover {
+    background: #000080;
+    color: white;
+}
+
+/* =========================
+   WINDOWS CONTAINER
+========================= */
+
 #windows-container {
     position: absolute;
     inset: 0 0 40px 0;
+
     pointer-events: none;
+    overflow: hidden;
+
+    z-index: 1;
 }
+
+/* =========================
+   WINDOW CORE
+========================= */
 
 .window {
     position: absolute;
+
     width: 420px;
     height: 300px;
+
+    min-width: 220px;
+    min-height: 160px;
+
     background: #c0c0c0;
+
     border: 2px solid;
-    border-color: white black black white;
+    border-color: #ffffff #000000 #000000 #ffffff;
+
     display: flex;
     flex-direction: column;
+
     pointer-events: auto;
+
+    box-sizing: border-box;
+
+    z-index: 10;
 }
+
+/* =========================
+   TITLE BAR
+========================= */
 
 .title-bar {
     height: 24px;
+
     background: #000080;
     color: white;
+
     display: flex;
+    align-items: center;
     justify-content: space-between;
+
     padding: 0 6px;
+
+    font-weight: bold;
+
     cursor: grab;
 }
 
-.window-content {
-    flex: 1;
-    background: white;
-    padding: 6px;
-    overflow: auto;
-    user-select: text;
+.title-bar:active {
+    cursor: grabbing;
 }
+
+/* =========================
+   CLOSE BUTTON
+========================= */
 
 .close-btn {
+    width: 18px;
+    height: 18px;
+
     background: #c0c0c0;
+
     border: 2px solid;
-    border-color: white black black white;
+    border-color: #ffffff #000000 #000000 #ffffff;
+
+    font-size: 10px;
+    cursor: pointer;
+
+    line-height: 12px;
+    text-align: center;
 }
 
-/* resize */
+.close-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   WINDOW CONTENT
+========================= */
+
+.window-content {
+    flex: 1;
+
+    margin: 0;
+    padding: 6px;
+
+    background: white;
+
+    border: 2px inset #c0c0c0;
+
+    overflow: auto;
+
+    box-sizing: border-box;
+
+    user-select: text; /* IMPORTANT FIX so text apps work */
+}
+
+/* =========================
+   RESIZE HANDLE (FIXED + STABLE)
+========================= */
+
 .resize-handle {
     position: absolute;
+
     width: 14px;
     height: 14px;
+
     right: 0;
     bottom: 0;
+
     cursor: se-resize;
+
     background: #c0c0c0;
+
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+
+    box-sizing: border-box;
+}
+
+/* =========================
+   INPUTS / BUTTONS (WIN95 STYLE)
+========================= */
+
+button, input, textarea {
+    font-family: inherit;
+    font-size: 12px;
+}
+
+button {
+    background: #c0c0c0;
+
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   BRIGHTNESS SUPPORT LAYER
+========================= */
+
+body {
+    transition: filter 0.1s linear;
+}
+
+/* =========================
+   UTILITY
+========================= */
+
+.win95-outset {
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+.win95-inset {
+    border: 2px solid;
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   FINAL SAFETY FIX
+========================= */
+
+* {
+    box-sizing: border-box;
 }
