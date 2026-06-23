@@ -23,8 +23,7 @@ let fileSystem = { files: {} };
 let activeNoteId = null;
 let activeDocId = null;
 
-/* FIX: taskbar state */
-let windowStates = new Map();
+let windowStates = new Map(); // FIX: now actually used for minimize/restore
 
 /* =========================
    BOOT
@@ -93,7 +92,7 @@ async function loadSystem() {
 }
 
 /* =========================
-   RERENDER
+   LIVE RERENDER
 ========================= */
 
 function rerenderOpenApps() {
@@ -109,7 +108,7 @@ function rerenderOpenApps() {
 }
 
 /* =========================
-   DRAG / RESIZE SYSTEM
+   WINDOW SYSTEM
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
@@ -136,7 +135,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW SYSTEM (FIXED)
+   CORE WINDOW (FIXED)
 ========================= */
 
 window.openWindow = function (title, html, app = "") {
@@ -156,7 +155,8 @@ window.openWindow = function (title, html, app = "") {
 
     win.innerHTML = `
         <div class="title-bar">
-            <span class="title-text">${title}</span>
+            <span>${title}</span>
+
             <div class="win-controls">
                 <button class="min-btn">_</button>
                 <button class="max-btn">□</button>
@@ -165,6 +165,7 @@ window.openWindow = function (title, html, app = "") {
         </div>
 
         <div class="window-content">${html}</div>
+
         <div class="resize-handle"></div>
     `;
 
@@ -187,37 +188,35 @@ window.openWindow = function (title, html, app = "") {
         e.stopPropagation();
 
         win.style.display = "none";
-        createTaskbarItem(win, title);
 
-        windowStates.set(win, { minimized: true });
+        const id = Date.now();
+        windowStates.set(id, win);
+
+        createTaskbarItem(id, title);
     };
 
-    /* MAXIMIZE (FIXED) */
+    /* MAXIMIZE */
     maxBtn.onclick = (e) => {
         e.stopPropagation();
 
         if (!isMaximized) {
-            const rect = win.getBoundingClientRect();
-
             prevState = {
-                left: rect.left + "px",
-                top: rect.top + "px",
-                width: rect.width + "px",
-                height: rect.height + "px"
+                left: win.style.left,
+                top: win.style.top,
+                width: win.style.width,
+                height: win.style.height
             };
 
             win.style.left = "0";
             win.style.top = "0";
             win.style.width = "100vw";
             win.style.height = "calc(100vh - 40px)";
-
             isMaximized = true;
         } else {
             win.style.left = prevState.left;
             win.style.top = prevState.top;
             win.style.width = prevState.width;
             win.style.height = prevState.height;
-
             isMaximized = false;
         }
     };
@@ -253,41 +252,36 @@ window.openWindow = function (title, html, app = "") {
 };
 
 /* =========================
-   TASKBAR (REQUIRED FIX)
+   TASKBAR FIX (NEW)
 ========================= */
 
-function createTaskbarItem(win, title) {
-    let bar = document.getElementById("taskbar-items");
+function createTaskbarItem(id, title) {
+    const bar = document.getElementById("taskbar");
+    if (!bar) return;
 
-    if (!bar) {
-        bar = document.createElement("div");
-        bar.id = "taskbar-items";
-        document.getElementById("taskbar").appendChild(bar);
-    }
+    const btn = document.createElement("button");
+    btn.textContent = title;
+    btn.dataset.winId = id;
 
-    const item = document.createElement("div");
-    item.className = "taskbar-item";
-    item.textContent = title;
+    btn.onclick = () => restoreWindow(id, btn);
 
-    item.onclick = () => {
-        win.style.display = "block";
-        win.style.zIndex = ++zIndexCounter;
+    bar.appendChild(btn);
+}
 
-        windowStates.set(win, { minimized: false });
-        item.remove();
-    };
+function restoreWindow(id, btn) {
+    const win = windowStates.get(id);
+    if (!win) return;
 
-    bar.appendChild(item);
+    win.style.display = "block";
+    win.style.zIndex = ++zIndexCounter;
+
+    windowStates.delete(id);
+    btn.remove();
 }
 
 /* =========================
-   (UNCHANGED APPS BELOW)
-   -- kept exactly as-is --
+   LEGACY
 ========================= */
-
-/* Calendar, Calculator, Clock, System, Files, Notes, Docs, etc...
-   (NO CHANGES MADE BELOW THIS LINE)
-*/
 
 function exposeAPI() {
     window.launchApp = openWindow;
