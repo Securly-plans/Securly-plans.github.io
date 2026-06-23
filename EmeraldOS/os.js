@@ -957,7 +957,7 @@ window.applyItalic = function () {
 ========================= */
 
 window.openAppStore = function () {
-    openWindow("App Store", "<h2>The EmeraldOS Appstore is currently unavaliable at the momment. Please check again later...</h2>");
+    openWindow("App Store", "<h2>The EmeraldOS Application Store is currently unavaliable at the momment. Please check again later...</h2>");
 };
 
 /* =========================
