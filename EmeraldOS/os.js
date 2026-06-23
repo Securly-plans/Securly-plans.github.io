@@ -402,6 +402,97 @@ function formatTime(sec) {
     return `${m}:${s.toString().padStart(2,"0")}`;
 }
 
+/* =========================================================
+   🌿 EMERALDOS - ON STARTUP SYSTEM
+   Handles all apps/services that run when OS loads
+========================================================= */
+
+const StartupSystem = (() => {
+
+  const STORAGE_KEY = "autostartApps";
+
+  /* -------------------------
+     GET / SAVE STARTUP APPS
+  ------------------------- */
+  function getStartupApps() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  }
+
+  function saveStartupApps(apps) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
+  }
+
+  /* -------------------------
+     ENABLE / DISABLE STARTUP
+  ------------------------- */
+  function enableStartup(appId) {
+    let apps = getStartupApps();
+    if (!apps.includes(appId)) {
+      apps.push(appId);
+      saveStartupApps(apps);
+    }
+  }
+
+  function disableStartup(appId) {
+    let apps = getStartupApps().filter(id => id !== appId);
+    saveStartupApps(apps);
+  }
+
+  function toggleStartup(appId, enabled) {
+    if (enabled) enableStartup(appId);
+    else disableStartup(appId);
+  }
+
+  /* -------------------------
+     RUN STARTUP SEQUENCE
+  ------------------------- */
+  function runStartup() {
+    const apps = getStartupApps();
+
+    console.log("[StartupSystem] Running startup apps:", apps);
+
+    apps.forEach(appId => {
+      try {
+        if (typeof AppRegistry !== "undefined" && AppRegistry[appId]) {
+          AppRegistry[appId]();
+        } 
+        else if (typeof window[appId] === "function") {
+          window[appId]();
+        } 
+        else {
+          console.warn(`[StartupSystem] App not found: ${appId}`);
+        }
+      } catch (err) {
+        console.error(`[StartupSystem] Failed to start ${appId}`, err);
+      }
+    });
+  }
+
+  /* -------------------------
+     AUTO RUN ON OS BOOT
+  ------------------------- */
+  function init() {
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        runStartup();
+      }, 500); // small boot delay for realism
+    });
+  }
+
+  /* -------------------------
+     PUBLIC API
+  ------------------------- */
+  return {
+    init,
+    runStartup,
+    enableStartup,
+    disableStartup,
+    toggleStartup,
+    getStartupApps
+  };
+
+})();
+
 /* =========================
    SYSTEM APP (CONTROL PANEL)
 ========================= */
@@ -454,6 +545,90 @@ function renderSystemApp() {
 
         </div>
     `;
+}
+
+function StartupSystemOS(containerId = "startupAppsList", appRegistry = {}) {
+  const KEY = "autostartApps";
+
+  /* -------------------------
+     LOAD / SAVE
+  ------------------------- */
+  const get = () => JSON.parse(localStorage.getItem(KEY) || "[]");
+
+  const save = (data) =>
+    localStorage.setItem(KEY, JSON.stringify(data));
+
+  /* -------------------------
+     TOGGLE APP
+  ------------------------- */
+  const toggle = (id, enabled) => {
+    let list = get();
+
+    if (enabled) {
+      if (!list.includes(id)) list.push(id);
+    } else {
+      list = list.filter(x => x !== id);
+    }
+
+    save(list);
+  };
+
+  /* -------------------------
+     RUN ON BOOT
+  ------------------------- */
+  const run = () => {
+    const list = get();
+
+    list.forEach(id => {
+      appRegistry?.[id]?.launch?.();
+    });
+  };
+
+  /* -------------------------
+     BUILD SYSTEM UI
+  ------------------------- */
+  const render = () => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const enabled = get();
+
+    container.innerHTML = "";
+
+    Object.entries(appRegistry).forEach(([id, app]) => {
+      const row = document.createElement("div");
+      row.className = "startup-row";
+
+      const checked = enabled.includes(id);
+
+      row.innerHTML = `
+        <label>
+          <input type="checkbox"
+            ${checked ? "checked" : ""}
+            onchange="StartupSystemOSInstance.toggle('${id}', this.checked)">
+          ${app.name || id}
+        </label>
+      `;
+
+      container.appendChild(row);
+    });
+  };
+
+  /* -------------------------
+     INIT BOOT HOOK
+  ------------------------- */
+  window.addEventListener("load", () => {
+    setTimeout(run, 500);
+  });
+
+  /* -------------------------
+     INSTANCE (so UI can access it)
+  ------------------------- */
+  const api = { toggle, run, render };
+
+  window.StartupSystemOSInstance = api;
+
+  return api;
 }
 
 /* =========================
