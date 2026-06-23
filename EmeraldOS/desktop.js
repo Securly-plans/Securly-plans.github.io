@@ -198,22 +198,26 @@ export function updateWindowState(id, changes) {
 ========================= */
 
 function restoreWindows() {
+
     if (!window.openWindow) return;
 
     desktopState.windows.forEach(win => {
+
+        // ❌ skip broken/empty windows
+        if (!win.html && !win.app) return;
+
         const w = window.openWindow(
             win.title,
             win.html || "",
             win.app || ""
         );
 
-        w.style.left = win.x + "px";
-        w.style.top = win.y + "px";
-        w.style.width = win.width + "px";
-        w.style.height = win.height + "px";
+        w.style.left = (win.x || 80) + "px";
+        w.style.top = (win.y || 80) + "px";
+        w.style.width = (win.width || 500) + "px";
+        w.style.height = (win.height || 350) + "px";
     });
 }
-
 /* =========================
    CLEAR SESSION
 ========================= */
