@@ -23,24 +23,11 @@ let fileSystem = { files: {} };
 let activeNoteId = null;
 let activeDocId = null;
 
-const hiddenWindows = new Map();
-
 /* =========================
-   FILE TYPE NORMALIZATION
+   WINDOW STATE
 ========================= */
 
-function normalizeFile(name, content = "") {
-    const lower = (name || "").toLowerCase();
-
-    let type = "file";
-
-    if (lower.endsWith(".doc")) type = "doc";
-    else if (lower.endsWith(".note")) type = "note";
-    else if (lower.match(/\.(png|jpg|jpeg|gif)$/)) type = "image";
-    else if (lower.match(/\.(mp4|webm)$/)) type = "video";
-
-    return { name, content, type };
-}
+const hiddenWindows = new Map();
 
 /* =========================
    BOOT
@@ -133,7 +120,7 @@ async function loadSystem() {
 }
 
 /* =========================
-   LIVE RERENDER
+   LIVE RERENDER (SAFE)
 ========================= */
 
 function rerenderOpenApps() {
@@ -151,7 +138,7 @@ function rerenderOpenApps() {
 }
 
 /* =========================
-   DRAG / RESIZE ENGINE
+   WINDOW SYSTEM (FIXED)
 ========================= */
 
 document.addEventListener("mousemove", (e) => {
@@ -178,7 +165,7 @@ document.addEventListener("mouseup", () => {
 });
 
 /* =========================
-   CORE WINDOW (FIXED)
+   CORE WINDOW (FIXED ONLY)
 ========================= */
 
 window.openWindow = function (title, html, app = "") {
@@ -195,7 +182,8 @@ window.openWindow = function (title, html, app = "") {
 
     win.innerHTML = `
         <div class="title-bar">
-            <span class="title-text">${title}</span>
+            <span>${title}</span>
+
             <div class="window-controls">
                 <button class="min-btn">_</button>
                 <button class="max-btn">□</button>
@@ -203,24 +191,25 @@ window.openWindow = function (title, html, app = "") {
                 <button class="close-btn">X</button>
             </div>
         </div>
+
         <div class="window-content">${html}</div>
         <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
+    const content = win.querySelector(".window-content");
     const titleBar = win.querySelector(".title-bar");
     const closeBtn = win.querySelector(".close-btn");
     const minBtn = win.querySelector(".min-btn");
     const maxBtn = win.querySelector(".max-btn");
     const hideBtn = win.querySelector(".hide-btn");
-    const content = win.querySelector(".window-content");
     const resizeHandle = win.querySelector(".resize-handle");
 
     let state = {
         minimized: false,
         maximized: false,
-        saved: null
+        backup: null
     };
 
     /* CLOSE */
@@ -229,46 +218,44 @@ window.openWindow = function (title, html, app = "") {
         win.remove();
     };
 
-    /* MINIMIZE (FIXED) */
+    /* MINIMIZE */
     minBtn.onclick = () => {
         state.minimized = !state.minimized;
 
         if (state.minimized) {
-            const rect = win.getBoundingClientRect();
-
-            state.saved = {
-                height: rect.height + "px"
-            };
+            if (!state.backup) state.backup = { height: win.style.height || "400px" };
 
             content.style.display = "none";
             win.style.height = "32px";
         } else {
             content.style.display = "block";
-            win.style.height = state.saved?.height || "400px";
+            win.style.height = state.backup?.height || "400px";
         }
     };
 
-    /* MAXIMIZE (FIXED STABLE RESTORE) */
+    /* MAXIMIZE */
     maxBtn.onclick = () => {
         state.maximized = !state.maximized;
 
         if (state.maximized) {
-            state.saved = {
-                left: win.offsetLeft + "px",
-                top: win.offsetTop + "px",
-                width: win.offsetWidth + "px",
-                height: win.offsetHeight + "px"
+            const rect = win.getBoundingClientRect();
+
+            state.backup = {
+                left: rect.left + "px",
+                top: rect.top + "px",
+                width: rect.width + "px",
+                height: rect.height + "px"
             };
 
             win.style.left = "0px";
             win.style.top = "0px";
             win.style.width = "100%";
             win.style.height = "calc(100% - 30px)";
-        } else if (state.saved) {
-            win.style.left = state.saved.left;
-            win.style.top = state.saved.top;
-            win.style.width = state.saved.width;
-            win.style.height = state.saved.height;
+        } else if (state.backup) {
+            win.style.left = state.backup.left;
+            win.style.top = state.backup.top;
+            win.style.width = state.backup.width;
+            win.style.height = state.backup.height;
         }
     };
 
@@ -284,7 +271,6 @@ window.openWindow = function (title, html, app = "") {
 
         w.style.display = "block";
         w.style.zIndex = ++zIndexCounter;
-
         hiddenWindows.delete(name);
     };
 
@@ -295,6 +281,7 @@ window.openWindow = function (title, html, app = "") {
             offsetX: e.clientX - win.offsetLeft,
             offsetY: e.clientY - win.offsetTop
         };
+
         win.style.zIndex = ++zIndexCounter;
     };
 
@@ -313,6 +300,7 @@ window.openWindow = function (title, html, app = "") {
         };
     };
 
+    /* FOCUS */
     win.onmousedown = () => {
         win.style.zIndex = ++zIndexCounter;
     };
@@ -321,66 +309,59 @@ window.openWindow = function (title, html, app = "") {
 };
 
 /* =========================
-   FILE OPS
-========================= */
-
-window.createFile = async function () {
-    const name = prompt("File name:", "New.note");
-    if (!name) return;
-
-    const finalName =
-        name.toLowerCase().endsWith(".doc") || name.toLowerCase().endsWith(".note")
-            ? name
-            : name + ".note";
-
-    await cloudCreateFile(finalName, "");
-    await loadSystem();
-};
-
-window.deleteFile = async function (id) {
-    await cloudDeleteFile(id);
-    await loadSystem();
-};
-
-/* =========================
-   NOTES (STRICT .note)
+   NOTES (SAFE)
 ========================= */
 
 function renderNotes() {
     return `
-        <div style="padding:6px">
+        <div style="padding:6px;height:100%;display:flex;flex-direction:column;gap:6px">
             <button onclick="createNote()">+ New Note</button>
-            <hr>
-            ${Object.entries(fileSystem.files)
-                .filter(([_, f]) => f.name?.toLowerCase().endsWith(".note"))
-                .map(([id, f]) => `
-                    <div onclick="loadNote('${id}')">${f.name}</div>
-                `).join("")}
+
+            <div style="flex:1;overflow:auto">
+                ${Object.entries(fileSystem.files)
+                    .filter(([_, f]) => f.name?.toLowerCase().endsWith(".note"))
+                    .map(([id, f]) => `
+                        <div onclick="loadNote('${id}')" style="cursor:pointer;padding:4px;">
+                            📄 ${f.name}
+                        </div>
+                    `).join("")}
+            </div>
+
+            <input id="note_title" placeholder="Title" style="width:100%">
+            <textarea id="note_body" style="width:100%;height:120px"></textarea>
+
+            <button onclick="saveNote()">Save</button>
         </div>
     `;
 }
 
-window.openNotes = () => openWindow("Notes", renderNotes(), "notes");
-
 /* =========================
-   DOCS (STRICT .doc)
+   DOCS (SAFE)
 ========================= */
 
 function renderDocs() {
     return `
-        <div style="padding:6px">
-            <button onclick="createDoc()">+ New Doc</button>
-            <hr>
-            ${Object.entries(fileSystem.files)
-                .filter(([_, f]) => f.name?.toLowerCase().endsWith(".doc"))
-                .map(([id, f]) => `
-                    <div onclick="loadDoc('${id}')">${f.name}</div>
-                `).join("")}
+        <div style="padding:6px;height:100%;display:flex;flex-direction:column;gap:6px">
+            <button onclick="createDoc()">New Doc</button>
+
+            <div style="flex:1;overflow:auto">
+                ${Object.entries(fileSystem.files)
+                    .filter(([_, f]) => f.name?.toLowerCase().endsWith(".doc"))
+                    .map(([id, f]) => `
+                        <div onclick="loadDoc('${id}')" style="cursor:pointer;padding:4px;">
+                            📄 ${f.name}
+                        </div>
+                    `).join("")}
+            </div>
+
+            <input id="doc_title" placeholder="Title" style="width:100%">
+            <div id="doc_editor" contenteditable="true"
+                style="border:1px solid #ccc;height:160px;overflow:auto;padding:6px"></div>
+
+            <button onclick="saveDoc()">Save</button>
         </div>
     `;
 }
-
-window.openDocs = () => openWindow("Docs", renderDocs(), "docs");
 
 /* =========================
    LEGACY
