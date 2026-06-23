@@ -31,7 +31,6 @@ html, body {
     gap: 14px;
 }
 
-/* Desktop Icons */
 .icon {
     width: 70px;
     text-align: center;
@@ -46,7 +45,7 @@ html, body {
 }
 
 /* =========================
-   TASKBAR
+   TASKBAR (IMPROVED)
 ========================= */
 
 #taskbar {
@@ -83,9 +82,44 @@ html, body {
     border-color: #000000 #ffffff #ffffff #000000;
 }
 
+/* TASKBAR APP BUTTONS (NEW FIX) */
+
+#taskbar-apps {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    margin: 0 10px;
+    overflow-x: auto;
+}
+
+#taskbar-apps button {
+    min-width: 90px;
+    height: 28px;
+
+    background: #c0c0c0;
+
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+
+    font-size: 11px;
+    cursor: pointer;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#taskbar-apps button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* =========================
+   CLOCK
+========================= */
+
 #clock {
-    margin-left: auto;
     padding: 0 8px;
+    font-size: 11px;
 }
 
 /* =========================
@@ -105,12 +139,11 @@ html, body {
     border-color: #ffffff #000000 #000000 #ffffff;
 
     display: none;
-
     z-index: 20000;
 }
 
 #start-menu.show {
-    display: block;
+    display: flex;
 }
 
 .start-item {
@@ -138,7 +171,7 @@ html, body {
 }
 
 /* =========================
-   WINDOW CORE
+   WINDOW CORE (IMPROVED)
 ========================= */
 
 .window {
@@ -165,8 +198,13 @@ html, body {
     z-index: 10;
 }
 
+/* ACTIVE WINDOW EFFECT (NEW) */
+.window:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
 /* =========================
-   TITLE BAR
+   TITLE BAR (WIN95 ACCURATE)
 ========================= */
 
 .title-bar {
@@ -191,10 +229,10 @@ html, body {
 }
 
 /* =========================
-   CLOSE BUTTON
+   WINDOW BUTTONS (MIN/MAX/CLOSE)
 ========================= */
 
-.close-btn {
+.title-bar button {
     width: 18px;
     height: 18px;
 
@@ -208,14 +246,24 @@ html, body {
 
     line-height: 12px;
     text-align: center;
+
+    margin-left: 2px;
 }
 
-.close-btn:active {
+.title-bar button:active {
     border-color: #000000 #ffffff #ffffff #000000;
 }
 
 /* =========================
-   WINDOW CONTENT (CRITICAL FIX)
+   CLOSE BUTTON SPECIAL
+========================= */
+
+.close-btn {
+    font-weight: bold;
+}
+
+/* =========================
+   WINDOW CONTENT
 ========================= */
 
 .window-content {
@@ -256,12 +304,10 @@ html, body {
     border-left: 1px solid #ffffff;
     border-right: 1px solid #000000;
     border-bottom: 1px solid #000000;
-
-    box-sizing: border-box;
 }
 
 /* =========================
-   INPUTS / TEXT SYSTEMS
+   INPUTS
 ========================= */
 
 button, input, textarea, select {
@@ -276,7 +322,7 @@ input, textarea {
 }
 
 /* =========================
-   BUTTON STYLE
+   BUTTONS
 ========================= */
 
 button {
@@ -293,23 +339,7 @@ button:active {
 }
 
 /* =========================
-   DOCS / WORD-LIKE TOOLBAR SUPPORT
-========================= */
-
-.toolbar {
-    display: flex;
-    gap: 4px;
-    padding: 4px;
-    background: #ddd;
-    border-bottom: 1px solid #999;
-}
-
-.toolbar button {
-    padding: 2px 6px;
-}
-
-/* =========================
-   SPLIT PANES (Notes/Files/Docs)
+   SPLIT VIEW (NOTES/DOCS/FILES)
 ========================= */
 
 .split {
@@ -331,7 +361,19 @@ button:active {
 }
 
 /* =========================
-   CALCULATOR UI SUPPORT
+   DOC TOOLBAR
+========================= */
+
+.toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #ddd;
+    border-bottom: 1px solid #999;
+}
+
+/* =========================
+   CALCULATOR GRID
 ========================= */
 
 .calc-grid {
@@ -340,53 +382,8 @@ button:active {
     gap: 4px;
 }
 
-.calc-display {
-    width: 100%;
-    font-size: 16px;
-    padding: 6px;
-    margin-bottom: 6px;
-}
-
 /* =========================
-   CALENDAR SUPPORT
-========================= */
-
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-}
-
-.calendar-day {
-    padding: 6px;
-    text-align: center;
-    border: 1px solid #aaa;
-    cursor: pointer;
-}
-
-.calendar-day:hover {
-    background: #000080;
-    color: white;
-}
-
-/* =========================
-   SYSTEM PANEL SLIDERS
-========================= */
-
-.slider {
-    width: 100%;
-}
-
-/* =========================
-   BRIGHTNESS SUPPORT
-========================= */
-
-body {
-    transition: filter 0.1s linear;
-}
-
-/* =========================
-   UTILITY
+   UTILITY BORDER STYLES
 ========================= */
 
 .win95-outset {
@@ -400,7 +397,7 @@ body {
 }
 
 /* =========================
-   FINAL SAFETY FIX
+   FINAL SAFETY
 ========================= */
 
 * {
