@@ -64,6 +64,25 @@ html, body {
     border: 2px inset #fff;
 }
 
+#start-btn {
+    width: 80px;
+    height: 28px;
+
+    background: #c0c0c0 url("assets/EmeraldOS.png") no-repeat 6px center;
+    background-size: 18px 18px;
+
+    border: 2px outset #fff;
+    cursor: pointer;
+
+    padding-left: 28px;
+    font-weight: bold;
+    font-family: "MS Sans Serif", Tahoma, Arial;
+}
+
+#start-btn:active {
+    border: 2px inset #fff;
+}
+
 /* =========================
    TASKBAR
 ========================= */
