@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EmeraldOS</title>
 
-    <link rel="stylesheet" href="os.css">
+    <!-- FAVICON -->
     <link rel="icon" type="image/png" href="assets/EmeraldOS.png">
 
+    <link rel="stylesheet" href="os.css">
 </head>
 
 <body>
@@ -22,6 +23,12 @@
         <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
 
         <div class="icon" onclick="openDocs()">📘<br>Docs</div>
+        
+        <div class="icon" onclick="openCalendar()">📅<br>Calendar</div>
+        
+        <div class="icon" onclick="openCalculator()">🧮<br>Calculator</div>
+        
+        <div class="icon" onclick="openClockApp()">⏰<br>Clock</div>
 
         <div class="icon" onclick="openSystemApp()">
         💻<br>System
@@ -63,10 +70,13 @@
         <div style="flex:1;display:flex;flex-direction:column;padding:2px;">
 
             <div class="start-item" onclick="openAppStore()">🛒 App Store</div>
+            <div class="start-item" onclick="openCalendar()">📅 Calender</div>
+            <div class="start-item" onclick="openClockApp()">⏰ Clock</div>
+            <div class="start-item" onclick="openCalculator()">🧮 Calculator</div>
             <div class="start-item" onclick="openFileExplorer()">📁 File Explorer</div>
             <div class="start-item" onclick="openNotes()">📄 Notes</div>
-            <div class="start-menu-item" onclick="openDocs()">📘 Docs</div>
-            <div class="start-menu-item" onclick="openSystemApp()">💻 System</div>
+            <div class="start-item" onclick="openDocs()">📘 Docs</div>
+            <div class="start-item" onclick="openSystemApp()">💻 System</div>
 
             <div class="start-item"
                 onclick="openWindow('Chat',
