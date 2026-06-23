@@ -38,8 +38,7 @@ function loadDesktop() {
 
     try {
         desktopState = JSON.parse(saved);
-    }
-    catch {
+    } catch {
         desktopState = {
             wallpaper: null,
             shortcuts: [],
@@ -55,9 +54,7 @@ function loadDesktop() {
 export function setWallpaper(url) {
     desktopState.wallpaper = url;
 
-    document.body.style.backgroundImage =
-        `url(${url})`;
-
+    document.body.style.backgroundImage = `url(${url})`;
     document.body.style.backgroundSize = "cover";
 
     saveDesktop();
@@ -66,20 +63,16 @@ export function setWallpaper(url) {
 function applyWallpaper() {
     if (!desktopState.wallpaper) return;
 
-    document.body.style.backgroundImage =
-        `url(${desktopState.wallpaper})`;
-
+    document.body.style.backgroundImage = `url(${desktopState.wallpaper})`;
     document.body.style.backgroundSize = "cover";
 }
 
 /* =========================
-   SHORTCUTS
+   SHORTCUTS (DESKTOP ICONS)
 ========================= */
 
 export function createShortcut(id, name) {
-
-    if (desktopState.shortcuts.some(s => s.id === id))
-        return;
+    if (desktopState.shortcuts.some(s => s.id === id)) return;
 
     desktopState.shortcuts.push({
         id,
@@ -89,40 +82,30 @@ export function createShortcut(id, name) {
     });
 
     saveDesktop();
-
     renderDesktop();
 }
 
 export function removeShortcut(id) {
     desktopState.shortcuts =
-        desktopState.shortcuts.filter(
-            s => s.id !== id
-        );
+        desktopState.shortcuts.filter(s => s.id !== id);
 
     saveDesktop();
-
     renderDesktop();
 }
 
 /* =========================
-   DESKTOP ICONS
+   RENDER DESKTOP ICONS
 ========================= */
 
 function renderDesktop() {
-
     applyWallpaper();
 
-    const desktop =
-        document.getElementById("desktop");
-
+    const desktop = document.getElementById("desktop");
     if (!desktop) return;
 
-    desktop.querySelectorAll(
-        ".desktop-icon"
-    ).forEach(i => i.remove());
+    desktop.querySelectorAll(".desktop-icon").forEach(i => i.remove());
 
     desktopState.shortcuts.forEach(icon => {
-
         const div = document.createElement("div");
 
         div.className = "desktop-icon";
@@ -132,17 +115,8 @@ function renderDesktop() {
         div.style.top = icon.y + "px";
 
         div.innerHTML = `
-            <div style="
-                font-size:32px;
-                text-align:center;
-            ">📄</div>
-
-            <div style="
-                color:white;
-                text-align:center;
-                font-size:12px;
-                margin-top:4px;
-            ">
+            <div style="font-size:32px;text-align:center;">📄</div>
+            <div style="color:white;text-align:center;font-size:12px;margin-top:4px;">
                 ${icon.name}
             </div>
         `;
@@ -154,7 +128,6 @@ function renderDesktop() {
         };
 
         enableDragging(div, icon);
-
         desktop.appendChild(div);
     });
 }
@@ -164,79 +137,59 @@ function renderDesktop() {
 ========================= */
 
 function enableDragging(el, icon) {
-
     let dragging = false;
-
     let offsetX = 0;
     let offsetY = 0;
 
     el.onmousedown = (e) => {
-
         dragging = true;
 
-        offsetX =
-            e.clientX - el.offsetLeft;
-
-        offsetY =
-            e.clientY - el.offsetTop;
+        offsetX = e.clientX - el.offsetLeft;
+        offsetY = e.clientY - el.offsetTop;
     };
 
     document.addEventListener("mousemove", e => {
-
         if (!dragging) return;
 
-        icon.x =
-            e.clientX - offsetX;
-
-        icon.y =
-            e.clientY - offsetY;
+        icon.x = e.clientX - offsetX;
+        icon.y = e.clientY - offsetY;
 
         el.style.left = icon.x + "px";
         el.style.top = icon.y + "px";
     });
 
     document.addEventListener("mouseup", () => {
-
         if (!dragging) return;
 
         dragging = false;
-
         saveDesktop();
     });
 }
 
 /* =========================
-   WINDOW SESSION
+   WINDOW SYSTEM (SESSION)
 ========================= */
 
 export function registerWindow(data) {
+    const exists = desktopState.windows.find(w => w.id === data.id);
+    if (exists) return;
 
     desktopState.windows.push(data);
-
     saveDesktop();
 }
 
 export function unregisterWindow(id) {
-
     desktopState.windows =
-        desktopState.windows.filter(
-            w => w.id !== id
-        );
+        desktopState.windows.filter(w => w.id !== id);
 
     saveDesktop();
 }
 
-export function updateWindow(id, changes) {
-
-    const win =
-        desktopState.windows.find(
-            w => w.id === id
-        );
-
+export function updateWindowState(id, changes) {
+    const win = desktopState.windows.find(w => w.id === id);
     if (!win) return;
 
     Object.assign(win, changes);
-
     saveDesktop();
 }
 
@@ -245,28 +198,19 @@ export function updateWindow(id, changes) {
 ========================= */
 
 function restoreWindows() {
-
     if (!window.openWindow) return;
 
     desktopState.windows.forEach(win => {
-
         const w = window.openWindow(
             win.title,
             win.html || "",
             win.app || ""
         );
 
-        w.style.left =
-            win.x + "px";
-
-        w.style.top =
-            win.y + "px";
-
-        w.style.width =
-            win.width + "px";
-
-        w.style.height =
-            win.height + "px";
+        w.style.left = win.x + "px";
+        w.style.top = win.y + "px";
+        w.style.width = win.width + "px";
+        w.style.height = win.height + "px";
     });
 }
 
@@ -275,18 +219,15 @@ function restoreWindows() {
 ========================= */
 
 export function clearDesktop() {
-
     desktopState.windows = [];
-
     saveDesktop();
 }
 
 /* =========================
-   SHUTDOWN
+   SHUTDOWN SCREEN
 ========================= */
 
 export function shutdownDesktop() {
-
     saveDesktop();
 
     document.body.innerHTML = `
