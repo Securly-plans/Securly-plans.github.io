@@ -9,19 +9,17 @@ body {
     margin: 0;
     font-family: "MS Sans Serif", Arial;
     background: #008080;
+    height: 100vh;
+    overflow: hidden;
 }
 
-/* WINDOW */
+/* FULL SCREEN BROWSER */
 .window {
-    width: 900px;
-    height: 600px;
-    background: #c0c0c0;
-    border: 2px solid #fff;
-    border-right-color: #404040;
-    border-bottom-color: #404040;
-    margin: 20px auto;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    background: #c0c0c0;
 }
 
 /* TITLE BAR */
@@ -30,6 +28,7 @@ body {
     color: white;
     padding: 4px;
     font-weight: bold;
+    flex-shrink: 0;
 }
 
 /* TOOLBAR */
@@ -39,6 +38,7 @@ body {
     padding: 4px;
     background: #c0c0c0;
     border-bottom: 2px solid #808080;
+    flex-shrink: 0;
 }
 
 button {
@@ -65,6 +65,7 @@ button:active {
     padding: 4px;
     gap: 4px;
     background: #c0c0c0;
+    flex-shrink: 0;
 }
 
 input {
@@ -74,11 +75,26 @@ input {
     padding: 3px;
 }
 
-/* BROWSER AREA */
+/* LOADING BAR */
+.loading {
+    height: 10px;
+    background: #000;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.bar {
+    height: 100%;
+    width: 0%;
+    background: lime;
+}
+
+/* BROWSER AREA (FULL SCREEN CORE) */
 .browser {
     flex: 1;
+    width: 100%;
+    border: none;
     background: white;
-    border: 2px inset #fff;
 }
 
 /* STATUS BAR */
@@ -87,19 +103,7 @@ input {
     padding: 3px;
     background: #c0c0c0;
     border-top: 2px solid #808080;
-}
-
-/* LOADING BAR */
-.loading {
-    height: 10px;
-    background: #000;
-    overflow: hidden;
-}
-
-.bar {
-    height: 100%;
-    width: 0%;
-    background: lime;
+    flex-shrink: 0;
 }
 </style>
 </head>
@@ -133,7 +137,7 @@ input {
 </div>
 
 <script>
-const proxy = "https://autumn-pond-38e6.wyatt-monroe2013.workers.dev/";
+const proxy = "https://autumn-pond-38e6.wyatt-monroe2013.workers.dev/?url=";
 
 let historyStack = [];
 let currentIndex = -1;
@@ -143,23 +147,22 @@ function setStatus(text) {
 }
 
 function load(url) {
-
     if (!url) return;
 
-    // Internal pages
+    // internal page
     if (url === "about:emerald") {
         document.getElementById("browser").srcdoc = `
-            <h1>EmeraldNet 1.0</h1>
+            <h1>🌿 EmeraldNet 1.0</h1>
             <p>Win95-style browser for EmeraldOS</p>
-            <p>Engine: Cloudflare Proxy</p>
+            <p>Engine: Cloudflare Proxy Backend</p>
         `;
         setStatus("Loaded internal page");
         return;
     }
 
-    // Fix missing protocol
+    // search fallback
     if (!url.startsWith("http") && !url.includes("about:")) {
-        url = "https://" + url;
+        url = "https://duckduckgo.com/?q=" + encodeURIComponent(url);
     }
 
     setStatus("Connecting...");
@@ -169,7 +172,6 @@ function load(url) {
 
     document.getElementById("browser").src = full;
 
-    // history
     historyStack = historyStack.slice(0, currentIndex + 1);
     historyStack.push(url);
     currentIndex++;
@@ -181,7 +183,6 @@ function load(url) {
 function go() {
     const url = document.getElementById("url").value;
 
-    // search fallback
     if (!url.includes(".") && !url.startsWith("about:")) {
         load("https://duckduckgo.com/?q=" + encodeURIComponent(url));
     } else {
@@ -224,12 +225,12 @@ function animateBar() {
 
         if (w >= 100) {
             clearInterval(interval);
-            setTimeout(() => bar.style.width = "0%", 300);
+            setTimeout(() => bar.style.width = "0%", 250);
         }
-    }, 80);
+    }, 60);
 }
 
-// default page
+// start page
 load("about:emerald");
 </script>
 
