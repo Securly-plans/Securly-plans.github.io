@@ -7,8 +7,8 @@ There is also a user system, the base model is currently free-to-use and free-to
 
 This project is intended to boost Emerald Systems Services popularity.
 -------------
-Wyatt Monroe
-Director of Operations,  Emerald Systems
-Chair, Monroe Entertainment Services
+Wyatt Monroe,
+Director of Operations,  Emerald Systems,
+Chair, Monroe Entertainment Services,
 
 ©Copyright 2026, Emerald Systems · Monroe Entertainment Services · All Rights Reserved
