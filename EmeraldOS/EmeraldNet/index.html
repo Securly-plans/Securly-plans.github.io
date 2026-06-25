@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EmeraldNet Browserless Mode</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #111;
+  color: #00ff99;
+}
+
+#bar {
+  display: flex;
+  padding: 10px;
+  background: #000;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  background: #111;
+  color: #00ff99;
+  border: 1px solid #00ff99;
+}
+
+button {
+  padding: 10px;
+  background: #00ff99;
+  border: none;
+  cursor: pointer;
+}
+
+iframe {
+  width: 100%;
+  height: 90vh;
+  border: none;
+  background: white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="bar">
+  <input id="url" placeholder="Search or URL">
+  <button onclick="go()">Go</button>
+</div>
+
+<iframe id="frame"></iframe>
+
+<script>
+const TOKEN = "2UlZY5nT5QYYMbf62c8b5e7e713c719a2a8ef1c675846c3d3";
+
+// Convert search → Google
+function normalize(input) {
+  if (!input.startsWith("http")) {
+    return "https://www.google.com/search?q=" + encodeURIComponent(input);
+  }
+  return input;
+}
+
+async function go() {
+  let input = document.getElementById("url").value;
+  const url = normalize(input);
+
+  const api = `https://chrome.browserless.io/content?token=${TOKEN}&url=${encodeURIComponent(url)}`;
+
+  document.getElementById("frame").srcdoc =
+    "<p style='color:#00ff99;background:#000;padding:10px;'>Loading via Browserless...</p>";
+
+  try {
+    const res = await fetch(api);
+    const html = await res.text();
+
+    document.getElementById("frame").srcdoc = html;
+  } catch (err) {
+    document.getElementById("frame").srcdoc =
+      "<p style='color:red;'>Failed to load page</p>";
+  }
+}
+</script>
+
+</body>
+</html>
