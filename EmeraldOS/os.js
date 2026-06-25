@@ -1,2070 +1,828 @@
 "use strict";
 
 /* =========================================================
-   EMERALDOS 3.2
-   PART 1
-   BOOT + REGISTRY + DESKTOP
+   EMERALDOS 3.1 - CORE SYSTEM
+   Part 1: Boot + Globals + System Services
 ========================================================= */
+
+/* =========================
+   CLOUD STORAGE IMPORTS
+========================= */
 
 import {
     loadDrive,
     createFile as cloudCreateFile,
     saveFile as cloudSaveFile,
-    deleteFile as cloudDeleteFile,
-    ensureUser
+    deleteFile as cloudDeleteFile
 } from "./cloudstorage.js";
 
-/* =========================================================
-   CORE STATE
-========================================================= */
+/* =========================
+   GLOBAL STATE
+========================= */
 
 let zIndexCounter = 100;
 
-let fileSystem = {
-    files: {},
-    folders: {
-        Desktop: [],
-        Documents: [],
-        Pictures: [],
-        Downloads: []
-    }
-};
+let dragState = null;
+let resizeState = null;
 
-let openWindows = [];
+let sessionSaveTimer = null;
 
-let notifications = [];
+let fileSystem = { files: {} };
 
-let activeTheme =
-    localStorage.getItem("emerald_theme")
-    || "classic";
+let activeNoteId = null;
+let activeDocId = null;
 
-/* =========================================================
-   APPLICATION REGISTRY
-========================================================= */
+/* Window + taskbar tracking */
+const taskbarButtons = new Map();
 
-const APPS = {
-
-    files: {
-        name: "Files",
-        icon: "📁",
-        launch: () => openFileExplorer()
-    },
-
-    notes: {
-        name: "Notes",
-        icon: "📄",
-        launch: () => openNotes()
-    },
-
-    docs: {
-        name: "Docs",
-        icon: "📘",
-        launch: () => openDocs()
-    },
-
-    calendar: {
-        name: "Calendar",
-        icon: "📅",
-        launch: () => openCalendar()
-    },
-
-    calculator: {
-        name: "Calculator",
-        icon: "🧮",
-        launch: () => openCalculator()
-    },
-
-    clock: {
-        name: "Clock",
-        icon: "⏰",
-        launch: () => openClockApp()
-    },
-
-    terminal: {
-        name: "Terminal",
-        icon: "⌨️",
-        launch: () => openTerminal()
-    },
-
-    system: {
-        name: "System",
-        icon: "💻",
-        launch: () => openSystemApp()
-    },
-
-    chat: {
-        name: "Chat",
-        icon: "💬",
-        launch: () => {
-            openWindow(
-                "Chat",
-                `<iframe
-                    src="https://securly-plans.github.io/EmeraldOS/G/chat.html"
-                    style="width:100%;height:100%;border:none">
-                 </iframe>`,
-                "chat"
-            );
-        }
-    },
-
-    games: {
-        name: "Games",
-        icon: "🌐",
-        launch: () => {
-            openWindow(
-                "Games",
-                `<iframe
-                    src="https://securly-plans.github.io/EmeraldOS/G/home.html"
-                    style="width:100%;height:100%;border:none">
-                 </iframe>`,
-                "games"
-            );
-        }
-    },
-
-    browser: {
-        name: "Emerald Browser",
-        icon: "🧭",
-        launch: () => openBrowser()
-    }
-
-};
-
-/* =========================================================
-   BOOT
-========================================================= */
+/* =========================
+   BOOT SEQUENCE
+========================= */
 
 window.addEventListener("DOMContentLoaded", async () => {
 
-    await ensureUser();
+    initStartMenu();
+    initClock();
+    initNotifications();
+    initTheme();
+
+    exposeAPI();
 
     await loadSystem();
 
-    applyTheme();
-
-    initClock();
-
-    initStartMenu();
-
-    initNotifications();
-
-    renderDesktop();
-
-    renderStartMenu();
-
-    notify(
-        "EmeraldOS",
-        "Desktop ready."
-    );
-
+    notify("System", "EmeraldOS 3.1 loaded successfully");
 });
 
-/* =========================================================
-   LOAD SYSTEM
-========================================================= */
-
-async function loadSystem() {
-
-    try {
-
-        fileSystem.files =
-            await loadDrive() || {};
-
-    }
-    catch (err) {
-
-        console.warn(
-            "Drive failed:",
-            err
-        );
-
-        fileSystem.files = {};
-    }
-}
-
-/* =========================================================
-   DESKTOP RENDERER
-========================================================= */
-
-function renderDesktop() {
-
-    const desktop =
-        document.getElementById("desktop");
-
-    desktop.innerHTML = "";
-
-    Object.entries(APPS).forEach(([id, app]) => {
-
-        const icon =
-            document.createElement("div");
-
-        icon.className = "icon";
-
-        icon.innerHTML = `
-            ${app.icon}<br>
-            ${app.name}
-        `;
-
-        icon.onclick = app.launch;
-
-        desktop.appendChild(icon);
-
-    });
-
-}
-
-/* =========================================================
-   START MENU
-========================================================= */
-
-function renderStartMenu() {
-
-    const results =
-        document.getElementById(
-            "start-results"
-        );
-
-    results.innerHTML = "";
-
-    Object.values(APPS).forEach(app => {
-
-        const item =
-            document.createElement("div");
-
-        item.className = "start-item";
-
-        item.innerHTML =
-            `${app.icon} ${app.name}`;
-
-        item.onclick = () => {
-
-            app.launch();
-
-            document
-                .getElementById(
-                    "start-menu"
-                )
-                .classList
-                .remove("show");
-        };
-
-        results.appendChild(item);
-
-    });
-
-}
-
-/* =========================================================
-   START MENU SEARCH
-========================================================= */
-
-function initStartMenu() {
-
-    const btn =
-        document.getElementById(
-            "start-btn"
-        );
-
-    const menu =
-        document.getElementById(
-            "start-menu"
-        );
-
-    const search =
-        document.getElementById(
-            "start-search"
-        );
-
-    btn.onclick = e => {
-
-        e.stopPropagation();
-
-        menu.classList.toggle("show");
-
-        search.focus();
-
-    };
-
-    document.addEventListener(
-        "click",
-        () => menu.classList.remove("show")
-    );
-
-    search.addEventListener(
-        "input",
-        () => {
-
-            const q =
-                search.value
-                .toLowerCase();
-
-            document
-                .querySelectorAll(
-                    ".start-item"
-                )
-                .forEach(item => {
-
-                    item.style.display =
-                        item.textContent
-                            .toLowerCase()
-                            .includes(q)
-                        ? ""
-                        : "none";
-
-                });
-
-        }
-    );
-
-}
-
-/* =========================================================
+/* =========================
    CLOCK
-========================================================= */
+========================= */
 
 function initClock() {
 
-    const clock =
-        document.getElementById(
-            "clock"
-        );
+    const clock = document.getElementById("clock");
+    if (!clock) return;
 
-    const update = () => {
+    const tick = () => {
 
         clock.textContent =
-            new Date()
-            .toLocaleTimeString([], {
+            new Date().toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit"
             });
 
     };
 
-    update();
-
-    setInterval(update, 1000);
-
+    tick();
+    setInterval(tick, 1000);
 }
 
-/* =========================================================
-   NOTIFICATIONS
-========================================================= */
+/* =========================
+   NOTIFICATIONS SYSTEM
+========================= */
 
-function notify(title, message) {
-
-    notifications.push({
-
-        title,
-        message,
-        time: Date.now()
-
-    });
-
-    renderNotifications();
-
+function initNotifications() {
+    if (!document.getElementById("notifications")) {
+        const div = document.createElement("div");
+        div.id = "notifications";
+        document.body.appendChild(div);
+    }
 }
 
-function renderNotifications() {
+window.notify = function (title, message) {
 
-    const list =
-        document.getElementById(
-            "notify-list"
-        );
+    const container =
+        document.getElementById("notifications");
 
-    if (!list) return;
+    if (!container) return;
 
-    list.innerHTML = "";
+    const el = document.createElement("div");
 
-    notifications
-        .slice()
-        .reverse()
-        .forEach(n => {
+    el.className = "notification";
 
-            const div =
-                document.createElement("div");
+    el.innerHTML = `
+        <strong>${title}</strong><br>
+        ${message}
+    `;
 
-            div.className =
-                "notify-entry";
+    container.appendChild(el);
 
-            div.innerHTML = `
-                <b>${n.title}</b><br>
-                ${n.message}
-            `;
+    setTimeout(() => el.remove(), 4000);
+};
 
-            list.appendChild(div);
+/* =========================
+   THEME SYSTEM
+========================= */
+
+function initTheme() {
+
+    const theme =
+        localStorage.getItem("os_theme") ||
+        "classic";
+
+    document.body.dataset.theme = theme;
+}
+
+window.setTheme = function (theme) {
+
+    document.body.dataset.theme = theme;
+
+    localStorage.setItem("os_theme", theme);
+
+    notify("Theme", `Switched to ${theme}`);
+};
+
+/* =========================
+   SESSION SAVE SYSTEM
+========================= */
+
+function saveSession() {
+
+    clearTimeout(sessionSaveTimer);
+
+    sessionSaveTimer = setTimeout(() => {
+
+        const session = [];
+
+        document.querySelectorAll(".window").forEach(win => {
+
+            session.push({
+                title: win.dataset.title,
+                app: win.dataset.app,
+                left: win.style.left,
+                top: win.style.top,
+                width: win.style.width,
+                height: win.style.height,
+                minimized: win.dataset.minimized === "true",
+                maximized: win.dataset.maximized === "true"
+            });
 
         });
 
+        localStorage.setItem(
+            "emerald_session",
+            JSON.stringify(session)
+        );
+
+    }, 500);
+
 }
 
-function initNotifications() {
+/* expose for later parts */
+window.saveSession = saveSession;
 
-    const btn =
-        document.getElementById(
-            "notify-btn"
-        );
+/* =========================
+   START MENU
+========================= */
 
-    const center =
-        document.getElementById(
-            "notification-center"
-        );
+function initStartMenu() {
 
-    btn.onclick = e => {
+    const menu = document.getElementById("start-menu");
+    const btn = document.getElementById("start-btn");
+
+    if (!menu || !btn) return;
+
+    btn.onclick = (e) => {
 
         e.stopPropagation();
-
-        center.classList.toggle(
-            "show"
-        );
+        menu.classList.toggle("show");
 
     };
 
+    document.addEventListener("click", () => {
+        menu.classList.remove("show");
+    });
 }
 
-/* =========================================================
-   THEMES
-========================================================= */
+/* =========================
+   API EXPOSURE
+========================= */
 
-function applyTheme() {
+function exposeAPI() {
 
-    document.body.dataset.theme =
-        activeTheme;
-
+    window.launchApp = openWindow;
 }
 
-window.setTheme = function(name) {
-
-    activeTheme = name;
-
-    localStorage.setItem(
-        "emerald_theme",
-        name
-    );
-
-    applyTheme();
-
-};
+"use strict";
 
 /* =========================================================
-   SYSTEM COMMANDS
+   PART 2 — WINDOW MANAGER
 ========================================================= */
 
-window.restartOS = function () {
+/* =========================
+   FOCUS SYSTEM
+========================= */
 
-    location.reload();
+function focusWindow(win) {
 
-};
+    win.style.zIndex = ++zIndexCounter;
 
-window.logoutUser = function () {
+    document
+        .querySelectorAll(".task-btn")
+        .forEach(btn => btn.classList.remove("active"));
 
-    localStorage.removeItem(
-        "OSusername"
-    );
+    const btn = taskbarButtons.get(win);
+    if (btn) btn.classList.add("active");
+}
 
-    localStorage.removeItem(
-        "os_session"
-    );
+/* =========================
+   TASKBAR BUTTONS
+========================= */
 
-    location.href =
-        "index.html";
+function createTaskButton(title, win) {
 
-};
+    const bar = document.getElementById("taskbar-apps");
+    if (!bar) return;
 
-/* =========================================================
-   GLOBALS
-========================================================= */
+    const btn = document.createElement("button");
 
-window.notify = notify;
+    btn.className = "task-btn";
+    btn.textContent = title;
 
-window.APPS = APPS;
-window.fileSystem = fileSystem;
-window.openWindows = openWindows;
+    btn.onclick = () => {
 
-/* =========================================================
-   PART 2
-   WINDOW MANAGER
-========================================================= */
+        if (win.dataset.minimized === "true") {
+            win.style.display = "flex";
+            win.dataset.minimized = "false";
+        }
 
-let dragState = null;
-let resizeState = null;
+        focusWindow(win);
+    };
 
-/* =========================================================
-   OPEN WINDOW
-========================================================= */
+    bar.appendChild(btn);
 
-window.openWindow = function (
-    title,
-    html,
-    app = ""
-) {
+    taskbarButtons.set(win, btn);
 
-    const container =
-        document.getElementById(
-            "windows-container"
-        );
+    return btn;
+}
 
-    const win =
-        document.createElement("div");
+/* =========================
+   MAIN WINDOW SYSTEM
+========================= */
+
+window.openWindow = function (title, html, app = "") {
+
+    const container = document.getElementById("windows-container");
+    if (!container) return;
+
+    const win = document.createElement("div");
 
     win.className = "window";
 
+    win.dataset.title = title;
     win.dataset.app = app;
 
-    win.style.left = "100px";
+    win.dataset.minimized = "false";
+    win.dataset.maximized = "false";
+
+    win.style.left = "120px";
     win.style.top = "80px";
+    win.style.width = "520px";
+    win.style.height = "360px";
 
-    win.style.width = "500px";
-    win.style.height = "350px";
-
-    win.style.zIndex =
-        ++zIndexCounter;
+    win.style.zIndex = ++zIndexCounter;
 
     win.innerHTML = `
-
         <div class="title-bar">
-
             <span>${title}</span>
 
-            <div>
-
-                <button class="min-btn">
-                    _
-                </button>
-
-                <button class="max-btn">
-                    □
-                </button>
-
-                <button class="close-btn">
-                    X
-                </button>
-
+            <div class="window-buttons">
+                <button class="min-btn">_</button>
+                <button class="max-btn">□</button>
+                <button class="close-btn">X</button>
             </div>
-
         </div>
 
         <div class="window-content">
             ${html}
         </div>
 
-        <div class="resize-handle">
-        </div>
-
+        <div class="resize-handle"></div>
     `;
 
     container.appendChild(win);
 
-    createTaskbarButton(
-        win,
-        title
-    );
+    /* register taskbar button */
+    createTaskButton(title, win);
 
-    attachWindowEvents(
-        win
-    );
+    focusWindow(win);
 
-    openWindows.push(win);
+    /* bring to front */
+    win.onmousedown = () => focusWindow(win);
+
+    /* =========================
+       CLOSE
+    ========================= */
+
+    win.querySelector(".close-btn").onclick = () => {
+
+        const btn = taskbarButtons.get(win);
+        if (btn) btn.remove();
+
+        taskbarButtons.delete(win);
+
+        win.remove();
+
+        saveSession();
+    };
+
+    /* =========================
+       MINIMIZE
+    ========================= */
+
+    win.querySelector(".min-btn").onclick = () => {
+
+        win.style.display = "none";
+        win.dataset.minimized = "true";
+
+        saveSession();
+    };
+
+    /* =========================
+       MAXIMIZE / RESTORE
+    ========================= */
+
+    win.querySelector(".max-btn").onclick = () => {
+
+        const isMax = win.dataset.maximized === "true";
+
+        if (isMax) {
+
+            win.style.left = win.dataset.oldLeft;
+            win.style.top = win.dataset.oldTop;
+            win.style.width = win.dataset.oldWidth;
+            win.style.height = win.dataset.oldHeight;
+
+            win.dataset.maximized = "false";
+
+        } else {
+
+            win.dataset.oldLeft = win.style.left;
+            win.dataset.oldTop = win.style.top;
+            win.dataset.oldWidth = win.style.width;
+            win.dataset.oldHeight = win.style.height;
+
+            win.style.left = "0";
+            win.style.top = "0";
+            win.style.width = "100vw";
+            win.style.height = "calc(100vh - 40px)";
+
+            win.dataset.maximized = "true";
+        }
+
+        saveSession();
+    };
+
+    /* =========================
+       DRAGGING
+    ========================= */
+
+    const titleBar = win.querySelector(".title-bar");
+
+    titleBar.onmousedown = (e) => {
+
+        dragState = {
+            win,
+            offsetX: e.clientX - win.offsetLeft,
+            offsetY: e.clientY - win.offsetTop
+        };
+    };
+
+    /* =========================
+       RESIZE
+    ========================= */
+
+    const resize = win.querySelector(".resize-handle");
+
+    resize.onmousedown = (e) => {
+
+        e.preventDefault();
+
+        resizeState = {
+            win,
+            startX: e.clientX,
+            startY: e.clientY,
+            startWidth: win.offsetWidth,
+            startHeight: win.offsetHeight
+        };
+    };
 
     saveSession();
 
     return win;
 };
 
-/* =========================================================
-   WINDOW EVENTS
-========================================================= */
+/* =========================
+   GLOBAL DRAG + RESIZE ENGINE
+========================= */
 
-function attachWindowEvents(win) {
+document.addEventListener("mousemove", (e) => {
 
-    const titleBar =
-        win.querySelector(
-            ".title-bar"
-        );
+    if (dragState) {
 
-    const closeBtn =
-        win.querySelector(
-            ".close-btn"
-        );
+        const w = dragState.win;
 
-    const minBtn =
-        win.querySelector(
-            ".min-btn"
-        );
+        w.style.left =
+            (e.clientX - dragState.offsetX) + "px";
 
-    const maxBtn =
-        win.querySelector(
-            ".max-btn"
-        );
-
-    const resizeHandle =
-        win.querySelector(
-            ".resize-handle"
-        );
-
-    titleBar.onmousedown =
-        e => {
-
-            dragState = {
-
-                win,
-
-                offsetX:
-                    e.clientX -
-                    win.offsetLeft,
-
-                offsetY:
-                    e.clientY -
-                    win.offsetTop
-
-            };
-
-        };
-
-    resizeHandle.onmousedown =
-        e => {
-
-            e.preventDefault();
-
-            resizeState = {
-
-                win,
-
-                startX:
-                    e.clientX,
-
-                startY:
-                    e.clientY,
-
-                width:
-                    win.offsetWidth,
-
-                height:
-                    win.offsetHeight
-
-            };
-
-        };
-
-    closeBtn.onclick =
-        () => {
-
-            removeTaskbarButton(
-                win
-            );
-
-            win.remove();
-
-            saveSession();
-
-        };
-
-    minBtn.onclick =
-        () => {
-
-            win.style.display =
-                "none";
-
-            win.dataset.minimized =
-                "true";
-
-            saveSession();
-
-        };
-
-    maxBtn.onclick =
-        () => {
-
-            toggleMaximize(
-                win
-            );
-
-        };
-
-    win.onmousedown =
-        () => {
-
-            win.style.zIndex =
-                ++zIndexCounter;
-
-        };
-
-}
-
-/* =========================================================
-   DRAGGING
-========================================================= */
-
-document.addEventListener(
-    "mousemove",
-    e => {
-
-        if (dragState) {
-
-            const win =
-                dragState.win;
-
-            win.style.left =
-                (
-                    e.clientX -
-                    dragState.offsetX
-                ) + "px";
-
-            win.style.top =
-                (
-                    e.clientY -
-                    dragState.offsetY
-                ) + "px";
-
-        }
-
-        if (resizeState) {
-
-            const win =
-                resizeState.win;
-
-            const dx =
-                e.clientX -
-                resizeState.startX;
-
-            const dy =
-                e.clientY -
-                resizeState.startY;
-
-            win.style.width =
-                Math.max(
-                    250,
-                    resizeState.width + dx
-                ) + "px";
-
-            win.style.height =
-                Math.max(
-                    180,
-                    resizeState.height + dy
-                ) + "px";
-
-        }
-
-    }
-);
-
-document.addEventListener(
-    "mouseup",
-    () => {
-
-        dragState = null;
-        resizeState = null;
+        w.style.top =
+            (e.clientY - dragState.offsetY) + "px";
 
         saveSession();
-
-    }
-);
-
-/* =========================================================
-   MAXIMIZE
-========================================================= */
-
-function toggleMaximize(win) {
-
-    if (
-        win.dataset.maximized ===
-        "true"
-    ) {
-
-        win.style.left =
-            win.dataset.left;
-
-        win.style.top =
-            win.dataset.top;
-
-        win.style.width =
-            win.dataset.width;
-
-        win.style.height =
-            win.dataset.height;
-
-        win.dataset.maximized =
-            "false";
-    }
-    else {
-
-        win.dataset.left =
-            win.style.left;
-
-        win.dataset.top =
-            win.style.top;
-
-        win.dataset.width =
-            win.style.width;
-
-        win.dataset.height =
-            win.style.height;
-
-        win.style.left = "0";
-
-        win.style.top = "0";
-
-        win.style.width =
-            "100vw";
-
-        win.style.height =
-            "calc(100vh - 40px)";
-
-        win.dataset.maximized =
-            "true";
     }
 
-    saveSession();
-}
+    if (resizeState) {
 
-/* =========================================================
-   TASKBAR
-========================================================= */
+        const w = resizeState.win;
 
-function createTaskbarButton(
-    win,
-    title
-) {
+        const dx = e.clientX - resizeState.startX;
+        const dy = e.clientY - resizeState.startY;
 
-    const bar =
-        document.getElementById(
-            "taskbar-apps"
-        );
+        w.style.width =
+            Math.max(220, resizeState.startWidth + dx) + "px";
 
-    const btn =
-        document.createElement(
-            "button"
-        );
+        w.style.height =
+            Math.max(160, resizeState.startHeight + dy) + "px";
 
-    btn.className =
-        "taskbar-item";
-
-    btn.textContent =
-        title;
-
-    btn.onclick =
-        () => {
-
-            if (
-                win.dataset.minimized ===
-                "true"
-            ) {
-
-                win.style.display =
-                    "";
-
-                win.dataset.minimized =
-                    "false";
-            }
-            else {
-
-                win.style.display =
-                    "none";
-
-                win.dataset.minimized =
-                    "true";
-            }
-
-            saveSession();
-
-        };
-
-    win.taskbarButton =
-        btn;
-
-    bar.appendChild(btn);
-
-}
-
-function removeTaskbarButton(
-    win
-) {
-
-    if (
-        win.taskbarButton
-    ) {
-
-        win.taskbarButton.remove();
-
+        saveSession();
     }
+});
 
-}
+document.addEventListener("mouseup", () => {
+    dragState = null;
+    resizeState = null;
+});
 
-/* =========================================================
-   SESSION SAVE
-========================================================= */
-
-function saveSession() {
-
-    const data = [];
-
-    document
-        .querySelectorAll(
-            ".window"
-        )
-        .forEach(win => {
-
-            data.push({
-
-                app:
-                    win.dataset.app,
-
-                title:
-                    win.querySelector(
-                        ".title-bar span"
-                    ).textContent,
-
-                left:
-                    win.style.left,
-
-                top:
-                    win.style.top,
-
-                width:
-                    win.style.width,
-
-                height:
-                    win.style.height,
-
-                minimized:
-                    win.dataset.minimized,
-
-                maximized:
-                    win.dataset.maximized
-
-            });
-
-        });
-
-    localStorage.setItem(
-        "emerald_session",
-        JSON.stringify(data)
-    );
-
-}
-
-window.saveSession =
-    saveSession;
+"use strict";
 
 /* =========================================================
-   PART 3
-   SESSIONS + DESKTOP FEATURES
+   PART 3 — FILE SYSTEM CORE (CLOUD DRIVE INTEGRATION)
 ========================================================= */
 
-/* =========================================================
-   SESSION RESTORE
-========================================================= */
+/* =========================
+   LOAD SYSTEM (CLOUD DRIVE)
+========================= */
 
-async function restoreSession() {
-
-    const raw =
-        localStorage.getItem(
-            "emerald_session"
-        );
-
-    if (!raw) return;
-
-    let session = [];
+async function loadSystem() {
 
     try {
-
-        session =
-            JSON.parse(raw);
-
-    }
-    catch {
-
-        return;
-
+        fileSystem.files = await loadDrive() || {};
+    } catch (err) {
+        console.warn("Drive load failed:", err);
+        fileSystem.files = {};
     }
 
-    session.forEach(data => {
+    rerenderApps();
+}
 
-        let html =
-            `<div style="padding:20px">
-                Restored window
-            </div>`;
+/* =========================
+   LIVE APP RERENDER
+========================= */
 
-        const win =
-            openWindow(
-                data.title,
-                html,
-                data.app
-            );
+function rerenderApps() {
 
-        win.style.left =
-            data.left;
+    const windows =
+        document.querySelectorAll(".window[data-app]");
 
-        win.style.top =
-            data.top;
+    windows.forEach(win => {
 
-        win.style.width =
-            data.width;
+        const app = win.dataset.app;
+        const content = win.querySelector(".window-content");
 
-        win.style.height =
-            data.height;
+        if (!content) return;
 
-        if (
-            data.minimized ===
-            "true"
-        ) {
-
-            win.style.display =
-                "none";
-
-            win.dataset.minimized =
-                "true";
+        if (app === "files") {
+            content.innerHTML = renderFileExplorer();
         }
 
-        if (
-            data.maximized ===
-            "true"
-        ) {
-
-            toggleMaximize(
-                win
-            );
+        if (app === "notes") {
+            content.innerHTML = renderNotes();
         }
 
+        if (app === "docs") {
+            content.innerHTML = renderDocs();
+        }
+
+        if (app === "calendar") {
+            content.innerHTML = renderCalendar();
+        }
     });
-
-    notify(
-        "System",
-        "Session restored."
-    );
-
 }
 
-/* =========================================================
-   RESTORE ON BOOT
-========================================================= */
-
-window.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        setTimeout(() => {
-
-            restoreSession();
-
-        }, 500);
-
-    }
-);
-
-/* =========================================================
-   DESKTOP CONTEXT MENU
-========================================================= */
-
-const contextMenu =
-    document.getElementById(
-        "context-menu"
-    );
-
-document
-    .getElementById(
-        "desktop"
-    )
-    .addEventListener(
-        "contextmenu",
-        e => {
-
-            e.preventDefault();
-
-            contextMenu.style.left =
-                e.clientX + "px";
-
-            contextMenu.style.top =
-                e.clientY + "px";
-
-            contextMenu.innerHTML = `
-
-                <div class="context-item"
-                     onclick="refreshDesktop()">
-                    Refresh
-                </div>
-
-                <div class="context-item"
-                     onclick="openFileExplorer()">
-                    Open Files
-                </div>
-
-                <div class="context-item"
-                     onclick="openSystemApp()">
-                    System Settings
-                </div>
-
-                <div class="context-item"
-                     onclick="cycleWallpaper()">
-                    Change Wallpaper
-                </div>
-
-            `;
-
-            contextMenu.classList.add(
-                "show"
-            );
-
-        }
-    );
-
-document.addEventListener(
-    "click",
-    () => {
-
-        contextMenu.classList.remove(
-            "show"
-        );
-
-    }
-);
-
-/* =========================================================
-   DESKTOP REFRESH
-========================================================= */
-
-window.refreshDesktop =
-    function () {
-
-        renderDesktop();
-
-        notify(
-            "Desktop",
-            "Desktop refreshed."
-        );
-
-    };
-
-/* =========================================================
-   POPUP NOTIFICATIONS
-========================================================= */
-
-function popupNotification(
-    title,
-    message
-) {
-
-    const box =
-        document.createElement(
-            "div"
-        );
-
-    box.className =
-        "popup-notification";
-
-    box.innerHTML = `
-
-        <b>${title}</b><br>
-        ${message}
-
-    `;
-
-    document.body.appendChild(
-        box
-    );
-
-    setTimeout(() => {
-
-        box.remove();
-
-    }, 4000);
-
-}
-
-const originalNotify =
-    window.notify;
-
-window.notify =
-    function (
-        title,
-        message
-    ) {
-
-        originalNotify(
-            title,
-            message
-        );
-
-        popupNotification(
-            title,
-            message
-        );
-
-    };
-
-/* =========================================================
-   WALLPAPER SYSTEM
-========================================================= */
-
-const wallpapers = [
-
-    "#008080",
-
-    "linear-gradient(#005c3c,#008060)",
-
-    "linear-gradient(#000040,#101060)",
-
-    "linear-gradient(#202020,#505050)",
-
-    "linear-gradient(#004400,#002200)"
-
-];
-
-let wallpaperIndex =
-    parseInt(
-        localStorage.getItem(
-            "emerald_wallpaper"
-        ) || 0
-    );
-
-function applyWallpaper() {
-
-    document.body.style.background =
-        wallpapers[
-            wallpaperIndex
-        ];
-
-}
-
-window.cycleWallpaper =
-    function () {
-
-        wallpaperIndex++;
-
-        if (
-            wallpaperIndex >=
-            wallpapers.length
-        ) {
-
-            wallpaperIndex = 0;
-
-        }
-
-        localStorage.setItem(
-            "emerald_wallpaper",
-            wallpaperIndex
-        );
-
-        applyWallpaper();
-
-        notify(
-            "Wallpaper",
-            "Wallpaper changed."
-        );
-
-    };
-
-applyWallpaper();
-
-/* =========================================================
-   DESKTOP ICON SIZE
-========================================================= */
-
-window.setIconSize =
-    function (size) {
-
-        document
-            .querySelectorAll(
-                ".icon"
-            )
-            .forEach(icon => {
-
-                icon.style.width =
-                    size + "px";
-
-                icon.style.fontSize =
-                    (size / 5) + "px";
-
-            });
-
-    };
-
-/* =========================================================
-   QUICK STARTUP APPS
-========================================================= */
-
-function launchStartupApps() {
-
-    const startup = JSON.parse(
-        localStorage.getItem(
-            "emerald_startup"
-        ) || "[]"
-    );
-
-    startup.forEach(app => {
-
-        if (
-            APPS[app]
-        ) {
-
-            APPS[app]
-                .launch();
-
-        }
-
-    });
-
-}
-
-/* =========================================================
-   REGISTER STARTUP APP
-========================================================= */
-
-window.addStartupApp =
-    function (app) {
-
-        const list =
-            JSON.parse(
-                localStorage.getItem(
-                    "emerald_startup"
-                ) || "[]"
-            );
-
-        if (
-            !list.includes(app)
-        ) {
-
-            list.push(app);
-
-        }
-
-        localStorage.setItem(
-            "emerald_startup",
-            JSON.stringify(
-                list
-            )
-        );
-
-    };
-
-/* =========================================================
-   FINAL BOOT PATCH
-========================================================= */
-
-window.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        applyWallpaper();
-
-        launchStartupApps();
-
-        notify(
-            "EmeraldOS",
-            "Desktop initialized."
-        );
-
-    }
-);
-
-/* =========================================================
-   PART 4
-   FILE SYSTEM + FOLDERS
-========================================================= */
-
-if (!fileSystem.folders) {
-
-    fileSystem.folders = {
-        Desktop: [],
-        Documents: [],
-        Pictures: [],
-        Downloads: [],
-        Trash: []
-    };
-
-}
-
-let currentFolder = "Desktop";
-
-/* =========================================================
-   OPEN FILE EXPLORER
-========================================================= */
+/* =========================
+   FILE EXPLORER
+========================= */
 
 window.openFileExplorer = function () {
-
-    openWindow(
-        "File Explorer",
-        renderFileExplorer(),
-        "files"
-    );
-
+    openWindow("Files", renderFileExplorer(), "files");
 };
-
-/* =========================================================
-   RENDER FILE EXPLORER
-========================================================= */
 
 function renderFileExplorer() {
 
-    const folderFiles =
-        Object.entries(fileSystem.files)
-            .filter(([id, file]) => {
-
-                return (
-                    file.folder ||
-                    "Desktop"
-                ) === currentFolder;
-
-            });
+    const files = fileSystem.files || {};
 
     return `
+        <div style="padding:6px">
 
-    <div class="split">
+            <button onclick="createFile()">New File</button>
+            <button onclick="uploadFile()">Upload</button>
+            <button onclick="downloadAllFiles()">Backup</button>
 
-        <div class="sidebar">
+            <hr>
 
-            <h3>Folders</h3>
+            ${Object.entries(files).map(([id, f]) => `
+                <div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #ccc">
 
-            ${Object.keys(
-                fileSystem.folders
-            ).map(folder => `
+                    <span>${f.name}</span>
 
-                <div
-                    class="folder-item"
-                    onclick="openFolder('${folder}')">
-
-                    📁 ${folder}
+                    <div>
+                        <button onclick="openFile('${id}')">Open</button>
+                        <button onclick="renameFile('${id}')">Rename</button>
+                        <button onclick="downloadFile('${id}')">Download</button>
+                        <button onclick="deleteFile('${id}')">Delete</button>
+                    </div>
 
                 </div>
-
             `).join("")}
 
         </div>
-
-        <div class="main">
-
-            <div style="padding:4px">
-
-                <button onclick="createFolder()">
-                    New Folder
-                </button>
-
-                <button onclick="createFile()">
-                    New File
-                </button>
-
-                <button onclick="uploadFile()">
-                    Upload
-                </button>
-
-                <input
-                    id="file_search"
-                    placeholder="Search files"
-                    oninput="searchFiles()">
-
-            </div>
-
-            <hr>
-
-            <div id="file_list">
-
-                ${folderFiles.map(([id, file]) => `
-
-                    <div
-                        class="file-row">
-
-                        <span>
-
-                            ${
-                                file.type === "image"
-                                ? "🖼️"
-                                : file.type === "video"
-                                ? "🎬"
-                                : "📄"
-                            }
-
-                            ${file.name}
-
-                        </span>
-
-                        <div>
-
-                            <button
-                                onclick="openFile('${id}')">
-                                Open
-                            </button>
-
-                            <button
-                                onclick="moveFile('${id}')">
-                                Move
-                            </button>
-
-                            <button
-                                onclick="showProperties('${id}')">
-                                Info
-                            </button>
-
-                            <button
-                                onclick="deleteFile('${id}')">
-                                Delete
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                `).join("")}
-
-            </div>
-
-        </div>
-
-    </div>
-
     `;
-
 }
 
-/* =========================================================
-   OPEN FOLDER
-========================================================= */
+/* =========================
+   CREATE FILE
+========================= */
 
-window.openFolder = function (
-    folder
-) {
+window.createFile = async function () {
 
-    currentFolder =
-        folder;
+    await cloudCreateFile(
+        "New File",
+        ""
+    );
 
-    rerenderExplorer();
+    await loadSystem();
 
+    notify("Files", "File created");
 };
 
-/* =========================================================
-   RERENDER
-========================================================= */
+/* =========================
+   DELETE FILE
+========================= */
 
-function rerenderExplorer() {
+window.deleteFile = async function (id) {
 
-    const win =
-        document.querySelector(
-            '.window[data-app="files"] .window-content'
-        );
+    await cloudDeleteFile(id);
 
-    if (!win) return;
+    await loadSystem();
 
-    win.innerHTML =
-        renderFileExplorer();
+    notify("Files", "File deleted");
+};
 
-}
+/* =========================
+   OPEN FILE (MEDIA SAFE)
+========================= */
 
-/* =========================================================
-   CREATE FOLDER
-========================================================= */
+window.openFile = function (id) {
 
-window.createFolder =
-    function () {
+    const file = fileSystem.files[id];
+    if (!file) return;
 
-        const name =
-            prompt(
-                "Folder name:"
-            );
+    let body = "";
 
-        if (!name) return;
+    if (file.content?.startsWith("data:image")) {
 
-        if (
-            fileSystem.folders[name]
-        ) {
-
-            alert(
-                "Folder exists."
-            );
-
-            return;
-
-        }
-
-        fileSystem.folders[name] =
-            [];
-
-        notify(
-            "Folder",
-            "Created " + name
-        );
-
-        rerenderExplorer();
-
-    };
-
-/* =========================================================
-   MOVE FILE
-========================================================= */
-
-window.moveFile =
-    async function (id) {
-
-        const folder =
-            prompt(
-                "Move to folder:"
-            );
-
-        if (
-            !folder ||
-            !fileSystem.folders[
-                folder
-            ]
-        ) {
-
-            alert(
-                "Folder not found."
-            );
-
-            return;
-
-        }
-
-        await cloudSaveFile(
-            id,
-            {
-                folder
-            }
-        );
-
-        await loadSystem();
-
-        rerenderExplorer();
-
-    };
-
-/* =========================================================
-   TRASH SYSTEM
-========================================================= */
-
-window.deleteFile =
-    async function (id) {
-
-        const file =
-            fileSystem.files[id];
-
-        if (!file) return;
-
-        await cloudSaveFile(
-            id,
-            {
-                folder: "Trash"
-            }
-        );
-
-        notify(
-            "Trash",
-            file.name +
-            " moved to trash."
-        );
-
-        await loadSystem();
-
-        rerenderExplorer();
-
-    };
-
-/* =========================================================
-   PERMANENT DELETE
-========================================================= */
-
-window.emptyTrash =
-    async function () {
-
-        const files =
-            Object.entries(
-                fileSystem.files
-            );
-
-        for (
-            const [id, file]
-            of files
-        ) {
-
-            if (
-                file.folder ===
-                "Trash"
-            ) {
-
-                await cloudDeleteFile(
-                    id
-                );
-
-            }
-
-        }
-
-        await loadSystem();
-
-        rerenderExplorer();
-
-    };
-
-/* =========================================================
-   FILE SEARCH
-========================================================= */
-
-window.searchFiles =
-    function () {
-
-        const q =
-            document
-                .getElementById(
-                    "file_search"
-                )
-                .value
-                .toLowerCase();
-
-        document
-            .querySelectorAll(
-                ".file-row"
-            )
-            .forEach(row => {
-
-                row.style.display =
-                    row.textContent
-                        .toLowerCase()
-                        .includes(q)
-                    ? ""
-                    : "none";
-
-            });
-
-    };
-
-/* =========================================================
-   FILE PROPERTIES
-========================================================= */
-
-window.showProperties =
-    function (id) {
-
-        const file =
-            fileSystem.files[id];
-
-        if (!file) return;
-
-        openWindow(
-            "Properties",
-
-            `
-
-            <h3>${file.name}</h3>
-
-            <hr>
-
-            <b>Type:</b>
-            ${file.type || "Text"}
-
-            <br><br>
-
-            <b>Folder:</b>
-            ${file.folder || "Desktop"}
-
-            <br><br>
-
-            <b>Created:</b>
-
-            <br>
-
-            ${
-                new Date(
-                    file.createdAt
-                ).toLocaleString()
-            }
-
-            <br><br>
-
-            <b>Updated:</b>
-
-            <br>
-
-            ${
-                new Date(
-                    file.updatedAt
-                ).toLocaleString()
-            }
-
-            `
-
-        );
-
-    };
-
-/* =========================================================
-   DOWNLOADS SHORTCUT
-========================================================= */
-
-window.openDownloads =
-    function () {
-
-        currentFolder =
-            "Downloads";
-
-        openFileExplorer();
-
-    };
-
-/* =========================================================
-   DOCUMENTS SHORTCUT
-========================================================= */
-
-window.openDocuments =
-    function () {
-
-        currentFolder =
-            "Documents";
-
-        openFileExplorer();
-
-    };
-
-/* =========================================================
-   PICTURES SHORTCUT
-========================================================= */
-
-window.openPictures =
-    function () {
-
-        currentFolder =
-            "Pictures";
-
-        openFileExplorer();
-
-    };
-
-/* =========================================================
-   PART 5
-   PRODUCTIVITY SUITE
-========================================================= */
-
-let activeNote = null;
-let activeDoc = null;
-
-const recentFiles = JSON.parse(
-    localStorage.getItem(
-        "emerald_recent"
-    ) || "[]"
-);
-
-/* =========================================================
-   RECENT FILES
-========================================================= */
-
-function addRecent(id) {
-
-    const index =
-        recentFiles.indexOf(id);
-
-    if (index !== -1) {
-        recentFiles.splice(index, 1);
+        body = `
+            <img src="${file.content}"
+            style="max-width:100%">
+        `;
     }
 
-    recentFiles.unshift(id);
+    else if (file.content?.startsWith("data:video")) {
 
-    if (recentFiles.length > 10) {
-        recentFiles.pop();
+        body = `
+            <video controls style="max-width:100%">
+                <source src="${file.content}">
+            </video>
+        `;
     }
 
-    localStorage.setItem(
-        "emerald_recent",
-        JSON.stringify(recentFiles)
+    else {
+
+        body = `
+            <textarea id="file_${id}"
+                style="width:100%;height:90%">
+                ${file.content || ""}
+            </textarea>
+
+            <button onclick="saveFile('${id}')">
+                Save
+            </button>
+        `;
+    }
+
+    openWindow(file.name, body);
+};
+
+/* =========================
+   SAVE FILE
+========================= */
+
+window.saveFile = async function (id) {
+
+    const el =
+        document.getElementById(`file_${id}`);
+
+    if (!el) return;
+
+    await cloudSaveFile(id, {
+        name: fileSystem.files[id].name,
+        content: el.value
+    });
+
+    await loadSystem();
+
+    notify("Files", "File saved");
+};
+
+/* =========================
+   RENAME FILE
+========================= */
+
+window.renameFile = async function (id) {
+
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    const name = prompt("Rename file:", file.name);
+
+    if (!name) return;
+
+    await cloudSaveFile(id, {
+        name
+    });
+
+    await loadSystem();
+
+    notify("Files", "File renamed");
+};
+
+/* =========================
+   DOWNLOAD FILE
+========================= */
+
+window.downloadFile = function (id) {
+
+    const file = fileSystem.files[id];
+    if (!file) return;
+
+    const blob = new Blob(
+        [file.content || ""],
+        { type: "text/plain" }
     );
-}
 
-/* =========================================================
-   NOTES APP 2.0
-========================================================= */
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = file.name || "file.txt";
+
+    a.click();
+};
+
+/* =========================
+   BACKUP ALL FILES
+========================= */
+
+window.downloadAllFiles = function () {
+
+    const data = Object.values(fileSystem.files || [])
+        .map(f =>
+            `${f.name}\n\n${f.content}\n\n---\n`
+        )
+        .join("");
+
+    const blob = new Blob(
+        [data],
+        { type: "text/plain" }
+    );
+
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+    a.download = "emeraldos_backup.txt";
+
+    a.click();
+};
+
+/* =========================
+   UPLOAD FILE
+========================= */
+
+window.uploadFile = function () {
+
+    const input =
+        document.createElement("input");
+
+    input.type = "file";
+
+    input.onchange = (e) => {
+
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+
+            await cloudCreateFile(
+                file.name,
+                reader.result
+            );
+
+            await loadSystem();
+
+            notify("Files", "Upload complete");
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    input.click();
+};
+
+/* =========================
+   NOTES APP
+========================= */
 
 window.openNotes = function () {
-
-    openWindow(
-        "Notes",
-        renderNotes(),
-        "notes"
-    );
-
+    openWindow("Notes", renderNotes(), "notes");
 };
 
 function renderNotes() {
 
-    const notes =
-        Object.entries(fileSystem.files)
-        .filter(([id, file]) =>
-            file.app === "notes"
-        );
+    const files = fileSystem.files || {};
 
     return `
-
-    <div class="split">
-
-        <div class="sidebar">
+        <div style="padding:6px">
 
             <button onclick="createNote()">
-                New Note
+                + New Note
             </button>
 
             <hr>
 
-            ${notes.map(([id, file]) => `
+            ${Object.entries(files).map(([id, f]) => `
+                <div onclick="loadNote('${id}')"
+                    style="cursor:pointer;padding:4px">
 
-                <div
-                    class="folder-item"
-                    onclick="loadNote('${id}')">
-
-                    📝 ${file.name}
+                    📄 ${f.name}
 
                 </div>
-
             `).join("")}
 
         </div>
-
-        <div class="main">
-
-            <input
-                id="note_title"
-                placeholder="Title">
-
-            <textarea
-                id="note_body"
-                style="flex:1;height:100%;resize:none"></textarea>
-
-            <div style="padding:5px">
-
-                <button onclick="saveNote()">
-                    Save
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
     `;
 }
 
-window.createNote =
-async function () {
+window.createNote = async function () {
 
-    activeNote =
-        await cloudCreateFile(
-            "New Note",
-            ""
-        );
-
-    await cloudSaveFile(
-        activeNote,
-        {
-            app: "notes"
-        }
-    );
+    await cloudCreateFile("New Note", "");
 
     await loadSystem();
-
 };
 
-window.loadNote =
-function (id) {
+window.loadNote = function (id) {
 
-    activeNote = id;
+    activeNoteId = id;
 
-    const file =
-        fileSystem.files[id];
+    setTimeout(() => {
 
-    document.getElementById(
-        "note_title"
-    ).value =
-        file.name;
+        const f = fileSystem.files[id];
 
-    document.getElementById(
-        "note_body"
-    ).value =
-        file.content;
-
-    addRecent(id);
-
-};
-
-window.saveNote =
-async function () {
-
-    if (!activeNote) return;
-
-    await cloudSaveFile(
-        activeNote,
-        {
-            name:
-                document.getElementById(
-                    "note_title"
-                ).value,
-
-            content:
-                document.getElementById(
-                    "note_body"
-                ).value
-        }
-    );
-
-    notify(
-        "Notes",
-        "Saved."
-    );
-
-    await loadSystem();
-
-};
-
-/* =========================================================
-   AUTOSAVE
-========================================================= */
-
-setInterval(async () => {
-
-    if (activeNote) {
+        const title =
+            document.getElementById("note_title");
 
         const body =
-            document.getElementById(
-                "note_body"
-            );
+            document.getElementById("note_body");
 
-        if (body) {
+        if (title) title.value = f.name;
+        if (body) body.value = f.content;
 
-            await cloudSaveFile(
-                activeNote,
-                {
-                    content:
-                        body.value
-                }
-            );
+    }, 50);
+};
 
-        }
+/* =========================
+   DOCS APP
+========================= */
 
-    }
-
-}, 30000);
-
-/* =========================================================
-   DOCS 2.0
-========================================================= */
-
-window.openDocs =
-function () {
-
-    openWindow(
-        "Documents",
-        renderDocs(),
-        "docs"
-    );
-
+window.openDocs = function () {
+    openWindow("Docs", renderDocs(), "docs");
 };
 
 function renderDocs() {
 
-    const docs =
-        Object.entries(fileSystem.files)
-        .filter(([id, file]) =>
-            file.app === "docs"
-        );
+    const files = fileSystem.files || {};
 
     return `
-
-    <div class="split">
-
-        <div class="sidebar">
+        <div style="padding:6px">
 
             <button onclick="createDoc()">
                 New Doc
@@ -2072,52 +830,27 @@ function renderDocs() {
 
             <hr>
 
-            ${docs.map(([id,file]) => `
+            ${Object.entries(files).map(([id, f]) => `
+                <div onclick="loadDoc('${id}')"
+                    style="cursor:pointer;padding:4px">
 
-                <div
-                    class="folder-item"
-                    onclick="loadDoc('${id}')">
-
-                    📄 ${file.name}
+                    📘 ${f.name}
 
                 </div>
-
             `).join("")}
 
-        </div>
+            <hr>
 
-        <div class="main">
+            <input id="doc_title"
+                placeholder="Title"
+                style="width:100%">
 
-            <div class="toolbar">
-
-                <button onclick="docBold()">
-                    B
-                </button>
-
-                <button onclick="docItalic()">
-                    I
-                </button>
-
-                <button onclick="docUnderline()">
-                    U
-                </button>
-
-            </div>
-
-            <input
-                id="doc_title"
-                placeholder="Title">
-
-            <div
-                id="doc_editor"
+            <div id="doc_editor"
                 contenteditable="true"
-                style="
-                    flex:1;
-                    border:1px solid #888;
-                    padding:8px;
-                    overflow:auto;
-                    background:white;
-                ">
+                style="height:200px;
+                border:1px solid #aaa;
+                padding:6px;
+                overflow:auto">
             </div>
 
             <button onclick="saveDoc()">
@@ -2125,1196 +858,605 @@ function renderDocs() {
             </button>
 
         </div>
-
-    </div>
-
     `;
-
 }
 
-window.createDoc =
-async function () {
+window.createDoc = async function () {
 
-    activeDoc =
-        await cloudCreateFile(
-            "New Document",
-            ""
-        );
-
-    await cloudSaveFile(
-        activeDoc,
-        {
-            app: "docs"
-        }
-    );
+    await cloudCreateFile("New Doc", "");
 
     await loadSystem();
-
 };
 
-window.loadDoc =
-function (id) {
+window.loadDoc = function (id) {
 
-    activeDoc = id;
+    activeDocId = id;
 
-    const file =
-        fileSystem.files[id];
+    setTimeout(() => {
 
-    document.getElementById(
-        "doc_title"
-    ).value =
-        file.name;
+        const f = fileSystem.files[id];
 
-    document.getElementById(
-        "doc_editor"
-    ).innerHTML =
-        file.content;
+        const title =
+            document.getElementById("doc_title");
 
-    addRecent(id);
+        const editor =
+            document.getElementById("doc_editor");
 
+        if (title) title.value = f.name;
+        if (editor) editor.innerHTML = f.content;
+
+    }, 50);
 };
 
-window.saveDoc =
-async function () {
+window.saveDoc = async function () {
 
-    if (!activeDoc) return;
+    if (!activeDocId) return;
 
-    await cloudSaveFile(
-        activeDoc,
-        {
-            name:
-                document.getElementById(
-                    "doc_title"
-                ).value,
+    const title =
+        document.getElementById("doc_title").value;
 
-            content:
-                document.getElementById(
-                    "doc_editor"
-                ).innerHTML
-        }
-    );
+    const body =
+        document.getElementById("doc_editor").innerHTML;
 
-    notify(
-        "Documents",
-        "Saved."
-    );
-
-    await loadSystem();
-
-};
-
-/* =========================================================
-   TEXT TOOLS
-========================================================= */
-
-window.docBold =
-function () {
-
-    document.execCommand(
-        "bold"
-    );
-
-};
-
-window.docItalic =
-function () {
-
-    document.execCommand(
-        "italic"
-    );
-
-};
-
-window.docUnderline =
-function () {
-
-    document.execCommand(
-        "underline"
-    );
-
-};
-
-/* =========================================================
-   DOCUMENT AUTOSAVE
-========================================================= */
-
-setInterval(async () => {
-
-    if (!activeDoc) return;
-
-    const editor =
-        document.getElementById(
-            "doc_editor"
-        );
-
-    if (!editor) return;
-
-    await cloudSaveFile(
-        activeDoc,
-        {
-            content:
-                editor.innerHTML
-        }
-    );
-
-}, 30000);
-
-/* =========================================================
-   CALENDAR REMINDERS
-========================================================= */
-
-window.saveCalendarReminder =
-async function () {
-
-    const date =
-        document.getElementById(
-            "cal_date"
-        ).value;
-
-    const text =
-        document.getElementById(
-            "cal_note"
-        ).value;
-
-    const id =
-        await cloudCreateFile(
-            "Reminder",
-            text
-        );
-
-    await cloudSaveFile(
-        id,
-        {
-            app: "calendar",
-            date
-        }
-    );
-
-    notify(
-        "Calendar",
-        "Reminder saved."
-    );
-
-};
-
-function checkReminders() {
-
-    const today =
-        new Date()
-        .toISOString()
-        .split("T")[0];
-
-    Object.values(
-        fileSystem.files
-    ).forEach(file => {
-
-        if (
-            file.app === "calendar" &&
-            file.date === today
-        ) {
-
-            notify(
-                "Reminder",
-                file.content
-            );
-
-        }
-
+    await cloudSaveFile(activeDocId, {
+        name: title,
+        content: body
     });
 
-}
+    await loadSystem();
 
-setTimeout(
-    checkReminders,
-    3000
-);
+    notify("Docs", "Document saved");
+};
+
+"use strict";
 
 /* =========================================================
-   RECENT FILES WINDOW
+   PART 4 — BUILT-IN APPS + SYSTEM CONTROL PANEL
 ========================================================= */
 
-window.openRecentFiles =
-function () {
+/* =========================
+   CALENDAR APP
+========================= */
 
-    let html = "";
+let calendarData = {};
+let selectedDate = null;
 
-    recentFiles.forEach(id => {
+window.openCalendar = function () {
+    openWindow("Calendar", renderCalendar(), "calendar");
+};
 
-        const file =
-            fileSystem.files[id];
+function renderCalendar() {
 
-        if (!file) return;
+    const today =
+        new Date().toISOString().split("T")[0];
 
-        html += `
+    return `
+        <div style="padding:8px">
 
-        <div
-            class="file-row">
+            <input type="date"
+                id="cal_date"
+                value="${today}"
+                onchange="selectDate(this.value)">
 
-            <span>
-                ${file.name}
-            </span>
+            <button onclick="saveCalendarNote()">
+                Save Note
+            </button>
 
-            <button
-                onclick="openFile('${id}')">
+            <hr>
 
-                Open
+            <textarea id="cal_note"
+                style="width:100%;height:120px"
+                placeholder="Calendar notes..."></textarea>
+
+            <hr>
+
+            <b>Saved Entries</b>
+
+            <div style="max-height:140px;overflow:auto">
+
+                ${Object.entries(fileSystem.files || {})
+                    .filter(([_, f]) => f.type === "calendar")
+                    .map(([id, f]) => `
+                        <div style="padding:4px;border-bottom:1px solid #ccc">
+
+                            📅 ${f.name}
+
+                            <button onclick="openCalendarEntry('${id}')">
+                                Open
+                            </button>
+
+                        </div>
+                    `).join("")}
+
+            </div>
+
+        </div>
+    `;
+}
+
+window.selectDate = function (date) {
+
+    selectedDate = date;
+
+    const entry =
+        Object.values(fileSystem.files || {})
+            .find(f => f.calendarDate === date);
+
+    const note =
+        document.getElementById("cal_note");
+
+    if (note) note.value = entry?.content || "";
+};
+
+window.saveCalendarNote = async function () {
+
+    const date =
+        document.getElementById("cal_date").value;
+
+    const note =
+        document.getElementById("cal_note").value;
+
+    await cloudCreateFile(
+        `Calendar ${date}`,
+        note
+    );
+
+    await loadSystem();
+
+    notify("Calendar", "Entry saved");
+};
+
+window.openCalendarEntry = function (id) {
+
+    const f = fileSystem.files[id];
+
+    if (!f) return;
+
+    openWindow(f.name, `<pre>${f.content}</pre>`);
+};
+
+/* =========================
+   CALCULATOR APP
+========================= */
+
+let calcInput = "";
+
+window.openCalculator = function () {
+    openWindow("Calculator", renderCalculator(), "calculator");
+};
+
+function renderCalculator() {
+
+    return `
+        <div style="padding:10px">
+
+            <input id="calc_display"
+                class="calc-display"
+                disabled>
+
+            <div class="calc-grid">
+
+                ${[
+                    "7","8","9","/",
+                    "4","5","6","*",
+                    "1","2","3","-",
+                    "0",".","=","+"
+                ].map(v => `
+                    <button onclick="calcPress('${v}')">
+                        ${v}
+                    </button>
+                `).join("")}
+
+            </div>
+
+            <button onclick="clearCalc()"
+                style="width:100%;margin-top:6px">
+
+                Clear
 
             </button>
 
         </div>
-
-        `;
-
-    });
-
-    openWindow(
-        "Recent Files",
-        html
-    );
-
-};
-
-/* =========================================================
-   RECOVERY
-========================================================= */
-
-window.recoverDocument =
-function (id) {
-
-    const file =
-        fileSystem.files[id];
-
-    if (!file) return;
-
-    if (file.app === "notes") {
-        loadNote(id);
-    }
-
-    if (file.app === "docs") {
-        loadDoc(id);
-    }
-
-};
-
-/* =========================================================
-   PART 6
-   THEMES + WIDGETS + APP STORE
-========================================================= */
-
-let currentTheme =
-    localStorage.getItem(
-        "emerald_theme"
-    ) || "classic";
-
-/* =========================================================
-   APPLY THEME
-========================================================= */
-
-window.applyTheme =
-function(theme) {
-
-    document.body.setAttribute(
-        "data-theme",
-        theme
-    );
-
-    currentTheme = theme;
-
-    localStorage.setItem(
-        "emerald_theme",
-        theme
-    );
-
-    notify(
-        "Theme",
-        theme + " enabled"
-    );
-
-};
-
-/* =========================================================
-   THEMES PANEL
-========================================================= */
-
-window.openThemes =
-function() {
-
-    openWindow(
-        "Themes",
-
-        `
-        <h3>Select Theme</h3>
-
-        <button onclick="applyTheme('classic')">
-            Classic
-        </button>
-
-        <button onclick="applyTheme('emerald')">
-            Emerald
-        </button>
-
-        <button onclick="applyTheme('dark')">
-            Dark
-        </button>
-
-        <button onclick="applyTheme('midnight')">
-            Midnight
-        </button>
-        `
-    );
-
-};
-
-/* =========================================================
-   APP STORE
-========================================================= */
-
-const appStoreApps = [
-
-    {
-        name: "Paint",
-        icon: "🎨"
-    },
-
-    {
-        name: "Weather",
-        icon: "☀️"
-    },
-
-    {
-        name: "Music",
-        icon: "🎵"
-    },
-
-    {
-        name: "Terminal",
-        icon: "💻"
-    }
-
-];
-
-window.openAppStore =
-function() {
-
-    openWindow(
-        "App Store",
-
-        `
-        <h3>EmeraldOS Store</h3>
-
-        ${appStoreApps.map(app => `
-
-            <div class="file-row">
-
-                <span>
-                    ${app.icon}
-                    ${app.name}
-                </span>
-
-                <button
-                    onclick="installApp('${app.name}')">
-
-                    Install
-
-                </button>
-
-            </div>
-
-        `).join("")}
-        `
-    );
-
-};
-
-window.installApp =
-function(name) {
-
-    notify(
-        "App Store",
-        name + " installed."
-    );
-
-};
-
-/* =========================================================
-   SYSTEM MONITOR
-========================================================= */
-
-window.openSystemMonitor =
-function() {
-
-    openWindow(
-        "System Monitor",
-
-        `
-        <div id="system_stats">
-
-            Loading...
-
-        </div>
-        `,
-
-        "monitor"
-    );
-
-    updateMonitor();
-
-};
-
-function updateMonitor() {
-
-    const el =
-        document.getElementById(
-            "system_stats"
-        );
-
-    if (!el) return;
-
-    el.innerHTML = `
-
-        <b>Windows:</b>
-        ${
-            document.querySelectorAll(
-                ".window"
-            ).length
-        }
-
-        <br><br>
-
-        <b>Files:</b>
-        ${
-            Object.keys(
-                fileSystem.files
-            ).length
-        }
-
-        <br><br>
-
-        <b>Theme:</b>
-        ${currentTheme}
-
-        <br><br>
-
-        <b>Resolution:</b>
-
-        ${window.innerWidth}
-        x
-        ${window.innerHeight}
-
     `;
-
-    setTimeout(
-        updateMonitor,
-        1000
-    );
-
 }
 
-/* =========================================================
-   DESKTOP WIDGETS
-========================================================= */
+window.calcPress = function (v) {
 
-window.addClockWidget =
-function() {
+    if (v === "=") {
 
-    const widget =
-        document.createElement(
-            "div"
-        );
+        try {
+            calcInput = eval(calcInput).toString();
+        } catch {
+            calcInput = "Error";
+        }
 
-    widget.className =
-        "desktop-widget";
+    } else {
+        calcInput += v;
+    }
 
-    widget.id =
-        "clock_widget";
+    const display =
+        document.getElementById("calc_display");
 
-    widget.innerHTML =
-        new Date()
-            .toLocaleTimeString();
-
-    document
-        .getElementById(
-            "desktop"
-        )
-        .appendChild(
-            widget
-        );
-
+    if (display) display.value = calcInput;
 };
 
-setInterval(() => {
+window.clearCalc = function () {
 
-    const w =
-        document.getElementById(
-            "clock_widget"
-        );
+    calcInput = "";
 
-    if (w) {
+    const display =
+        document.getElementById("calc_display");
 
-        w.innerHTML =
-            new Date()
-                .toLocaleTimeString();
+    if (display) display.value = "";
+};
 
-    }
+/* =========================
+   CLOCK SUITE
+========================= */
 
-}, 1000);
+let stopwatchInterval;
+let stopwatchTime = 0;
+let alarmTime = null;
 
-/* =========================================================
-   WINDOW SNAPPING
-========================================================= */
+window.openClockApp = function () {
+    openWindow("Clock Suite", renderClock(), "clock");
+};
 
-document.addEventListener(
-    "mouseup",
+function renderClock() {
 
-    () => {
+    return `
+        <div style="padding:10px">
 
-        document
-            .querySelectorAll(
-                ".window"
-            )
-            .forEach(win => {
-
-                const left =
-                    win.offsetLeft;
-
-                if (left < 10) {
-
-                    win.style.left =
-                        "0px";
-
-                    win.style.top =
-                        "0px";
-
-                    win.style.width =
-                        "50%";
-
-                    win.style.height =
-                        "calc(100% - 40px)";
-                }
-
-                if (
-                    left >
-                    window.innerWidth - 50
-                ) {
-
-                    win.style.left =
-                        "50%";
-
-                    win.style.top =
-                        "0px";
-
-                    win.style.width =
-                        "50%";
-
-                    win.style.height =
-                        "calc(100% - 40px)";
-                }
-
-            });
-
-    }
-);
-
-/* =========================================================
-   TERMINAL APP
-========================================================= */
-
-window.openTerminal =
-function() {
-
-    openWindow(
-        "Terminal",
-
-        `
-        <div id="terminal_output">
-
-            EmeraldOS Terminal
+            <h3>🕒 Live Time</h3>
+            <div id="live_time"></div>
 
             <hr>
 
+            <h3>⏱ Stopwatch</h3>
+
+            <div id="stopwatch">0:00</div>
+
+            <button onclick="startStopwatch()">Start</button>
+            <button onclick="pauseStopwatch()">Pause</button>
+            <button onclick="resetStopwatch()">Reset</button>
+
+            <hr>
+
+            <h3>⏰ Alarm</h3>
+
+            <input type="time" id="alarm_input">
+            <button onclick="setAlarm()">Set Alarm</button>
+
         </div>
+    `;
+}
 
-        <input
-            id="terminal_input"
-            placeholder="Enter command"
-            onkeydown="
-                if(event.key==='Enter')
-                runCommand(this.value)
-            ">
-        `
-    );
+/* LIVE CLOCK UPDATE */
+setInterval(() => {
 
+    const el =
+        document.getElementById("live_time");
+
+    if (el) {
+        el.textContent =
+            new Date().toLocaleTimeString();
+    }
+
+    checkAlarm();
+
+}, 1000);
+
+/* =========================
+   STOPWATCH
+========================= */
+
+window.startStopwatch = function () {
+
+    if (stopwatchInterval) return;
+
+    stopwatchInterval = setInterval(() => {
+
+        stopwatchTime++;
+
+        const el =
+            document.getElementById("stopwatch");
+
+        if (el) {
+            el.textContent =
+                formatTime(stopwatchTime);
+        }
+
+    }, 1000);
 };
 
-window.runCommand =
-function(cmd) {
+window.pauseStopwatch = function () {
 
-    const output =
-        document.getElementById(
-            "terminal_output"
-        );
+    clearInterval(stopwatchInterval);
 
-    if (!output) return;
+    stopwatchInterval = null;
+};
 
-    let result =
-        "Unknown command";
+window.resetStopwatch = function () {
 
-    if (cmd === "help") {
+    stopwatchTime = 0;
 
-        result =
-            "help, clear, version, files";
+    pauseStopwatch();
 
+    const el =
+        document.getElementById("stopwatch");
+
+    if (el) el.textContent = "0:00";
+};
+
+function formatTime(sec) {
+
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/* =========================
+   ALARM
+========================= */
+
+window.setAlarm = function () {
+
+    alarmTime =
+        document.getElementById("alarm_input").value;
+
+    notify("Clock", `Alarm set for ${alarmTime}`);
+};
+
+function checkAlarm() {
+
+    if (!alarmTime) return;
+
+    const now =
+        new Date().toTimeString().slice(0, 5);
+
+    if (now === alarmTime) {
+
+        notify("Alarm", "Time is up!");
+
+        alarmTime = null;
     }
+}
 
-    if (cmd === "version") {
+/* =========================
+   SYSTEM CONTROL PANEL
+========================= */
 
-        result =
-            "EmeraldOS 3.2";
+window.openSystemApp = function () {
+    openWindow("System", renderSystem(), "system");
+};
 
-    }
+function renderSystem() {
 
-    if (cmd === "files") {
+    return `
+        <div style="padding:10px">
 
-        result =
-            Object.keys(
-                fileSystem.files
-            ).length +
-            " files";
+            <h3>User</h3>
 
-    }
+            <div>
+                Logged in as:
+                <b>
+                    ${localStorage.getItem("OSusername") || "Guest"}
+                </b>
+            </div>
 
-    if (cmd === "clear") {
+            <button onclick="logoutUser()">
+                Logout
+            </button>
 
-        output.innerHTML =
-            "";
+            <hr>
 
+            <h3>System Controls</h3>
+
+            <button onclick="clearWindows()">
+                Close All Windows
+            </button>
+
+            <button onclick="restartOS()">
+                Restart OS
+            </button>
+
+            <hr>
+
+            <h3>Performance</h3>
+
+            <button onclick="toggleFocus()">
+                Focus Mode
+            </button>
+
+            <button onclick="togglePerf()">
+                Performance Mode
+            </button>
+
+            <hr>
+
+            <h3>Theme</h3>
+
+            <button onclick="setTheme('classic')">Classic</button>
+            <button onclick="setTheme('dark')">Dark</button>
+            <button onclick="setTheme('midnight')">Midnight</button>
+
+            <hr>
+
+            <h3>System Info</h3>
+
+            <div id="sys_info"></div>
+
+        </div>
+    `;
+}
+
+/* =========================
+   SYSTEM ACTIONS
+========================= */
+
+window.logoutUser = function () {
+
+    localStorage.clear();
+
+    location.href = "index.html";
+};
+
+window.clearWindows = function () {
+
+    document
+        .querySelectorAll(".window")
+        .forEach(w => w.remove());
+
+    notify("System", "All windows closed");
+};
+
+window.restartOS = function () {
+
+    location.reload();
+};
+
+/* =========================
+   OPTIONAL TOGGLES (SAFE DEFAULTS)
+========================= */
+
+let focusMode = false;
+let perfMode = false;
+
+window.toggleFocus = function () {
+
+    focusMode = !focusMode;
+
+    document.body.style.filter =
+        focusMode ? "brightness(0.8)" : "";
+
+    notify("System",
+        focusMode ? "Focus ON" : "Focus OFF"
+    );
+};
+
+window.togglePerf = function () {
+
+    perfMode = !perfMode;
+
+    document.body.style.transition =
+        perfMode ? "none" : "";
+
+    notify("System",
+        perfMode ? "Performance ON" : "Performance OFF"
+    );
+};
+
+"use strict";
+
+/* =========================================================
+   PART 5 — SESSION RESTORE + FINAL BOOT ENGINE
+========================================================= */
+
+/* =========================
+   SESSION RESTORE
+========================= */
+
+async function restoreSession() {
+
+    const raw =
+        localStorage.getItem("emerald_session");
+
+    if (!raw) return;
+
+    let session = [];
+
+    try {
+        session = JSON.parse(raw);
+    } catch {
         return;
     }
 
-    output.innerHTML += `
+    for (const winData of session) {
 
-        > ${cmd}
+        const win = openWindow(
+            winData.title,
+            `<div class="restored">Restored session window</div>`,
+            winData.app
+        );
 
-        <br>
+        if (!win) continue;
 
-        ${result}
+        win.style.left = winData.left || "100px";
+        win.style.top = winData.top || "80px";
+        win.style.width = winData.width || "500px";
+        win.style.height = winData.height || "350px";
 
-        <br><br>
+        if (winData.maximized) {
+            win.dataset.maximized = "true";
 
-    `;
+            win.style.left = "0";
+            win.style.top = "0";
+            win.style.width = "100vw";
+            win.style.height = "calc(100vh - 40px)";
+        }
 
-};
+        if (winData.minimized) {
+            win.dataset.minimized = "true";
+            win.style.display = "none";
+        }
+    }
 
-/* =========================================================
-   UPDATE MANAGER
-========================================================= */
+    notify("System", "Session restored");
+}
 
-window.openUpdates =
-function() {
+/* expose for boot */
+window.restoreSession = restoreSession;
 
-    openWindow(
-        "Updates",
+/* =========================
+   WINDOW PATCH (IMPORTANT FIX)
+========================= */
 
-        `
-        <h3>EmeraldOS Update Manager</h3>
+/*
+Ensure saveSession is globally available
+from Part 1
+*/
+if (!window.saveSession) {
+    window.saveSession = () => {};
+}
 
-        <p>
-            Current Version:
-            3.2
-        </p>
+/* =========================
+   BOOT FINALIZATION PATCH
+========================= */
 
-        <button onclick="
-            notify(
-                'Updates',
-                'No updates available.'
-            )
-        ">
-            Check Updates
-        </button>
-        `
+window.addEventListener("DOMContentLoaded", async () => {
+
+    // slight delay ensures DOM + apps are ready
+    setTimeout(async () => {
+
+        await restoreSession();
+
+        notify(
+            "EmeraldOS",
+            "Desktop ready"
+        );
+
+    }, 300);
+
+});
+
+/* =========================
+   GLOBAL CLEAN API EXPORT
+========================= */
+
+window.launchApp = openWindow;
+
+/* =========================
+   SAFETY PATCH (AVOID DOUBLE INIT)
+========================= */
+
+if (!window.__EMERALD_BOOTED__) {
+
+    window.__EMERALD_BOOTED__ = true;
+
+} else {
+
+    console.warn(
+        "EmeraldOS already booted once"
     );
-
-};
-
-/***********************
- * EmeraldOS 3.2
- * PART 7 - SYSTEM SERVICES LAYER
- ***********************/
-
-const EmeraldSystem = (() => {
-
-  /***********************
-   * STATE PERSISTENCE
-   ***********************/
-  const STORAGE_KEY = "emeraldos_state_v32";
-
-  function saveState() {
-    const state = {
-      windows: WindowManager.getAll?.() || [],
-      tasks: Taskbar?.getTasks?.() || [],
-      desktop: Desktop?.getState?.() || {},
-      time: Date.now()
-    };
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (e) {
-      console.warn("[EmeraldOS] Failed to save state:", e);
-    }
-  }
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (e) {
-      console.warn("[EmeraldOS] Failed to load state:", e);
-      return null;
-    }
-  }
-
-  function restoreState(state) {
-    if (!state) return;
-
-    if (state.windows && WindowManager.restoreAll) {
-      WindowManager.restoreAll(state.windows);
-    }
-
-    if (state.tasks && Taskbar?.restore) {
-      Taskbar.restore(state.tasks);
-    }
-
-    if (state.desktop && Desktop?.restore) {
-      Desktop.restore(state.desktop);
-    }
-  }
-
-
-  /***********************
-   * AUTO-SAVE LOOP
-   ***********************/
-  let autosaveInterval = null;
-
-  function startAutosave(intervalMs = 5000) {
-    if (autosaveInterval) clearInterval(autosaveInterval);
-
-    autosaveInterval = setInterval(() => {
-      saveState();
-    }, intervalMs);
-
-    console.log("[EmeraldOS] Autosave enabled");
-  }
-
-  function stopAutosave() {
-    clearInterval(autosaveInterval);
-    autosaveInterval = null;
-  }
-
-
-  /***********************
-   * CRASH HANDLER / SAFETY NET
-   ***********************/
-  function initCrashHandler() {
-    window.addEventListener("error", (e) => {
-      console.error("[EmeraldOS CRASH]", e.message);
-
-      try {
-        saveState();
-      } catch (_) {}
-
-      // optional: show BSOD-style overlay
-      if (WindowManager.createSystemModal) {
-        WindowManager.createSystemModal({
-          title: "System Error",
-          message: "EmeraldOS encountered a critical error and saved your session.",
-          type: "error"
-        });
-      }
-    });
-
-    window.addEventListener("unhandledrejection", (e) => {
-      console.error("[EmeraldOS Promise Error]", e.reason);
-
-      try {
-        saveState();
-      } catch (_) {}
-    });
-  }
-
-
-  /***********************
-   * SYSTEM HEARTBEAT
-   ***********************/
-  let heartbeat = null;
-
-  function startHeartbeat() {
-    heartbeat = setInterval(() => {
-      const status = {
-        time: new Date().toLocaleTimeString(),
-        windows: WindowManager.count?.() || 0,
-        memoryHint: performance?.memory?.usedJSHeapSize || null
-      };
-
-      // optional hook for UI
-      if (typeof SystemStatus !== "undefined" && SystemStatus.update) {
-        SystemStatus.update(status);
-      }
-
-    }, 2000);
-  }
-
-  function stopHeartbeat() {
-    clearInterval(heartbeat);
-    heartbeat = null;
-  }
-
-
-  /***********************
-   * SAFE MODE
-   ***********************/
-  function enableSafeMode() {
-    console.warn("[EmeraldOS] Safe Mode Enabled");
-
-    WindowManager.setAnimations?.(false);
-    Taskbar.disableEffects?.(true);
-
-    localStorage.setItem("emeraldos_safe_mode", "true");
-  }
-
-  function disableSafeMode() {
-    console.log("[EmeraldOS] Safe Mode Disabled");
-
-    WindowManager.setAnimations?.(true);
-    Taskbar.disableEffects?.(false);
-
-    localStorage.removeItem("emeraldos_safe_mode");
-  }
-
-  function isSafeMode() {
-    return localStorage.getItem("emeraldos_safe_mode") === "true";
-  }
-
-
-  /***********************
-   * BOOT HOOK
-   ***********************/
-  function init() {
-    console.log("[EmeraldOS] Initializing System Services...");
-
-    initCrashHandler();
-    startHeartbeat();
-
-    const state = loadState();
-    if (state) {
-      restoreState(state);
-      console.log("[EmeraldOS] State restored");
-    }
-
-    if (isSafeMode()) {
-      enableSafeMode();
-    }
-
-    startAutosave(5000);
-
-    console.log("[EmeraldOS] System Services Online");
-  }
-
-
-  /***********************
-   * PUBLIC API
-   ***********************/
-  return {
-    init,
-    saveState,
-    loadState,
-    restoreState,
-    startAutosave,
-    stopAutosave,
-    startHeartbeat,
-    stopHeartbeat,
-    enableSafeMode,
-    disableSafeMode,
-    isSafeMode
-  };
-
-})();
-
-/***********************
- * AUTO BOOT HOOK
- ***********************/
-document.addEventListener("DOMContentLoaded", () => {
-  EmeraldSystem.init();
-});
-
-/***********************
- * EmeraldOS 3.2
- * PART 8 - FINAL SYSTEM CORE
- * Window Manager + Sandbox + Event Bus
- ***********************/
-
-const EmeraldCore = (() => {
-
-  /***********************
-   * GLOBAL EVENT BUS
-   * (OS-wide communication layer)
-   ***********************/
-  const events = {};
-
-  function on(event, handler) {
-    if (!events[event]) events[event] = [];
-    events[event].push(handler);
-  }
-
-  function off(event, handler) {
-    if (!events[event]) return;
-    events[event] = events[event].filter(h => h !== handler);
-  }
-
-  function emit(event, data) {
-    if (!events[event]) return;
-    events[event].forEach(handler => {
-      try {
-        handler(data);
-      } catch (e) {
-        console.warn("[EmeraldOS Event Error]", e);
-      }
-    });
-  }
-
-
-  /***********************
-   * WINDOW MANAGER ENHANCEMENTS
-   ***********************/
-  const WindowManagerCore = {
-
-    windows: new Map(),
-    zIndex: 100,
-
-    register(win) {
-      this.windows.set(win.id, win);
-      this.focus(win.id);
-    },
-
-    unregister(id) {
-      this.windows.delete(id);
-    },
-
-    focus(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      this.zIndex++;
-      win.element.style.zIndex = this.zIndex;
-
-      emit("window:focus", { id });
-    },
-
-    close(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      win.element.remove();
-      this.windows.delete(id);
-
-      emit("window:close", { id });
-    },
-
-    snapLeft(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      win.element.style.left = "0";
-      win.element.style.top = "0";
-      win.element.style.width = "50%";
-      win.element.style.height = "100%";
-
-      emit("window:snap", { id, mode: "left" });
-    },
-
-    snapRight(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      win.element.style.left = "50%";
-      win.element.style.top = "0";
-      win.element.style.width = "50%";
-      win.element.style.height = "100%";
-
-      emit("window:snap", { id, mode: "right" });
-    },
-
-    maximize(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      win.element.dataset.prev = JSON.stringify({
-        left: win.element.style.left,
-        top: win.element.style.top,
-        width: win.element.style.width,
-        height: win.element.style.height
-      });
-
-      win.element.style.left = "0";
-      win.element.style.top = "0";
-      win.element.style.width = "100%";
-      win.element.style.height = "100%";
-
-      emit("window:maximize", { id });
-    },
-
-    restore(id) {
-      const win = this.windows.get(id);
-      if (!win) return;
-
-      const prev = win.element.dataset.prev;
-      if (!prev) return;
-
-      const data = JSON.parse(prev);
-
-      win.element.style.left = data.left;
-      win.element.style.top = data.top;
-      win.element.style.width = data.width;
-      win.element.style.height = data.height;
-
-      emit("window:restore", { id });
-    }
-  };
-
-
-  /***********************
-   * DRAG SYSTEM HARDENING
-   ***********************/
-  function makeDraggable(win, handle) {
-    let offsetX = 0, offsetY = 0, dragging = false;
-
-    handle.addEventListener("mousedown", (e) => {
-      dragging = true;
-      offsetX = e.clientX - win.offsetLeft;
-      offsetY = e.clientY - win.offsetTop;
-
-      WindowManagerCore.focus(win.id);
-      emit("window:dragstart", { id: win.id });
-    });
-
-    window.addEventListener("mousemove", (e) => {
-      if (!dragging) return;
-
-      win.style.left = `${e.clientX - offsetX}px`;
-      win.style.top = `${e.clientY - offsetY}px`;
-    });
-
-    window.addEventListener("mouseup", () => {
-      if (!dragging) return;
-      dragging = false;
-
-      emit("window:dragend", { id: win.id });
-    });
-  }
-
-
-  /***********************
-   * APP SANDBOX SYSTEM
-   * (critical for iframe apps like EmeraldNet)
-   ***********************/
-  const Sandbox = {
-
-    createIframeApp({ id, src }) {
-      const iframe = document.createElement("iframe");
-
-      iframe.src = src;
-
-      iframe.sandbox = [
-        "allow-scripts",
-        "allow-forms",
-        "allow-popups",
-        "allow-modals",
-        "allow-same-origin"
-      ].join(" ");
-
-      iframe.referrerPolicy = "no-referrer";
-
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.border = "none";
-
-      emit("sandbox:create", { id, src });
-
-      return iframe;
-    },
-
-    restrict(iframe) {
-      // optional stricter mode
-      iframe.sandbox = "allow-scripts";
-      emit("sandbox:restrict", {});
-    }
-  };
-
-
-  /***********************
-   * SYSTEM SHUTDOWN / REBOOT
-   ***********************/
-  function shutdown() {
-    emit("system:shutdown", {});
-
-    console.log("[EmeraldOS] Shutting down...");
-
-    setTimeout(() => {
-      document.body.innerHTML = `
-        <div style="
-          width:100vw;height:100vh;
-          background:black;color:lime;
-          display:flex;align-items:center;justify-content:center;
-          font-family:monospace;
-        ">
-          SYSTEM SHUTDOWN COMPLETE
-        </div>
-      `;
-    }, 800);
-  }
-
-  function reboot() {
-    emit("system:reboot", {});
-
-    console.log("[EmeraldOS] Rebooting...");
-
-    setTimeout(() => {
-      location.reload();
-    }, 600);
-  }
-
-
-  /***********************
-   * GLOBAL INIT HOOKS
-   ***********************/
-  function init() {
-    console.log("[EmeraldOS] Core Layer Online");
-
-    emit("system:boot", {
-      time: Date.now()
-    });
-  }
-
-
-  /***********************
-   * PUBLIC API
-   ***********************/
-  return {
-    init,
-    events: { on, off, emit },
-    WindowManagerCore,
-    Sandbox,
-    makeDraggable,
-    shutdown,
-    reboot
-  };
-
-})();
-
-
-/***********************
- * BOOT FINAL HOOK
- ***********************/
-document.addEventListener("DOMContentLoaded", () => {
-  EmeraldCore.init();
-});
+}
