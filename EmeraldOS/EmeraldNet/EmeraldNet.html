@@ -129,11 +129,11 @@ function openURL(url, addHistory = true) {
 
     if (url === "about:emerald") {
 
-        frame.srcdoc = `
+        frame.src = "data:text/html," + encodeURIComponent(`
             <h1>🌿 EmeraldNet 2.0</h1>
             <p>Cloudflare Proxy Engine</p>
             <p>Welcome to EmeraldOS.</p>
-        `;
+        `);
 
         setStatus("Internal page.");
         return;
