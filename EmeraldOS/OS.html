@@ -1,71 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmeraldOS 3.1</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS 3.2</title>
 
-    <link rel="icon" type="image/png" href="assets/EmeraldOS.png">
-    <link rel="stylesheet" href="os.css">
+<link rel="icon" href="assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
+
 </head>
+
 <body data-theme="classic">
 
     <!-- Desktop -->
-    <div id="desktop">
+    <div id="desktop"></div>
 
-        <div class="icon" onclick="openNotes()">📄<br>Notes</div>
-        <div class="icon" onclick="openFileExplorer()">📁<br>Files</div>
-        <div class="icon" onclick="openAppStore()">🛒<br>App Store</div>
-        <div class="icon" onclick="openDocs()">📘<br>Docs</div>
-        <div class="icon" onclick="openCalendar()">📅<br>Calendar</div>
-        <div class="icon" onclick="openCalculator()">🧮<br>Calculator</div>
-        <div class="icon" onclick="openClockApp()">⏰<br>Clock</div>
-        <div class="icon" onclick="openSystemApp()">💻<br>System</div>
+    <!-- Context Menu -->
+    <div id="context-menu"></div>
 
-        <div class="icon"
-            onclick="openWindow(
-                'Chat',
-                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/G/chat.html\' style=\'width:100%;height:100%;border:none\'></iframe>'
-            )">
-            💬<br>Chat
+    <!-- Notification Center -->
+    <div id="notification-center">
+        <div class="notify-header">
+            Notifications
         </div>
 
-        <div class="icon"
-            onclick="openWindow(
-                'Games',
-                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/G/home.html\' style=\'width:100%;height:100%;border:none\'></iframe>'
-            )">
-            🌐<br>Games
-        </div>
-
-        <div class="icon"
-            onclick="openWindow(
-                'Media Player',
-                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/mediaplayer.html\' style=\'width:100%;height:100%;border:none\'></iframe>'
-            )">
-            📀<br>Media Player
-        </div>
-
-        <div class="icon"
-            onclick="openWindow(
-                'Terms of Service',
-                '<iframe src=\'https://securly-plans.github.io/EmeraldOS/G/tos.html\' style=\'width:100%;height:100%;border:none\'></iframe>'
-            )">
-            📄<br>TOS
-        </div>
-
-        <div class="icon"
-            onclick="openWindow(
-                'Welcome',
-                '<iframe src=\'welcome.html\' style=\'width:100%;height:100%;border:none\'></iframe>'
-            )">
-            📄<br>Welcome
-        </div>
-
+        <div id="notify-list"></div>
     </div>
-
-    <!-- Notifications -->
-    <div id="notifications"></div>
 
     <!-- Start Menu -->
     <div id="start-menu">
@@ -78,21 +38,20 @@
 
             <input
                 id="start-search"
-                placeholder="Search..."
-                autocomplete="off">
+                placeholder="Search Programs">
 
-            <div class="start-item" onclick="openFileExplorer()">📁 File Explorer</div>
-            <div class="start-item" onclick="openNotes()">📄 Notes</div>
-            <div class="start-item" onclick="openDocs()">📘 Docs</div>
-            <div class="start-item" onclick="openCalendar()">📅 Calendar</div>
-            <div class="start-item" onclick="openCalculator()">🧮 Calculator</div>
-            <div class="start-item" onclick="openClockApp()">⏰ Clock</div>
-            <div class="start-item" onclick="openSystemApp()">💻 System</div>
+            <div id="start-results"></div>
 
             <hr>
 
-            <div class="start-item" onclick="location.reload()">
-                🔄 Restart
+            <div class="start-item"
+                 onclick="restartOS()">
+                 🔄 Restart
+            </div>
+
+            <div class="start-item"
+                 onclick="logoutUser()">
+                 🚪 Logout
             </div>
 
         </div>
@@ -108,9 +67,11 @@
 
         <div id="taskbar-apps"></div>
 
-        <div id="taskbar-right">
-            <div id="clock"></div>
-        </div>
+        <button id="notify-btn">
+            🔔
+        </button>
+
+        <div id="clock"></div>
 
     </div>
 
