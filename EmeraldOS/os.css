@@ -444,3 +444,137 @@ body {
 * {
     box-sizing: border-box;
 }
+
+/* =========================
+   THEMES
+========================= */
+
+body[data-theme="classic"] {
+    --desktop: #008080;
+    --window: #c0c0c0;
+    --text: black;
+}
+
+body[data-theme="dark"] {
+    --desktop: #1b1b1b;
+    --window: #2b2b2b;
+    --text: white;
+}
+
+body[data-theme="light"] {
+    --desktop: #f0f0f0;
+    --window: white;
+    --text: black;
+}
+
+body[data-theme="midnight"] {
+    --desktop: #09111f;
+    --window: #18263f;
+    --text: white;
+}
+
+body {
+    background: var(--desktop);
+}
+
+/* =========================
+   TASKBAR APPS
+========================= */
+
+#taskbar-apps {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    margin: 0 10px;
+}
+
+.task-btn {
+    min-width: 120px;
+    max-width: 180px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.task-btn.active {
+    border-style: inset;
+}
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+#notifications {
+    position: fixed;
+    right: 15px;
+    bottom: 50px;
+    z-index: 999999;
+}
+
+.notification {
+    background: #c0c0c0;
+    border: 2px outset white;
+    padding: 10px;
+    margin-top: 8px;
+    width: 250px;
+    animation: slideIn .25s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(300px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* =========================
+   WINDOW BUTTONS
+========================= */
+
+.window-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.window-buttons button {
+    width: 20px;
+    height: 18px;
+}
+
+/* =========================
+   START MENU SEARCH
+========================= */
+
+.start-main {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+}
+
+.start-side {
+    background: #000080;
+    color: white;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-weight: bold;
+    padding: 8px;
+}
+
+#start-search {
+    margin-bottom: 5px;
+}
+
+/* =========================
+   THEMES SUPPORT
+========================= */
+
+.window {
+    background: var(--window);
+    color: var(--text);
+}
