@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>EmeraldNet Browserless Mode</title>
+<title>EmeraldNet Alpha 4.0</title>
 
 <style>
 body {
@@ -53,7 +53,6 @@ iframe {
 <script>
 const TOKEN = "2UlZY5nT5QYYMbf62c8b5e7e713c719a2a8ef1c675846c3d3";
 
-// Convert search → Google
 function normalize(input) {
   if (!input.startsWith("http")) {
     return "https://www.google.com/search?q=" + encodeURIComponent(input);
@@ -62,22 +61,33 @@ function normalize(input) {
 }
 
 async function go() {
-  let input = document.getElementById("url").value;
+  const input = document.getElementById("url").value;
   const url = normalize(input);
 
-  const api = `https://chrome.browserless.io/content?token=${TOKEN}&url=${encodeURIComponent(url)}`;
+  const frame = document.getElementById("frame");
 
-  document.getElementById("frame").srcdoc =
-    "<p style='color:#00ff99;background:#000;padding:10px;'>Loading via Browserless...</p>";
+  // Loading screen
+  frame.srcdoc = `
+    <div style="color:#00ff99;background:#000;padding:10px;font-family:Arial;">
+      Loading via Browserless...
+    </div>
+  `;
+
+  const api = `https://chrome.browserless.io/content?token=${TOKEN}&url=${encodeURIComponent(url)}`;
 
   try {
     const res = await fetch(api);
     const html = await res.text();
 
-    document.getElementById("frame").srcdoc = html;
+    // safer rendering than direct srcdoc overwrite
+    frame.srcdoc = html;
+
   } catch (err) {
-    document.getElementById("frame").srcdoc =
-      "<p style='color:red;'>Failed to load page</p>";
+    frame.srcdoc = `
+      <div style="color:red;background:#000;padding:10px;">
+        Failed to load page
+      </div>
+    `;
   }
 }
 </script>
