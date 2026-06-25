@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>EmeraldNet</title>
 
 <style>
 html, body {
-    margin: 0;
     width: 100%;
     height: 100%;
+    margin: 0;
     overflow: hidden;
     font-family: "MS Sans Serif", Arial;
     background: #c0c0c0;
@@ -33,27 +33,36 @@ html, body {
     gap: 4px;
     padding: 4px;
     background: #c0c0c0;
+    border-bottom: 1px solid gray;
 }
 
 button {
+    font-family: inherit;
+    background: #c0c0c0;
     border: 2px solid #fff;
     border-right-color: #404040;
     border-bottom-color: #404040;
-    background: #c0c0c0;
     padding: 4px 10px;
-    font-family: inherit;
+}
+
+button:active {
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    border-left-color: #404040;
+    border-top-color: #404040;
 }
 
 .address {
     display: flex;
-    padding: 4px;
     gap: 4px;
+    padding: 4px;
+    background: #c0c0c0;
 }
 
 input {
     flex: 1;
-    border: 2px inset white;
     padding: 4px;
+    border: 2px inset white;
 }
 
 iframe {
@@ -86,7 +95,7 @@ iframe {
     </div>
 
     <div class="address">
-        <input id="address" placeholder="Enter address or search">
+        <input id="address" placeholder="Enter website or search">
         <button onclick="go()">Go</button>
     </div>
 
@@ -99,11 +108,18 @@ iframe {
 </div>
 
 <script>
+
 const proxy =
     "https://autumn-pond-38e6.wyatt-monroe2013.workers.dev/?url=";
 
 let historyList = [];
 let historyIndex = -1;
+
+const frame = document.getElementById("view");
+
+frame.onload = () => {
+    setStatus("Page loaded.");
+};
 
 function setStatus(text) {
     document.getElementById("status").textContent = text;
@@ -113,8 +129,8 @@ function openURL(url, addHistory = true) {
 
     if (url === "about:emerald") {
 
-        document.getElementById("view").srcdoc = `
-            <h1>EmeraldNet 2.0</h1>
+        frame.srcdoc = `
+            <h1>🌿 EmeraldNet 2.0</h1>
             <p>Cloudflare Proxy Engine</p>
             <p>Welcome to EmeraldOS.</p>
         `;
@@ -136,16 +152,18 @@ function openURL(url, addHistory = true) {
 
     document.getElementById("address").value = url;
 
-    document.getElementById("view").src =
+    frame.src =
         proxy + encodeURIComponent(url);
 
     setStatus("Loading " + url);
 
     if (addHistory) {
+
         historyList =
             historyList.slice(0, historyIndex + 1);
 
         historyList.push(url);
+
         historyIndex++;
     }
 }
@@ -163,6 +181,7 @@ function home() {
 function reloadPage() {
 
     if (historyIndex >= 0) {
+
         openURL(
             historyList[historyIndex],
             false
@@ -189,6 +208,7 @@ function goForward() {
         historyIndex <
         historyList.length - 1
     ) {
+
         historyIndex++;
 
         openURL(
@@ -208,6 +228,7 @@ document
     });
 
 home();
+
 </script>
 
 </body>
