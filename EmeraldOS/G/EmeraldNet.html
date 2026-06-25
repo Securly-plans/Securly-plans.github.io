@@ -1,214 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>EmeraldNet Engine</title>
+<title>EmeraldNet</title>
 
 <style>
-body {
+html, body {
     margin: 0;
-    font-family: "MS Sans Serif", Arial;
-    background: #008080;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    font-family: "MS Sans Serif", Arial;
+    background: #c0c0c0;
 }
 
-.window {
-    width: 100vw;
-    height: 100vh;
+.browser-window {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    background: #c0c0c0;
 }
 
 .titlebar {
-    background: linear-gradient(to right, #000080, #1084d0);
+    background: linear-gradient(to right,#000080,#1084d0);
     color: white;
-    padding: 4px;
+    padding: 4px 8px;
     font-weight: bold;
-}
-
-.toolbar, .addressbar, .status, .loading {
-    background: #c0c0c0;
-    padding: 4px;
-    flex-shrink: 0;
 }
 
 .toolbar {
     display: flex;
     gap: 4px;
+    padding: 4px;
+    background: #c0c0c0;
 }
 
 button {
-    font-family: inherit;
-    font-size: 12px;
-    background: #c0c0c0;
     border: 2px solid #fff;
     border-right-color: #404040;
     border-bottom-color: #404040;
-    padding: 3px 8px;
-    cursor: pointer;
+    background: #c0c0c0;
+    padding: 4px 10px;
+    font-family: inherit;
+}
+
+.address {
+    display: flex;
+    padding: 4px;
+    gap: 4px;
 }
 
 input {
     flex: 1;
-    border: 2px inset #fff;
-    padding: 3px;
+    border: 2px inset white;
+    padding: 4px;
 }
 
-.addressbar {
-    display: flex;
-    gap: 4px;
-}
-
-.loading {
-    height: 10px;
-    background: black;
-}
-
-.bar {
-    height: 100%;
-    width: 0%;
-    background: lime;
-}
-
-.browser {
+iframe {
     flex: 1;
-    overflow: auto;
+    border: none;
     background: white;
-    padding: 10px;
-    font-family: Arial;
 }
 
 .status {
+    padding: 4px;
+    border-top: 1px solid gray;
     font-size: 12px;
-    border-top: 2px solid #808080;
 }
 </style>
 </head>
 
 <body>
 
-<div class="window">
+<div class="browser-window">
 
-<div class="titlebar">🌿 EmeraldNet Engine v2</div>
+    <div class="titlebar">
+        🌿 EmeraldNet 2.0
+    </div>
 
-<div class="toolbar">
-    <button onclick="home()">🏠 Home</button>
-    <button onclick="back()">◄ Back</button>
-    <button onclick="forward()">Forward ►</button>
-    <button onclick="refresh()">⟳</button>
-</div>
+    <div class="toolbar">
+        <button onclick="goBack()">◄ Back</button>
+        <button onclick="goForward()">Forward ►</button>
+        <button onclick="reloadPage()">Refresh</button>
+        <button onclick="home()">Home</button>
+    </div>
 
-<div class="addressbar">
-    <input id="url" placeholder="Enter URL or search">
-    <button onclick="go()">Go</button>
-</div>
+    <div class="address">
+        <input id="address" placeholder="Enter address or search">
+        <button onclick="go()">Go</button>
+    </div>
 
-<div class="loading"><div class="bar" id="bar"></div></div>
+    <iframe id="view"></iframe>
 
-<div id="browser" class="browser"></div>
-
-<div class="status" id="status">Ready</div>
+    <div class="status" id="status">
+        Ready.
+    </div>
 
 </div>
 
 <script>
-const proxy = "https://autumn-pond-38e6.wyatt-monroe2013.workers.dev/";
+const proxy =
+    "https://autumn-pond-38e6.wyatt-monroe2013.workers.dev/?url=";
 
-let history = [];
-let index = -1;
+let historyList = [];
+let historyIndex = -1;
 
-function setStatus(t){ document.getElementById("status").innerText = t; }
-
-async function load(url) {
-
-    if (!url) return;
-
-    if (!url.startsWith("http") && !url.includes("about:")) {
-        url = "https://duckduckgo.com/?q=" + encodeURIComponent(url);
-    }
-
-    setStatus("Loading...");
-    animate();
-
-    const res = await fetch(proxy + encodeURIComponent(url));
-    const html = await res.text();
-
-    document.getElementById("browser").innerHTML = html;
-
-    history = history.slice(0, index + 1);
-    history.push(url);
-    index++;
-
-    document.getElementById("url").value = url;
-    setStatus("Loaded");
+function setStatus(text) {
+    document.getElementById("status").textContent = text;
 }
 
-function go(){
-    load(document.getElementById("url").value);
-}
+function openURL(url, addHistory = true) {
 
-function back(){
-    if(index>0){ index--; load(history[index]); }
-}
+    if (url === "about:emerald") {
 
-function forward(){
-    if(index<history.length-1){ index++; load(history[index]); }
-}
+        document.getElementById("view").srcdoc = `
+            <h1>EmeraldNet 2.0</h1>
+            <p>Cloudflare Proxy Engine</p>
+            <p>Welcome to EmeraldOS.</p>
+        `;
 
-function refresh(){
-    if(index>=0) load(history[index]);
-}
-
-function home(){
-    load("about:emerald");
-}
-
-function animate(){
-    let bar=document.getElementById("bar");
-    bar.style.width="0%";
-    let w=0;
-    let i=setInterval(()=>{
-        w+=10;
-        bar.style.width=w+"%";
-        if(w>=100) clearInterval(i);
-    },40);
-}
-
-// internal page
-function loadInternal(){
-    document.getElementById("browser").innerHTML = `
-        <h1>🌿 EmeraldNet Engine</h1>
-        <p>Real proxy rendering engine active.</p>
-    `;
-}
-
-function load(url){
-    if(url==="about:emerald"){
-        loadInternal();
-        setStatus("Internal page");
+        setStatus("Internal page.");
         return;
     }
 
-    if(!url.startsWith("http")){
-        url="https://"+url;
+    if (!url.startsWith("http")) {
+
+        if (url.includes(".")) {
+            url = "https://" + url;
+        } else {
+            url =
+                "https://duckduckgo.com/?q=" +
+                encodeURIComponent(url);
+        }
     }
 
-    goTo(url);
+    document.getElementById("address").value = url;
+
+    document.getElementById("view").src =
+        proxy + encodeURIComponent(url);
+
+    setStatus("Loading " + url);
+
+    if (addHistory) {
+        historyList =
+            historyList.slice(0, historyIndex + 1);
+
+        historyList.push(url);
+        historyIndex++;
+    }
 }
 
-async function goTo(url){
-    const res=await fetch(proxy+encodeURIComponent(url));
-    const html=await res.text();
-
-    document.getElementById("browser").innerHTML=html;
-    document.getElementById("url").value=url;
-
-    setStatus("Done");
+function go() {
+    openURL(
+        document.getElementById("address").value
+    );
 }
 
-load("about:emerald");
+function home() {
+    openURL("about:emerald", false);
+}
+
+function reloadPage() {
+
+    if (historyIndex >= 0) {
+        openURL(
+            historyList[historyIndex],
+            false
+        );
+    }
+}
+
+function goBack() {
+
+    if (historyIndex > 0) {
+
+        historyIndex--;
+
+        openURL(
+            historyList[historyIndex],
+            false
+        );
+    }
+}
+
+function goForward() {
+
+    if (
+        historyIndex <
+        historyList.length - 1
+    ) {
+        historyIndex++;
+
+        openURL(
+            historyList[historyIndex],
+            false
+        );
+    }
+}
+
+document
+    .getElementById("address")
+    .addEventListener("keydown", e => {
+
+        if (e.key === "Enter") {
+            go();
+        }
+    });
+
+home();
 </script>
 
 </body>
