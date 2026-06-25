@@ -1,580 +1,680 @@
-/* =========================
-   WIN95 GLOBAL BASE
-========================= */
+/* =====================================================
+   EMERALDOS 3.2
+   COMPLETE CSS
+===================================================== */
 
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-
-    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
-    font-size: 12px;
-
-    background: #008080;
-    user-select: none;
+*{
+    box-sizing:border-box;
 }
 
-/* =========================
-   DESKTOP
-========================= */
+html,body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
 
-#desktop {
-    position: absolute;
-    inset: 0 0 40px 0;
-    padding: 10px;
+    font-family:"MS Sans Serif",Tahoma,Arial,sans-serif;
+    font-size:12px;
 
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 14px;
+    user-select:none;
+
+    transition:
+        background .2s,
+        color .2s;
 }
 
-/* Desktop Icons */
-.icon {
-    width: 70px;
-    text-align: center;
-    color: white;
-    cursor: pointer;
-    padding: 4px;
-}
-
-.icon:hover {
-    background: #000080;
-    color: white;
-}
-
-#taskbar-items {
-    display: flex;
-    gap: 4px;
-    margin-left: 10px;
-    flex: 1;
-}
-
-.taskbar-item {
-    background: #c0c0c0;
-    border: 2px outset #fff;
-    padding: 2px 8px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.taskbar-item:active {
-    border: 2px inset #fff;
-}
-
-#start-btn {
-    width: 80px;
-    height: 28px;
-
-    background: #c0c0c0 url("assets/EmeraldOS.png") no-repeat 6px center;
-    background-size: 18px 18px;
-
-    border: 2px outset #fff;
-    cursor: pointer;
-
-    padding-left: 28px;
-    font-weight: bold;
-    font-family: "MS Sans Serif", Tahoma, Arial;
-}
-
-#start-btn:active {
-    border: 2px inset #fff;
-}
-
-/* =========================
-   TASKBAR
-========================= */
-
-#taskbar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    height: 40px;
-    background: #c0c0c0;
-
-    display: flex;
-    align-items: center;
-    padding: 3px;
-
-    border-top: 2px solid #ffffff;
-    z-index: 10000;
-}
-
-#start-btn {
-    height: 30px;
-    padding: 2px 10px;
-    font-weight: bold;
-
-    background: #c0c0c0;
-
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-
-    cursor: pointer;
-}
-
-#start-btn:active {
-    border-color: #000000 #ffffff #ffffff #000000;
-}
-
-#clock {
-    margin-left: auto;
-    padding: 0 8px;
-}
-
-/* =========================
-   START MENU
-========================= */
-
-#start-menu {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
-
-    width: 280px;
-
-    background: #c0c0c0;
-
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-
-    display: none;
-
-    z-index: 20000;
-}
-
-#start-menu.show {
-    display: block;
-}
-
-.start-item {
-    padding: 8px 10px;
-    cursor: pointer;
-}
-
-.start-item:hover {
-    background: #000080;
-    color: white;
-}
-
-/* =========================
-   WINDOWS CONTAINER
-========================= */
-
-#windows-container {
-    position: absolute;
-    inset: 0 0 40px 0;
-
-    pointer-events: none;
-    overflow: hidden;
-
-    z-index: 1;
-}
-
-/* =========================
-   WINDOW CORE
-========================= */
-
-.window {
-    position: absolute;
-
-    width: 460px;
-    height: 320px;
-
-    min-width: 220px;
-    min-height: 160px;
-
-    background: #c0c0c0;
-
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-
-    display: flex;
-    flex-direction: column;
-
-    pointer-events: auto;
-
-    box-sizing: border-box;
-
-    z-index: 10;
-}
-
-/* =========================
-   TITLE BAR
-========================= */
-
-.title-bar {
-    height: 24px;
-
-    background: #000080;
-    color: white;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 6px;
-
-    font-weight: bold;
-
-    cursor: grab;
-}
-
-.title-bar:active {
-    cursor: grabbing;
-}
-
-/* =========================
-   CLOSE BUTTON
-========================= */
-
-.close-btn {
-    width: 18px;
-    height: 18px;
-
-    background: #c0c0c0;
-
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-
-    font-size: 10px;
-    cursor: pointer;
-
-    line-height: 12px;
-    text-align: center;
-}
-
-.close-btn:active {
-    border-color: #000000 #ffffff #ffffff #000000;
-}
-
-/* =========================
-   WINDOW CONTENT (CRITICAL FIX)
-========================= */
-
-.window-content {
-    flex: 1;
-
-    margin: 0;
-    padding: 6px;
-
-    background: white;
-
-    border: 2px inset #c0c0c0;
-
-    overflow: auto;
-
-    box-sizing: border-box;
-
-    user-select: text;
-}
-
-/* =========================
-   RESIZE HANDLE
-========================= */
-
-.resize-handle {
-    position: absolute;
-
-    width: 14px;
-    height: 14px;
-
-    right: 0;
-    bottom: 0;
-
-    cursor: se-resize;
-
-    background: #c0c0c0;
-
-    border-top: 1px solid #ffffff;
-    border-left: 1px solid #ffffff;
-    border-right: 1px solid #000000;
-    border-bottom: 1px solid #000000;
-
-    box-sizing: border-box;
-}
-
-/* =========================
-   INPUTS / TEXT SYSTEMS
-========================= */
-
-button, input, textarea, select {
-    font-family: inherit;
-    font-size: 12px;
-}
-
-input, textarea {
-    border: 2px inset #c0c0c0;
-    padding: 4px;
-    outline: none;
-}
-
-/* =========================
-   BUTTON STYLE
-========================= */
-
-button {
-    background: #c0c0c0;
-
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-
-    cursor: pointer;
-}
-
-button:active {
-    border-color: #000000 #ffffff #ffffff #000000;
-}
-
-/* =========================
-   DOCS / WORD-LIKE TOOLBAR SUPPORT
-========================= */
-
-.toolbar {
-    display: flex;
-    gap: 4px;
-    padding: 4px;
-    background: #ddd;
-    border-bottom: 1px solid #999;
-}
-
-.toolbar button {
-    padding: 2px 6px;
-}
-
-/* =========================
-   SPLIT PANES (Notes/Files/Docs)
-========================= */
-
-.split {
-    display: flex;
-    height: 100%;
-}
-
-.sidebar {
-    width: 35%;
-    border-right: 1px solid #aaa;
-    overflow: auto;
-    padding: 6px;
-}
-
-.main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-/* =========================
-   CALCULATOR UI SUPPORT
-========================= */
-
-.calc-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-}
-
-.calc-display {
-    width: 100%;
-    font-size: 16px;
-    padding: 6px;
-    margin-bottom: 6px;
-}
-
-/* =========================
-   CALENDAR SUPPORT
-========================= */
-
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-}
-
-.calendar-day {
-    padding: 6px;
-    text-align: center;
-    border: 1px solid #aaa;
-    cursor: pointer;
-}
-
-.calendar-day:hover {
-    background: #000080;
-    color: white;
-}
-
-/* =========================
-   SYSTEM PANEL SLIDERS
-========================= */
-
-.slider {
-    width: 100%;
-}
-
-/* =========================
-   BRIGHTNESS SUPPORT
-========================= */
-
-body {
-    transition: filter 0.1s linear;
-}
-
-/* =========================
-   UTILITY
-========================= */
-
-.win95-outset {
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-}
-
-.win95-inset {
-    border: 2px solid;
-    border-color: #000000 #ffffff #ffffff #000000;
-}
-
-/* =========================
-   FINAL SAFETY FIX
-========================= */
-
-* {
-    box-sizing: border-box;
-}
-
-/* =========================
+/* =====================================================
    THEMES
-========================= */
+===================================================== */
 
-body[data-theme="classic"] {
-    --desktop: #008080;
-    --window: #c0c0c0;
-    --text: black;
+body[data-theme="classic"]{
+    --desktop:#008080;
+    --window:#c0c0c0;
+    --windowContent:#ffffff;
+    --text:#000;
+    --taskbar:#c0c0c0;
+    --title:#000080;
 }
 
-body[data-theme="dark"] {
-    --desktop: #1b1b1b;
-    --window: #2b2b2b;
-    --text: white;
+body[data-theme="dark"]{
+    --desktop:#1b1b1b;
+    --window:#2c2c2c;
+    --windowContent:#1f1f1f;
+    --text:#fff;
+    --taskbar:#2d2d2d;
+    --title:#0b3d91;
 }
 
-body[data-theme="light"] {
-    --desktop: #f0f0f0;
-    --window: white;
-    --text: black;
+body[data-theme="light"]{
+    --desktop:#e9e9e9;
+    --window:#ffffff;
+    --windowContent:#ffffff;
+    --text:#000;
+    --taskbar:#dcdcdc;
+    --title:#0050c8;
 }
 
-body[data-theme="midnight"] {
-    --desktop: #09111f;
-    --window: #18263f;
-    --text: white;
+body[data-theme="midnight"]{
+    --desktop:#09111f;
+    --window:#1b2a45;
+    --windowContent:#132033;
+    --text:#fff;
+    --taskbar:#1b2a45;
+    --title:#264d8c;
 }
 
-body {
-    background: var(--desktop);
+body{
+    background:var(--desktop);
+    color:var(--text);
 }
 
-/* =========================
-   TASKBAR APPS
-========================= */
+/* =====================================================
+   DESKTOP
+===================================================== */
 
-#taskbar-apps {
-    flex: 1;
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    margin: 0 10px;
+#desktop{
+    position:absolute;
+    inset:0 0 40px 0;
+
+    padding:10px;
+
+    display:flex;
+    flex-direction:column;
+    flex-wrap:wrap;
+    align-content:flex-start;
+
+    gap:14px;
 }
 
-.task-btn {
-    min-width: 120px;
-    max-width: 180px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+.icon{
+    width:72px;
+
+    color:white;
+
+    text-align:center;
+
+    padding:4px;
+
+    cursor:pointer;
+
+    border:1px solid transparent;
 }
 
-.task-btn.active {
-    border-style: inset;
+.icon:hover{
+    background:#000080;
+    border:1px dotted white;
 }
 
-/* =========================
+.icon:active{
+    background:#1b3a9b;
+}
+
+/* =====================================================
+   TASKBAR
+===================================================== */
+
+#taskbar{
+    position:absolute;
+
+    left:0;
+    right:0;
+    bottom:0;
+
+    height:40px;
+
+    background:var(--taskbar);
+
+    display:flex;
+    align-items:center;
+
+    padding:4px;
+
+    border-top:2px solid white;
+
+    z-index:50000;
+}
+
+#start-btn{
+    width:90px;
+    height:30px;
+
+    font-weight:bold;
+
+    background:
+        var(--taskbar)
+        url("assets/EmeraldOS.png")
+        no-repeat
+        6px center;
+
+    background-size:18px;
+
+    padding-left:30px;
+
+    border:2px solid;
+    border-color:
+        #ffffff
+        #000000
+        #000000
+        #ffffff;
+
+    cursor:pointer;
+}
+
+#start-btn:active{
+    border-color:
+        #000000
+        #ffffff
+        #ffffff
+        #000000;
+}
+
+#taskbar-apps{
+    flex:1;
+
+    display:flex;
+
+    gap:4px;
+
+    margin:0 10px;
+
+    overflow-x:auto;
+}
+
+.task-btn{
+    min-width:120px;
+
+    background:#c0c0c0;
+
+    border:2px outset white;
+
+    padding:4px 8px;
+
+    cursor:pointer;
+
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.task-btn.active{
+    border-style:inset;
+}
+
+#taskbar-right{
+    min-width:90px;
+    text-align:center;
+}
+
+#clock{
+    padding:4px;
+}
+
+/* =====================================================
+   START MENU
+===================================================== */
+
+#start-menu{
+    position:absolute;
+
+    left:0;
+    bottom:40px;
+
+    width:300px;
+    height:420px;
+
+    display:none;
+
+    background:#c0c0c0;
+
+    border:2px solid;
+    border-color:
+        #ffffff
+        #000000
+        #000000
+        #ffffff;
+
+    z-index:60000;
+}
+
+#start-menu.show{
+    display:flex;
+}
+
+.start-side{
+    width:36px;
+
+    background:#000080;
+
+    color:white;
+
+    writing-mode:vertical-rl;
+
+    transform:rotate(180deg);
+
+    font-weight:bold;
+
+    padding:8px;
+}
+
+.start-main{
+    flex:1;
+
+    padding:4px;
+
+    display:flex;
+    flex-direction:column;
+}
+
+#start-search{
+    margin-bottom:6px;
+    padding:5px;
+}
+
+.start-item{
+    padding:8px;
+
+    cursor:pointer;
+}
+
+.start-item:hover{
+    background:#000080;
+    color:white;
+}
+
+/* =====================================================
+   WINDOWS
+===================================================== */
+
+#windows-container{
+    position:absolute;
+    inset:0 0 40px 0;
+
+    pointer-events:none;
+
+    overflow:hidden;
+}
+
+.window{
+    position:absolute;
+
+    width:520px;
+    height:360px;
+
+    min-width:260px;
+    min-height:180px;
+
+    background:var(--window);
+
+    color:var(--text);
+
+    border:2px solid;
+    border-color:
+        #ffffff
+        #000000
+        #000000
+        #ffffff;
+
+    display:flex;
+    flex-direction:column;
+
+    pointer-events:auto;
+
+    box-shadow:4px 4px 12px rgba(0,0,0,.4);
+}
+
+.window.maximized{
+    left:0 !important;
+    top:0 !important;
+
+    width:100% !important;
+    height:calc(100% - 40px) !important;
+}
+
+.title-bar{
+    height:26px;
+
+    background:var(--title);
+
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 4px;
+
+    font-weight:bold;
+
+    cursor:grab;
+}
+
+.window-buttons{
+    display:flex;
+    gap:2px;
+}
+
+.window-buttons button{
+    width:20px;
+    height:18px;
+
+    padding:0;
+}
+
+.window-content{
+    flex:1;
+
+    background:var(--windowContent);
+
+    color:var(--text);
+
+    border:2px inset #c0c0c0;
+
+    padding:6px;
+
+    overflow:auto;
+
+    user-select:text;
+}
+
+.resize-handle{
+    position:absolute;
+
+    right:0;
+    bottom:0;
+
+    width:14px;
+    height:14px;
+
+    cursor:se-resize;
+
+    border-top:1px solid white;
+    border-left:1px solid white;
+    border-right:1px solid black;
+    border-bottom:1px solid black;
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+button{
+    background:#c0c0c0;
+
+    border:2px solid;
+    border-color:
+        #ffffff
+        #000000
+        #000000
+        #ffffff;
+
+    cursor:pointer;
+
+    font-family:inherit;
+    font-size:12px;
+}
+
+button:active{
+    border-color:
+        #000000
+        #ffffff
+        #ffffff
+        #000000;
+}
+
+/* =====================================================
+   INPUTS
+===================================================== */
+
+input,
+textarea,
+select{
+    width:auto;
+
+    font-family:inherit;
+    font-size:12px;
+
+    border:2px inset #c0c0c0;
+
+    padding:4px;
+}
+
+textarea{
+    resize:none;
+}
+
+/* =====================================================
+   SPLIT PANES
+===================================================== */
+
+.split{
+    display:flex;
+    height:100%;
+}
+
+.sidebar{
+    width:35%;
+
+    border-right:1px solid gray;
+
+    overflow:auto;
+
+    padding:6px;
+}
+
+.main{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:6px;
+}
+
+/* =====================================================
+   CALCULATOR
+===================================================== */
+
+.calc-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:4px;
+}
+
+.calc-display{
+    width:100%;
+
+    font-size:18px;
+
+    text-align:right;
+}
+
+/* =====================================================
+   CALENDAR
+===================================================== */
+
+.calendar-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+
+    gap:4px;
+}
+
+.calendar-day{
+    padding:8px;
+
+    border:1px solid gray;
+
+    text-align:center;
+
+    cursor:pointer;
+}
+
+.calendar-day:hover{
+    background:#000080;
+    color:white;
+}
+
+/* =====================================================
    NOTIFICATIONS
-========================= */
+===================================================== */
 
-#notifications {
-    position: fixed;
-    right: 15px;
-    bottom: 50px;
-    z-index: 999999;
+#notifications{
+    position:fixed;
+
+    right:10px;
+    bottom:55px;
+
+    z-index:999999;
 }
 
-.notification {
-    background: #c0c0c0;
-    border: 2px outset white;
-    padding: 10px;
-    margin-top: 8px;
-    width: 250px;
-    animation: slideIn .25s ease;
+.notification{
+    width:250px;
+
+    background:#c0c0c0;
+
+    border:2px outset white;
+
+    padding:10px;
+
+    margin-top:8px;
+
+    animation:slideIn .2s ease;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(300px);
-        opacity: 0;
+@keyframes slideIn{
+    from{
+        opacity:0;
+        transform:translateX(300px);
     }
 
-    to {
-        transform: translateX(0);
-        opacity: 1;
+    to{
+        opacity:1;
+        transform:translateX(0);
     }
 }
 
-/* =========================
-   WINDOW BUTTONS
-========================= */
+/* =====================================================
+   CONTEXT MENU
+===================================================== */
 
-.window-buttons {
-    display: flex;
-    gap: 2px;
+.context-menu{
+    position:absolute;
+
+    background:#c0c0c0;
+
+    border:2px outset white;
+
+    min-width:180px;
+
+    z-index:999999;
 }
 
-.window-buttons button {
-    width: 20px;
-    height: 18px;
+.context-item{
+    padding:8px;
+    cursor:pointer;
 }
 
-/* =========================
-   START MENU SEARCH
-========================= */
-
-.start-main {
-    display: flex;
-    flex-direction: column;
-    padding: 4px;
+.context-item:hover{
+    background:#000080;
+    color:white;
 }
 
-.start-side {
-    background: #000080;
-    color: white;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-weight: bold;
-    padding: 8px;
+/* =====================================================
+   APP STORE CARDS
+===================================================== */
+
+.app-card{
+    border:1px solid gray;
+
+    padding:10px;
+
+    margin-bottom:8px;
+
+    background:white;
 }
 
-#start-search {
-    margin-bottom: 5px;
+.app-card h3{
+    margin:0 0 5px;
 }
 
-/* =========================
-   THEMES SUPPORT
-========================= */
+/* =====================================================
+   SYSTEM INFO
+===================================================== */
 
-.window {
-    background: var(--window);
-    color: var(--text);
+.sys-box{
+    border:1px inset gray;
+
+    padding:8px;
+
+    margin-bottom:6px;
+}
+
+/* =====================================================
+   FILE LIST
+===================================================== */
+
+.file-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:4px;
+
+    border-bottom:1px solid #ccc;
+}
+
+.file-row:hover{
+    background:#dcdcdc;
+}
+
+/* =====================================================
+   SCROLLBARS
+===================================================== */
+
+::-webkit-scrollbar{
+    width:14px;
+    height:14px;
+}
+
+::-webkit-scrollbar-track{
+    background:#c0c0c0;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#888;
+
+    border:2px solid #c0c0c0;
+}
+
+/* =====================================================
+   RUN DIALOG
+===================================================== */
+
+.run-box{
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+
+/* =====================================================
+   MOBILE SAFETY
+===================================================== */
+
+@media (max-width:700px){
+
+    .window{
+        width:95vw !important;
+        height:70vh !important;
+        left:2vw !important;
+        top:2vh !important;
+    }
+
+    #start-menu{
+        width:95vw;
+    }
+
+    .icon{
+        width:64px;
+    }
 }
