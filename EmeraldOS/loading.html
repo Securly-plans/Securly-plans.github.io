@@ -26,6 +26,7 @@ body {
     border-right: 2px solid #808080;
     border-bottom: 2px solid #808080;
     padding: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .title {
@@ -47,6 +48,7 @@ body {
     font-size: 12px;
     line-height: 1.4;
     margin-bottom: 10px;
+    text-align: center;
 }
 
 .log {
@@ -54,8 +56,9 @@ body {
     background: #ffffff;
     border: 1px solid #808080;
     padding: 6px;
-    height: 90px;
+    height: 100px;
     overflow: hidden;
+    font-family: monospace;
 }
 
 .bar {
@@ -76,12 +79,7 @@ body {
         #c0c0c0 10px,
         #c0c0c0 14px
     );
-    animation: load 3.8s linear forwards;
-}
-
-@keyframes load {
-    from { width: 0%; }
-    to { width: 100%; }
+    transition: width 0.2s linear;
 }
 </style>
 </head>
@@ -89,21 +87,16 @@ body {
 <body>
 
 <div class="boot-window">
-    <div class="title">Microsoft Windows 95 Startup</div>
+    <div class="title">EmeraldOS is loading...</div>
 
     <div class="logo"></div>
 
-    <div class="text">
+    <div class="text" id="statusText">
         Starting EmeraldOS system files...
     </div>
 
-    <div class="log">
-        Loading kernel... OK<br>
-        Initializing display driver... OK<br>
-        Mounting virtual disk... OK<br>
-        Starting UI shell... OK<br>
-        Checking system integrity... OK<br>
-        Launching EmeraldOS...
+    <div class="log" id="log">
+        Boot sequence initialized...
     </div>
 
     <div class="bar">
@@ -113,26 +106,86 @@ body {
 
 <script>
 (function () {
+
     const progress = document.getElementById("progress");
+    const log = document.getElementById("log");
+    const statusText = document.getElementById("statusText");
 
-    let hasBooted = false;
+    let percent = 0;
+    let stepIndex = 0;
+    let booted = false;
 
-    function bootOS() {
-        if (hasBooted) return;
-        hasBooted = true;
+    const steps = [
+        "Loading kernel modules",
+        "Initializing memory manager",
+        "Mounting virtual filesystem",
+        "Starting graphics subsystem",
+        "Loading UI engine",
+        "Checking system integrity",
+        "Launching EmeraldOS shell"
+    ];
 
-        // IMPORTANT: force navigation (works on GitHub Pages + local servers)
-        window.location.replace("./OS.html");
+    function addLog(text) {
+        log.innerHTML += "<br>" + text;
+        log.scrollTop = log.scrollHeight;
     }
 
-    // Primary: animation finished
-    progress.addEventListener("animationend", bootOS);
+    function setProgress(value) {
+        progress.style.width = value + "%";
+    }
 
-    // Fallback 1: timer safety
-    setTimeout(bootOS, 4500);
+    function bootComplete() {
+        if (booted) return;
+        booted = true;
 
-    // Fallback 2: ensure even slow devices don't get stuck
-    setTimeout(bootOS, 6000);
+        statusText.textContent = "Welcome to EmeraldOS...";
+
+        setTimeout(() => {
+            window.location.replace("./OS.html");
+        }, 600);
+    }
+
+    const interval = setInterval(() => {
+
+        // Smooth randomized progress
+        percent += Math.random() * 10 + 3;
+
+        if (percent > 100) percent = 100;
+
+        setProgress(percent);
+
+        // Step-based logs
+        const threshold = stepIndex * (100 / steps.length);
+
+        if (percent >= threshold && stepIndex < steps.length) {
+            addLog(steps[stepIndex] + " ... OK");
+            stepIndex++;
+        }
+
+        // Status text updates
+        if (percent < 30) {
+            statusText.textContent = "Starting EmeraldOS system files...";
+        } else if (percent < 60) {
+            statusText.textContent = "Loading system components...";
+        } else if (percent < 90) {
+            statusText.textContent = "Preparing user interface...";
+        } else {
+            statusText.textContent = "Finalizing boot sequence...";
+        }
+
+        if (percent >= 100) {
+            clearInterval(interval);
+            addLog("Boot complete.");
+            bootComplete();
+        }
+
+    }, 180);
+
+    // Safety fallback (prevents infinite loading)
+    setTimeout(() => {
+        bootComplete();
+    }, 9000);
+
 })();
 </script>
 
