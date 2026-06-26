@@ -1,526 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Starting EmeraldOS...</title>
+<title>EmeraldOS Login</title>
 
 <style>
-/* =========================================================
-   EMERALDOS LOADING.HTML
-   Win95-style loader
-   Compatible with BIOS build + edition selector
-========================================================= */
-
-html,
 body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-
-    background: #008080;
-    color: #000;
-
-    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
-    font-size: 12px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin:0;
+    background:#008080;
+    font-family:Tahoma;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
 }
 
-/* =========================================================
-   BOOT WINDOW
-========================================================= */
-
-.boot-window {
-    width: 440px;
-    background: #c0c0c0;
-
-    border-top: 2px solid #ffffff;
-    border-left: 2px solid #ffffff;
-    border-right: 2px solid #808080;
-    border-bottom: 2px solid #808080;
-
-    box-shadow: 8px 8px 0 rgba(0,0,0,0.35);
+.panel {
+    width:340px;
+    background:#c0c0c0;
+    border:2px solid;
+    border-color:#fff #000 #000 #fff;
+    padding:15px;
 }
-
-/* =========================================================
-   TITLE BAR
-========================================================= */
 
 .title {
-    background: #000080;
-    color: #ffffff;
-
-    padding: 4px 6px;
-
-    font-size: 12px;
-    font-weight: bold;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background:#000080;
+    color:white;
+    padding:5px;
+    font-weight:bold;
+    margin:-15px -15px 10px -15px;
 }
 
-.title-controls {
-    display: flex;
-    gap: 2px;
+input {
+    width:100%;
+    margin:6px 0;
+    padding:6px;
+    border:2px inset #fff;
+    box-sizing:border-box;
 }
 
-.title-button {
-    width: 16px;
-    height: 14px;
-
-    background: #c0c0c0;
-    color: #000;
-
-    border-top: 1px solid #ffffff;
-    border-left: 1px solid #ffffff;
-    border-right: 1px solid #808080;
-    border-bottom: 1px solid #808080;
-
-    font-size: 10px;
-    line-height: 12px;
-    text-align: center;
+button {
+    width:100%;
+    padding:6px;
+    margin-top:8px;
+    border:2px outset #fff;
+    background:#c0c0c0;
+    cursor:pointer;
 }
 
-/* =========================================================
-   CONTENT
-========================================================= */
-
-.content {
-    padding: 14px;
-}
-
-.logo {
-    width: 72px;
-    height: 72px;
-
-    margin: 8px auto 10px auto;
-
-    background:
-        url("https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png")
-        center / contain
-        no-repeat;
-}
-
-.status-text {
-    text-align: center;
-    margin-bottom: 10px;
-    line-height: 1.4;
-}
-
-.build-box {
-    background: #ffffff;
-
-    border-top: 2px solid #808080;
-    border-left: 2px solid #808080;
-    border-right: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-
-    padding: 7px;
-    margin-bottom: 10px;
-
-    line-height: 1.5;
-}
-
-.test-warning {
-    display: none;
-
-    background: #ffffcc;
-
-    border-top: 2px solid #808080;
-    border-left: 2px solid #808080;
-    border-right: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-
-    padding: 7px;
-    margin-bottom: 10px;
-}
-
-/* =========================================================
-   LOG
-========================================================= */
-
-.log {
-    height: 110px;
-
-    background: #ffffff;
-    color: #000000;
-
-    border-top: 2px solid #808080;
-    border-left: 2px solid #808080;
-    border-right: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-
-    padding: 6px;
-
-    overflow: hidden;
-
-    font-family: "Courier New", monospace;
-    font-size: 11px;
-    line-height: 1.35;
-}
-
-/* =========================================================
-   PROGRESS BAR
-========================================================= */
-
-.bar {
-    margin-top: 10px;
-
-    height: 17px;
-
-    background: #ffffff;
-
-    border-top: 2px solid #808080;
-    border-left: 2px solid #808080;
-    border-right: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-
-    overflow: hidden;
-}
-
-.progress {
-    height: 100%;
-    width: 0%;
-
-    background: repeating-linear-gradient(
-        90deg,
-        #000080,
-        #000080 10px,
-        #c0c0c0 10px,
-        #c0c0c0 14px
-    );
-
-    transition: width 0.18s linear;
-}
-
-/* =========================================================
-   FOOTER STATUS
-========================================================= */
-
-.footer-status {
-    margin-top: 10px;
-
-    background: #d4d0c8;
-
-    border-top: 1px solid #808080;
-    border-left: 1px solid #808080;
-    border-right: 1px solid #ffffff;
-    border-bottom: 1px solid #ffffff;
-
-    padding: 4px 6px;
-
-    font-size: 11px;
-}
-
-.blink {
-    animation: blink 1s steps(2, start) infinite;
-}
-
-@keyframes blink {
-    50% {
-        opacity: 0;
-    }
+button:active {
+    border:2px inset #fff;
 }
 </style>
 </head>
 
 <body>
 
-<div class="boot-window">
+<div class="panel">
+    <div class="title">EmeraldOS Login</div>
 
-    <div class="title">
-        <span id="windowTitle">EmeraldOS Startup</span>
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
 
-        <div class="title-controls">
-            <div class="title-button">_</div>
-            <div class="title-button">□</div>
-            <div class="title-button">×</div>
-        </div>
-    </div>
-
-    <div class="content">
-
-        <div class="logo"></div>
-
-        <div class="status-text" id="statusText">
-            Starting EmeraldOS system files...
-        </div>
-
-        <div class="build-box">
-            <b>Selected Build:</b>
-            <span id="buildName">EmeraldOS 3.2</span>
-            <br>
-
-            <b>Version:</b>
-            <span id="buildVersion">3.2</span>
-            <br>
-
-            <b>Channel:</b>
-            <span id="buildChannel">Stable</span>
-            <br>
-
-            <b>Edition:</b>
-            <span id="editionName">EmeraldOS Home</span>
-        </div>
-
-        <div class="test-warning" id="testWarning">
-            <b>Test Channel Notice:</b>
-            You are booting an experimental EmeraldOS build. Some features may be unfinished.
-        </div>
-
-        <div class="log" id="log">
-            Boot loader initialized...
-        </div>
-
-        <div class="bar">
-            <div class="progress" id="progress"></div>
-        </div>
-
-        <div class="footer-status" id="footerStatus">
-            Preparing boot sequence<span class="blink">_</span>
-        </div>
-
-    </div>
-
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Create Account</button>
 </div>
 
-<script>
-"use strict";
+<script type="module">
+import { db } from "./firebase.js";
+import {
+    doc,
+    getDoc,
+    updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* =========================================================
-   EMERALDOS LOADER SCRIPT
-========================================================= */
+/* =========================
+   HASH PASSWORD
+========================= */
 
-(function () {
+async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", enc);
 
-    const progress =
-        document.getElementById("progress");
+    return [...new Uint8Array(hash)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
-    const log =
-        document.getElementById("log");
+/* =========================
+   LOGIN
+========================= */
 
-    const statusText =
-        document.getElementById("statusText");
+async function login() {
+    const username = document.getElementById("user").value.trim();
+    const password = document.getElementById("pass").value;
 
-    const footerStatus =
-        document.getElementById("footerStatus");
-
-    const windowTitle =
-        document.getElementById("windowTitle");
-
-    const buildNameEl =
-        document.getElementById("buildName");
-
-    const buildVersionEl =
-        document.getElementById("buildVersion");
-
-    const buildChannelEl =
-        document.getElementById("buildChannel");
-
-    const editionNameEl =
-        document.getElementById("editionName");
-
-    const testWarning =
-        document.getElementById("testWarning");
-
-    /* =====================================================
-       READ BIOS CONFIGURATION
-    ===================================================== */
-
-    const selectedBuild =
-        localStorage.getItem("emerald_build_name")
-        || "EmeraldOS 3.2 Stable";
-
-    const selectedVersion =
-        localStorage.getItem("emerald_version")
-        || "3.2";
-
-    const selectedChannel =
-        localStorage.getItem("emerald_channel")
-        || "Stable";
-
-    const selectedEditionId =
-        localStorage.getItem("emerald_edition")
-        || "home";
-
-    const selectedEdition =
-        localStorage.getItem("emerald_edition_name")
-        || "EmeraldOS Home";
-
-    const isTestBuild =
-        localStorage.getItem("emerald_test_build") === "true"
-        || selectedChannel.toLowerCase() === "test"
-        || selectedVersion.includes("T");
-
-    /* =====================================================
-       APPLY BUILD INFO TO PAGE
-    ===================================================== */
-
-    document.title =
-        "Starting " + selectedBuild + "...";
-
-    windowTitle.textContent =
-        selectedBuild + " Startup";
-
-    buildNameEl.textContent =
-        selectedBuild;
-
-    buildVersionEl.textContent =
-        selectedVersion;
-
-    buildChannelEl.textContent =
-        selectedChannel;
-
-    editionNameEl.textContent =
-        selectedEdition;
-
-    statusText.textContent =
-        "Starting " + selectedBuild + " as " + selectedEdition + "...";
-
-    if (isTestBuild) {
-        testWarning.style.display = "block";
+    if (!username || !password) {
+        alert("Fill all fields");
+        return;
     }
 
-    /* =====================================================
-       BOOT STEPS
-    ===================================================== */
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
 
-    const bootSteps = [
-        "Loading " + selectedBuild + " kernel",
-        "Reading BIOS boot configuration",
-        "Loading " + selectedEdition + " profile",
-        "Mounting virtual filesystem",
-        "Initializing desktop shell",
-        "Loading edition manager",
-        "Starting notification engine",
-        "Loading user interface resources",
-        "Checking experimental services",
-        "Preparing EmeraldOS session",
-        "Launching EmeraldOS shell"
-    ];
-
-    let percent = 0;
-    let stepIndex = 0;
-    let booted = false;
-
-    /* =====================================================
-       HELPERS
-    ===================================================== */
-
-    function addLog(message) {
-        log.innerHTML += "<br>" + message;
-        log.scrollTop = log.scrollHeight;
+    if (!snap.exists()) {
+        alert("User not found");
+        return;
     }
 
-    function setProgress(value) {
-        progress.style.width = value + "%";
+    const data = snap.data();
+    const hash = await sha256(password);
+
+    if (data.passwordHash !== hash) {
+        alert("Incorrect password");
+        return;
     }
 
-    function setStatus(message) {
-        statusText.textContent = message;
-        footerStatus.innerHTML =
-            message + '<span class="blink">_</span>';
-    }
+    await updateDoc(ref, {
+        lastLogin: Date.now()
+    });
 
-    function bootComplete() {
-        if (booted) return;
+    /* =========================
+       FIX: REQUIRED FOR CLOUD OS
+    ========================= */
 
-        booted = true;
+    localStorage.setItem("OSusername", username);      // ✅ REQUIRED
+    localStorage.setItem("os_session", username);     // optional legacy support
+    localStorage.setItem("loggedIn", "true");         // optional stability flag
 
-        setProgress(100);
+    window.location.href = "bios.html";
+}
 
-        addLog("Boot complete.");
-        addLog("Starting OS.html...");
+/* =========================
+   REGISTER REDIRECT
+========================= */
 
-        setStatus("Welcome to " + selectedBuild + "...");
+function goRegister() {
+    window.location.href = "register.html";
+}
 
-        setTimeout(() => {
-            window.location.replace("./OS.html");
-        }, 650);
-    }
+/* =========================
+   INIT
+========================= */
 
-    function getStatusForPercent(value) {
-        if (value < 20) {
-            return "Loading system files...";
-        }
-
-        if (value < 40) {
-            return "Initializing " + selectedEdition + "...";
-        }
-
-        if (value < 60) {
-            return "Preparing desktop environment...";
-        }
-
-        if (value < 80) {
-            return "Loading EmeraldOS services...";
-        }
-
-        if (value < 98) {
-            return "Finalizing boot sequence...";
-        }
-
-        return "Ready to launch EmeraldOS...";
-    }
-
-    /* =====================================================
-       START BOOT LOOP
-    ===================================================== */
-
-    addLog("Selected build: " + selectedBuild);
-    addLog("Selected edition: " + selectedEdition);
-    addLog("Channel: " + selectedChannel);
-    addLog("Version: " + selectedVersion);
-    addLog("Edition ID: " + selectedEditionId);
-    addLog("Starting boot sequence...");
-
-    const interval = setInterval(() => {
-
-        percent += Math.random() * 9 + 4;
-
-        if (percent > 100) {
-            percent = 100;
-        }
-
-        setProgress(percent);
-        setStatus(getStatusForPercent(percent));
-
-        const threshold =
-            stepIndex * (100 / bootSteps.length);
-
-        if (
-            percent >= threshold &&
-            stepIndex < bootSteps.length
-        ) {
-            addLog(
-                bootSteps[stepIndex] + " ... OK"
-            );
-
-            stepIndex++;
-        }
-
-        if (percent >= 100) {
-            clearInterval(interval);
-            bootComplete();
-        }
-
-    }, 190);
-
-    /* =====================================================
-       SAFETY FALLBACK
-    ===================================================== */
-
-    setTimeout(() => {
-        bootComplete();
-    }, 9000);
-
-})();
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("registerBtn").addEventListener("click", goRegister);
+});
 </script>
 
 </body>
