@@ -355,7 +355,6 @@ function initClock() {
    CENTER + TOAST (UNIFIED)
 ========================================================= */
 
-let notifications = [];
 let toastContainer;
 
 /* INIT (call once on boot) */
