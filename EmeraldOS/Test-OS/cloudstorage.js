@@ -16,8 +16,8 @@ import {
 
 function getUsername() {
     const username =
-        localStorage.getItem("OSusername") ||
-        localStorage.getItem("os_session");
+        localStorage.getItem("TestOSusername") ||
+        localStorage.getItem("Testos_session");
 
     if (!username) {
         console.warn("No username found in localStorage");
