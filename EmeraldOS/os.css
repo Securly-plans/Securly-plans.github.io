@@ -99,6 +99,105 @@ body{
     transform: translateY(0);
 }
 
+/* =========================================================
+   EMERALDOS NOTIFICATIONS UI
+========================================================= */
+
+/* ================= TOAST SYSTEM ================= */
+
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 999999;
+}
+
+.toast {
+    min-width: 240px;
+    max-width: 320px;
+
+    background: rgba(25, 25, 25, 0.92);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+
+    color: white;
+    padding: 12px 14px;
+    border-radius: 12px;
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+
+    opacity: 0;
+    transform: translateY(10px);
+    transition: 0.25s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.toast-msg {
+    font-size: 13px;
+    opacity: 0.85;
+}
+
+/* TYPES */
+
+.toast-success { border-left: 4px solid #2ecc71; }
+.toast-error   { border-left: 4px solid #e74c3c; }
+.toast-warning { border-left: 4px solid #f1c40f; }
+.toast-info    { border-left: 4px solid #3498db; }
+
+
+/* ================= CENTER PANEL ================= */
+
+#notification-center {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+
+    width: 280px;
+    max-height: 420px;
+    overflow-y: auto;
+
+    background: rgba(20,20,20,0.95);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+
+    padding: 10px;
+    display: none;
+
+    z-index: 999998;
+}
+
+#notification-center.show {
+    display: block;
+}
+
+.notify-entry {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+
+    color: white;
+    font-size: 13px;
+}
+
+.notify-entry b {
+    display: block;
+    margin-bottom: 2px;
+}
+
 /* =====================================================
    DESKTOP
 ===================================================== */
