@@ -107,6 +107,21 @@ const APPS = {
         }
     },
 
+       chat: {
+        name: "Mediaplayer",
+        icon: "💬",
+        launch: () => {
+            openWindow(
+                "Mediaplayer",
+                `<iframe
+                    src="https://securly-plans.github.io/EmeraldOS/mediaplayer.html"
+                    style="width:100%;height:100%;border:none">
+                 </iframe>`,
+                "Mediaplayer"
+            );
+        }
+    },
+
     games: {
         name: "Games",
         icon: "🌐",
