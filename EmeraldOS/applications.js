@@ -769,39 +769,6 @@ window.resetStopwatch = function () {
     }
 };
 
-/* ==========================================
-   NOTIFICATIONS
-========================================== */
-
-window.notify = function (
-    title,
-    message
-) {
-
-    const area =
-        document.getElementById(
-            "notify-list"
-        );
-
-    if (!area) return;
-
-    const div =
-        document.createElement("div");
-
-    div.className = "notification";
-
-    div.innerHTML = `
-        <b>${title}</b>
-        <br>
-        ${message}
-    `;
-
-    area.prepend(div);
-
-    setTimeout(() => {
-        div.remove();
-    }, 5000);
-};
 
 /* ==========================================
    BROWSER
