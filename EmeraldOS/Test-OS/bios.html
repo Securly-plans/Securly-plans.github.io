@@ -253,14 +253,14 @@ function chooseEdition(index) {
 function bootSelected(build, edition) {
     mode = "booting";
 
-    localStorage.setItem("emerald_build_id", build.id);
-    localStorage.setItem("emerald_build_name", build.name);
-    localStorage.setItem("emerald_version", build.version);
-    localStorage.setItem("emerald_channel", build.channel);
-    localStorage.setItem("emerald_test_build", build.test ? "true" : "false");
+    localStorage.setItem("testos_build_id", build.id);
+    localStorage.setItem("testos_build_name", build.name);
+    localStorage.setItem("testos_version", build.version);
+    localStorage.setItem("testos_channel", build.channel);
+    localStorage.setItem("testos_test_build", build.test ? "true" : "false");
 
-    localStorage.setItem("emerald_edition", edition.id);
-    localStorage.setItem("emerald_edition_name", edition.name);
+    localStorage.setItem("testos_edition", edition.id);
+    localStorage.setItem("testos_edition_name", edition.name);
 
     screen.innerHTML = `
 <span class="white">EmeraldBIOS Boot Manager</span>
