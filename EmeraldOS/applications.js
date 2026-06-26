@@ -2582,7 +2582,6 @@ window.restoreSession = function () {
         );
     });
 
-    notify("Session restored.");
 };
 
 /* =========================================================
