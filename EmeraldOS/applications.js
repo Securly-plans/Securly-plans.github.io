@@ -2425,28 +2425,6 @@ window.applyTheme = function () {
 })();
 
 /* =========================================================
-   NOTIFICATIONS
-========================================================= */
-
-window.notify = function (message) {
-    const area =
-        document.getElementById("notify-list");
-
-    if (!area) return;
-
-    const n = document.createElement("div");
-    n.className = "notification";
-
-    n.textContent = message;
-
-    area.prepend(n);
-
-    setTimeout(() => {
-        n.remove();
-    }, 5000);
-};
-
-/* =========================================================
    DESKTOP FILES
 ========================================================= */
 
