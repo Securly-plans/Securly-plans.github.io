@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>TestOS Login</title>
+
+<style>
+body {
+    margin:0;
+    background:#008080;
+    font-family:Tahoma;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.panel {
+    width:340px;
+    background:#c0c0c0;
+    border:2px solid;
+    border-color:#fff #000 #000 #fff;
+    padding:15px;
+}
+
+.title {
+    background:#000080;
+    color:white;
+    padding:5px;
+    font-weight:bold;
+    margin:-15px -15px 10px -15px;
+}
+
+input {
+    width:100%;
+    margin:6px 0;
+    padding:6px;
+    border:2px inset #fff;
+    box-sizing:border-box;
+}
+
+button {
+    width:100%;
+    padding:6px;
+    margin-top:8px;
+    border:2px outset #fff;
+    background:#c0c0c0;
+    cursor:pointer;
+}
+
+button:active {
+    border:2px inset #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+    <div class="title">TestOS Login</div>
+
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Create Account</button>
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import {
+    doc,
+    getDoc,
+    updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* =========================
+   HASH PASSWORD
+========================= */
+
+async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", enc);
+
+    return [...new Uint8Array(hash)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+/* =========================
+   LOGIN
+========================= */
+
+async function login() {
+    const username = document.getElementById("user").value.trim();
+    const password = document.getElementById("pass").value;
+
+    if (!username || !password) {
+        alert("Fill all fields");
+        return;
+    }
+
+    const ref = doc(db, "emeraldOSUsers", username);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        alert("User not found");
+        return;
+    }
+
+    const data = snap.data();
+    const hash = await sha256(password);
+
+    if (data.passwordHash !== hash) {
+        alert("Incorrect password");
+        return;
+    }
+
+    await updateDoc(ref, {
+        lastLogin: Date.now()
+    });
+
+    /* =========================
+       FIX: REQUIRED FOR CLOUD OS
+    ========================= */
+
+    localStorage.setItem("TestOSusername", username);      // ✅ REQUIRED
+    localStorage.setItem("Testos_session", username);     // optional legacy support
+    localStorage.setItem("loggedIn", "true");         // optional stability flag
+
+    window.location.href = "bios.html";
+}
+
+/* =========================
+   REGISTER REDIRECT
+========================= */
+
+function goRegister() {
+    window.location.href = "register.html";
+}
+
+/* =========================
+   INIT
+========================= */
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("registerBtn").addEventListener("click", goRegister);
+});
+</script>
+
+</body>
+</html>

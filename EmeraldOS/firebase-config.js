@@ -1,4 +1,4 @@
-console.log("js/firebase-config.js LOADED.");
+console.log("firebase-config.js LOADED.");
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBLghWLth0syJhARDMWiJ7xNwyJAh7MWjQ",
