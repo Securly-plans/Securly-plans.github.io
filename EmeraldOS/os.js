@@ -146,8 +146,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     initStartMenu();
 
-    initNotifications();
-
     renderDesktop();
 
     renderStartMenu();
