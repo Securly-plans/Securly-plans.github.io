@@ -123,11 +123,11 @@ async function login() {
        FIX: REQUIRED FOR CLOUD OS
     ========================= */
 
-    localStorage.setItem("OSusername", username);      // ✅ REQUIRED
-    localStorage.setItem("os_session", username);     // optional legacy support
+    localStorage.setItem("40_username", username);      // ✅ REQUIRED
+    localStorage.setItem("40_session", username);     // optional legacy support
     localStorage.setItem("loggedIn", "true");         // optional stability flag
 
-    window.location.href = "bios.html";
+    window.location.href = "4.0/bios.html";
 }
 
 /* =========================
