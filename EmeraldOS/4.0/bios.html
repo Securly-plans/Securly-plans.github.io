@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +15,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#c0c0c0;font-fam
 "use strict";
 
 import { db } from "./firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const screen=document.getElementById("screen"),footer=document.getElementById("footer");
 const BUILD={id:"emerald40",name:"EmeraldOS 4.0",version:"4.0",channel:"Stable",test:false};
@@ -79,7 +80,7 @@ window.chooseEdition=function(index){
 
 function renderAdminVerify(){
   mode="admin";
-  screen.innerHTML=`\n<span class="white">EmeraldBIOS Executive Verification</span>\n<span class="blue">Executive edition requires an Emerald Games account with role: admin</span>\n\n<div class="admin-box">\nUsername:\n<br><input id="adminUser" autocomplete="username">\n<br>Password:\n<br><input id="adminPass" type="password" autocomplete="current-password">\n<br><button id="verifyBtn">Verify Admin</button>\n</div>\n\n<span class="small">This checks Firestore collection: users / username / passwordHash / role.</span>\n${verifyMessage?`\n<span class="red">${escapeHTML(verifyMessage)}</span>`:""}\n\n<span class="yellow">Press ESC to return to the edition selector.</span>`;
+  screen.innerHTML=`\n<span class="white">EmeraldBIOS Executive Verification</span>\n<span class="blue">Executive edition requires an Emerald Games account with role: admin</span>\n\n<div class="admin-box">\nUsername:\n<br><input id="adminUser" autocomplete="username">\n<br>Password:\n<br><input id="adminPass" type="password" autocomplete="current-password">\n<br><button id="verifyBtn">Verify Admin</button>\n</div>\n\n<span class="small">This uses Emerald Games auth: users where username + passwordHash match, then role must be admin.</span>\n${verifyMessage?`\n<span class="red">${escapeHTML(verifyMessage)}</span>`:""}\n\n<span class="yellow">Press ESC to return to the edition selector.</span>`;
   footer.textContent="ESC: return";
   setTimeout(()=>{
     const u=document.getElementById("adminUser");
@@ -97,30 +98,82 @@ async function sha256(text){
   return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
+async function getSystemConfig(){
+  try{
+    const snap=await getDoc(doc(db,"system","config"));
+    if(!snap.exists()){
+      return { loginDisabled:false, globalLock:false };
+    }
+    return snap.data();
+  }catch(err){
+    console.warn("System config fetch failed:",err);
+    return { loginDisabled:false, globalLock:false };
+  }
+}
+
 async function verifyAdmin(){
   const username=document.getElementById("adminUser")?.value.trim();
   const password=document.getElementById("adminPass")?.value||"";
   if(!username||!password){verifyMessage="Enter admin username and password.";renderAdminVerify();return;}
+
   try{
-    const ref=doc(db,"users",username);
-    const snap=await getDoc(ref);
-    if(!snap.exists()){verifyMessage="Emerald Games admin account not found.";renderAdminVerify();return;}
-    const data=snap.data();
+    const config=await getSystemConfig();
+
+    if(config.globalLock===true){
+      verifyMessage="Emerald Games is currently locked by administrators.";
+      renderAdminVerify();
+      return;
+    }
+
+    if(config.loginDisabled===true){
+      verifyMessage="Emerald Games login is currently disabled by administrators.";
+      renderAdminVerify();
+      return;
+    }
+
     const hash=await sha256(password);
-    if(data.passwordHash!==hash){verifyMessage="Incorrect admin password.";renderAdminVerify();return;}
+
+    const adminQuery=query(
+      collection(db,"users"),
+      where("username","==",username),
+      where("passwordHash","==",hash)
+    );
+
+    const snap=await getDocs(adminQuery);
+
+    if(snap.empty){
+      verifyMessage="Invalid Emerald Games admin login.";
+      renderAdminVerify();
+      return;
+    }
+
+    const userDoc=snap.docs[0];
+    const data=userDoc.data();
+
+    if(data.locked===true){
+      verifyMessage="Emerald Games account is locked.";
+      renderAdminVerify();
+      return;
+    }
+
     if(String(data.role||"").toLowerCase()!=="admin"){
       verifyMessage="Account exists, but role is not admin.";
       renderAdminVerify();
       return;
     }
+
+    await updateDoc(doc(db,"users",userDoc.id),{
+      lastExecutiveVerify:Date.now()
+    });
+
     localStorage.setItem("40_executive_verified","true");
-    localStorage.setItem("40_executive_admin",username);
+    localStorage.setItem("40_executive_admin",data.username||username);
     localStorage.setItem("40_executive_verified_at",String(Date.now()));
     verifyMessage="";
     bootSelected(BUILD,EDITIONS.find(e=>e.id==="executive"));
   }catch(err){
     console.error(err);
-    verifyMessage="Could not verify admin account. Check firebase.js and network access.";
+    verifyMessage="Could not verify admin account. Check firebase.js, Firestore rules, and network access.";
     renderAdminVerify();
   }
 }
