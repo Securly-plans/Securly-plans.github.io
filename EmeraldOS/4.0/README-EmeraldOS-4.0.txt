@@ -1,4 +1,4 @@
-EmeraldOS 4.0
+ EmeraldOS 4.0
 ==============
 
 This package is conditioned from the previous TestOS 3.2.T.5 desktop-folder build into EmeraldOS 4.0.
