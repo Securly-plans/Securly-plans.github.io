@@ -109,7 +109,7 @@ const APPS = {
 
        chat: {
         name: "Mediaplayer",
-        icon: "💬",
+        icon: "📀",
         launch: () => {
             openWindow(
                 "Mediaplayer",
