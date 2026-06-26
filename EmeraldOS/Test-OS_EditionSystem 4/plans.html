@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestOS Editions</title>
+
+<style>
+html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #008080;
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+    font-size: 12px;
+    color: #000;
+}
+
+.page { padding: 18px; }
+
+.window {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.35);
+}
+
+.titlebar {
+    background: #000080;
+    color: #ffffff;
+    padding: 4px 6px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+
+.content { padding: 14px; }
+
+.logo {
+    width: 72px;
+    height: 72px;
+    background: url("https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png") center/contain no-repeat;
+    margin: 0 auto 10px auto;
+}
+
+h1, h2 { margin: 8px 0; }
+
+.subtitle { text-align: center; margin-bottom: 14px; }
+
+.notice {
+    background: #ffffcc;
+    padding: 8px;
+    margin-bottom: 12px;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+}
+
+.edition-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.card {
+    background: #d4d0c8;
+    padding: 10px;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+}
+
+.card h2 { text-align: center; font-size: 15px; }
+.card.active { outline: 2px solid #000080; }
+.price { text-align: center; font-weight: bold; margin: 8px 0; }
+
+.tchart {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    background: #ffffff;
+}
+
+.tcol { min-height: 210px; padding: 6px; border-right: 1px solid #808080; }
+.tcol:last-child { border-right: none; }
+
+.thead {
+    font-weight: bold;
+    text-align: center;
+    background: #000080;
+    color: #ffffff;
+    padding: 3px;
+    margin: -6px -6px 6px -6px;
+}
+
+ul { margin: 0; padding-left: 16px; }
+li { margin-bottom: 5px; }
+
+.footer {
+    margin-top: 14px;
+    background: #ffffff;
+    padding: 8px;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+}
+
+.actions { text-align: center; margin-top: 10px; }
+
+button {
+    background: #c0c0c0;
+    padding: 5px 12px;
+    font-family: inherit;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    cursor: pointer;
+}
+
+button:active {
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+}
+
+@media (max-width: 950px) { .edition-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .edition-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+
+<body>
+<div class="page">
+<div class="window">
+    <div class="titlebar">
+        <span>TestOS Editions</span>
+        <span>— □ ✕</span>
+    </div>
+
+    <div class="content">
+        <div class="logo"></div>
+        <h1 style="text-align:center;">TestOS 3.2.T.1 Editions</h1>
+        <div class="subtitle">Built on EmeraldOS 3.2. Locked edition features are hidden from the desktop and Start menu.</div>
+
+        <div class="notice" id="currentEditionBox">
+            <b>Current BIOS-selected edition:</b> <span id="currentEdition">Loading...</span><br>
+            To change editions, reboot and choose another edition in TestBIOS.
+        </div>
+
+        <div class="edition-grid">
+            <div class="card" data-edition="home">
+                <h2>TestOS Home</h2>
+                <div class="price">Base Edition</div>
+                <div class="tchart">
+                    <div class="tcol">
+                        <div class="thead">Includes</div>
+                        <ul>
+                            <li>Core desktop</li>
+                            <li>Files</li>
+                            <li>Notes</li>
+                            <li>Docs</li>
+                            <li>Calendar</li>
+                            <li>Calculator</li>
+                            <li>Clock</li>
+                            <li>System panel</li>
+                        </ul>
+                    </div>
+                    <div class="tcol">
+                        <div class="thead">Hidden</div>
+                        <ul>
+                            <li>Business workspace</li>
+                            <li>Browser</li>
+                            <li>App Store</li>
+                            <li>Developer tools</li>
+                            <li>Games</li>
+                            <li>Executive dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" data-edition="business">
+                <h2>TestOS Business</h2>
+                <div class="price">Work Edition</div>
+                <div class="tchart">
+                    <div class="tcol">
+                        <div class="thead">Includes</div>
+                        <ul>
+                            <li>Everything in Home</li>
+                            <li>Workspace</li>
+                            <li>Browser</li>
+                            <li>App Store</li>
+                            <li>Chat</li>
+                            <li>Media Player</li>
+                        </ul>
+                    </div>
+                    <div class="tcol">
+                        <div class="thead">Hidden</div>
+                        <ul>
+                            <li>Terminal</li>
+                            <li>Developer tools</li>
+                            <li>System monitor</li>
+                            <li>Paint</li>
+                            <li>Games</li>
+                            <li>Executive dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" data-edition="virtue">
+                <h2>TestOS Virtue</h2>
+                <div class="price">Pro Edition</div>
+                <div class="tchart">
+                    <div class="tcol">
+                        <div class="thead">Includes</div>
+                        <ul>
+                            <li>Everything in Business</li>
+                            <li>Terminal</li>
+                            <li>Developer tools</li>
+                            <li>System monitor</li>
+                            <li>Wallpaper manager</li>
+                            <li>Desktop manager</li>
+                            <li>Paint</li>
+                        </ul>
+                    </div>
+                    <div class="tcol">
+                        <div class="thead">Hidden</div>
+                        <ul>
+                            <li>Games</li>
+                            <li>Executive dashboard</li>
+                            <li>Executive-only tools</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" data-edition="executive">
+                <h2>TestOS Executive</h2>
+                <div class="price">Ultimate Edition</div>
+                <div class="tchart">
+                    <div class="tcol">
+                        <div class="thead">Includes</div>
+                        <ul>
+                            <li>Everything in Virtue</li>
+                            <li>Games</li>
+                            <li>Executive dashboard</li>
+                            <li>All experimental apps</li>
+                            <li>All edition features</li>
+                        </ul>
+                    </div>
+                    <div class="tcol">
+                        <div class="thead">Hidden</div>
+                        <ul>
+                            <li>No hidden apps</li>
+                            <li>No edition limits</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <b>Edition order:</b> Home → Business → Virtue → Executive<br><br>
+            Higher editions include all visible features from lower editions. This page is informational; edition selection happens in TestBIOS.
+        </div>
+
+        <div class="actions">
+            <button onclick="history.back()">Back</button>
+            <button onclick="window.location.href='bios.html'">Reboot to BIOS</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+(function () {
+    const current = localStorage.getItem("testos_edition") || "home";
+    const name = localStorage.getItem("testos_edition_name") || "TestOS Home";
+
+    document.getElementById("currentEdition").textContent = name;
+
+    document.querySelectorAll(".card").forEach(card => {
+        if (card.dataset.edition === current) {
+            card.classList.add("active");
+        }
+    });
+})();
+</script>
+</body>
+</html>
