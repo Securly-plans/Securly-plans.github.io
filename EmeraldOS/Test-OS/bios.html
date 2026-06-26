@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmeraldOS BIOS</title>
+
+<style>
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    color: #c0c0c0;
+    font-family: "Courier New", monospace;
+    font-size: 15px;
+    overflow: hidden;
+}
+
+.screen {
+    padding: 26px;
+    white-space: pre-line;
+}
+
+.white { color: #ffffff; }
+.green { color: #00ff66; }
+.blue { color: #00aaff; }
+.yellow { color: #ffff66; }
+.red { color: #ff5555; }
+
+.menu {
+    margin-top: 18px;
+    border: 1px solid #808080;
+    padding: 12px;
+    width: 720px;
+    max-width: calc(100vw - 70px);
+}
+
+.menu-title {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.option {
+    padding: 5px 8px;
+    cursor: pointer;
+}
+
+.option.selected {
+    background: #000080;
+    color: #ffffff;
+}
+
+.footer {
+    position: fixed;
+    left: 26px;
+    bottom: 20px;
+    color: #808080;
+}
+
+.blink {
+    animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="screen" id="screen"></div>
+<div class="footer" id="footer"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   EMERALDOS BIOS BOOT MANAGER
+========================================================= */
+
+const screen = document.getElementById("screen");
+const footer = document.getElementById("footer");
+
+const BUILDS = [
+    {
+        id: "stable",
+        name: "EmeraldOS 3.2 Stable",
+        version: "3.2",
+        channel: "Stable",
+        test: false
+    },
+    {
+        id: "test",
+        name: "EmeraldOS V 3.2.T.1",
+        version: "3.2.T.1",
+        channel: "Test",
+        test: true
+    }
+];
+
+const EDITIONS = [
+    {
+        id: "home",
+        name: "EmeraldOS Home",
+        description: "Base edition with core apps and standard desktop features."
+    },
+    {
+        id: "business",
+        name: "EmeraldOS Business",
+        description: "Work edition with productivity and workspace tools."
+    },
+    {
+        id: "virtue",
+        name: "EmeraldOS Virtue",
+        description: "Pro edition with advanced tools and power-user features."
+    },
+    {
+        id: "executive",
+        name: "EmeraldOS Executive",
+        description: "Full edition with all features and premium perks."
+    }
+];
+
+let mode = "startup";
+let selectedBuild = 0;
+let selectedEdition = 0;
+
+/* =========================================================
+   STARTUP TEXT
+========================================================= */
+
+const startupLines = [
+    '<span class="white">EmeraldBIOS Version 3.2</span>',
+    'Copyright 2026 Emerald Systems',
+    '',
+    'CPU: Emerald Virtual Processor 95 MHz',
+    'Memory Test: 640K OK',
+    'Extended Memory: 32768K OK',
+    '',
+    'Detecting IDE drives...',
+    'Primary Master: EmeraldOS Virtual Disk',
+    'Primary Slave: None',
+    '',
+    'Initializing keyboard... OK',
+    'Initializing display adapter... OK',
+    'Checking CMOS settings... OK',
+    '',
+    '<span class="green">Boot device found: EmeraldOS System Disk</span>',
+    '',
+    'Loading EmeraldOS Boot Manager...',
+    ''
+];
+
+let startupIndex = 0;
+
+function printStartup() {
+    if (startupIndex < startupLines.length) {
+        screen.innerHTML += startupLines[startupIndex] + "\n";
+        startupIndex++;
+        setTimeout(printStartup, 110);
+    } else {
+        mode = "build";
+        renderBuildMenu();
+    }
+}
+
+/* =========================================================
+   BUILD MENU
+========================================================= */
+
+function renderBuildMenu() {
+    screen.innerHTML = `
+<span class="white">EmeraldBIOS Boot Manager</span>
+<span class="blue">Select the operating system build to boot.</span>
+
+<div class="menu">
+<div class="menu-title">Available Builds</div>
+${BUILDS.map((build, index) => `
+<div class="option ${index === selectedBuild ? "selected" : ""}" onclick="chooseBuild(${index})">
+    ${index + 1}. ${build.name}  [${build.channel}]
+</div>
+`).join("")}
+</div>
+
+<span class="yellow">Use Up/Down arrows and Enter, or press 1-2.</span>
+<span class="blink">_</span>
+`;
+
+    footer.textContent = "DEL: BIOS setup   ESC: boot first option";
+}
+
+function chooseBuild(index) {
+    selectedBuild = index;
+
+    const build = BUILDS[selectedBuild];
+
+    if (build.id === "test") {
+        mode = "edition";
+        selectedEdition = 0;
+        renderEditionMenu();
+        return;
+    }
+
+    bootSelected(build, {
+        id: "home",
+        name: "EmeraldOS Home"
+    });
+}
+
+/* =========================================================
+   EDITION MENU
+========================================================= */
+
+function renderEditionMenu() {
+    const build = BUILDS[selectedBuild];
+
+    screen.innerHTML = `
+<span class="white">EmeraldBIOS Edition Selector</span>
+<span class="blue">Selected Build: ${build.name}</span>
+
+<div class="menu">
+<div class="menu-title">Choose Edition To Boot</div>
+${EDITIONS.map((edition, index) => `
+<div class="option ${index === selectedEdition ? "selected" : ""}" onclick="chooseEdition(${index})">
+    ${index + 1}. ${edition.name}
+       ${edition.description}
+</div>
+`).join("")}
+</div>
+
+<span class="yellow">Use Up/Down arrows and Enter, or press 1-4.</span>
+<span class="blink">_</span>
+`;
+
+    footer.textContent = "BACKSPACE: return to build menu   DEL: BIOS setup";
+}
+
+function chooseEdition(index) {
+    selectedEdition = index;
+
+    const build = BUILDS[selectedBuild];
+    const edition = EDITIONS[selectedEdition];
+
+    bootSelected(build, edition);
+}
+
+/* =========================================================
+   BOOT SAVE + REDIRECT
+========================================================= */
+
+function bootSelected(build, edition) {
+    mode = "booting";
+
+    localStorage.setItem("emerald_build_id", build.id);
+    localStorage.setItem("emerald_build_name", build.name);
+    localStorage.setItem("emerald_version", build.version);
+    localStorage.setItem("emerald_channel", build.channel);
+    localStorage.setItem("emerald_test_build", build.test ? "true" : "false");
+
+    localStorage.setItem("emerald_edition", edition.id);
+    localStorage.setItem("emerald_edition_name", edition.name);
+
+    screen.innerHTML = `
+<span class="white">EmeraldBIOS Boot Manager</span>
+
+Selected build: <span class="green">${build.name}</span>
+Selected edition: <span class="green">${edition.name}</span>
+
+Saving boot configuration... OK
+Loading boot sector... OK
+Starting EmeraldOS loader...
+
+<span class="blink">_</span>
+`;
+
+    footer.textContent = "Booting selected configuration...";
+
+    const query =
+        "?build=" + encodeURIComponent(build.version) +
+        "&channel=" + encodeURIComponent(build.channel) +
+        "&edition=" + encodeURIComponent(edition.id);
+
+    setTimeout(() => {
+        window.location.replace("./loading.html" + query);
+    }, 1400);
+}
+
+/* =========================================================
+   BIOS SETUP
+========================================================= */
+
+function renderSetup() {
+    mode = "setup";
+
+    screen.innerHTML = `
+<span class="white">EmeraldBIOS Setup Utility</span>
+
+Main        Advanced        Boot        Security        Exit
+
+System Disk:        EmeraldOS Virtual Disk
+Default Build:      EmeraldOS 3.2 Stable
+Test Build:         EmeraldOS V 3.2.T.1
+Edition Selector:   Enabled
+Memory:             32768K
+Video Adapter:      Emerald VGA Compatible
+
+This setup screen is decorative for now.
+
+<span class="yellow">Press ESC to return to the boot manager.</span>
+`;
+
+    footer.textContent = "ESC: return";
+}
+
+/* =========================================================
+   KEYBOARD CONTROLS
+========================================================= */
+
+document.addEventListener("keydown", (e) => {
+    if (mode === "startup" || mode === "booting") return;
+
+    if (e.key === "Delete") {
+        renderSetup();
+        return;
+    }
+
+    if (mode === "setup") {
+        if (e.key === "Escape") {
+            mode = "build";
+            renderBuildMenu();
+        }
+        return;
+    }
+
+    if (mode === "build") {
+        if (e.key === "ArrowDown") {
+            selectedBuild = (selectedBuild + 1) % BUILDS.length;
+            renderBuildMenu();
+        }
+
+        if (e.key === "ArrowUp") {
+            selectedBuild = (selectedBuild - 1 + BUILDS.length) % BUILDS.length;
+            renderBuildMenu();
+        }
+
+        if (e.key === "Enter") {
+            chooseBuild(selectedBuild);
+        }
+
+        if (e.key === "1") chooseBuild(0);
+        if (e.key === "2") chooseBuild(1);
+
+        if (e.key === "Escape") {
+            chooseBuild(0);
+        }
+
+        return;
+    }
+
+    if (mode === "edition") {
+        if (e.key === "ArrowDown") {
+            selectedEdition = (selectedEdition + 1) % EDITIONS.length;
+            renderEditionMenu();
+        }
+
+        if (e.key === "ArrowUp") {
+            selectedEdition = (selectedEdition - 1 + EDITIONS.length) % EDITIONS.length;
+            renderEditionMenu();
+        }
+
+        if (e.key === "Enter") {
+            chooseEdition(selectedEdition);
+        }
+
+        if (e.key === "1") chooseEdition(0);
+        if (e.key === "2") chooseEdition(1);
+        if (e.key === "3") chooseEdition(2);
+        if (e.key === "4") chooseEdition(3);
+
+        if (e.key === "Backspace") {
+            mode = "build";
+            renderBuildMenu();
+        }
+    }
+});
+
+/* =========================================================
+   START
+========================================================= */
+
+setTimeout(printStartup, 300);
+</script>
+
+</body>
+</html>
