@@ -333,27 +333,27 @@ body {
     ===================================================== */
 
     const selectedBuild =
-        localStorage.getItem("emerald_build_name")
+        localStorage.getItem("testos_build_name")
         || "EmeraldOS 3.2 Stable";
 
     const selectedVersion =
-        localStorage.getItem("emerald_version")
+        localStorage.getItem("testos_version")
         || "3.2";
 
     const selectedChannel =
-        localStorage.getItem("emerald_channel")
+        localStorage.getItem("testos_channel")
         || "Stable";
 
     const selectedEditionId =
-        localStorage.getItem("emerald_edition")
+        localStorage.getItem("testos_edition")
         || "home";
 
     const selectedEdition =
-        localStorage.getItem("emerald_edition_name")
+        localStorage.getItem("testos_edition_name")
         || "EmeraldOS Home";
 
     const isTestBuild =
-        localStorage.getItem("emerald_test_build") === "true"
+        localStorage.getItem("testos_test_build") === "true"
         || selectedChannel.toLowerCase() === "test"
         || selectedVersion.includes("T");
 
