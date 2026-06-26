@@ -394,7 +394,6 @@ window.logoutUser = function () {
    GLOBALS
 ========================================================= */
 
-window.notify = notify;
 
 window.APPS = APPS;
 window.fileSystem = fileSystem;
