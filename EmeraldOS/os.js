@@ -150,11 +150,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     renderStartMenu();
 
-    notify(
-        "EmeraldOS",
-        "Desktop ready."
-    );
-
 });
 
 /* =========================================================
