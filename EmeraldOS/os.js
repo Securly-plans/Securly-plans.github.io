@@ -135,12 +135,6 @@ const APPS = {
                 "games"
             );
         }
-    },
-
-    browser: {
-        name: "Emerald Browser",
-        icon: "🧭",
-        launch: () => openBrowser()
     }
 
 };
