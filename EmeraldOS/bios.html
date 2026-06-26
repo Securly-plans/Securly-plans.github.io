@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmeraldOS BIOS</title>
+
+<style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #c0c0c0;
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+  overflow: hidden;
+}
+
+.screen {
+  padding: 28px;
+  white-space: pre-line;
+}
+
+.blue {
+  color: #00aaff;
+}
+
+.green {
+  color: #00ff66;
+}
+
+.white {
+  color: #ffffff;
+}
+
+.blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="screen" id="bios"></div>
+
+<script>
+const bios = document.getElementById("bios");
+
+const lines = [
+  '<span class="white">EmeraldBIOS Version 3.2</span>',
+  'Copyright 2026 Emerald Systems',
+  '',
+  'CPU: Emerald Virtual Processor 95 MHz',
+  'Memory Test: 640K OK',
+  'Extended Memory: 32768K OK',
+  '',
+  'Detecting IDE drives...',
+  'Primary Master: EmeraldOS Virtual Disk',
+  'Primary Slave: None',
+  '',
+  'Initializing keyboard... OK',
+  'Initializing display adapter... OK',
+  'Checking CMOS settings... OK',
+  '',
+  '<span class="green">Boot device found: EmeraldOS System Disk</span>',
+  '',
+  'Starting EmeraldOS Boot Manager...',
+  '',
+  '<span class="white">Press DEL to enter setup</span>',
+  '<span class="blink">_</span>'
+];
+
+let i = 0;
+
+function printNextLine() {
+  if (i < lines.length) {
+    bios.innerHTML += lines[i] + "\n";
+    i++;
+    setTimeout(printNextLine, 180);
+  } else {
+    setTimeout(() => {
+      window.location.replace("./loading.html");
+    }, 1200);
+  }
+}
+
+setTimeout(printNextLine, 400);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Delete") {
+    bios.innerHTML = `
+<span class="white">EmeraldBIOS Setup Utility</span>
+
+Main       Advanced       Boot       Security       Exit
+
+System Version: EmeraldOS 3.2
+System Disk:    EmeraldOS Virtual Disk
+Memory:         32768K
+Boot Order:     1. EmeraldOS System Disk
+
+This setup screen is decorative.
+
+Press ESC to continue boot.
+`;
+  }
+
+  if (e.key === "Escape") {
+    window.location.replace("./loading.html");
+  }
+});
+</script>
+
+</body>
+</html>
