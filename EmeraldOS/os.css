@@ -69,6 +69,36 @@ body{
     color:var(--text);
 }
 
+#notification-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 999999;
+}
+
+.os-notification {
+    background: rgba(25, 25, 25, 0.95);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    min-width: 220px;
+    max-width: 320px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    font-family: sans-serif;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+}
+
+.os-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* =====================================================
    DESKTOP
 ===================================================== */
