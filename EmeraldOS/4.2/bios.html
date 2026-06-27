@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmeraldOS 4.2 BIOS</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#000;color:#c0c0c0;font-family:"Courier New",monospace;font-size:15px;overflow:hidden}.screen{padding:26px;white-space:pre-line}.white{color:#fff}.green{color:#00ff66}.blue{color:#00aaff}.yellow{color:#ffff66}.red{color:#ff5555}.menu{margin-top:18px;border:1px solid #808080;padding:12px;width:820px;max-width:calc(100vw - 70px)}.menu-title{color:#fff;margin-bottom:10px}.option{padding:5px 8px;cursor:pointer}.option.selected{background:#000080;color:#fff}.option.locked{color:#888}.footer{position:fixed;left:26px;bottom:20px;color:#808080}.blink{animation:blink 1s steps(2,start) infinite}@keyframes blink{50%{opacity:0}}input{background:#000;color:#fff;border:1px solid #808080;font-family:"Courier New",monospace;font-size:15px;padding:4px;margin:4px 0;width:260px}button{background:#c0c0c0;color:#000;border:2px outset #fff;font-family:"Courier New",monospace;padding:4px 10px;margin-top:8px;cursor:pointer}button:active{border:2px inset #fff}.small{font-size:13px;color:#aaa}.admin-box{margin-top:12px;border:1px solid #808080;padding:10px;width:520px;max-width:calc(100vw - 80px)}
+</style>
+</head>
+<body>
+<div class="screen" id="screen"></div><div class="footer" id="footer"></div>
+<script type="module">
+"use strict";
+
+import { db } from "./firebase.js";
+import { collection, query, where, getDocs, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const screen=document.getElementById("screen"),footer=document.getElementById("footer");
+const BUILD={id:"emerald40",name:"EmeraldOS 4.2",version:"4.2",channel:"Stable",test:false};
+const EDITIONS=[
+{id:"economy",name:"EmeraldOS Economy",description:"Smallest edition with essential desktop tools only."},
+{id:"home",name:"EmeraldOS Home",description:"Personal edition with docs, calendar, and home apps."},
+{id:"business",name:"EmeraldOS Business",description:"Work edition with productivity, planning, and communication apps."},
+{id:"virtue",name:"EmeraldOS Virtue",description:"Default edition with creative, power-user, and advanced tools."},
+{id:"developer",name:"EmeraldOS Developer",description:"Developer edition with terminal, registry, code, and network tools."},
+{id:"executive",name:"EmeraldOS Executive",description:"Administrator-only edition with all apps, policy, audit, and deployment tools."}
+];
+
+let mode="startup";
+let selectedEdition=3;
+let startupIndex=0;
+let verifyMessage="";
+
+const startupLines=[
+'<span class="white">EmeraldBIOS Version 4.1</span>',
+'Copyright 2026 Emerald Systems',
+'',
+'CPU: Emerald Virtual Processor 95 MHz',
+'Memory Test: 640K OK',
+'Extended Memory: 32768K OK',
+'',
+'Detecting IDE drives...',
+'Primary Master: EmeraldOS 4.2 Virtual Disk',
+'Primary Slave: None',
+'',
+'Initializing keyboard... OK',
+'Initializing display adapter... OK',
+'Checking CMOS settings... OK',
+'',
+'<span class="green">Boot device found: EmeraldOS 4.2 System Disk</span>',
+'',
+'Loading EmeraldOS Boot Manager...',
+''
+];
+
+function printStartup(){
+  if(startupIndex<startupLines.length){screen.innerHTML+=startupLines[startupIndex]+"\n";startupIndex++;setTimeout(printStartup,95)}
+  else{mode="edition";renderEditionMenu()}
+}
+
+function isExecutiveVerified(){return localStorage.getItem("40_executive_verified")==="true";}
+
+function renderEditionMenu(){
+  const verified=isExecutiveVerified();
+  screen.innerHTML=`\n<span class="white">EmeraldBIOS Edition Selector</span>\n<span class="blue">Build: ${BUILD.name}</span>\n<span class="green">Default edition: EmeraldOS Virtue</span>\n\n<div class="menu">\n<div class="menu-title">Choose Edition To Boot</div>\n${EDITIONS.map((edition,index)=>`\n<div class="option ${index===selectedEdition?"selected":""} ${edition.id==="executive"&&!verified?"locked":""}" onclick="chooseEdition(${index})">\n    ${index+1}. ${edition.name}${edition.id==="executive"&&!verified?"  [ADMIN VERIFY REQUIRED]":""}\n       ${edition.description}\n</div>`).join("")}\n</div>\n\n${verified?'<span class="green">Executive verification: ACTIVE</span>':'<span class="yellow">Executive requires Emerald Games admin verification.</span>'}\n${verifyMessage?`\n<span class="red">${escapeHTML(verifyMessage)}</span>`:""}\n\n<span class="yellow">Use Up/Down arrows and Enter, or press 1-6. Press A to verify Executive access.</span>\n<span class="blink">_</span>`;
+  footer.textContent="A: verify Executive   DEL: BIOS setup";
+}
+
+window.chooseEdition=function(index){
+  selectedEdition=index;
+  const edition=EDITIONS[selectedEdition];
+  if(edition.id==="executive"&&!isExecutiveVerified()){
+    renderAdminVerify();
+    return;
+  }
+  bootSelected(BUILD,edition);
+}
+
+function renderAdminVerify(){
+  mode="admin";
+  screen.innerHTML=`\n<span class="white">EmeraldBIOS Executive Verification</span>\n<span class="blue">Executive edition requires an Emerald Games account with role: admin</span>\n\n<div class="admin-box">\nUsername:\n<br><input id="adminUser" autocomplete="username">\n<br>Password:\n<br><input id="adminPass" type="password" autocomplete="current-password">\n<br><button id="verifyBtn">Verify Admin</button>\n</div>\n\n<span class="small">This uses Emerald Games auth: users where username + passwordHash match, then role must be admin.</span>\n${verifyMessage?`\n<span class="red">${escapeHTML(verifyMessage)}</span>`:""}\n\n<span class="yellow">Press ESC to return to the edition selector.</span>`;
+  footer.textContent="ESC: return";
+  setTimeout(()=>{
+    const u=document.getElementById("adminUser");
+    const p=document.getElementById("adminPass");
+    const b=document.getElementById("verifyBtn");
+    if(u)u.focus();
+    if(b)b.onclick=verifyAdmin;
+    if(p)p.addEventListener("keydown",e=>{if(e.key==="Enter")verifyAdmin();});
+  },0);
+}
+
+async function sha256(text){
+  const enc=new TextEncoder().encode(text);
+  const hash=await crypto.subtle.digest("SHA-256",enc);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function getSystemConfig(){
+  try{
+    const snap=await getDoc(doc(db,"system","config"));
+    if(!snap.exists()){
+      return { loginDisabled:false, globalLock:false };
+    }
+    return snap.data();
+  }catch(err){
+    console.warn("System config fetch failed:",err);
+    return { loginDisabled:false, globalLock:false };
+  }
+}
+
+async function verifyAdmin(){
+  const username=document.getElementById("adminUser")?.value.trim();
+  const password=document.getElementById("adminPass")?.value||"";
+  if(!username||!password){verifyMessage="Enter admin username and password.";renderAdminVerify();return;}
+
+  try{
+    const config=await getSystemConfig();
+
+    if(config.globalLock===true){
+      verifyMessage="Emerald Games is currently locked by administrators.";
+      renderAdminVerify();
+      return;
+    }
+
+    if(config.loginDisabled===true){
+      verifyMessage="Emerald Games login is currently disabled by administrators.";
+      renderAdminVerify();
+      return;
+    }
+
+    const hash=await sha256(password);
+
+    const adminQuery=query(
+      collection(db,"users"),
+      where("username","==",username),
+      where("passwordHash","==",hash)
+    );
+
+    const snap=await getDocs(adminQuery);
+
+    if(snap.empty){
+      verifyMessage="Invalid Emerald Games admin login.";
+      renderAdminVerify();
+      return;
+    }
+
+    const userDoc=snap.docs[0];
+    const data=userDoc.data();
+
+    if(data.locked===true){
+      verifyMessage="Emerald Games account is locked.";
+      renderAdminVerify();
+      return;
+    }
+
+    if(String(data.role||"").toLowerCase()!=="admin"){
+      verifyMessage="Account exists, but role is not admin.";
+      renderAdminVerify();
+      return;
+    }
+
+    await updateDoc(doc(db,"users",userDoc.id),{
+      lastExecutiveVerify:Date.now()
+    });
+
+    localStorage.setItem("40_executive_verified","true");
+    localStorage.setItem("40_executive_admin",data.username||username);
+    localStorage.setItem("40_executive_verified_at",String(Date.now()));
+    verifyMessage="";
+    bootSelected(BUILD,EDITIONS.find(e=>e.id==="executive"));
+  }catch(err){
+    console.error(err);
+    verifyMessage="Could not verify admin account. Check firebase.js, Firestore rules, and network access.";
+    renderAdminVerify();
+  }
+}
+
+function bootSelected(build,edition){
+  mode="booting";
+  if(edition.id!=="executive"){
+    localStorage.removeItem("40_executive_pending");
+  }
+  localStorage.setItem("40_build_id",build.id);
+  localStorage.setItem("40_build_name",build.name);
+  localStorage.setItem("40_version",build.version);
+  localStorage.setItem("40_channel",build.channel);
+  localStorage.setItem("40_test_build",build.test?"true":"false");
+  localStorage.setItem("40_edition",edition.id);
+  localStorage.setItem("40_edition_name",edition.name);
+  screen.innerHTML=`\n<span class="white">EmeraldBIOS Boot Manager</span>\n\nSelected build: <span class="green">${build.name}</span>\nSelected edition: <span class="green">${edition.name}</span>\n\nSaving 40_ boot configuration... OK\nLoading edition map... OK\nLoading boot sector... OK\nStarting EmeraldOS loader...\n\n<span class="blink">_</span>`;
+  footer.textContent="Booting selected configuration...";
+  setTimeout(()=>window.location.replace("./loading.html"),1200);
+}
+
+function renderSetup(){
+  mode="setup";
+  screen.innerHTML=`\n<span class="white">EmeraldBIOS Setup Utility</span>\n\nMain        Advanced        Boot        Security        Exit\n\nSystem Disk:        EmeraldOS Virtual Disk\nBuild:              EmeraldOS 4.2\nDefault Edition:    EmeraldOS Virtue\nExecutive Access:   ${isExecutiveVerified()?"Verified":"Admin verification required"}\nStorage Prefix:     40_\nDesktop Folder Mode: Enabled\nDesktop Sync:       Firebase + Local Cache\nRegistry:           HKEY compatible\nMemory:             32768K\nVideo Adapter:      Emerald VGA Compatible\n\n<span class="yellow">Press ESC to return to edition selector.</span>`;
+  footer.textContent="ESC: return";
+}
+
+document.addEventListener("keydown",e=>{
+  if(mode==="startup"||mode==="booting")return;
+  if(e.key==="Delete"){renderSetup();return}
+  if(mode==="setup"){if(e.key==="Escape"){mode="edition";renderEditionMenu()}return}
+  if(mode==="admin"){if(e.key==="Escape"){mode="edition";renderEditionMenu()}return}
+  if(mode==="edition"){
+    if(e.key==="ArrowDown"){selectedEdition=(selectedEdition+1)%EDITIONS.length;renderEditionMenu()}
+    if(e.key==="ArrowUp"){selectedEdition=(selectedEdition-1+EDITIONS.length)%EDITIONS.length;renderEditionMenu()}
+    if(e.key==="Enter")window.chooseEdition(selectedEdition);
+    if(["1","2","3","4","5","6"].includes(e.key))window.chooseEdition(parseInt(e.key,10)-1);
+    if(e.key.toLowerCase()==="a")renderAdminVerify();
+  }
+});
+
+function escapeHTML(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");}
+
+setTimeout(printStartup,300);
+</script>
+</body>
+</html>
