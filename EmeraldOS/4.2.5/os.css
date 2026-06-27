@@ -1331,3 +1331,100 @@ textarea{
     opacity:.82;
     z-index:99999;
 }
+
+
+/* =========================================================
+   EMERALDOS 4.2.5 RIGHT-CLICK HOTFIX CSS
+   Applies even if older code forgets to add menu classes.
+========================================================= */
+#context-menu,
+#context-menu.win95-context-menu,
+.win95-context-menu,
+.emerald425-context-menu {
+    position: fixed !important;
+    display: none;
+    min-width: 220px !important;
+    max-width: 300px !important;
+    background: #c0c0c0 !important;
+    color: #000000 !important;
+    border-top: 2px solid #ffffff !important;
+    border-left: 2px solid #ffffff !important;
+    border-right: 2px solid #404040 !important;
+    border-bottom: 2px solid #404040 !important;
+    padding: 2px !important;
+    z-index: 2147483647 !important;
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif !important;
+    font-size: 12px !important;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.55) !important;
+    user-select: none !important;
+}
+#context-menu.show,
+#context-menu.show.win95-context-menu,
+.win95-context-menu.show,
+.emerald425-context-menu.show {
+    display: block !important;
+}
+#context-menu .context-item,
+.win95-context-menu .context-item,
+.emerald425-context-menu .context-item {
+    min-height: 22px !important;
+    padding: 4px 24px 4px 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: default !important;
+    white-space: nowrap !important;
+    color: #000000 !important;
+    background: transparent !important;
+    line-height: 14px !important;
+}
+#context-menu .context-item:hover,
+.win95-context-menu .context-item:hover,
+.emerald425-context-menu .context-item:hover {
+    background: #000080 !important;
+    color: #ffffff !important;
+}
+#context-menu .context-separator,
+.win95-context-menu .context-separator,
+.emerald425-context-menu .context-separator {
+    height: 1px !important;
+    background: #808080 !important;
+    border-bottom: 1px solid #ffffff !important;
+    margin: 3px 2px !important;
+}
+
+/* Win95 bottom-right toast override */
+#toast-container {
+    position: fixed !important;
+    left: auto !important;
+    right: 10px !important;
+    bottom: 50px !important;
+    align-items: flex-end !important;
+    z-index: 2147483646 !important;
+}
+.toast {
+    background: #c0c0c0 !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+    border-top: 2px solid #ffffff !important;
+    border-left: 2px solid #ffffff !important;
+    border-right: 2px solid #404040 !important;
+    border-bottom: 2px solid #404040 !important;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.55) !important;
+    padding: 0 !important;
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif !important;
+}
+.toast-title {
+    background: #000080 !important;
+    color: #ffffff !important;
+    padding: 3px 6px !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+}
+.toast-msg {
+    background: #c0c0c0 !important;
+    color: #000000 !important;
+    padding: 8px !important;
+    opacity: 1 !important;
+}
