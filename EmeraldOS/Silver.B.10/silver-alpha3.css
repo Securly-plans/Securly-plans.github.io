@@ -1,0 +1,282 @@
+/* =========================================================
+   EMERALDOS SILVER ALPHA VERSION 3
+   Independent Silver product-line shell
+   Original glass/silver styling only. No Microsoft assets.
+========================================================= */
+
+body[data-theme="silver3"] {
+    --desktop: #778899;
+    --window: rgba(238, 244, 250, 0.82);
+    --windowContent: rgba(255, 255, 255, 0.94);
+    --text: #102033;
+    --taskbar: rgba(18, 34, 50, 0.80);
+    --title: linear-gradient(90deg, rgba(255,255,255,.94), rgba(173,190,207,.90));
+    --silver-accent: #85bdf2;
+    --silver-dark: #15283c;
+    --silver-panel: rgba(241, 246, 250, .82);
+    --silver-border: rgba(255,255,255,.72);
+    --silver-glow: rgba(166, 210, 255, .55);
+    --silver-green: #22a463;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,.60), transparent 0 13%, transparent 38%),
+        radial-gradient(circle at 82% 12%, rgba(177, 221, 255, .70), transparent 0 15%, transparent 46%),
+        radial-gradient(circle at 18% 86%, rgba(111, 222, 174, .38), transparent 0 16%, transparent 46%),
+        linear-gradient(135deg, #45586c 0%, #8da2b5 42%, #dbe4ec 100%);
+    color: var(--text);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+body[data-theme="silver3"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(120deg, rgba(255,255,255,.23), transparent 22%, transparent 70%, rgba(255,255,255,.14)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 5px);
+    z-index: 0;
+}
+
+body[data-theme="silver3"] #desktop,
+body[data-theme="silver3"] #windows-container,
+body[data-theme="silver3"] #taskbar,
+body[data-theme="silver3"] #start-menu,
+body[data-theme="silver3"] #context-menu {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+body[data-theme="silver3"] #desktop {
+    padding: 18px;
+    gap: 18px;
+    z-index: 1;
+}
+
+body[data-theme="silver3"] #desktop::after {
+    content:"EmeraldOS Silver Alpha Version 3";
+    position:fixed;
+    right:22px;
+    bottom:66px;
+    color:rgba(255,255,255,.80);
+    font-size:20px;
+    font-weight:650;
+    letter-spacing:.2px;
+    text-shadow:0 2px 8px rgba(0,0,0,.72);
+    pointer-events:none;
+}
+
+body[data-theme="silver3"] .icon {
+    width: 86px;
+    min-height: 78px;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.78);
+    border-radius: 12px;
+    padding: 8px 5px;
+    border: 1px solid transparent;
+    outline: none !important;
+    transition: background .16s ease, border .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+body[data-theme="silver3"] .icon:hover {
+    background: rgba(255,255,255,.20);
+    border: 1px solid rgba(255,255,255,.52);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 0 18px rgba(130,185,240,.34);
+    transform: translateY(-1px);
+}
+body[data-theme="silver3"] .icon:focus,
+body[data-theme="silver3"] .icon:focus-visible { outline:none!important; box-shadow:none; }
+body[data-theme="silver3"] .icon:active { transform:translateY(0); background:rgba(116,170,225,.34); }
+
+body[data-theme="silver3"] #taskbar {
+    height: 48px;
+    padding: 5px 8px;
+    border: 0;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.28), rgba(255,255,255,.10) 42%, rgba(0,0,0,.16) 43%, rgba(16,31,47,.86)),
+        rgba(19,39,58,.80);
+    box-shadow: 0 -1px 0 rgba(255,255,255,.46), 0 -14px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.50);
+    backdrop-filter: blur(20px) saturate(135%);
+    z-index: 50000;
+}
+body[data-theme="silver3"] #start-btn {
+    width: 98px;
+    height: 38px;
+    padding-left: 37px;
+    color: white;
+    font-weight: 750;
+    letter-spacing: .2px;
+    border: 1px solid rgba(255,255,255,.66);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 23px 18px, #ffffff 0 2px, #b9f7c6 3px, #23ad62 10px, #087541 18px, transparent 19px),
+        linear-gradient(to bottom, rgba(255,255,255,.42), rgba(255,255,255,.14) 45%, rgba(0,0,0,.18) 46%, rgba(33,58,83,.90));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 0 14px rgba(150,210,255,.50), 0 2px 5px rgba(0,0,0,.35);
+    text-shadow: 0 1px 2px rgba(0,0,0,.72);
+}
+body[data-theme="silver3"] #start-btn:hover { box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 24px rgba(165,222,255,.82),0 2px 6px rgba(0,0,0,.36); }
+body[data-theme="silver3"] #taskbar-apps { gap:6px; margin:0 10px; }
+body[data-theme="silver3"] .taskbar-item,
+body[data-theme="silver3"] .task-btn {
+    min-width: 134px;
+    height: 34px;
+    padding: 6px 12px;
+    color: #edf8ff;
+    border: 1px solid rgba(255,255,255,.38);
+    border-radius: 8px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.28), rgba(255,255,255,.09) 45%, rgba(0,0,0,.14) 46%, rgba(51,82,113,.55));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 4px rgba(0,0,0,.30);
+    text-shadow: 0 1px 2px rgba(0,0,0,.75);
+}
+body[data-theme="silver3"] .taskbar-item:hover,
+body[data-theme="silver3"] .task-btn:hover { background:linear-gradient(to bottom, rgba(255,255,255,.44), rgba(167,214,255,.22) 45%, rgba(0,0,0,.10) 46%, rgba(76,115,150,.70)); box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 0 16px rgba(145,202,255,.48); }
+body[data-theme="silver3"] .taskbar-item.active,
+body[data-theme="silver3"] .task-btn.active { background:linear-gradient(to bottom, rgba(255,255,255,.56), rgba(171,222,255,.27) 45%, rgba(0,0,0,.12) 46%, rgba(55,101,139,.84)); }
+
+#silver-bell {
+    height: 34px;
+    min-width: 42px;
+    margin-left: auto;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.55);
+    background: linear-gradient(to bottom, rgba(255,255,255,.36), rgba(42,74,106,.76));
+    color: #fff;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 12px rgba(149,209,255,.32);
+}
+#silver-bell::before { content:"🔔 "; }
+#silver-bell.has-unread { background:linear-gradient(to bottom,#fff6b8,#e5a83e 48%,#a85d16 49%,#6d3610); color:#1f1606; text-shadow:0 1px rgba(255,255,255,.45); }
+
+body[data-theme="silver3"] #emerald40-edition-badge,
+body[data-theme="silver3"] #emerald40-build-badge,
+body[data-theme="silver3"] #clock { color:#f5fbff; text-shadow:0 1px 3px rgba(0,0,0,.75); border-left:1px solid rgba(255,255,255,.18); padding:4px 9px; }
+
+body[data-theme="silver3"] #start-menu {
+    width: 460px;
+    height: 540px;
+    bottom: 48px;
+    left: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.70);
+    border-radius: 14px 14px 9px 9px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.62), rgba(242,247,251,.90) 34%, rgba(207,221,235,.90)), rgba(232,240,248,.86);
+    box-shadow: 0 18px 52px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.88);
+    backdrop-filter: blur(24px) saturate(140%);
+}
+body[data-theme="silver3"] #start-menu.show { display:flex; }
+body[data-theme="silver3"] .start-side {
+    width: 78px;
+    padding: 12px 8px;
+    color: #fff;
+    background: radial-gradient(circle at center 36px, rgba(255,255,255,.36), transparent 0 30px), linear-gradient(to bottom, #3d627f, #6e8eab 40%, #273f55);
+    text-shadow: 0 1px 3px rgba(0,0,0,.72);
+    letter-spacing: .8px;
+}
+body[data-theme="silver3"] .start-main { padding:12px; background:linear-gradient(to right, rgba(255,255,255,.42), rgba(255,255,255,.14)); }
+body[data-theme="silver3"] #start-search {
+    margin-bottom:10px; padding:9px 12px; border:1px solid rgba(64,96,122,.48); border-radius:14px; background:rgba(255,255,255,.94); box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 1px 0 rgba(255,255,255,.8); user-select:text;
+}
+body[data-theme="silver3"] .start-item { margin:2px 0; padding:9px 10px; border-radius:7px; color:#102d45; border:1px solid transparent; }
+body[data-theme="silver3"] .start-item:hover { background:linear-gradient(to bottom,#f1f9ff,#b7ddff); border-color:rgba(69,128,184,.55); color:#08233d; box-shadow:inset 0 1px 0 rgba(255,255,255,.86); }
+
+body[data-theme="silver3"] .window {
+    background: rgba(230,239,247,.72);
+    border: 1px solid rgba(255,255,255,.78);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 18px 58px rgba(0,10,25,.42), 0 0 0 1px rgba(54,87,116,.22), inset 0 1px 0 rgba(255,255,255,.78);
+    backdrop-filter: blur(21px) saturate(150%);
+}
+body[data-theme="silver3"] .window.maximized { border-radius:0; border-left:0; border-right:0; border-bottom:0; }
+body[data-theme="silver3"] .title-bar {
+    height: 35px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.72), rgba(224,237,249,.64) 48%, rgba(179,199,219,.58) 49%, rgba(140,165,190,.60)), rgba(207,224,240,.74);
+    color:#102a44; padding:0 8px 0 12px; font-size:13px; font-weight:650; text-shadow:0 1px 0 rgba(255,255,255,.82); border-bottom:1px solid rgba(63,93,122,.30); cursor:grab;
+}
+body[data-theme="silver3"] .window:focus-within .title-bar,
+body[data-theme="silver3"] .window:hover .title-bar { background:linear-gradient(to bottom,rgba(255,255,255,.84),rgba(222,239,255,.73) 48%,rgba(151,198,236,.65) 49%,rgba(104,151,195,.68)); }
+body[data-theme="silver3"] .title-bar span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+body[data-theme="silver3"] .title-bar button,
+body[data-theme="silver3"] .window-buttons button { min-width:28px; width:28px; height:22px; margin-left:2px; color:#163047; border:1px solid rgba(75,96,112,.55); border-radius:0 0 6px 6px; background:linear-gradient(to bottom,rgba(255,255,255,.78),rgba(210,226,239,.60)); box-shadow:inset 0 1px 0 rgba(255,255,255,.88); font-weight:700; }
+body[data-theme="silver3"] .title-bar .close-btn,
+body[data-theme="silver3"] .close-btn { color:white; background:linear-gradient(to bottom,#ffb4a9,#d24b38 54%,#8f2118); border-color:rgba(115,20,18,.65); text-shadow:0 1px 2px rgba(0,0,0,.7); }
+body[data-theme="silver3"] .window-content { margin:0 7px 7px 7px; border:1px solid rgba(96,116,136,.42); border-radius:0 0 8px 8px; background:linear-gradient(to bottom,rgba(255,255,255,.99),rgba(247,251,254,.95)),#fff; box-shadow:inset 0 1px 5px rgba(0,0,0,.08); color:#13273a; padding:10px; }
+body[data-theme="silver3"] .resize-handle { right:3px; bottom:3px; border:0; background:linear-gradient(135deg, transparent 0 45%, rgba(90,111,130,.45) 46% 52%, transparent 53%), linear-gradient(135deg, transparent 0 62%, rgba(90,111,130,.45) 63% 70%, transparent 71%); }
+
+body[data-theme="silver3"] input,
+body[data-theme="silver3"] textarea,
+body[data-theme="silver3"] select,
+body[data-theme="silver3"] [contenteditable="true"] { font-family:"Segoe UI",Tahoma,Arial,sans-serif; user-select:text; }
+body[data-theme="silver3"] input,
+body[data-theme="silver3"] textarea,
+body[data-theme="silver3"] select { border:1px solid rgba(72,101,128,.55); border-radius:7px; background:linear-gradient(to bottom,#fff,#f3f8fc); color:#102033; padding:7px 9px; box-shadow:inset 0 1px 3px rgba(0,0,0,.10); }
+body[data-theme="silver3"] input:focus,
+body[data-theme="silver3"] textarea:focus,
+body[data-theme="silver3"] select:focus,
+body[data-theme="silver3"] [contenteditable="true"]:focus { outline:2px solid rgba(89,159,225,.35); border-color:#5495d2; box-shadow:0 0 10px rgba(85,159,232,.25), inset 0 1px 3px rgba(0,0,0,.10); }
+body[data-theme="silver3"] button { font-family:"Segoe UI",Tahoma,Arial,sans-serif; border-radius:7px; border:1px solid rgba(69,91,108,.58); background:linear-gradient(to bottom,#ffffff,#dbe9f4 48%,#c5d9ea 49%,#e7f1f8); color:#142b41; padding:6px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,.88),0 1px 2px rgba(0,0,0,.15); }
+body[data-theme="silver3"] button:hover { border-color:#4a91d0; background:linear-gradient(to bottom,#ffffff,#e8f5ff 48%,#c1e2fc 49%,#eaf7ff); box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 0 12px rgba(105,174,238,.30); }
+body[data-theme="silver3"] button:active { background:linear-gradient(to bottom,#c9dcea,#ffffff); transform:translateY(1px); }
+
+body[data-theme="silver3"] .app-panel,
+body[data-theme="silver3"] .emerald57-panel,
+body[data-theme="silver3"] .emerald57-card,
+body[data-theme="silver3"] .card,
+body[data-theme="silver3"] .panel,
+body[data-theme="silver3"] .silver-card { background:linear-gradient(to bottom, rgba(255,255,255,.97), rgba(238,246,252,.94)); border:1px solid rgba(104,132,158,.35); border-radius:11px; box-shadow:0 2px 10px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.85); }
+body[data-theme="silver3"] table { border-collapse:collapse; background:#fff; }
+body[data-theme="silver3"] th { background:linear-gradient(to bottom,#f8fbfe,#d6e5f2); color:#132c43; }
+body[data-theme="silver3"] td, body[data-theme="silver3"] th { border:1px solid #c7d5e2; padding:6px; }
+
+body[data-theme="silver3"] #context-menu { border:1px solid rgba(89,116,140,.45); border-radius:8px; background:rgba(252,254,255,.96); box-shadow:0 10px 32px rgba(0,0,0,.28); backdrop-filter:blur(12px); overflow:hidden; }
+body[data-theme="silver3"] #context-menu div,
+body[data-theme="silver3"] .context-item { padding:8px 14px; color:#102033; }
+body[data-theme="silver3"] #context-menu div:hover,
+body[data-theme="silver3"] .context-item:hover { background:linear-gradient(to bottom,#e9f6ff,#afd9ff); }
+
+/* Silver product-line application surfaces */
+#silver-sidebar {
+    position:fixed; top:18px; right:18px; width:214px; display:flex; flex-direction:column; gap:12px; z-index:1000; pointer-events:none;
+}
+.silver-gadget {
+    pointer-events:auto; padding:12px; border-radius:15px; color:#eef8ff;
+    background:linear-gradient(to bottom,rgba(255,255,255,.27),rgba(255,255,255,.09)),rgba(11,31,48,.46);
+    border:1px solid rgba(255,255,255,.38); box-shadow:0 12px 32px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.38); backdrop-filter:blur(19px) saturate(135%); text-shadow:0 1px 3px rgba(0,0,0,.72);
+}
+.silver-gadget h4 { margin:0 0 6px; font-size:13px; color:#fff; }
+.silver-gadget .big { font-size:25px; line-height:1.1; font-weight:650; }
+.silver-gadget small { opacity:.92; }
+.silver-gadget button { margin-top:7px; width:100%; }
+
+.silver-alpha-ribbon {
+    position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:10000;
+    color:#f9fdff; background:rgba(25,55,82,.46); border:1px solid rgba(255,255,255,.44);
+    border-radius:999px; padding:6px 14px; backdrop-filter:blur(16px); box-shadow:0 5px 18px rgba(0,0,0,.20); text-shadow:0 1px 3px rgba(0,0,0,.65); font-size:12px; pointer-events:none;
+}
+#silver-start-badge { position:absolute; right:13px; bottom:12px; color:#26465f; font-size:12px; opacity:.86; }
+
+.silver-shell {
+    padding:16px; border-radius:13px; background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(223,238,251,.92)); border:1px solid rgba(100,130,158,.34); box-shadow:0 5px 18px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.silver-hero {
+    display:flex; align-items:center; gap:14px; margin-bottom:14px; padding:14px; border-radius:15px; background:linear-gradient(135deg,rgba(255,255,255,.76),rgba(190,213,235,.56)); border:1px solid rgba(255,255,255,.80);
+}
+.silver-orb { width:58px; height:58px; border-radius:50%; background:radial-gradient(circle at 35% 25%,#fff,#d8f1ff 12%,#94c5f0 40%,#527b9f 72%,#1c3246); border:1px solid rgba(255,255,255,.78); box-shadow:inset 0 1px 9px rgba(255,255,255,.9),0 0 25px rgba(150,214,255,.64),0 6px 18px rgba(0,0,0,.33); }
+.silver-title { font-size:24px; font-weight:700; color:#102d4b; }
+.silver-subtitle { color:#36536e; font-size:12px; margin-top:3px; }
+.silver-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin:12px 0; }
+.silver-tile { min-height:94px; padding:12px; border-radius:12px; background:linear-gradient(to bottom,rgba(255,255,255,.86),rgba(218,233,246,.76)); border:1px solid rgba(93,130,160,.36); box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 2px 8px rgba(0,0,0,.12); cursor:pointer; }
+.silver-tile:hover { background:linear-gradient(to bottom,rgba(255,255,255,.96),rgba(202,228,250,.84)); box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 0 18px rgba(111,181,238,.38); }
+.silver-tile b { display:block; margin-bottom:6px; color:#173452; font-size:14px; }
+.silver-tile small { color:#35536b; line-height:1.35; }
+.silver-status { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:10px 0; }
+.silver-status-card { padding:9px; border-radius:10px; background:rgba(255,255,255,.70); border:1px solid rgba(255,255,255,.76); }
+.silver-status-card b { display:block; color:#102d4b; }
+.silver-status-card span { color:#415b72; font-size:12px; }
+.silver-list { display:grid; gap:8px; margin-top:8px; }
+.silver-row { padding:9px 10px; border-radius:10px; background:rgba(255,255,255,.68); border:1px solid rgba(255,255,255,.74); display:flex; justify-content:space-between; gap:10px; align-items:center; }
+.silver-row code { user-select:text; background:rgba(255,255,255,.76); padding:2px 5px; border-radius:4px; }
+.silver-toolbar { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.silver-editor { min-height:180px; width:100%; resize:vertical; }
+.silver-note-item { padding:10px; border-radius:10px; background:rgba(255,255,255,.75); border:1px solid rgba(110,140,166,.28); margin:6px 0; }
+.silver-pill { display:inline-block; border-radius:999px; padding:3px 8px; background:#dcefff; border:1px solid #bdd7eb; font-size:12px; color:#163a5a; }
+.silver-warning { padding:12px; border-radius:12px; background:rgba(255,245,198,.80); border:1px solid rgba(205,166,64,.45); color:#4b3308; }
+
+@media (max-width: 900px) { #silver-sidebar { display:none; } body[data-theme="silver3"] #desktop::after { display:none; } }

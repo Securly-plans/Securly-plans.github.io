@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Silver Beta 1.0</title>
+<link rel="icon" href="https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
+<link rel="stylesheet" href="silver-beta1.css">
+<script type="module" src="os.js"></script>
+<script type="module" src="emerald57.js"></script>
+<script src="silver-beta1.js"></script>
+</head>
+<body data-theme="silver-beta1">
+    <div id="desktop"></div>
+    <div id="context-menu"></div>
+    <div id="start-menu">
+        <div class="start-side">Silver</div>
+        <div class="start-main">
+            <input id="start-search" placeholder="Search Silver programs, files, settings, and apps">
+            <div id="start-results"></div>
+            <hr>
+            <div class="start-item" onclick="openSilverBetaHome()">Silver Home</div>
+            <div class="start-item" onclick="openSilverBetaApps()">Silver Apps</div>
+            <div class="start-item" onclick="openSilverBetaSessionCenter()">Resume Center</div>
+            <div class="start-item" onclick="restartOS()">Restart Silver</div>
+            <div class="start-item" onclick="logoutUser()">Logout</div>
+        </div>
+    </div>
+    <div id="taskbar">
+        <button id="start-btn">Silver</button>
+        <div id="taskbar-apps"></div>
+        <button id="silver-bell" title="Universal Silver Notifications" onclick="window.openSilverBetaNotifications?.()">0</button>
+        <button id="silver-sync" title="Silver Sync Status" onclick="window.openSilverBetaSessionCenter?.()">Sync</button>
+        <div id="emerald40-edition-badge"></div>
+        <div id="emerald40-build-badge"></div>
+        <div id="clock"></div>
+    </div>
+    <div id="windows-container"></div>
+</body>
+</html>
