@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emerald Mail</title>
+
+<style>
+/* =========================================================
+   EMERALD MAIL
+   Standalone inbox client for the Cloudflare Email Worker
+   Works with:
+   GET  /api/messages?mailbox=&folder=
+   GET  /api/message/raw?id=
+   POST /api/message/read
+   POST /api/message/delete
+========================================================= */
+
+:root {
+  --desktop: #008080;
+  --panel: #c0c0c0;
+  --panel-light: #ffffff;
+  --panel-dark: #808080;
+  --panel-darker: #404040;
+  --title: #000080;
+  --title-text: #ffffff;
+  --text: #000000;
+  --muted: #555555;
+  --danger: #800000;
+  --select: #000080;
+  --select-text: #ffffff;
+  --paper: #ffffff;
+  --border: #808080;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+  font-size: 12px;
+  background: var(--desktop);
+  color: var(--text);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 12px;
+}
+
+button {
+  min-height: 24px;
+  padding: 3px 10px;
+  background: var(--panel);
+  color: var(--text);
+  border-top: 2px solid var(--panel-light);
+  border-left: 2px solid var(--panel-light);
+  border-right: 2px solid var(--panel-dark);
+  border-bottom: 2px solid var(--panel-dark);
+  cursor: pointer;
+}
+
+button:active {
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+input,
+select {
+  min-height: 24px;
+  padding: 3px 6px;
+  background: #ffffff;
+  color: #000000;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+label {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: bold;
+}
+
+.mail-window {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-top: 2px solid var(--panel-light);
+  border-left: 2px solid var(--panel-light);
+  border-right: 2px solid var(--panel-darker);
+  border-bottom: 2px solid var(--panel-darker);
+}
+
+.titlebar {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--title);
+  color: var(--title-text);
+  padding: 3px 6px;
+  font-weight: bold;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.titlebar-badge {
+  width: 18px;
+  height: 18px;
+  background: var(--panel);
+  color: #000000;
+  border-top: 1px solid var(--panel-light);
+  border-left: 1px solid var(--panel-light);
+  border-right: 1px solid var(--panel-dark);
+  border-bottom: 1px solid var(--panel-dark);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.25fr) minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 2px solid var(--panel-dark);
+}
+
+.field-group {
+  min-width: 0;
+}
+
+.field-group input {
+  width: 100%;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding-top: 18px;
+}
+
+.checkbox-row input {
+  min-height: auto;
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 160px minmax(250px, 360px) 1fr;
+}
+
+.sidebar {
+  border-right: 2px solid var(--panel-dark);
+  padding: 8px;
+  overflow: auto;
+}
+
+.sidebar-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.folder-button {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 5px;
+}
+
+.folder-button.active {
+  background: var(--select);
+  color: var(--select-text);
+}
+
+.list-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 2px solid var(--panel-dark);
+}
+
+.list-toolbar {
+  padding: 6px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  border-bottom: 2px solid var(--panel-dark);
+}
+
+.list-toolbar input {
+  width: 100%;
+}
+
+.message-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--paper);
+}
+
+.message-card {
+  padding: 8px;
+  border-bottom: 1px solid #b0b0b0;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.message-card:hover,
+.message-card.selected {
+  background: var(--select);
+  color: var(--select-text);
+}
+
+.message-card.unread .subject {
+  font-weight: bold;
+}
+
+.subject {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.meta,
+.date-line {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-card:hover .meta,
+.message-card:hover .date-line,
+.message-card.selected .meta,
+.message-card.selected .date-line {
+  color: var(--select-text);
+}
+
+.viewer-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-toolbar {
+  padding: 6px;
+  display: flex;
+  gap: 6px;
+  border-bottom: 2px solid var(--panel-dark);
+  flex-wrap: wrap;
+}
+
+.viewer {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--paper);
+  padding: 10px;
+}
+
+.empty-viewer {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-align: center;
+}
+
+.message-header {
+  border-bottom: 1px solid #a0a0a0;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.message-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.message-row {
+  margin-bottom: 4px;
+}
+
+.message-label {
+  font-weight: bold;
+}
+
+.message-body {
+  white-space: pre-wrap;
+  line-height: 1.4;
+  font-family: Tahoma, Arial, sans-serif;
+}
+
+.raw-block {
+  white-space: pre-wrap;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.statusbar {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px;
+  border-top: 2px solid var(--panel-light);
+  background: var(--panel);
+}
+
+.status-left {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-right {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.error {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+.notice-box {
+  padding: 10px;
+  background: #ffffff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+@media (max-width: 850px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .checkbox-row {
+    padding-top: 0;
+  }
+
+  .workspace {
+    grid-template-columns: 120px 1fr;
+  }
+
+  .viewer-pane {
+    display: none;
+  }
+
+  .workspace.show-viewer {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace.show-viewer .sidebar,
+  .workspace.show-viewer .list-pane {
+    display: none;
+  }
+
+  .workspace.show-viewer .viewer-pane {
+    display: flex;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="mail-window">
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <div class="titlebar-badge">MAIL</div>
+      <div>Emerald Mail</div>
+    </div>
+    <div id="titleMailbox">Disconnected</div>
+  </div>
+
+  <div class="topbar">
+    <div class="field-group">
+      <label for="apiUrl">Worker URL</label>
+      <input id="apiUrl" autocomplete="off" placeholder="https://emerald-mail-router.your-name.workers.dev">
+    </div>
+
+    <div class="field-group">
+      <label for="apiKey">API Key</label>
+      <input id="apiKey" autocomplete="off" type="password" placeholder="Private Emerald Mail key">
+    </div>
+
+    <div class="field-group">
+      <label for="mailbox">Mailbox</label>
+      <input id="mailbox" autocomplete="off" placeholder="support@monroecorp.org">
+    </div>
+
+    <div class="checkbox-row">
+      <input id="rememberSettings" type="checkbox">
+      <label for="rememberSettings" style="margin:0;font-weight:normal;">Remember</label>
+    </div>
+
+    <div class="checkbox-row">
+      <button onclick="loadInbox()">Connect</button>
+    </div>
+  </div>
+
+  <div id="workspace" class="workspace">
+    <aside class="sidebar">
+      <div class="sidebar-title">Folders</div>
+      <button id="folder-inbox" class="folder-button active" onclick="setFolder('inbox')">Inbox</button>
+      <button id="folder-trash" class="folder-button" onclick="setFolder('trash')">Trash</button>
+
+      <div style="height:12px"></div>
+
+      <div class="sidebar-title">Actions</div>
+      <button class="folder-button" onclick="loadInbox()">Refresh</button>
+      <button class="folder-button" onclick="clearViewer()">Clear Viewer</button>
+      <button class="folder-button" onclick="clearSavedSettings()">Clear Saved Settings</button>
+    </aside>
+
+    <section class="list-pane">
+      <div class="list-toolbar">
+        <input id="searchBox" placeholder="Search messages" oninput="renderMessageList()">
+        <button onclick="loadInbox()">Reload</button>
+      </div>
+      <div id="messageList" class="message-list">
+        <div class="notice-box" style="margin:8px;">
+          Enter your Worker URL, API key, and mailbox, then press Connect.
+        </div>
+      </div>
+    </section>
+
+    <section class="viewer-pane">
+      <div class="viewer-toolbar">
+        <button onclick="backToList()">Back</button>
+        <button id="deleteButton" onclick="deleteSelectedMessage()" disabled>Move to Trash</button>
+        <button id="rawButton" onclick="toggleRawView()" disabled>Show Raw</button>
+      </div>
+      <div id="viewer" class="viewer">
+        <div class="empty-viewer">Select a message to read it.</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="statusbar">
+    <div id="status" class="status-left">Ready.</div>
+    <div id="countStatus" class="status-right">0 messages</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentFolder = "inbox";
+let currentMessages = [];
+let selectedMessage = null;
+let selectedRaw = "";
+let showingRaw = false;
+
+/* =========================================================
+   STARTUP
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadSavedSettings();
+
+  document.getElementById("apiUrl").addEventListener("change", saveSettingsIfAllowed);
+  document.getElementById("apiKey").addEventListener("change", saveSettingsIfAllowed);
+  document.getElementById("mailbox").addEventListener("change", saveSettingsIfAllowed);
+  document.getElementById("rememberSettings").addEventListener("change", saveSettingsIfAllowed);
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      backToList();
+    }
+
+    if (event.key === "F5") {
+      event.preventDefault();
+      loadInbox();
+    }
+  });
+});
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+function loadSavedSettings() {
+  const saved = localStorage.getItem("emerald_mail_settings");
+
+  if (!saved) {
+    document.getElementById("mailbox").value = "support@monroecorp.org";
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(saved);
+
+    document.getElementById("apiUrl").value = settings.apiUrl || "";
+    document.getElementById("apiKey").value = settings.apiKey || "";
+    document.getElementById("mailbox").value = settings.mailbox || "support@monroecorp.org";
+    document.getElementById("rememberSettings").checked = true;
+
+    updateTitleMailbox();
+  } catch {
+    localStorage.removeItem("emerald_mail_settings");
+  }
+}
+
+function saveSettingsIfAllowed() {
+  const remember = document.getElementById("rememberSettings").checked;
+
+  if (!remember) {
+    localStorage.removeItem("emerald_mail_settings");
+    return;
+  }
+
+  const settings = {
+    apiUrl: getApiUrl(),
+    apiKey: getApiKey(),
+    mailbox: getMailbox()
+  };
+
+  localStorage.setItem("emerald_mail_settings", JSON.stringify(settings));
+  updateTitleMailbox();
+}
+
+function clearSavedSettings() {
+  localStorage.removeItem("emerald_mail_settings");
+  document.getElementById("rememberSettings").checked = false;
+  setStatus("Saved settings cleared.");
+}
+
+function getApiUrl() {
+  return document.getElementById("apiUrl").value.trim().replace(/\/$/, "");
+}
+
+function getApiKey() {
+  return document.getElementById("apiKey").value.trim();
+}
+
+function getMailbox() {
+  return document.getElementById("mailbox").value.trim().toLowerCase();
+}
+
+function updateTitleMailbox() {
+  const mailbox = getMailbox();
+  document.getElementById("titleMailbox").textContent = mailbox || "Disconnected";
+}
+
+/* =========================================================
+   API
+========================================================= */
+
+async function apiRequest(path, options = {}) {
+  const apiUrl = getApiUrl();
+  const apiKey = getApiKey();
+
+  if (!apiUrl) {
+    throw new Error("Missing Worker URL.");
+  }
+
+  if (!apiKey) {
+    throw new Error("Missing API key.");
+  }
+
+  const response = await fetch(apiUrl + path, {
+    ...options,
+    headers: {
+      "Authorization": "Bearer " + apiKey,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  return response;
+}
+
+async function loadInbox() {
+  const mailbox = getMailbox();
+
+  if (!mailbox) {
+    setStatus("Missing mailbox.", true);
+    return;
+  }
+
+  saveSettingsIfAllowed();
+  updateTitleMailbox();
+  clearViewer(false);
+
+  setStatus("Loading " + currentFolder + "...");
+  setCountStatus("Loading");
+
+  try {
+    const path =
+      "/api/messages?mailbox=" +
+      encodeURIComponent(mailbox) +
+      "&folder=" +
+      encodeURIComponent(currentFolder);
+
+    const response = await apiRequest(path);
+    const data = await response.json();
+
+    if (!data.ok) {
+      throw new Error(data.error || "Inbox request failed.");
+    }
+
+    currentMessages = Array.isArray(data.messages) ? data.messages : [];
+    renderMessageList();
+
+    setStatus("Connected to " + mailbox + ".");
+  } catch (error) {
+    currentMessages = [];
+    renderMessageList();
+    setStatus(error.message, true);
+  }
+}
+
+async function openMessage(messageId) {
+  const message = currentMessages.find(item => item.id === messageId);
+
+  if (!message) {
+    setStatus("Message not found.", true);
+    return;
+  }
+
+  selectedMessage = message;
+  selectedRaw = "";
+  showingRaw = false;
+
+  markSelectedCard(messageId);
+  enableViewerButtons(true);
+  showMobileViewer();
+
+  const viewer = document.getElementById("viewer");
+  viewer.innerHTML = "<div class='empty-viewer'>Loading message...</div>";
+  setStatus("Opening message...");
+
+  try {
+    const response = await apiRequest("/api/message/raw?id=" + encodeURIComponent(messageId));
+    selectedRaw = await response.text();
+
+    const parsed = parseRawEmail(selectedRaw, message);
+    renderParsedMessage(parsed);
+
+    await apiRequest("/api/message/read", {
+      method: "POST",
+      body: JSON.stringify({ id: messageId })
+    });
+
+    message.read = 1;
+    renderMessageList(false);
+    markSelectedCard(messageId);
+
+    setStatus("Message opened.");
+  } catch (error) {
+    viewer.innerHTML = "<div class='notice-box error'>" + escapeHtml(error.message) + "</div>";
+    setStatus(error.message, true);
+  }
+}
+
+async function deleteSelectedMessage() {
+  if (!selectedMessage) {
+    return;
+  }
+
+  const subject = selectedMessage.subject || "(No subject)";
+  const confirmed = confirm("Move this message to Trash?\n\n" + subject);
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await apiRequest("/api/message/delete", {
+      method: "POST",
+      body: JSON.stringify({ id: selectedMessage.id })
+    });
+
+    setStatus("Message moved to Trash.");
+    selectedMessage = null;
+    selectedRaw = "";
+    showingRaw = false;
+    enableViewerButtons(false);
+    await loadInbox();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+/* =========================================================
+   FOLDERS
+========================================================= */
+
+function setFolder(folder) {
+  currentFolder = folder;
+
+  document.querySelectorAll(".folder-button").forEach(button => {
+    button.classList.remove("active");
+  });
+
+  const active = document.getElementById("folder-" + folder);
+  if (active) {
+    active.classList.add("active");
+  }
+
+  loadInbox();
+}
+
+/* =========================================================
+   RENDERING
+========================================================= */
+
+function renderMessageList(keepSelection = true) {
+  const list = document.getElementById("messageList");
+  const query = document.getElementById("searchBox").value.trim().toLowerCase();
+
+  let messages = currentMessages;
+
+  if (query) {
+    messages = messages.filter(message => {
+      const text = [
+        message.subject,
+        message.sender,
+        message.recipient,
+        message.received_at
+      ].join(" ").toLowerCase();
+
+      return text.includes(query);
+    });
+  }
+
+  list.innerHTML = "";
+
+  if (!messages.length) {
+    const empty = document.createElement("div");
+    empty.className = "notice-box";
+    empty.style.margin = "8px";
+    empty.textContent = currentMessages.length
+      ? "No messages match your search."
+      : "No messages in this folder.";
+    list.appendChild(empty);
+    setCountStatus("0 messages");
+    return;
+  }
+
+  for (const message of messages) {
+    const card = document.createElement("div");
+    card.className = "message-card" + (Number(message.read) ? "" : " unread");
+    card.dataset.id = message.id;
+
+    const subject = document.createElement("div");
+    subject.className = "subject";
+    subject.textContent = message.subject || "(No subject)";
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = "From: " + (message.sender || "Unknown sender");
+
+    const dateLine = document.createElement("div");
+    dateLine.className = "date-line";
+    dateLine.textContent = formatDate(message.received_at);
+
+    card.appendChild(subject);
+    card.appendChild(meta);
+    card.appendChild(dateLine);
+
+    card.addEventListener("click", () => openMessage(message.id));
+
+    list.appendChild(card);
+  }
+
+  if (keepSelection && selectedMessage) {
+    markSelectedCard(selectedMessage.id);
+  }
+
+  setCountStatus(messages.length + (messages.length === 1 ? " message" : " messages"));
+}
+
+function renderParsedMessage(parsed) {
+  const viewer = document.getElementById("viewer");
+
+  viewer.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.className = "message-header";
+
+  const title = document.createElement("div");
+  title.className = "message-title";
+  title.textContent = parsed.subject || "(No subject)";
+
+  header.appendChild(title);
+  header.appendChild(messageHeaderRow("From", parsed.from || "Unknown sender"));
+  header.appendChild(messageHeaderRow("To", parsed.to || getMailbox()));
+  header.appendChild(messageHeaderRow("Date", parsed.date || formatDate(selectedMessage && selectedMessage.received_at)));
+
+  const body = document.createElement("div");
+  body.className = "message-body";
+  body.textContent = parsed.body || selectedRaw || "No readable body found.";
+
+  viewer.appendChild(header);
+  viewer.appendChild(body);
+
+  const rawButton = document.getElementById("rawButton");
+  rawButton.textContent = "Show Raw";
+}
+
+function renderRawMessage() {
+  const viewer = document.getElementById("viewer");
+  viewer.innerHTML = "";
+
+  const block = document.createElement("div");
+  block.className = "raw-block";
+  block.textContent = selectedRaw || "No raw message loaded.";
+
+  viewer.appendChild(block);
+
+  const rawButton = document.getElementById("rawButton");
+  rawButton.textContent = "Show Parsed";
+}
+
+function messageHeaderRow(label, value) {
+  const row = document.createElement("div");
+  row.className = "message-row";
+
+  const strong = document.createElement("span");
+  strong.className = "message-label";
+  strong.textContent = label + ": ";
+
+  const text = document.createElement("span");
+  text.textContent = value || "";
+
+  row.appendChild(strong);
+  row.appendChild(text);
+
+  return row;
+}
+
+function clearViewer(setReady = true) {
+  selectedMessage = null;
+  selectedRaw = "";
+  showingRaw = false;
+
+  document.getElementById("viewer").innerHTML =
+    "<div class='empty-viewer'>Select a message to read it.</div>";
+
+  enableViewerButtons(false);
+
+  document.querySelectorAll(".message-card").forEach(card => {
+    card.classList.remove("selected");
+  });
+
+  if (setReady) {
+    setStatus("Viewer cleared.");
+  }
+}
+
+function enableViewerButtons(enabled) {
+  document.getElementById("deleteButton").disabled = !enabled;
+  document.getElementById("rawButton").disabled = !enabled;
+}
+
+function markSelectedCard(messageId) {
+  document.querySelectorAll(".message-card").forEach(card => {
+    card.classList.toggle("selected", card.dataset.id === messageId);
+  });
+}
+
+function toggleRawView() {
+  if (!selectedMessage) {
+    return;
+  }
+
+  showingRaw = !showingRaw;
+
+  if (showingRaw) {
+    renderRawMessage();
+  } else {
+    renderParsedMessage(parseRawEmail(selectedRaw, selectedMessage));
+  }
+}
+
+function showMobileViewer() {
+  document.getElementById("workspace").classList.add("show-viewer");
+}
+
+function backToList() {
+  document.getElementById("workspace").classList.remove("show-viewer");
+}
+
+/* =========================================================
+   RAW EMAIL PARSING
+   This is intentionally simple.
+   It handles many plain text emails, but not every MIME edge case.
+========================================================= */
+
+function parseRawEmail(raw, fallback) {
+  const normalized = String(raw || "").replace(/\r\n/g, "\n");
+  const splitIndex = normalized.indexOf("\n\n");
+
+  const headerText = splitIndex >= 0 ? normalized.slice(0, splitIndex) : "";
+  const bodyText = splitIndex >= 0 ? normalized.slice(splitIndex + 2) : normalized;
+
+  const headers = parseHeaders(headerText);
+
+  const contentType = (headers["content-type"] || "").toLowerCase();
+  let body = "";
+
+  if (contentType.includes("multipart/")) {
+    body = extractTextFromMultipart(bodyText, headers["content-type"]);
+  } else {
+    body = decodeMaybeQuotedPrintable(bodyText);
+  }
+
+  body = cleanupBody(body);
+
+  return {
+    subject: decodeMimeHeader(headers.subject || fallback.subject || "(No subject)"),
+    from: decodeMimeHeader(headers.from || fallback.sender || ""),
+    to: decodeMimeHeader(headers.to || fallback.recipient || ""),
+    date: headers.date || formatDate(fallback.received_at),
+    body
+  };
+}
+
+function parseHeaders(headerText) {
+  const headers = {};
+  const lines = String(headerText || "").split("\n");
+  let currentKey = "";
+
+  for (const line of lines) {
+    if (/^\s/.test(line) && currentKey) {
+      headers[currentKey] += " " + line.trim();
+      continue;
+    }
+
+    const index = line.indexOf(":");
+    if (index === -1) {
+      continue;
+    }
+
+    currentKey = line.slice(0, index).trim().toLowerCase();
+    headers[currentKey] = line.slice(index + 1).trim();
+  }
+
+  return headers;
+}
+
+function extractTextFromMultipart(bodyText, contentTypeHeader) {
+  const boundaryMatch = /boundary="?([^";]+)"?/i.exec(contentTypeHeader || "");
+
+  if (!boundaryMatch) {
+    return decodeMaybeQuotedPrintable(bodyText);
+  }
+
+  const boundary = boundaryMatch[1];
+  const parts = bodyText.split("--" + boundary);
+
+  let htmlCandidate = "";
+  let textCandidate = "";
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+
+    if (!trimmed || trimmed === "--") {
+      continue;
+    }
+
+    const splitIndex = trimmed.indexOf("\n\n");
+    const partHeadersText = splitIndex >= 0 ? trimmed.slice(0, splitIndex) : "";
+    const partBody = splitIndex >= 0 ? trimmed.slice(splitIndex + 2) : trimmed;
+    const partHeaders = parseHeaders(partHeadersText);
+    const partType = (partHeaders["content-type"] || "").toLowerCase();
+    const transferEncoding = (partHeaders["content-transfer-encoding"] || "").toLowerCase();
+
+    let decoded = partBody;
+
+    if (transferEncoding.includes("quoted-printable")) {
+      decoded = decodeQuotedPrintable(decoded);
+    }
+
+    if (partType.includes("text/plain") && !textCandidate) {
+      textCandidate = decoded;
+    }
+
+    if (partType.includes("text/html") && !htmlCandidate) {
+      htmlCandidate = htmlToText(decoded);
+    }
+  }
+
+  return textCandidate || htmlCandidate || decodeMaybeQuotedPrintable(bodyText);
+}
+
+function decodeMaybeQuotedPrintable(value) {
+  const text = String(value || "");
+
+  if (text.includes("=0A") || text.includes("=0D") || /=\n/.test(text) || /=[A-Fa-f0-9]{2}/.test(text)) {
+    return decodeQuotedPrintable(text);
+  }
+
+  return text;
+}
+
+function decodeQuotedPrintable(input) {
+  try {
+    return String(input || "")
+      .replace(/=\n/g, "")
+      .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+      });
+  } catch {
+    return String(input || "");
+  }
+}
+
+function decodeMimeHeader(value) {
+  const text = String(value || "");
+
+  return text.replace(/=\?([^?]+)\?([BQbq])\?([^?]+)\?=/g, (_, charset, encoding, encoded) => {
+    try {
+      if (encoding.toUpperCase() === "B") {
+        return atob(encoded);
+      }
+
+      return decodeQuotedPrintable(encoded.replace(/_/g, " "));
+    } catch {
+      return encoded;
+    }
+  });
+}
+
+function htmlToText(html) {
+  const withoutScripts = String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, "");
+
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = withoutScripts;
+  return textarea.value;
+}
+
+function cleanupBody(body) {
+  return String(body || "")
+    .replace(/\n--[a-zA-Z0-9_'()+,./:=?-]+--\s*$/g, "")
+    .replace(/\n{4,}/g, "\n\n\n")
+    .trim();
+}
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+function formatDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString();
+}
+
+function setStatus(text, isError = false) {
+  const status = document.getElementById("status");
+  status.textContent = text;
+  status.classList.toggle("error", Boolean(isError));
+}
+
+function setCountStatus(text) {
+  document.getElementById("countStatus").textContent = text;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+</script>
+
+</body>
+</html>
