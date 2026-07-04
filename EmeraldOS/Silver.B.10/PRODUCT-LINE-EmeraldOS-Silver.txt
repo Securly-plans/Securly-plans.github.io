@@ -1,0 +1,25 @@
+EmeraldOS Silver Product Line
+
+EmeraldOS Silver is a separate EmeraldOS product line focused on a glass-like desktop experience, a more modern taskbar, Silver-branded applications, and VM-like continuity across devices.
+
+Current release:
+EmeraldOS Silver Beta 1.0
+
+Product line direction:
+- Silver should feel separate from base EmeraldOS, not just a skin.
+- Silver apps should use their own names, logos, storage keys, and user experience.
+- Base EmeraldOS services remain underneath for compatibility, but Silver users launch Silver-branded front ends.
+- Silver should resume where the user left off after login, including across devices.
+
+Beta 1.0 priorities:
+- Silver-only desktop.
+- Unique app logos.
+- Silver Office Beta.
+- Universal notifications.
+- Resume Center and cloud VM session.
+- Better first-use experience.
+
+Future roadmap:
+- Silver Beta 1.1: stronger Silver Mail interface and mail notifications.
+- Silver Beta 1.2: full Silver Files rewrite.
+- Silver Beta 2.0: Silver-native account shell and app install/update system.
