@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Silver</title>
+<link rel="icon" href="https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
+<link rel="stylesheet" href="emerald-silver.css">
+<script type="module" src="os.js"></script>
+<script type="module" src="emerald57.js"></script>
+<script src="emerald-silver.js"></script>
+</head>
+<body data-theme="silver">
+    <div id="desktop"></div>
+    <div id="context-menu"></div>
+    <div id="start-menu">
+        <div class="start-side">EmeraldOS</div>
+        <div class="start-main">
+            <input id="start-search" placeholder="Search Programs">
+            <div id="start-results"></div>
+            <hr>
+            <div class="start-item" onclick="restartOS()">Restart</div>
+            <div class="start-item" onclick="logoutUser()">Logout</div>
+        </div>
+    </div>
+    <div id="taskbar">
+        <button id="start-btn">Start</button>
+        <div id="taskbar-apps"></div>
+        <div id="emerald40-edition-badge"></div>
+        <div id="emerald40-build-badge"></div>
+        <div id="clock"></div>
+    </div>
+    <div id="windows-container"></div>
+</body>
+</html>
