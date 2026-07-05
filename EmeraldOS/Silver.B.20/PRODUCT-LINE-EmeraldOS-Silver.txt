@@ -1,0 +1,17 @@
+EmeraldOS Silver Product Line
+
+EmeraldOS Silver is a separate EmeraldOS product line focused on a glass-style desktop, cloud workspace continuity, Silver-branded apps, and a more modern virtual-machine-like browser OS experience.
+
+Current build:
+EmeraldOS Silver Beta 2.0
+
+Beta 2.0 focus:
+- Consolidated desktop hubs
+- Temporary no-editions beta mode
+- Vista-like original CSS app logos
+- Customizable desktop folders and app shortcuts
+- Silver Drive + Office as a central cloud workspace
+- Responsive interface adjustments for different screens
+
+Branding note:
+The interface is Vista-inspired but does not include Microsoft logos, Windows assets, copied icons, wallpapers or sounds.

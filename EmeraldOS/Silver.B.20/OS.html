@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Silver Beta 2.0</title>
+<link rel="icon" href="https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
+<link rel="stylesheet" href="silver-beta2.css">
+<script type="module" src="os.js"></script>
+<script type="module" src="emerald57.js"></script>
+<script src="silver-beta2.js"></script>
+</head>
+<body data-theme="silver-beta20">
+    <div id="desktop"></div>
+    <div id="context-menu"></div>
+    <div id="start-menu">
+        <div class="start-side">Silver</div>
+        <div class="start-main">
+            <input id="start-search" placeholder="Search Silver programs, files, settings, and apps">
+            <div id="start-results"></div>
+            <hr>
+            <div class="start-item" onclick="openSilverWorkspace20()">Silver Home</div>
+            <div class="start-item" onclick="openSilverDriveHub20()">Silver Drive</div>
+            <div class="start-item" onclick="openSilverDesktopCustomizer20()">Desktop Customizer</div>
+            <div class="start-item" onclick="openSilverApps20()">Silver Apps</div>
+            <div class="start-item" onclick="openSilverResumeCenter20()">Resume Center</div>
+            <div class="start-item" onclick="restartOS()">Restart Silver</div>
+            <div class="start-item" onclick="logoutUser()">Logout</div>
+        </div>
+    </div>
+    <div id="taskbar">
+        <button id="start-btn">Silver</button>
+        <div id="taskbar-apps"></div>
+        <button id="silver-bell" title="Universal Silver Notifications" onclick="window.openSilverNotifications20?.()">0</button>
+        <button id="silver-sync" title="Silver Sync Status" onclick="window.openSilverSyncCenter20?.()">Sync</button>
+        <div id="emerald40-edition-badge"></div>
+        <div id="emerald40-build-badge"></div>
+        <div id="clock"></div>
+    </div>
+    <div id="windows-container"></div>
+</body>
+</html>
