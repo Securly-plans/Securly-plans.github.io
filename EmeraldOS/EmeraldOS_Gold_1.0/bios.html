@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emerald Systems BIOS A1</title>
+<style>
+html,body{height:100%;margin:0;background:#02060b;color:#bdf5ff;font-family:Consolas,"Courier New",monospace;overflow:hidden}
+.bios{height:100%;display:grid;grid-template-rows:auto 1fr auto;background:linear-gradient(180deg,#02060b,#05111d)}
+.header{padding:18px 22px;border-bottom:1px solid #1d5570;background:#061726;color:#fff}.header h1{margin:0;font-size:22px;letter-spacing:.5px}.header small{color:#72d7ff}.main{display:grid;grid-template-columns:330px 1fr;gap:18px;padding:18px}.panel{border:1px solid #1d5570;background:rgba(5,23,38,.82);padding:14px;box-shadow:0 0 26px rgba(0,170,255,.12)}.panel h2{margin:0 0 10px;font-size:15px;color:#fff}.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(114,215,255,.12)}.row b{color:#fff}.dos{display:flex;flex-direction:column;min-height:0}.screen{flex:1;overflow:auto;white-space:pre-wrap;color:#bdf5ff;background:#000814;border:1px solid #1d5570;padding:12px}.cmd{display:flex;gap:8px;margin-top:10px}.cmd span{padding:9px 0}.cmd input{flex:1;background:#00111d;border:1px solid #1d5570;color:#bdf5ff;padding:9px;font:inherit}.footer{padding:10px 18px;border-top:1px solid #1d5570;color:#72d7ff}.btn{background:#082a43;border:1px solid #42caff;color:#fff;padding:9px 12px;font:inherit;cursor:pointer}.btn:hover{background:#0b3b5d}.quick{display:grid;gap:8px;margin-top:10px}@media(max-width:760px){.main{grid-template-columns:1fr}.panel:first-child{display:none}}
+</style>
+</head>
+<body>
+<div class="bios">
+  <div class="header"><h1>Emerald Systems BIOS A1</h1><small>Gold Boot Firmware · Integrated Emerald DOS · Original EmeraldOS environment</small></div>
+  <div class="main">
+    <aside class="panel">
+      <h2>System Information</h2>
+      <div class="row"><span>Product</span><b>EmeraldOS Gold 1.0</b></div>
+      <div class="row"><span>BIOS</span><b>Emerald Systems BIOS A1</b></div>
+      <div class="row"><span>Boot Mode</span><b>Gold Desktop</b></div>
+      <div class="row"><span>Storage</span><b>Local + Firebase optional</b></div>
+      <div class="row"><span>DOS</span><b>Enabled</b></div>
+      <div class="quick">
+        <button class="btn" onclick="bootGold()">Boot EmeraldOS Gold</button>
+        <button class="btn" onclick="run('setup')">Run Setup Flag Reset</button>
+        <button class="btn" onclick="run('restore')">Show Restore Info</button>
+        <button class="btn" onclick="run('help')">DOS Help</button>
+      </div>
+    </aside>
+    <section class="panel dos">
+      <h2>Emerald DOS</h2>
+      <div id="screen" class="screen"></div>
+      <div class="cmd"><span>EDS&gt;</span><input id="cmd" autocomplete="off" spellcheck="false" autofocus onkeydown="if(event.key==='Enter'){run(this.value);this.value=''}"></div>
+    </section>
+  </div>
+  <div class="footer">F1 Help · F2 Setup · F10 Boot · Type HELP for commands</div>
+</div>
+<script>
+const screen=document.getElementById('screen');
+function write(t=''){screen.textContent += t + '\n'; screen.scrollTop=screen.scrollHeight;}
+function bootGold(){write('Booting EmeraldOS Gold 1.0...'); setTimeout(()=>location.href='loading.html',450);}
+function run(raw){const cmd=String(raw||'').trim().toLowerCase(); if(!cmd)return; write('EDS> '+cmd); switch(cmd){
+case 'help': write('Commands: HELP, VER, DIR, BOOT, GOLD, SETUP, RESTORE, CLEAR, TIME, MEM, EXIT'); break;
+case 'ver': write('Emerald Systems BIOS A1\nEmerald DOS 1.0\nEmeraldOS Gold 1.0'); break;
+case 'dir': write('OS.HTML\nGOLD10.JS\nGOLD10.CSS\nFIREBASE.JS\nLOADING.HTML\nINDEX.HTML'); break;
+case 'boot': case 'gold': case 'exit': bootGold(); break;
+case 'setup': localStorage.removeItem('gold10_setupDone'); localStorage.removeItem('gold10_goldPrefs'); write('First boot setup flag cleared. Type BOOT to continue.'); break;
+case 'restore': write('Restore path: emeraldOSUsers/{username}/gold10/current\nUse Restore Center inside Gold to save or restore workspace.'); break;
+case 'clear': screen.textContent=''; break;
+case 'time': write(new Date().toString()); break;
+case 'mem': write('Memory: Browser-managed virtual workspace. LocalStorage and optional Firebase sync available.'); break;
+default: write('Bad command or file name. Type HELP.');
+}}
+window.addEventListener('keydown',e=>{if(e.key==='F10'){e.preventDefault();bootGold()} if(e.key==='F1'){e.preventDefault();run('help')} if(e.key==='F2'){e.preventDefault();run('setup')}});
+write('Emerald Systems BIOS A1'); write('Copyright 2026 Emerald Systems'); write('Integrated Emerald DOS ready. Type HELP or BOOT.');
+</script>
+</body>
+</html>
