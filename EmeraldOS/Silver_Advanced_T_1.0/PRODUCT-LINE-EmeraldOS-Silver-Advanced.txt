@@ -1,0 +1,28 @@
+EmeraldOS Silver Advanced Product Line
+======================================
+
+Purpose:
+EmeraldOS Silver Advanced is a separate Silver product model focused on a more advanced Aero-modern desktop experience, stronger consolidation, and a cloud workspace/virtual machine style workflow.
+
+Design direction:
+- Aero-modern glass/acrylic UI.
+- Consolidated hubs.
+- Responsive shell.
+- Universal Action Center.
+- Advanced Search and Task View.
+- Restore Center for cross-device workspace continuity.
+
+Main hubs:
+- Advanced Home
+- Silver Explorer
+- Silver Office
+- Silver Communications
+- Silver Store
+- Creator Studio
+- Settings
+- Control Panel
+- Action Center
+- Restore Center
+
+Compatibility:
+The build includes EmeraldOS Platform 5.7 compatibility files so existing EmeraldOS apps, Mail, Assistant, creator tools, and storage features can continue to work under the Silver Advanced shell.

@@ -1,0 +1,232 @@
+/* =========================================================
+   EMERALDOS SILVER ADVANCED
+   Aero-modern desktop inspired by Windows 7/10 design ideas.
+   Original CSS only. No Microsoft assets.
+========================================================= */
+:root{
+  --adv-glass: rgba(235,248,255,.72);
+  --adv-glass-strong: rgba(255,255,255,.86);
+  --adv-glass-dark: rgba(12,34,58,.72);
+  --adv-blue:#1784d2;
+  --adv-blue-2:#0d4c85;
+  --adv-text:#102538;
+  --adv-muted:#5a7388;
+  --adv-border:rgba(255,255,255,.78);
+  --adv-shadow:0 24px 70px rgba(0,20,45,.38), inset 0 1px rgba(255,255,255,.75);
+  --adv-radius:14px;
+}
+
+html, body{
+  background:
+    radial-gradient(circle at 20% 8%, rgba(117,204,255,.95) 0, rgba(40,126,190,.72) 20%, transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,.55) 0, transparent 25%),
+    linear-gradient(135deg,#051326 0,#0d4772 43%,#1b7eb0 68%,#e6f7ff 100%) !important;
+  color:var(--adv-text);
+  font-family:"Segoe UI", Tahoma, Arial, sans-serif !important;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg, transparent 0 45%, rgba(255,255,255,.15) 46% 48%, transparent 50%),
+    radial-gradient(circle at 64% 78%, rgba(255,255,255,.22), transparent 24%);
+  z-index:0;
+}
+
+#desktop{
+  padding:20px 22px 76px 22px !important;
+  gap:18px !important;
+  z-index:1;
+}
+
+#taskbar{
+  height:56px !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(26,78,120,.68) 50%, rgba(9,34,60,.88)) !important;
+  border-top:1px solid rgba(255,255,255,.75) !important;
+  box-shadow:0 -12px 34px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.62) !important;
+  backdrop-filter: blur(16px) saturate(1.35);
+  padding:7px 10px !important;
+  gap:8px !important;
+  align-items:center !important;
+  z-index:20000 !important;
+}
+
+#start-btn{
+  min-width:112px !important;
+  height:42px !important;
+  border-radius:999px !important;
+  background:radial-gradient(circle at 28% 18%,#fff 0,#9eebff 18%,#1ca4dd 46%,#0b5b9d 72%,#053357 100%) !important;
+  border:1px solid rgba(255,255,255,.7) !important;
+  color:white !important;
+  text-shadow:0 1px 3px #001d33 !important;
+  box-shadow:0 8px 24px rgba(0,23,50,.42), inset 0 1px 6px rgba(255,255,255,.9) !important;
+  font-weight:700 !important;
+  letter-spacing:.2px;
+}
+
+#silver-advanced-search,
+#silver-advanced-taskview,
+#silver-advanced-bell,
+#silver-advanced-sync,
+#taskbar button:not(#start-btn){
+  height:38px !important;
+  border-radius:8px !important;
+  border:1px solid rgba(255,255,255,.62) !important;
+  color:#eefaff !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(37,94,139,.58), rgba(8,35,64,.72)) !important;
+  box-shadow:inset 0 1px rgba(255,255,255,.65),0 4px 12px rgba(0,0,0,.2) !important;
+  padding:0 13px !important;
+  text-shadow:0 1px 2px #001827 !important;
+}
+
+#silver-advanced-bell.has-unread{
+  background:linear-gradient(180deg,#fff7c8,#ef9a22 55%,#944a00) !important;
+  color:#1b1100 !important;
+  text-shadow:none !important;
+  animation:advPulse 1.8s infinite;
+}
+@keyframes advPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,203,64,.45)}50%{box-shadow:0 0 0 7px rgba(255,203,64,0)}}
+
+#taskbar-apps{gap:7px !important;}
+#taskbar-apps button{
+  min-width:130px !important;
+  max-width:190px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+#clock,#emerald40-build-badge,#emerald40-edition-badge{
+  color:#f5fbff !important;
+  text-shadow:0 1px 3px #001827;
+  font-size:12px !important;
+}
+
+#start-menu{
+  width:min(620px, calc(100vw - 22px)) !important;
+  max-height:min(680px, calc(100vh - 82px)) !important;
+  left:10px !important;
+  bottom:62px !important;
+  border-radius:18px !important;
+  overflow:hidden;
+  background:linear-gradient(135deg, rgba(255,255,255,.92), rgba(225,241,255,.76) 58%, rgba(11,61,104,.7)) !important;
+  border:1px solid rgba(255,255,255,.86) !important;
+  box-shadow:var(--adv-shadow) !important;
+  backdrop-filter: blur(18px) saturate(1.35);
+}
+#start-menu .start-side{
+  width:94px !important;
+  background:linear-gradient(180deg,#0d67a5,#063d69) !important;
+  color:#fff !important;
+  text-shadow:0 1px 5px #001827;
+  font-size:19px !important;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  letter-spacing:1px;
+  align-items:center;
+  justify-content:center;
+}
+#start-menu .start-main{
+  padding:14px !important;
+  color:var(--adv-text);
+}
+#start-search{
+  width:100% !important;
+  border-radius:20px !important;
+  border:1px solid #80b4dc !important;
+  padding:10px 14px !important;
+  background:rgba(255,255,255,.93) !important;
+  box-shadow:inset 0 1px 4px rgba(0,30,70,.12) !important;
+}
+.start-item{
+  border-radius:9px !important;
+  padding:9px 12px !important;
+  font-size:13px !important;
+  color:#17364f !important;
+}
+.start-item:hover{
+  background:linear-gradient(180deg,#e5f5ff,#b9def8) !important;
+  outline:1px solid #75b5e4 !important;
+}
+
+.window{
+  border-radius:13px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.44),rgba(196,227,247,.35)) !important;
+  border:1px solid rgba(255,255,255,.78) !important;
+  box-shadow:0 28px 70px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.8) !important;
+  overflow:hidden !important;
+  backdrop-filter:blur(16px) saturate(1.25);
+}
+.window.maximized{
+  border-radius:0 !important;
+}
+.titlebar{
+  height:34px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(173,211,241,.58),rgba(51,114,168,.45)) !important;
+  border-bottom:1px solid rgba(80,130,170,.55) !important;
+  color:#06223a !important;
+  text-shadow:0 1px rgba(255,255,255,.8);
+}
+.window.active .titlebar{
+  background:linear-gradient(180deg,#eaf8ff,#9dcdf2 55%,#3e8dcc) !important;
+  color:#071b2e !important;
+}
+.window-content{
+  background:rgba(245,251,255,.92) !important;
+  border-radius:0 0 12px 12px !important;
+}
+.window button,.adv-btn,button.adv-btn{
+  border:1px solid #7aaed1;
+  border-radius:7px;
+  background:linear-gradient(#ffffff,#d8ebfa 48%,#b0d4ee 52%,#eaf7ff);
+  box-shadow:inset 0 1px #fff,0 1px 2px rgba(0,0,0,.15);
+  color:#17324a;
+  padding:7px 12px;
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  cursor:pointer;
+}
+.window button:hover,.adv-btn:hover{filter:brightness(1.04);border-color:#2e8ad1;}
+.window input,.window textarea,.window select,.adv-input{
+  border:1px solid #8bb9d8 !important;
+  border-radius:7px !important;
+  background:#fff !important;
+  color:#122d45 !important;
+  padding:8px 10px !important;
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif !important;
+  user-select:text !important;
+}
+.window textarea{min-height:110px;}
+
+.icon,.desktop-icon,.adv-desktop-icon{
+  border-radius:12px !important;
+  padding:9px 7px !important;
+  width:92px !important;
+  color:#f7fbff !important;
+  text-shadow:0 2px 5px rgba(0,0,0,.78) !important;
+  outline:none !important;
+  box-shadow:none !important;
+}
+.icon:hover,.desktop-icon:hover,.adv-desktop-icon:hover{
+  background:rgba(255,255,255,.18) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.42),0 8px 24px rgba(0,0,0,.18) !important;
+}
+.icon:focus,.desktop-icon:focus{outline:none !important;}
+
+.adv-shell{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:var(--adv-text);}
+.adv-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(210,235,252,.8));border:1px solid #fff;box-shadow:0 8px 22px rgba(0,45,90,.12)}
+.adv-header h2{margin:0;font-weight:300;font-size:25px;color:#0f3b61}.adv-header p{margin:4px 0 0;color:var(--adv-muted)}
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}.adv-grid.compact{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.adv-card{display:flex;gap:12px;align-items:flex-start;padding:13px;border-radius:14px;background:linear-gradient(#fff,#edf7ff);border:1px solid #c7dff0;box-shadow:0 8px 20px rgba(0,50,100,.11);cursor:pointer;min-height:88px}
+.adv-card:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(0,60,110,.18);border-color:#8ac5ed}.adv-card b{display:block;color:#123b5f}.adv-card small{display:block;color:#5b7286;margin-top:3px;line-height:1.35}.adv-card .meta{margin-top:8px}.adv-pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#dff1ff;border:1px solid #a8d3ef;color:#245372;font-size:11px;margin-right:4px}.adv-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:10px 0 16px}.adv-status-card{padding:13px;border-radius:14px;background:linear-gradient(#fff,#e9f5ff);border:1px solid #c7dff0}.adv-status-card b{display:block;color:#557085;font-size:12px}.adv-status-card span{display:block;margin-top:6px;font-size:16px;color:#123b5f}.adv-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.adv-two{display:grid;grid-template-columns:260px 1fr;gap:14px}.adv-side{border-radius:14px;background:linear-gradient(#fff,#e8f3fb);border:1px solid #c9dfef;padding:12px}.adv-main{border-radius:14px;background:#ffffffc8;border:1px solid #c9dfef;padding:12px}.adv-list{display:grid;gap:8px}.adv-row{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid #cbddeb;background:#fff;border-radius:10px;padding:10px}.adv-row .grow{flex:1}.adv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.adv-tab{padding:8px 12px;border-radius:999px;background:#e4f3ff;border:1px solid #a4d1ef;cursor:pointer}.adv-tab.active{background:linear-gradient(#4db0eb,#16699f);color:#fff}.adv-editor{width:100%;min-height:320px;resize:vertical}.adv-sheet{border-collapse:collapse;width:100%;background:#fff}.adv-sheet td,.adv-sheet th{border:1px solid #c6d9e8;padding:5px;min-width:90px}.adv-sheet input{border:none!important;width:100%;padding:5px!important}.adv-slide{border:1px solid #bcd7ea;border-radius:14px;min-height:260px;background:linear-gradient(135deg,#fff,#e5f4ff);padding:28px}.adv-action-center{position:fixed;right:14px;bottom:68px;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 92px);overflow:auto;z-index:25000;border-radius:18px;background:rgba(245,250,255,.94);border:1px solid #fff;box-shadow:0 24px 80px rgba(0,0,0,.38);backdrop-filter:blur(18px);padding:14px}.adv-toast{position:fixed;left:50%;top:26px;transform:translateX(-50%);z-index:30000;background:linear-gradient(#fff,#e5f3ff);border:1px solid #aad2ec;border-radius:14px;box-shadow:0 18px 55px rgba(0,0,0,.3);padding:14px 18px;max-width:520px;color:#14344d}.adv-logo{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:52px;height:52px;border-radius:14px;color:#fff;font-weight:800;font-size:14px;letter-spacing:.5px;text-shadow:0 1px 4px #001d33;border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 2px 7px rgba(255,255,255,.8), inset 0 -12px 20px rgba(0,0,0,.22),0 8px 20px rgba(0,0,0,.24);overflow:hidden}.adv-logo::before{content:"";position:absolute;inset:3px 3px 50% 3px;border-radius:12px 12px 8px 8px;background:linear-gradient(rgba(255,255,255,.82),rgba(255,255,255,.18));}.adv-logo span{position:relative;z-index:1}.adv-logo.small{width:28px;height:28px;border-radius:8px;font-size:10px}.adv-logo.home{background:linear-gradient(135deg,#39b9ff,#055c9b)}.adv-logo.explorer{background:linear-gradient(135deg,#ffe68b,#c38200)}.adv-logo.office{background:linear-gradient(135deg,#53d98e,#098a48)}.adv-logo.mail{background:linear-gradient(135deg,#6fd7ff,#0f67bd)}.adv-logo.chat{background:linear-gradient(135deg,#b288ff,#5627b8)}.adv-logo.media{background:linear-gradient(135deg,#ff8ac5,#ad205f)}.adv-logo.creator{background:linear-gradient(135deg,#ffc767,#b95f00)}.adv-logo.settings{background:linear-gradient(135deg,#c6d3df,#536b81)}.adv-logo.security{background:linear-gradient(135deg,#9ee7bf,#157448)}.adv-logo.store{background:linear-gradient(135deg,#91e6ff,#005a9d)}.adv-logo.sync{background:linear-gradient(135deg,#b6f6ff,#1e7b88)}.adv-logo.search{background:linear-gradient(135deg,#f2f7ff,#4279b6)}
+
+.adv-desktop-icon .adv-logo{margin:0 auto 5px}.adv-desktop-icon label{display:block;font-size:12px;line-height:1.2;max-width:88px;overflow:hidden;text-overflow:ellipsis;}
+
+@media (max-width: 900px){
+  #desktop{padding:14px 12px 70px 12px!important;gap:12px!important}.adv-two{grid-template-columns:1fr}.adv-grid{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}#taskbar{height:52px!important;padding:6px!important}#silver-advanced-taskview{display:none!important}#taskbar-apps button{min-width:80px!important;max-width:100px}.window{max-width:calc(100vw - 8px)!important}.adv-header h2{font-size:21px}.adv-card{min-height:74px;padding:10px}.adv-logo{width:44px;height:44px}.icon,.desktop-icon,.adv-desktop-icon{width:82px!important}
+}
+@media (max-width: 560px){
+  #silver-advanced-search{display:none!important}#emerald40-build-badge,#emerald40-edition-badge{display:none!important}#start-btn{min-width:86px!important}.adv-status{grid-template-columns:1fr}.adv-grid{grid-template-columns:1fr}.adv-row{align-items:flex-start;flex-direction:column}.adv-toolbar{align-items:stretch}.adv-toolbar input,.adv-toolbar select,.adv-toolbar button{width:100%}.window-content{font-size:13px!important}
+}
