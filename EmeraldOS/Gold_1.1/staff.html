@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Staff Edition</title>
+<link rel="stylesheet" href="gold10.css">
+<link rel="stylesheet" href="gold10-patch1.css">
+<link rel="stylesheet" href="gold10-patch2.css">
+<style>
+html,body{height:100%;margin:0;background:linear-gradient(135deg,#eaf5ff,#ffffff);font-family:"Segoe UI",Arial,sans-serif;color:#111827}.staff-shell{min-height:100%;display:grid;grid-template-columns:minmax(330px,460px) 1fr}.staff-login{padding:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border-right:1px solid #d4dfec}.staff-card-login{width:100%;max-width:390px}.staff-card-login h1{font-weight:400;margin:0 0 8px}.staff-card-login p{color:#5f6b7a}.staff-card-login input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border:1px solid #b9c7d5;background:white;color:#111827}.staff-card-login button{width:100%;margin-top:8px}.staff-info{padding:46px;display:flex;flex-direction:column;justify-content:center}.staff-info h2{font-weight:400;font-size:36px;margin:0 0 12px}.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:22px}.feature{background:white;border:1px solid #d4dfec;padding:16px;box-shadow:0 10px 24px rgba(15,23,42,.08)}.feature b{display:block;margin-bottom:8px}.status{margin-top:12px;padding:12px;background:#edf6ff;border:1px solid #bddcff;white-space:pre-wrap}.danger{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}.top-actions{position:fixed;right:14px;top:14px;display:flex;gap:8px}.top-actions button{padding:9px 12px;border:1px solid #b9c7d5;background:#fff}.badge{display:inline-block;padding:5px 9px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:999px;font-weight:700}@media(max-width:820px){.staff-shell{grid-template-columns:1fr}.staff-login{border-right:0;border-bottom:1px solid #d4dfec}.staff-info{padding:26px}.staff-info h2{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="top-actions"><button onclick="location.href='bios.html'">BIOS / DOS</button><button onclick="location.href='OS.html'">Boot Gold</button></div>
+<main class="staff-shell">
+  <section class="staff-login">
+    <div class="staff-card-login">
+      <div class="gold11-logo" style="width:58px;height:58px;margin-bottom:16px;background:linear-gradient(135deg,#5c2d91,#0078d4)">SF</div>
+      <h1>EmeraldOS Gold Staff Edition</h1>
+      <p>Sign in with your EmeraldOS account and Emerald Mail account.</p>
+      <label>EmeraldOS username</label>
+      <input id="staff_user" autocomplete="username" placeholder="Example: Wmonroe01">
+      <label>EmeraldOS password</label>
+      <input id="staff_pass" type="password" autocomplete="current-password" placeholder="EmeraldOS password">
+      <label>Emerald Mail address</label>
+      <input id="staff_mail" autocomplete="email" placeholder="username@mail.monroecorp.org or username@emeraldos.mail">
+      <label>Emerald Mail password</label>
+      <input id="staff_mail_pass" type="password" placeholder="Emerald Mail password">
+      <label>Access reason</label>
+      <input id="staff_reason" placeholder="Example: system maintenance">
+      <button class="btn primary" onclick="loginStaff()">Sign in to Staff Edition</button>
+      <button class="btn" onclick="bootPreview()">Local Preview Mode</button>
+      <button class="btn" onclick="location.href='OS.html'">Return to EmeraldOS Gold</button>
+      <div id="staff_status" class="status">Ready. This page checks Firestore when firebase.js is available.</div>
+    </div>
+  </section>
+  <section class="staff-info">
+    <span class="badge">Emerald Systems BIOS A1 route: STAFF</span>
+    <h2>Staff control for EmeraldOS Gold</h2>
+    <p>Staff Edition unlocks enhanced control surfaces inside Gold, including Staff Center, system audit, workspace repair, app control, sync diagnostics, and administrative tools.</p>
+    <div class="feature-grid">
+      <div class="feature"><b>Dual login</b>EmeraldOS credentials plus Emerald Mail account verification.</div>
+      <div class="feature"><b>Staff Center</b>Control workspace repair, sync tools, app review, and system logs.</div>
+      <div class="feature"><b>Audit log</b>Staff actions are recorded locally for review.</div>
+      <div class="feature"><b>BIOS access</b>Type STAFF in Emerald DOS from BIOS A1.</div>
+      <div class="feature"><b>Safe controls</b>No destructive mass-delete tools are included.</div>
+      <div class="feature"><b>Cloud-aware</b>Uses Firebase when the project rules allow access.</div>
+    </div>
+  </section>
+</main>
+<script type="module">
+let fb=null;
+try{ fb=await import('./firebase.js'); }catch(e){ console.warn('Firebase unavailable',e); }
+const status=document.getElementById('staff_status');
+function write(msg, danger=false){ status.textContent=msg; status.classList.toggle('danger',!!danger); }
+async function sha256(text){ const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function cleanRole(r){return String(r||'').toLowerCase();}
+function staffRoleAllowed(role){return ['admin','administrator','mod','moderator','operator','staff','executive','owner','vip'].includes(cleanRole(role));}
+async function findUser(username,passwordHash){
+  if(!fb?.db || !fb?.collection || !fb?.getDocs) throw new Error('Firebase module did not export Firestore helpers.');
+  const snap=await fb.getDocs(fb.collection(fb.db,'users'));
+  let found=null;
+  snap.forEach(doc=>{const d=doc.data(); if(String(d.username||doc.id).toLowerCase()===username.toLowerCase() && d.passwordHash===passwordHash) found={id:doc.id,...d};});
+  return found;
+}
+async function findMail(email,passwordHash){
+  if(!fb?.db || !fb?.collection || !fb?.getDocs) throw new Error('Firebase module did not export Firestore helpers.');
+  const snap=await fb.getDocs(fb.collection(fb.db,'EmeraldMail'));
+  let found=null;
+  snap.forEach(doc=>{const d=doc.data(); if(String(d.email||doc.id).toLowerCase()===email.toLowerCase() && (!d.passwordHash || d.passwordHash===passwordHash)) found={id:doc.id,...d};});
+  return found;
+}
+async function loginStaff(){
+  const username=document.getElementById('staff_user').value.trim();
+  const password=document.getElementById('staff_pass').value;
+  const mail=document.getElementById('staff_mail').value.trim().toLowerCase();
+  const mailPass=document.getElementById('staff_mail_pass').value;
+  const reason=document.getElementById('staff_reason').value.trim();
+  if(!username || !password || !mail || !mailPass) return write('Enter EmeraldOS username/password and Emerald Mail address/password.',true);
+  if(!mail.includes('@')) return write('Enter a valid Emerald Mail address.',true);
+  write('Checking EmeraldOS account...');
+  try{
+    const osHash=await sha256(password);
+    const mailHash=await sha256(mailPass);
+    const user=await findUser(username,osHash);
+    if(!user) return write('EmeraldOS login failed. Check username and password.',true);
+    if(user.locked) return write('This EmeraldOS account is locked: '+(user.lockReason||'No reason supplied.'),true);
+    if(!staffRoleAllowed(user.role) && !staffRoleAllowed(user.role2)) return write('EmeraldOS account is valid, but it does not have staff access.',true);
+    write('Checking Emerald Mail account...');
+    const mailAcct=await findMail(mail,mailHash);
+    if(!mailAcct) return write('Emerald Mail login failed. Check mail address and password.',true);
+    const session={verified:true,preview:false,username:user.username||username,role:user.role||user.role2||'staff',mail,mailDisplay:mailAcct.displayName||mailAcct.fromName||'',reason,createdAt:Date.now(),expiresAt:Date.now()+8*60*60*1000};
+    localStorage.setItem('username',session.username);
+    localStorage.setItem('loggedIn','true');
+    localStorage.setItem('gold10_staffEditionSession',JSON.stringify(session));
+    const logs=JSON.parse(localStorage.getItem('gold10_gold11StaffLogs')||'[]');
+    logs.unshift({id:Math.random().toString(36).slice(2),date:new Date().toISOString(),staff:session.username,mail,action:'staff login',target:'Gold Staff Edition',reason});
+    localStorage.setItem('gold10_gold11StaffLogs',JSON.stringify(logs.slice(0,250)));
+    write('Staff Edition verified. Booting EmeraldOS Gold...');
+    setTimeout(()=>location.href='OS.html',900);
+  }catch(e){ write('Staff login could not complete: '+e.message,true); }
+}
+function bootPreview(){
+  const username=document.getElementById('staff_user').value.trim() || localStorage.getItem('username') || 'GoldStaffPreview';
+  const mail=document.getElementById('staff_mail').value.trim().toLowerCase() || `${username.toLowerCase().replace(/[^a-z0-9._-]/g,'.')}@emeraldos.mail`;
+  const session={verified:false,preview:true,username,role:'preview',mail,reason:'Local preview mode',createdAt:Date.now(),expiresAt:Date.now()+2*60*60*1000};
+  localStorage.setItem('username',username);
+  localStorage.setItem('loggedIn','true');
+  localStorage.setItem('gold10_staffEditionSession',JSON.stringify(session));
+  write('Local Staff Edition preview enabled. Booting Gold...');
+  setTimeout(()=>location.href='OS.html',700);
+}
+window.loginStaff=loginStaff; window.bootPreview=bootPreview;
+</script>
+</body>
+</html>

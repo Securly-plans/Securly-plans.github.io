@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold 1.1</title>
+<link rel="stylesheet" href="gold10.css">
+<link rel="stylesheet" href="gold10-patch1.css">
+<link rel="stylesheet" href="gold10-patch2.css">
+<script>
+(function(){
+  function showGoldBootMenu(){
+    if(document.getElementById('gold-boot-menu')) return;
+    const d=document.createElement('div');
+    d.id='gold-boot-menu';
+    d.innerHTML='<div class="boot-menu-card"><h1>Emerald Systems BIOS A1</h1><p>Startup options</p><button onclick="location.href=\'bios.html\'">Open BIOS / Emerald DOS</button><button onclick="location.href=\'staff.html\'">EmeraldOS Gold Staff Edition</button><button onclick="document.getElementById(\'gold-boot-menu\').remove()">Continue Boot</button><button onclick="localStorage.removeItem(\'gold10_setupDone\');location.reload()">Run First Boot Setup</button></div>';
+    document.body.appendChild(d);
+  }
+  window.addEventListener('keydown',function(e){
+    if(e.key==='F12'){ e.preventDefault(); if(document.body) showGoldBootMenu(); else window.__goldF12Pending=true; }
+  });
+  window.addEventListener('DOMContentLoaded',function(){ if(window.__goldF12Pending) showGoldBootMenu(); });
+})();
+</script>
+<script defer src="gold10.js"></script>
+<script defer src="gold10-patch1.js"></script>
+<script defer src="gold10-patch2.js"></script>
+</head>
+<body data-product="EmeraldOS Gold 1.1" class="gold-os">
+  <div id="boot-shade" class="boot-shade">
+    <div class="boot-card gold-boot-card">
+      <div class="boot-logo gold-boot-logo">G10</div>
+      <h1>EmeraldOS Gold 1.1</h1>
+      <p>Preparing your Gold desktop, personalization, Staff Edition controls, settings, and applications...</p>
+      <div class="f12-hint">Press F12 during startup for Emerald Systems BIOS A1 / Emerald DOS / Staff Edition</div>
+      <div class="boot-bar"><span></span></div>
+    </div>
+  </div>
+
+  <main id="desktop" aria-label="Gold Desktop"></main>
+
+  <section id="start-menu" class="start-menu hidden" aria-label="Start menu">
+    <aside class="start-rail">
+      <button title="User" onclick="Gold10.openApp('profile')">U</button>
+      <button title="Explorer" onclick="Gold10.openApp('explorer')">F</button>
+      <button title="Settings" onclick="Gold10.openApp('settings')">S</button>
+      <button title="Power" onclick="Gold10.restart()">⏻</button>
+    </aside>
+    <div class="start-list">
+      <input id="start-search" placeholder="Type here to search apps, files, settings, and documents" oninput="Gold10.renderStart(this.value)">
+      <h3>All apps</h3>
+      <div id="start-results"></div>
+    </div>
+    <div class="start-tiles">
+      <h3>Pinned</h3>
+      <div id="start-tiles-grid"></div>
+    </div>
+  </section>
+
+  <section id="search-panel" class="flyout hidden" aria-label="Search panel"></section>
+  <section id="task-view" class="flyout hidden" aria-label="Task view"></section>
+  <section id="widgets-panel" class="flyout right hidden" aria-label="Widgets"></section>
+  <section id="action-center" class="action-center hidden" aria-label="Action Center"></section>
+
+  <div id="window-layer" aria-label="Application windows"></div>
+
+  <footer id="taskbar" aria-label="Taskbar">
+    <button id="start-button" class="taskbar-start" title="Start" onclick="Gold10.toggleStart()">G10</button>
+    <button class="taskbar-search" title="Search" onclick="Gold10.openSearch()">Search</button>
+    <button class="taskbar-tool" title="Task View" onclick="Gold10.openTaskView()">Task View</button>
+    <div id="taskbar-apps"></div>
+    <button class="taskbar-tool" title="Widgets" onclick="Gold10.openWidgets()">Widgets</button>
+    <button id="action-button" class="taskbar-tool" title="Action Center" onclick="Gold10.openActionCenter()">0</button>
+    <button id="sync-button" class="taskbar-tool" title="Restore Center" onclick="Gold10.openApp('restore')">Sync</button>
+    <div id="clock"></div>
+  </footer>
+</body>
+</html>
