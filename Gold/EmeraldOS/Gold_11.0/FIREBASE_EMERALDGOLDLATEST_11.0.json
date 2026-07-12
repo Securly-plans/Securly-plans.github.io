@@ -1,0 +1,24 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "11.0",
+  "build": "11.0",
+  "folder": "Gold_11.0",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "continue",
+  "releaseTitle": "EmeraldOS Gold 11.0",
+  "summary": "OS-folder-only update build for the EmeraldOS Gold shell/manual update architecture.",
+  "migrationFrom": [
+    "10.0",
+    "9.0",
+    "8.0",
+    "8.0.1"
+  ],
+  "migrationId": "gold10-to-gold11-os-folder",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_10.0",
+  "rollbackVersion": "10.0"
+}
