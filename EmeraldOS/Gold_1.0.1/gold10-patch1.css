@@ -1,0 +1,56 @@
+/* =========================================================
+   EmeraldOS Gold 1.0 Patch 1 UI
+   Lighter Windows 10-inspired original EmeraldOS styling
+========================================================= */
+:root{
+  --accent:#0078d4;
+  --accent-2:#005a9e;
+  --bg:#eef3f8;
+  --text:#111827;
+  --muted:#64748b;
+  --window:#ffffff;
+  --window-text:#111827;
+  --line:#d3dde8;
+  --shadow:0 18px 55px rgba(15,23,42,.28);
+}
+body.gold-os,
+body.gold-os.light{
+  background:
+    radial-gradient(circle at 14% 20%, rgba(0,120,212,.22), transparent 30%),
+    radial-gradient(circle at 92% 12%, rgba(255,215,125,.22), transparent 28%),
+    linear-gradient(135deg,#eaf3fb 0%,#d9e8f7 48%,#f9fbfd 100%) !important;
+  color:#111827;
+}
+body.gold-os::before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background:linear-gradient(125deg, transparent 0 44%, rgba(255,255,255,.35) 45% 48%, transparent 49% 100%);
+}
+#desktop{padding-top:18px;}
+.desktop-icon{color:#102033;text-shadow:0 1px 0 rgba(255,255,255,.7);border-radius:3px;}
+.desktop-icon:hover{background:rgba(0,120,212,.12);outline:1px solid rgba(0,120,212,.28)}
+.desktop-icon:focus{outline:none!important;background:transparent!important}
+#taskbar{background:rgba(22,27,34,.92)!important;backdrop-filter:blur(18px);height:48px;border-top:1px solid rgba(255,255,255,.18)}
+.taskbar-start{background:#0078d4!important;min-width:54px!important;border-right:1px solid rgba(255,255,255,.1);font-weight:600;}
+.taskbar-start:hover,.taskbar-tool:hover,.taskbar-search:hover,.taskbar-app:hover{background:rgba(255,255,255,.14)!important}
+.taskbar-search{background:rgba(255,255,255,.96)!important;color:#1f2937!important;border:0!important;min-width:220px;text-align:left;padding-left:14px!important;}
+.taskbar-search::before{content:"🔎 ";}
+.taskbar-tool{color:#f8fafc!important;border:0!important;background:transparent!important;}
+#clock{color:#f8fafc!important;min-width:88px;}
+.taskbar-app{background:rgba(255,255,255,.08)!important;color:#f8fafc!important;border-bottom:2px solid transparent!important;}
+.taskbar-app.active{border-bottom-color:#59b7ff!important;background:rgba(255,255,255,.16)!important;}
+#action-button.has-unread{background:#0078d4!important;color:#fff!important;box-shadow:inset 0 -2px #fff;}
+.start-menu{background:#1f2937!important;color:#f9fafb;box-shadow:0 -12px 50px rgba(0,0,0,.38);border-top:1px solid rgba(255,255,255,.18);}
+.start-rail{background:#111827!important}.start-list input{background:#fff!important;color:#111827!important;border:0!important}.start-result:hover{background:rgba(255,255,255,.12)!important}.start-result small{color:#cbd5e1!important}.start-tiles{background:#111827!important}.tile{border-radius:0!important;background:#0078d4!important}.patch-tile:nth-child(2n){background:#107c10!important}.patch-tile:nth-child(3n){background:#b7472a!important}
+.win{border-radius:2px!important;border:1px solid rgba(0,0,0,.22)!important;background:#fff!important;color:#111827!important;box-shadow:0 20px 60px rgba(15,23,42,.28)!important;}
+.win.max{inset:0 0 0 0!important;width:100%!important;height:100%!important;border-radius:0!important;}
+.titlebar{height:34px!important;background:#ffffff!important;color:#111827!important;border-bottom:1px solid #d7dee8!important;}
+.win.active .titlebar{background:linear-gradient(#fff,#eff6fd)!important;}
+.win-controls button{color:#111827!important}.win-controls button:hover{background:#e5e7eb!important}.win-controls .close:hover{background:#e81123!important;color:white!important}.content{background:#fff!important;color:#111827!important;}
+.app-header{background:#f5f9fd!important;border:1px solid #d8e4ef!important;border-radius:3px!important}.app-header h2{font-weight:400}.card{background:#fff!important;color:#111827!important;border:1px solid #d7e1ea!important;border-radius:2px!important;box-shadow:0 1px 2px rgba(0,0,0,.04)}.card:hover{border-color:#7dbde8!important;box-shadow:0 3px 10px rgba(0,120,212,.1)}.sidebar{background:#f6f9fc!important;color:#111827!important}.list-item:hover{background:#edf6ff!important}.btn{border-radius:2px!important;background:#f9fbfd!important;border:1px solid #aebdca!important;color:#111827!important}.btn:hover{background:#eef7ff!important;border-color:#0078d4!important}.btn.primary{background:#0078d4!important;border-color:#006cbe!important;color:#fff!important}.btn.danger{background:#e81123!important;border-color:#c50f1f!important;color:#fff!important}.field,input,select,textarea{border-radius:2px!important}.editor{background:#fff!important;color:#111827!important;}
+.app-logo{border-radius:7px!important}.patch-logo{position:relative;display:grid;place-items:center}.logo-blue{background:linear-gradient(135deg,#2ca7f8,#0067b8)!important}.logo-green{background:linear-gradient(135deg,#4ad66d,#107c10)!important}.logo-teal{background:linear-gradient(135deg,#5eead4,#047c78)!important}.logo-yellow{background:linear-gradient(135deg,#ffe680,#d39b00)!important;color:#3b2a00!important}.logo-orange{background:linear-gradient(135deg,#ffb86b,#d65a00)!important}.logo-red{background:linear-gradient(135deg,#ff8a8a,#c50f1f)!important}.logo-purple{background:linear-gradient(135deg,#c084fc,#6d28d9)!important}.logo-gray{background:linear-gradient(135deg,#d8dee9,#64748b)!important}.logo-pink{background:linear-gradient(135deg,#f9a8d4,#be185d)!important}
+.settings10-layout{display:grid;grid-template-columns:250px 1fr;gap:0;border:1px solid #dbe5ef;min-height:500px}.settings10-sidebar{background:#f3f6fa;border-right:1px solid #dbe5ef;padding:10px}.settings10-sidebar button{display:block;width:100%;text-align:left;background:transparent;border:0;padding:12px 10px;color:#111827;font:inherit}.settings10-sidebar button:hover{background:#e8f3ff}.settings10-main{padding:16px;overflow:auto}.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.settings-actions{position:sticky;bottom:0;background:rgba(255,255,255,.92);border-top:1px solid #dbe5ef;padding-top:10px}.hidden{display:none!important}.sticky-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:12px}.sticky{min-height:160px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.14);border:1px solid rgba(0,0,0,.08)}.sticky.yellow{background:#fff4a8}.sticky.blue{background:#cfe9ff}.sticky.green{background:#d8ffd8}.sticky.pink{background:#ffd7e9}.dos-screen{background:#020617;color:#9fffb4;border:1px solid #14532d;min-height:310px;white-space:pre-wrap;overflow:auto;padding:12px;font-family:Consolas,monospace}.dos-cmd{background:#020617;color:#9fffb4}.dos-cmd input{background:#06130a!important;color:#9fffb4!important;border-color:#14532d!important;font-family:Consolas,monospace}.patch-desktop-icon .app-logo{box-shadow:inset 0 1px rgba(255,255,255,.48),0 8px 18px rgba(0,0,0,.20)}
+#gold-boot-menu{position:fixed;inset:0;background:rgba(2,6,23,.86);z-index:999999;display:grid;place-items:center;color:white}.boot-menu-card{background:#07111f;border:1px solid #38bdf8;box-shadow:0 0 50px rgba(56,189,248,.25);padding:26px;width:min(480px,92vw);font-family:Consolas,monospace}.boot-menu-card h1{margin-top:0}.boot-menu-card button{display:block;width:100%;margin:10px 0;padding:12px;background:#082f49;border:1px solid #38bdf8;color:white;font:inherit;text-align:left}.boot-menu-card button:hover{background:#075985}
+.boot-card .f12-hint{margin-top:10px;color:#0f172a;background:rgba(255,255,255,.75);padding:6px 10px;border-radius:2px}.boot-shade .boot-card{background:rgba(245,249,253,.96)!important;color:#111827!important;border:1px solid rgba(15,23,42,.12)!important}.boot-shade .boot-card p{color:#334155!important}
+body.high-contrast{background:#000!important;color:#fff!important}body.high-contrast .win,body.high-contrast .content,body.high-contrast .card{background:#000!important;color:#fff!important;border-color:#fff!important}body.high-contrast #taskbar,body.high-contrast .start-menu{background:#000!important;border-color:#fff!important}.toast{background:#1f2937!important;border-left-color:#0078d4!important}
+@media (max-width:900px){.settings10-layout{grid-template-columns:1fr}.settings10-sidebar{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;border-right:0;border-bottom:1px solid #dbe5ef}.settings-grid{grid-template-columns:1fr}.taskbar-search{min-width:44px!important;font-size:0}.taskbar-search::before{font-size:14px}.win{left:8px!important;top:8px!important;width:calc(100vw - 16px)!important;max-height:calc(100vh - 64px)}.start-menu{width:100vw!important;grid-template-columns:48px 1fr!important}.start-tiles{display:none!important}}
+@media (min-width:1200px){.settings-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
