@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emerald BIOS A5 - EmeraldOS Gold 7.0</title>
+<link rel="icon" type="image/svg+xml" href="emerald-gold-70-logo.svg">
+<style>
+:root{--bg:#08111f;--panel:#101c2f;--line:#2b4264;--text:#dbeafe;--muted:#8fb3da;--accent:#f2c94c;--green:#27d17f;--blue:#60a5fa;}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Cascadia Mono",Consolas,"Segoe UI",monospace;background:radial-gradient(circle at 30% 0,#17345b,#07111f 55%,#020617);color:var(--text)}
+body{display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}.top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(8,17,31,.88)}.brand{display:flex;align-items:center;gap:12px}.logo{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#fff7cc,#f2c94c,#0078d4);display:grid;place-items:center;color:#07111f;font-weight:900}.grid{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:16px;height:100%;min-height:0}.panel{background:rgba(16,28,47,.88);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden}.panel h2{font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.04);color:#fff}.menu{padding:10px;display:grid;gap:8px}.menu button{background:#13243b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:left;font:inherit;cursor:pointer}.menu button:hover,.menu button.active{border-color:var(--accent);background:#1d3352;color:#fff}.main{display:grid;grid-template-rows:auto 1fr;min-height:0}.status{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px}.card{border:1px solid var(--line);background:rgba(255,255,255,.04);border-radius:10px;padding:12px}.card b{display:block;color:#fff}.card span{color:var(--muted);font-size:12px}.terminal{margin:0 12px 12px;border:1px solid var(--line);border-radius:10px;display:grid;grid-template-rows:1fr auto;min-height:0;background:#030712}.out{padding:14px;overflow:auto;white-space:pre-wrap;color:#d1fae5}.cmd{display:flex;border-top:1px solid var(--line)}.cmd span{padding:12px;color:var(--green)}.cmd input{flex:1;background:transparent;border:0;color:#fff;font:inherit;padding:12px;outline:0}.footer{padding:10px 18px;border-top:1px solid var(--line);color:var(--muted);background:rgba(8,17,31,.9)}@media(max-width:850px){.grid{grid-template-columns:1fr;overflow:auto}.status{grid-template-columns:1fr 1fr}.terminal{min-height:420px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="logo">G</div><div><strong>Emerald BIOS A5</strong><br><small>EmeraldOS Gold 7.0 Modern Firmware + Emerald DOS</small></div></div><div id="time"></div></header>
+<div class="grid">
+<section class="panel"><h2>Boot Options</h2><div class="menu">
+<button onclick="boot()">Boot EmeraldOS Gold</button>
+<button onclick="safe()">Boot Safe Mode</button>
+<button onclick="location.href='index.html'">Open Login</button>
+<button onclick="location.href='register.html'">Register User</button>
+<button onclick="location.href='staff.html'">Gold Staff Edition</button>
+<button onclick="support()">Support Center</button>
+<button onclick="emergency()">Emergency Center</button>
+<button onclick="quickassist()">Quick Assist</button>
+<button onclick="recovery()">Recovery Options</button>
+<button onclick="reliability()">Reliability Monitor</button>
+<button onclick="store()">User Appstore</button>
+<button onclick="dev()">Gold App Lab</button>
+<button onclick="snapshot()">Save VM Snapshot</button>
+<button onclick="clearCache()">Clear Gold Cache</button>
+</div></section>
+<section class="panel main"><h2>System Status</h2><div class="status">
+<div class="card"><b id="user">Guest</b><span>Current user</span></div>
+<div class="card"><b>BIOS A5</b><span>Emergency boot</span></div>
+<div class="card"><b id="login">Unknown</b><span>Login state</span></div>
+<div class="card"><b id="storage">0 KB</b><span>Local VM storage</span></div>
+</div><div class="terminal"><pre class="out" id="out">Emerald DOS 7.0\nType HELP for commands.\n</pre><div class="cmd"><span>EDOS&gt;</span><input id="cmd" autofocus onkeydown="if(event.key==='Enter')run()"></div></div></section>
+</div>
+<footer class="footer">F12 BIOS/DOS · F9 Staff Edition · F1 Support · Commands: HELP, VER, DIR, APPS, USERS, LOGIN, REGISTER, BOOT, SAFE, SUPPORT, EMERGENCY, QUICKASSIST, RECOVERY, RELIABILITY, STORE, DEV, OFFICE, SNAPSHOT, RESTORE, RESET, DIAG, PREFS, THEME, ACCESSIBILITY, CLEARCACHE, LOGOUT</footer>
+<script>
+const PREFIX='gold70_';
+const $=id=>document.getElementById(id);
+function logged(){return localStorage.getItem('loggedIn')==='true'||localStorage.getItem(PREFIX+'loggedIn')==='true'}
+function user(){return localStorage.getItem('username')||localStorage.getItem(PREFIX+'username')||'Guest'}
+function bytes(){let n=0;for(let k in localStorage)n+=(localStorage.getItem(k)||'').length;return n<1024?n+' B':(n/1024).toFixed(1)+' KB'}
+function refresh(){time.textContent=new Date().toLocaleString();$('user').textContent=user();$('login').textContent=logged()?'Signed in':'Not signed in';$('storage').textContent=bytes()}setInterval(refresh,1000);refresh();
+function line(t){out.textContent+='\n'+t;out.scrollTop=out.scrollHeight}
+function boot(){location.href=logged()?'OS.html':'index.html?next=OS.html'}
+function safe(){localStorage.setItem(PREFIX+'safemode','true');boot()}
+function support(){location.href=logged()?'OS.html#support':'index.html?next=OS.html#support'}
+function emergency(){location.href=logged()?'OS.html#emergency':'index.html?next=OS.html#emergency'}
+function quickassist(){location.href=logged()?'OS.html#quickassist':'index.html?next=OS.html#quickassist'}
+function recovery(){location.href=logged()?'OS.html#recovery':'index.html?next=OS.html#recovery'}
+function reliability(){location.href=logged()?'OS.html#reliability':'index.html?next=OS.html#reliability'}
+function store(){location.href=logged()?'OS.html#store':'index.html?next=OS.html#store'}
+function dev(){location.href=logged()?'OS.html#applab':'index.html?next=OS.html#applab'}
+function snapshot(){localStorage.setItem(PREFIX+'bios_snapshot',JSON.stringify({time:new Date().toISOString(),user:user(),keys:Object.keys(localStorage).filter(k=>k.startsWith(PREFIX))}));line('Snapshot marker saved. Boot Gold VM Center for full snapshot tools.')}
+function clearCache(){if(confirm('Clear EmeraldOS Gold 7.0 local cache?')){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k));line('Gold cache cleared.')}}
+function run(){const v=cmd.value.trim();cmd.value='';line('EDOS> '+v);exec(v)}
+function exec(v){const [c,...a]=v.split(/\s+/);switch((c||'').toUpperCase()){
+case 'HELP':line('HELP VER DIR APPS USERS WHOAMI LOGIN REGISTER LOGOUT BOOT DESKTOP SAFE SETUP STAFF SUPPORT EMERGENCY QUICKASSIST RECOVERY RELIABILITY STORE DEV OFFICE EXPLORER SNAPSHOT RESTORE BACKUP RESET DIAG PREFS THEME ACCESSIBILITY COLOR BG CLEARCACHE TIME DATE MEM ECHO CLEAR EXIT');break;
+case 'VER':line('Emerald BIOS A5 / Emerald DOS 7.0 / EmeraldOS Gold 7.0');break;
+case 'DIR':line('BOOT  LOGIN  REGISTER  STAFF  SUPPORT  STORE  DEV  OFFICE  EXPLORER  RESTORE  SETTINGS');break;
+case 'APPS':line('Explorer, Office, Mail, Support, Settings, User Appstore, Gold App Lab, App Packager, Accessibility, Theme Studio, Terminal, Browser, Media Player');break;
+case 'USERS':case 'WHOAMI':line(user()+' / '+(logged()?'signed in':'not signed in'));break;
+case 'LOGIN':location.href='index.html?next=OS.html';break;case 'REGISTER':location.href='register.html';break;case 'LOGOUT':localStorage.removeItem('loggedIn');localStorage.removeItem(PREFIX+'loggedIn');line('Logged out.');break;
+case 'BOOT':case 'DESKTOP':boot();break;case 'SAFE':safe();break;case 'SETUP':localStorage.removeItem(PREFIX+'setup_done');boot();break;case 'STAFF':location.href='staff.html';break;case 'SUPPORT':support();break;case 'EMERGENCY':emergency();break;case 'QUICKASSIST':quickassist();break;case 'RECOVERY':recovery();break;case 'RELIABILITY':reliability();break;case 'STORE':store();break;case 'DEV':dev();break;case 'OFFICE':location.href=logged()?'OS.html#office':'index.html?next=OS.html#office';break;case 'EXPLORER':location.href=logged()?'OS.html#explorer':'index.html?next=OS.html#explorer';break;
+case 'SNAPSHOT':snapshot();break;case 'RESTORE':line('Use Gold VM Center after boot for full restore.');break;case 'BACKUP':line('Use Restore Center after boot to export backup.');break;case 'RESET':clearCache();break;case 'DIAG':line(JSON.stringify({user:user(),loggedIn:logged(),storage:bytes(),agent:navigator.userAgent,time:new Date().toString()},null,2));break;case 'PREFS':line(localStorage.getItem(PREFIX+'prefs')||'No prefs saved.');break;
+case 'THEME':line('Available: light, dark, highcontrast. Use Settings > Personalization after boot.');break;case 'ACCESSIBILITY':location.href=logged()?'OS.html#accessibility':'index.html?next=OS.html#accessibility';break;case 'COLOR':line('Use Theme Studio after boot to set background color and accent.');break;case 'BG':line('Use Theme Studio after boot to set custom background URL/upload/solid color.');break;case 'CLEARCACHE':clearCache();break;case 'TIME':line(new Date().toLocaleTimeString());break;case 'DATE':line(new Date().toLocaleDateString());break;case 'MEM':line(bytes()+' local storage used.');break;case 'ECHO':line(a.join(' '));break;case 'CLEAR':out.textContent='Emerald DOS 7.0\n';break;case 'EXIT':boot();break;default:line('Unknown command. Type HELP.');}}
+</script>
+</body>
+</html>
