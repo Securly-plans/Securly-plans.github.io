@@ -1,0 +1,12 @@
+EmeraldOS Gold Product Line
+===========================
+
+EmeraldOS Gold is an independent modern EmeraldOS product line focused on a Windows 10-inspired original desktop experience, built-in apps, setup, customization, and cloud workspace continuity.
+
+Gold 1.0 goals:
+- More complete first-boot experience.
+- More complete BIOS/DOS boot identity.
+- More modern Settings and personalization.
+- Built-in apps styled as native Gold apps.
+- Stronger restore and cross-device workspace continuation.
+- Original EmeraldOS branding and assets only.
