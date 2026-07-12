@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Gold Settings logo">
+<defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".08" stop-color="#e9f4ff"/><stop offset=".58" stop-color="#0078d4"/><stop offset="1" stop-color="#0f172a"/></linearGradient><linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="rgba(255,255,255,.86)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient></defs>
+<rect width="256" height="256" rx="34" fill="url(#b)"/>
+<rect x="12" y="12" width="232" height="108" rx="28" fill="url(#shine)" opacity=".65"/>
+<path d="M128 82a46 46 0 1 0 0 92 46 46 0 0 0 0-92z M128 42v34 M128 180v34 M42 128h34 M180 128h34 M67 67l24 24 M165 165l24 24 M189 67l-24 24 M91 165l-24 24" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="128" y="232" text-anchor="middle" font-family="Segoe UI,Arial" font-size="22" font-weight="800" fill="#fff">Settings</text>
+</svg>
