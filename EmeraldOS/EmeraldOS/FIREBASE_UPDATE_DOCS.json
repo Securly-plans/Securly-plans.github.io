@@ -1,0 +1,27 @@
+{
+  "system/emeraldGoldLatest_TU1": {
+    "product": "EmeraldOS Gold",
+    "latestVersion": "T.U.1",
+    "folder": "Gold_T.U.1",
+    "entry": "OS.html",
+    "channel": "stable",
+    "status": "test",
+    "releaseTitle": "EmeraldOS Gold T.U.1 Shell Test",
+    "summary": "Initial shell-routed test build.",
+    "setupMode": "full",
+    "required": false
+  },
+  "system/emeraldGoldLatest_TU2": {
+    "product": "EmeraldOS Gold",
+    "latestVersion": "T.U.2",
+    "folder": "Gold_T.U.2",
+    "entry": "OS.html",
+    "channel": "stable",
+    "status": "test",
+    "releaseTitle": "EmeraldOS Gold T.U.2 Shell Update Test",
+    "summary": "Updated folder loaded by the shell while preserving the cloud VM profile.",
+    "setupMode": "continue",
+    "required": false,
+    "migrationFrom": ["T.U.1"]
+  }
+}

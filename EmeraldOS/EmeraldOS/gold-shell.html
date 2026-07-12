@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Shell</title>
+<link rel="stylesheet" href="gold-shell.css">
+</head>
+<body>
+<div id="shellRoot" class="shell-root">
+  <header class="shell-topbar">
+    <div class="brand-block">
+      <img src="app-logos/emerald-gold-shell.svg" alt="EmeraldOS Gold" class="shell-logo">
+      <div>
+        <div class="shell-title">EmeraldOS Gold Shell</div>
+        <div class="shell-subtitle">Cloud VM launcher and update router</div>
+      </div>
+    </div>
+    <div class="shell-status" id="shellStatus">Starting shell...</div>
+  </header>
+
+  <main class="shell-main">
+    <section id="loginPanel" class="shell-card login-card">
+      <div class="card-header">
+        <h1>Sign in to EmeraldOS Gold</h1>
+        <p>Your version folder is selected by the shell, while your VM data stays in your cloud profile.</p>
+      </div>
+      <div class="form-grid">
+        <label>Username<input id="loginUsername" autocomplete="username" placeholder="EmeraldOS username"></label>
+        <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="EmeraldOS password"></label>
+      </div>
+      <div class="button-row">
+        <button id="loginBtn" class="primary">Sign in</button>
+        <button id="showRegisterBtn">Create account</button>
+        <button id="localPreviewBtn">Local preview</button>
+      </div>
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section id="registerPanel" class="shell-card login-card hidden">
+      <div class="card-header">
+        <h1>Create EmeraldOS Gold account</h1>
+        <p>This writes to the existing <b>users</b> collection when Firebase allows it. A local fallback is also saved for testing.</p>
+      </div>
+      <div class="form-grid">
+        <label>Username<input id="regUsername" autocomplete="username" placeholder="New username"></label>
+        <label>Display name<input id="regDisplay" placeholder="Display name"></label>
+        <label>Password<input id="regPassword" type="password" autocomplete="new-password" placeholder="Password"></label>
+      </div>
+      <div class="button-row">
+        <button id="registerBtn" class="primary">Register</button>
+        <button id="backToLoginBtn">Back to sign in</button>
+      </div>
+      <div id="registerMessage" class="message"></div>
+    </section>
+
+    <section id="launcherPanel" class="launcher hidden">
+      <aside class="launcher-side">
+        <div class="user-tile">
+          <div class="avatar" id="userAvatar">G</div>
+          <div>
+            <strong id="signedInName">Guest</strong>
+            <span id="signedInRole">Gold user</span>
+          </div>
+        </div>
+        <div class="side-section">
+          <button id="checkUpdateBtn" class="side-btn primary">Check for updates</button>
+          <button id="loadLatestBtn" class="side-btn">Load latest</button>
+          <button id="saveSnapshotBtn" class="side-btn">Save VM snapshot</button>
+          <button id="openSeederBtn" class="side-btn">Open update seeder</button>
+          <button id="logoutBtn" class="side-btn danger">Log out</button>
+        </div>
+        <div class="side-section">
+          <h3>Local test override</h3>
+          <button id="forceTu1Btn" class="side-btn">Load T.U.1</button>
+          <button id="forceTu2Btn" class="side-btn">Load T.U.2</button>
+          <button id="clearOverrideBtn" class="side-btn">Clear override</button>
+        </div>
+        <div class="shell-log" id="shellLog" aria-live="polite"></div>
+      </aside>
+
+      <section class="vm-stage">
+        <div class="version-strip">
+          <div>
+            <strong id="loadedVersion">No version loaded</strong>
+            <span id="loadedFolder">Waiting for Firebase latest data...</span>
+          </div>
+          <div class="version-actions">
+            <span id="syncState" class="pill">Sync idle</span>
+            <span id="channelState" class="pill">stable</span>
+          </div>
+        </div>
+        <iframe id="goldFrame" title="EmeraldOS Gold VM" class="gold-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-popups"></iframe>
+      </section>
+    </section>
+  </main>
+</div>
+<script type="module" src="gold-shell.js"></script>
+</body>
+</html>

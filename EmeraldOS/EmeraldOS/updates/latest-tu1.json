@@ -1,0 +1,12 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "T.U.1",
+  "folder": "Gold_T.U.1",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "test",
+  "releaseTitle": "EmeraldOS Gold T.U.1 Shell Test",
+  "summary": "Initial shell-routed test build.",
+  "setupMode": "full",
+  "required": false
+}
