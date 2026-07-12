@@ -127,9 +127,17 @@
     "url": "games/GeometryDashLite-main/index.html",
     "vip": false
   },
+  {
+    "id": 17,
+    "title": "EmeraldOS Gold",
+    "thumbnail": "assets/images/EmeraldOS_Gold.png",
+    "category": "OSProject",
+    "url": "Gold/EmeraldOS/gold-shell.html",
+    "vip": false
+  },
  {
-   "id": 17,
-   "title": "EmeraldOS",
+   "id": 18,
+   "title": "EmeraldOS Classic",
    "category": "OSProject",
    "thumbnail": "EmeraldOS/assets/EmeraldOS.png",
    "url": "EmeraldOS",
