@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emerald Systems BIOS A1</title>
+<style>
+html,body{height:100%;margin:0;background:#05070a;color:#d8f0ff;font-family:Consolas,'Courier New',monospace;overflow:hidden}.bios{display:grid;grid-template-rows:auto 1fr auto;height:100%;border:6px solid #0b1220}.top{background:#0b1220;border-bottom:2px solid #4c6078;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.brand{font-size:22px;color:#9fd3ff;font-weight:bold}.tag{color:#e8c46b}.main{display:grid;grid-template-columns:280px 1fr;min-height:0}.menu{border-right:1px solid #4c6078;background:#07111f;padding:12px}.menu button{display:block;width:100%;background:#0d1b2e;color:#d8f0ff;border:1px solid #34516f;text-align:left;padding:10px;margin:6px 0;font:inherit}.menu button:hover,.menu button.active{background:#174f82;color:#fff}.panel{padding:18px;overflow:auto}.card{border:1px solid #4c6078;background:#07111f;padding:14px;margin:10px 0}.footer{background:#0b1220;border-top:2px solid #4c6078;padding:10px 18px;color:#9fb1c7}.dos{background:#000;color:#72ff9d;padding:12px;height:330px;overflow:auto;white-space:pre-wrap}.cmd{display:flex;background:#000;color:#72ff9d;padding:8px}.cmd input{flex:1;background:#000;color:#72ff9d;border:0;outline:0;font:inherit}.kbd{color:#ffd36b}</style>
+</head>
+<body>
+<div class="bios">
+  <div class="top"><div class="brand">Emerald Systems BIOS A1</div><div class="tag">Bell BIOS Mode · Gold 1.3</div></div>
+  <div class="main">
+    <nav class="menu">
+      <button onclick="show('main')">Main</button>
+      <button onclick="show('boot')">Boot Options</button>
+      <button onclick="show('staff')">Staff Edition</button>
+      <button onclick="show('restore')">Restore</button>
+      <button onclick="show('diagnostics')">Diagnostics</button>
+      <button onclick="show('dos')">Emerald DOS</button>
+      <button onclick="location.href='OS.html'">Boot EmeraldOS Gold</button>
+    </nav>
+    <main id="panel" class="panel"></main>
+  </div>
+  <div class="footer"><span class="kbd">F12</span> BIOS · <span class="kbd">F9</span> Staff Edition · <span class="kbd">ESC</span> Boot Gold · Use DOS command HELP for commands.</div>
+</div>
+<script>
+const PREFIX='gold13_';
+function show(tab){
+  const p=document.getElementById('panel');
+  if(tab==='main')p.innerHTML='<h1>Emerald Systems BIOS A1</h1><div class="card"><b>Product:</b> EmeraldOS Gold 1.3<br><b>BIOS:</b> Bell-style Emerald Systems BIOS A1<br><b>Mode:</b> Original EmeraldOS firmware interface</div><div class="card">Use the left menu to select boot, restore, Staff Edition, diagnostics, or Emerald DOS.</div>';
+  if(tab==='boot')p.innerHTML='<h1>Boot Options</h1><div class="card"><button onclick="location.href=\'OS.html\'">Normal Boot</button><button onclick="localStorage.setItem(\'gold13_safemode\',\'true\');location.href=\'OS.html\'">Boot Safe Mode</button><button onclick="localStorage.removeItem(\'gold13_setup_done\');location.href=\'OS.html\'">Run First-Boot Setup</button><button onclick="localStorage.removeItem(\'gold13_safemode\');location.href=\'OS.html\'">Disable Safe Mode and Boot</button></div>';
+  if(tab==='staff')p.innerHTML='<h1>Gold Staff Edition</h1><div class="card"><p>Open the staff login page. Staff login verifies EmeraldOS and Emerald Mail credentials when Firebase rules allow it.</p><button onclick="location.href=\'staff.html\'">Open Staff Edition Login</button></div>';
+  if(tab==='restore')p.innerHTML='<h1>Restore Options</h1><div class="card"><button onclick="localStorage.removeItem(\'gold13_setup_done\')">Reset setup flag</button><button onclick="if(confirm(\'Clear local Gold 1.3 settings?\')) Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k))">Factory reset local Gold 1.3 data</button><button onclick="location.href=\'OS.html\'">Boot to Restore Center</button></div>';
+  if(tab==='diagnostics')p.innerHTML='<h1>Diagnostics</h1><div class="card"><pre>'+JSON.stringify({time:new Date().toString(),width:innerWidth,height:innerHeight,userAgent:navigator.userAgent,localStorageKeys:Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).length},null,2)+'</pre></div>';
+  if(tab==='dos')p.innerHTML='<h1>Emerald DOS</h1><div id="out" class="dos">Emerald DOS for Emerald Systems BIOS A1\nType HELP for commands.\n</div><div class="cmd"><span>GOLD&gt;</span><input id="cmd" autofocus onkeydown="if(event.key===\'Enter\')run(this.value)"></div>';
+}
+function run(c){const out=document.getElementById('out'),input=document.getElementById('cmd');c=(c||'').trim();input.value='';const C=c.toUpperCase();function w(t){out.textContent+='\nGOLD> '+c+'\n'+t+'\n';out.scrollTop=out.scrollHeight}
+ if(C==='HELP')w('HELP, VER, DIR, BOOT, SAFE, SETUP, STAFF, RESTORE, RESET, DIAG, TIME, CLEAR, EXIT');
+ else if(C==='VER')w('Emerald Systems BIOS A1 / EmeraldOS Gold 1.3');
+ else if(C==='DIR')w(Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).join('\n')||'No Gold local keys.');
+ else if(C==='BOOT'){w('Booting Gold...');location.href='OS.html'}
+ else if(C==='SAFE'){localStorage.setItem(PREFIX+'safemode','true');w('Safe Mode enabled.');}
+ else if(C==='SETUP'){localStorage.removeItem(PREFIX+'setup_done');w('Setup will run on next boot.');}
+ else if(C==='STAFF'){w('Opening Staff Edition...');location.href='staff.html'}
+ else if(C==='RESTORE')show('restore');
+ else if(C==='RESET'){if(confirm('Factory reset Gold 1.3 local data?')){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k));w('Reset complete.')}}
+ else if(C==='DIAG')show('diagnostics');
+ else if(C==='TIME')w(new Date().toString());
+ else if(C==='CLEAR')out.textContent='';
+ else if(C==='EXIT')location.href='OS.html';
+ else w('Unknown command. Type HELP.');}
+window.addEventListener('keydown',e=>{if(e.key==='Escape')location.href='OS.html';if(e.key==='F9')location.href='staff.html'});show('main');
+</script>
+</body>
+</html>
