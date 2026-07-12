@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emerald Systems BIOS A2</title>
+<style>
+html,body{height:100%;margin:0;background:#05070a;color:#d8f0ff;font-family:Consolas,'Courier New',monospace;overflow:hidden}.bios{display:grid;grid-template-rows:auto 1fr auto;height:100%;border:6px solid #0b1220}.top{background:#0b1220;border-bottom:2px solid #4c6078;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.brand{font-size:22px;color:#9fd3ff;font-weight:bold}.tag{color:#e8c46b}.main{display:grid;grid-template-columns:300px 1fr;min-height:0}.menu{border-right:1px solid #4c6078;background:#07111f;padding:12px}.menu button{display:block;width:100%;background:#0d1b2e;color:#d8f0ff;border:1px solid #34516f;text-align:left;padding:10px;margin:6px 0;font:inherit;cursor:pointer}.menu button:hover,.menu button.active{background:#174f82;color:#fff}.panel{padding:18px;overflow:auto}.card{border:1px solid #4c6078;background:#07111f;padding:14px;margin:10px 0}.footer{background:#0b1220;border-top:2px solid #4c6078;padding:10px 18px;color:#9fb1c7}.dos{background:#000;color:#72ff9d;padding:12px;height:330px;overflow:auto;white-space:pre-wrap}.cmd{display:flex;background:#000;color:#72ff9d;padding:8px}.cmd input{flex:1;background:#000;color:#72ff9d;border:0;outline:0;font:inherit}.kbd{color:#ffd36b}.warn{color:#ffd36b}.ok{color:#72ff9d}@media(max-width:760px){.main{grid-template-columns:1fr}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.menu button{margin:0}.panel{padding:12px}}
+</style>
+</head>
+<body>
+<div class="bios">
+  <div class="top"><div class="brand">Emerald Systems BIOS A2</div><div class="tag">Bell BIOS Mode · Gold 3.0</div></div>
+  <div class="main">
+    <nav class="menu">
+      <button onclick="show('main')">Main</button>
+      <button onclick="show('boot')">Boot Options</button>
+      <button onclick="show('login')">Normal Login</button>
+      <button onclick="show('staff')">Staff Edition</button>
+      <button onclick="show('restore')">Restore</button>
+      <button onclick="show('diagnostics')">Diagnostics</button>
+      <button onclick="show('dos')">Emerald DOS</button>
+      <button onclick="normalBoot()">Continue Boot</button>
+    </nav>
+    <main id="panel" class="panel"></main>
+  </div>
+  <div class="footer"><span class="kbd">F12</span> BIOS · <span class="kbd">F9</span> Staff Edition · <span class="kbd">ESC</span> Continue Boot · DOS command <span class="kbd">HELP</span>.</div>
+</div>
+<script>
+const PREFIX='gold30_';
+function isLoggedIn(){return localStorage.getItem('loggedIn')==='true'||localStorage.getItem(PREFIX+'loggedIn')==='true'}
+function normalBoot(){location.href=isLoggedIn()?'OS.html':'index.html'}
+function show(tab){
+  const p=document.getElementById('panel');
+  if(tab==='main')p.innerHTML='<h1>Emerald Systems BIOS A2</h1><div class="card"><b>Product:</b> EmeraldOS Gold 3.0<br><b>Firmware:</b> Bell-style Emerald Systems BIOS A2<br><b>Status:</b> '+(isLoggedIn()?'<span class="ok">Gold session detected</span>':'<span class="warn">No normal login session detected</span>')+'</div><div class="card">This patch routes normal boot to the EmeraldOS login when needed. Use Boot Options, Staff Edition, Restore, Diagnostics, or Emerald DOS.</div>';
+  if(tab==='boot')p.innerHTML='<h1>Boot Options</h1><div class="card"><button onclick="normalBoot()">Normal Boot / Login</button> <button onclick="location.href=\'OS.html\'">Attempt Desktop Boot</button> <button onclick="localStorage.setItem(\'gold30_safemode\',\'true\');normalBoot()">Boot Safe Mode</button> <button onclick="localStorage.removeItem(\'gold30_setup_done\');normalBoot()">Run First-Boot Setup</button> <button onclick="localStorage.removeItem(\'gold30_safemode\');normalBoot()">Disable Safe Mode and Boot</button></div>';
+  if(tab==='login')p.innerHTML='<h1>Normal EmeraldOS Login</h1><div class="card"><p>Open the normal EmeraldOS Gold login page before booting the desktop.</p><button onclick="location.href=\'index.html\'">Open Normal Login</button><button onclick="localStorage.removeItem(\'loggedIn\');localStorage.removeItem(\'gold30_loggedIn\');location.href=\'index.html?force=1\'">Sign out and open login</button></div>';
+  if(tab==='staff')p.innerHTML='<h1>Gold Staff Edition</h1><div class="card"><p>Open Staff Edition login. Gold 3.0 accepts EmeraldOS staff roles including admin, administrator, moderator, mod, operator, staff, executive, owner, when Firestore rules allow verification.</p><button onclick="location.href=\'staff.html\'">Open Staff Edition Login</button></div>';
+  if(tab==='restore')p.innerHTML='<h1>Restore Options</h1><div class="card"><button onclick="localStorage.removeItem(\'gold30_setup_done\')">Reset setup flag</button><button onclick="localStorage.removeItem(\'loggedIn\');localStorage.removeItem(\'gold30_loggedIn\')">Clear normal login session</button><button onclick="if(confirm(\'Clear local Gold 3.0 data?\')) Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k))">Factory reset local Gold data</button><button onclick="normalBoot()">Boot to Restore Center</button></div>';
+  if(tab==='diagnostics')p.innerHTML='<h1>Diagnostics</h1><div class="card"><pre>'+JSON.stringify({product:'EmeraldOS Gold 3.0',time:new Date().toString(),loggedIn:isLoggedIn(),username:localStorage.getItem('username')||localStorage.getItem(PREFIX+'username')||null,width:innerWidth,height:innerHeight,userAgent:navigator.userAgent,localStorageKeys:Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)||['loggedIn','username','role','role2','userId'].includes(k)).length},null,2)+'</pre></div>';
+  if(tab==='dos')p.innerHTML='<h1>Emerald DOS</h1><div id="out" class="dos">Emerald DOS for Emerald Systems BIOS A2\nGold 3.0 boot/login patch loaded.\nType HELP for commands.\n</div><div class="cmd"><span>GOLD&gt;</span><input id="cmd" autofocus onkeydown="if(event.key===\'Enter\')run(this.value)"></div>';
+}
+function run(c){const out=document.getElementById('out'),input=document.getElementById('cmd');c=(c||'').trim();input.value='';const C=c.toUpperCase();function w(t){out.textContent+='\nGOLD> '+c+'\n'+t+'\n';out.scrollTop=out.scrollHeight}
+ if(C==='HELP')w('HELP, VER, DIR, LOGIN, LOGOUT, BOOT, DESKTOP, SAFE, SETUP, STAFF, RESTORE, RESET, DIAG, TIME, CLEAR, EXIT');
+ else if(C==='VER')w('Emerald Systems BIOS A2 / EmeraldOS Gold 3.0');
+ else if(C==='DIR')w(Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)||['loggedIn','username','role','role2','userId'].includes(k)).join('\n')||'No Gold/session keys.');
+ else if(C==='LOGIN'){w('Opening normal login...');location.href='index.html'}
+ else if(C==='LOGOUT'){localStorage.removeItem('loggedIn');localStorage.removeItem('gold30_loggedIn');w('Normal login session cleared.');}
+ else if(C==='BOOT'){w(isLoggedIn()?'Booting desktop...':'No login session. Opening normal login...');normalBoot()}
+ else if(C==='DESKTOP'){w('Attempting desktop boot...');location.href='OS.html'}
+ else if(C==='SAFE'){localStorage.setItem(PREFIX+'safemode','true');w('Safe Mode enabled. Use BOOT.');}
+ else if(C==='SETUP'){localStorage.removeItem(PREFIX+'setup_done');w('Setup will run on next desktop boot.');}
+ else if(C==='STAFF'){w('Opening Staff Edition...');location.href='staff.html'}
+ else if(C==='RESTORE')show('restore');
+ else if(C==='RESET'){if(confirm('Factory reset Gold local data?')){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k));w('Reset complete.')}}
+ else if(C==='DIAG')show('diagnostics');
+ else if(C==='TIME')w(new Date().toString());
+ else if(C==='CLEAR')out.textContent='';
+ else if(C==='EXIT')normalBoot();
+ else w('Unknown command. Type HELP.');}
+window.addEventListener('keydown',e=>{if(e.key==='Escape')normalBoot();if(e.key==='F9')location.href='staff.html'});show('main');
+</script>
+</body>
+</html>
