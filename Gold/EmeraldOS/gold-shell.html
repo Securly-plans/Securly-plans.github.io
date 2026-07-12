@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Shell</title>
+<link rel="stylesheet" href="gold-shell.css">
+<link rel="icon" href="Gold_9.0/emerald-gold-90-logo.svg" type="image/svg+xml">
+<script type="module" src="gold-shell.js"></script>
+</head>
+<body>
+<header id="shellTopbar">
+  <div class="shell-brand"><div class="shell-logo">G</div><div><b>EmeraldOS Gold Shell</b><span id="shellVersion">Shell 1.0</span></div></div>
+  <div class="shell-actions">
+    <button id="checkUpdateBtn">Check for updates</button>
+    <button id="bootLatestBtn">Boot latest</button>
+    <button id="rollbackBtn">Rollback</button>
+  </div>
+</header>
+<section id="shellStatus" class="shell-status">Starting EmeraldOS Gold Shell...</section>
+<main id="shellFrameWrap">
+  <iframe id="goldFrame" title="EmeraldOS Gold VM"></iframe>
+</main>
+<dialog id="updateDialog">
+  <form method="dialog">
+    <h2 id="updateTitle">EmeraldOS Gold update</h2>
+    <p id="updateBody"></p>
+    <menu>
+      <button value="cancel">Later</button>
+      <button id="applyUpdateDialogBtn" value="default">Apply update</button>
+    </menu>
+  </form>
+</dialog>
+</body>
+</html>
