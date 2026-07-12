@@ -1,0 +1,24 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "10.0",
+  "build": "10.0",
+  "folder": "Gold_10.0",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "continue",
+  "releaseTitle": "EmeraldOS Gold 10.0",
+  "summary": "Manual user-controlled update architecture. The shell checks Firebase for the newest build, but users update their own VM only when they accept the update prompt.",
+  "migrationFrom": [
+    "8.0",
+    "8.0.1",
+    "9.0"
+  ],
+  "migrationId": "gold8-gold9-to-gold10-manual-update",
+  "minShellVersion": "4.0",
+  "rollbackFolder": "Gold_9.0",
+  "rollbackVersion": "9.0",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}

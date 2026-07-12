@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Update Router</title>
+<link rel="stylesheet" href="gold-shell.css">
+<link rel="icon" href="Gold_10.0/emerald-gold-100-logo.svg" type="image/svg+xml">
+<script type="module" src="gold-shell.js"></script>
+</head>
+<body>
+<main class="boot-card" aria-live="polite" hidden>
+  <div class="boot-logo">G</div>
+  <h1>EmeraldOS Gold</h1>
+  <p id="bootStatus">Checking your EmeraldOS Gold version...</p>
+  <div class="boot-progress"><span></span></div>
+  <section id="bootFallback" class="boot-fallback" hidden>
+    <p>The update router could not continue automatically.</p>
+    <button id="bootFallbackBtn">Boot my selected version</button>
+    <button id="bootLatestBtn">Use latest configured version</button>
+    <button id="retryBtn">Retry</button>
+  </section>
+</main>
+<noscript>EmeraldOS Gold requires JavaScript.</noscript>
+</body>
+</html>
