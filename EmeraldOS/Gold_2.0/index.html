@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold 2.0 Login</title>
+<link rel="icon" href="emerald-gold-20-logo.svg" type="image/svg+xml">
+<style>
+:root{--accent:#0078d4;--gold:#c99616;--bg:#eef6ff;--panel:#fff;--text:#111827;--muted:#607086;--border:#d7e0ea;--shadow:0 24px 70px rgba(15,23,42,.22);font-family:'Segoe UI',Arial,sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(135deg,#e9f5ff 0%,#fff7db 55%,#e9fff4 100%);color:var(--text);display:grid;place-items:center;padding:24px}.wrap{width:min(980px,96vw);display:grid;grid-template-columns:1fr 420px;gap:18px}.hero,.login{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}.hero{padding:34px}.login{padding:24px}.logo{width:74px;height:74px;border-radius:18px;background:linear-gradient(135deg,#fff6cd,#d69e1d 45%,#0f7b4d);display:grid;place-items:center;color:white;font-weight:900;font-size:46px;box-shadow:0 12px 24px rgba(0,0,0,.22)}h1{font-size:42px;margin:18px 0 8px}.muted{color:var(--muted);line-height:1.5}.tilegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}.tile{padding:14px;border-radius:12px;background:#f5f9ff;border:1px solid var(--border)}.field{width:100%;padding:12px;border:1px solid #b9c8da;border-radius:6px;margin:6px 0 14px;font:inherit;background:white}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #b6c8da;background:white;color:#111827;border-radius:6px;padding:11px 14px;font:inherit;text-decoration:none;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}.btn.gold{background:linear-gradient(135deg,#d69e1d,#0f7b4d);border:0;color:white}.status{min-height:24px;margin-top:10px;color:var(--muted)}.err{color:#b91c1c}.ok{color:#047857}.toplinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.kbd{font-family:Consolas,monospace;background:#eef3f8;border:1px solid var(--border);border-radius:5px;padding:2px 6px}@media(max-width:860px){.wrap{grid-template-columns:1fr}.hero{padding:24px}h1{font-size:32px}.tilegrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div class="logo">G</div>
+    <h1>EmeraldOS Gold 2.0</h1>
+    <p class="muted">Sign in before booting the Gold desktop. This patch restores the normal login flow, fixes boot routing, and improves Staff Edition authentication.</p>
+    <div class="tilegrid">
+      <div class="tile"><b>Normal Login</b><p class="muted">Uses your EmeraldOS / Emerald Games username and SHA-256 password hash from Firestore.</p></div>
+      <div class="tile"><b>Boot Options</b><p class="muted">Press <span class="kbd">F12</span> during startup for Emerald Systems BIOS A1 and Emerald DOS.</p></div>
+      <div class="tile"><b>Staff Edition</b><p class="muted">Press <span class="kbd">F9</span> or use BIOS command <b>STAFF</b> for staff login.</p></div>
+      <div class="tile"><b>Required Login</b><p class="muted">Login is required before opening the Gold desktop. Staff tools require separate staff verification.</p></div>
+    </div>
+    <div class="toplinks">
+      <a class="btn" href="loading.html">Startup Screen</a>
+      <a class="btn" href="bios.html">BIOS / DOS</a>
+      <a class="btn" href="staff.html">Staff Edition</a>
+      <a class="btn" href="plans.html">Product Info</a>
+    </div>
+  </section>
+  <section class="login">
+    <h2>Sign in to EmeraldOS Gold</h2>
+    <p class="muted">Enter your EmeraldOS account. After login, Gold will boot normally.</p>
+    <label>Username<input id="username" class="field" autocomplete="username" placeholder="EmeraldOS username"></label>
+    <label>Password<input id="password" class="field" type="password" autocomplete="current-password" placeholder="Password"></label>
+    <div class="row">
+      <button id="loginBtn" class="btn primary">Sign in and boot</button>
+      
+    </div>
+    <p id="status" class="status"></p>
+    <hr style="border:0;border-top:1px solid var(--border);margin:22px 0">
+    <p class="muted">Startup shortcuts: <span class="kbd">F12</span> BIOS/DOS · <span class="kbd">F9</span> Staff Edition.</p>
+  </section>
+</main>
+<script type="module">
+const status=document.getElementById('status');
+const params=new URLSearchParams(location.search);
+const next=params.get('next')||'OS.html';
+function setStatus(text,cls=''){status.className='status '+cls;status.textContent=text}
+function loggedIn(){return localStorage.getItem('loggedIn')==='true'||localStorage.getItem('gold20_loggedIn')==='true'}
+if(loggedIn()&&params.get('force')!=='1') setStatus('Already signed in. You can boot EmeraldOS Gold now.','ok');
+async function sha256(text){const data=new TextEncoder().encode(text);const hash=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function importFirebase(){try{return await import('./firebase.js')}catch(e){console.warn(e);return null}}
+function roleAllowed(data){const r=String(data.role||data.role2||data.clearance||'user').toLowerCase();return r||'user'}
+async function findUser(fb,username,passwordHash){
+  const uname=username.toLowerCase();
+  const candidates=[username,uname,username.trim()];
+  for(const id of candidates){
+    try{const snap=await fb.getDoc(fb.doc(fb.db,'users',id));if(snap.exists()){const x=snap.data();if(String(x.username||id).toLowerCase()===uname && x.passwordHash===passwordHash && !x.locked)return {id:snap.id,data:x}}}catch(e){console.warn('direct user lookup failed',e)}
+  }
+  try{const q=await fb.getDocs(fb.collection(fb.db,'users'));let found=null;q.forEach(d=>{const x=d.data();if(String(x.username||d.id).toLowerCase()===uname && x.passwordHash===passwordHash && !x.locked)found={id:d.id,data:x}});return found}catch(e){console.warn('user collection scan failed',e);throw e}
+}
+async function login(){
+  const username=document.getElementById('username').value.trim();
+  const pass=document.getElementById('password').value;
+  if(!username||!pass){setStatus('Enter your username and password.','err');return}
+  setStatus('Checking EmeraldOS account...');
+  try{
+    const fb=await importFirebase();
+    if(!fb) throw new Error('Firebase module could not be loaded.');
+    const h=await sha256(pass);
+    const found=await findUser(fb,username,h);
+    if(!found){setStatus('Login failed. Check the username, password, lock status, and Firestore rules.','err');return}
+    const data=found.data;
+    localStorage.setItem('loggedIn','true');
+    localStorage.setItem('username',String(data.username||username));
+    localStorage.setItem('role',String(data.role||'user'));
+    localStorage.setItem('role2',String(data.role2||''));
+    localStorage.setItem('userId',found.id);
+    localStorage.setItem('gold20_loggedIn','true');
+    localStorage.setItem('gold20_username',String(data.username||username));
+    localStorage.setItem('gold20_role',String(data.role||data.role2||'user'));
+    localStorage.setItem('gold20_last_login',new Date().toISOString());
+    setStatus('Login successful. Booting EmeraldOS Gold...','ok');
+    setTimeout(()=>location.href=next,450);
+  }catch(e){console.error(e);setStatus('Could not verify login. Check Firebase rules/imports, then try again.','err')}
+}
+document.getElementById('loginBtn').onclick=login;
+document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+window.addEventListener('keydown',e=>{if(e.key==='F12'){e.preventDefault();location.href='bios.html'}if(e.key==='F9'){e.preventDefault();location.href='staff.html'}});
+</script>
+</body>
+</html>
