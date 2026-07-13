@@ -34,9 +34,30 @@ function migrateGold1ELocalData(){
     localStorage.setItem('gold1g_migrated_from_gold1e','true');
   }catch(e){console.warn('Gold 1G migration from Gold 1E skipped',e)}
 }
+
+function migrateGold1FLocalData(){
+  try{
+    if(localStorage.getItem('gold1g_migrated_from_gold1f')==='true') return;
+    const oldPrefix='gold1f_', newPrefix='gold1g_';
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith(oldPrefix)){
+        const nk=newPrefix+k.slice(oldPrefix.length);
+        if(localStorage.getItem(nk)===null) localStorage.setItem(nk, localStorage.getItem(k));
+      }
+    });
+    if(localStorage.getItem('gold1f_setup_done')==='true' || localStorage.getItem('emeraldos_gold_elsus_first_setup_done')==='true'){
+      localStorage.setItem('gold1g_updated_from','1F');
+      setElsusFirstSetupDone();
+    }
+    // Update Setup is per-version, so Gold 1G still gets its own update walkthrough.
+    localStorage.removeItem('gold1g_update_setup_done');
+    localStorage.removeItem('gold1g_license_agreed_update');
+    localStorage.setItem('gold1g_migrated_from_gold1f','true');
+  }catch(e){console.warn('Gold 1G migration from Gold 1F skipped',e)}
+}
 function migrateELSUSFirstBootFlags1G(){
   try{
-    if(localStorage.getItem('gold1e_setup_done')==='true'||localStorage.getItem('gold1d_setup_done')==='true'||localStorage.getItem('gold1c_setup_done')==='true'||localStorage.getItem('gold1b_setup_done')==='true'||localStorage.getItem('gold1a_setup_done')==='true'||localStorage.getItem('gold110_setup_done')==='true'){
+    if(localStorage.getItem('gold1f_setup_done')==='true'||localStorage.getItem('gold1e_setup_done')==='true'||localStorage.getItem('gold1d_setup_done')==='true'||localStorage.getItem('gold1c_setup_done')==='true'||localStorage.getItem('gold1b_setup_done')==='true'||localStorage.getItem('gold1a_setup_done')==='true'||localStorage.getItem('gold110_setup_done')==='true'||localStorage.getItem('emeraldos_gold_elsus_first_setup_done')==='true'){
       setElsusFirstSetupDone();
     }
   }catch(e){console.warn('Gold 1G E.L.S.U.S. setup flag migration skipped',e)}
@@ -45,7 +66,7 @@ function gold1gShouldRunFirstBootSetup(){return !elsusFirstSetupDone()}
 function gold1gShouldRunUpdateSetup(){
   if(gold1gShouldRunFirstBootSetup()) return false;
   if(localStorage.getItem(PREFIX+'update_setup_done')==='true') return false;
-  const oldKnown = !!(localStorage.getItem(PREFIX+'updated_from') || localStorage.getItem('gold1g_migrated_from_gold1e')==='true' || elsusLastVersion() && elsusLastVersion()!==BUILD.version);
+  const oldKnown = !!(localStorage.getItem(PREFIX+'updated_from') || localStorage.getItem('gold1g_migrated_from_gold1f')==='true' || localStorage.getItem('gold1g_migrated_from_gold1e')==='true' || (elsusLastVersion() && elsusLastVersion()!==BUILD.version));
   return oldKnown;
 }
 function gold1gBootSetupGate(){
@@ -155,7 +176,7 @@ APPS.push(
  {id:"devcenter",name:"User Development",label:"UD",color:"purple",group:"Apps",desc:"JS-only app builder, tester, exporter, and Appstore submission tools.",open:openDeveloperCenter}
 );
 const appById=id=>APPS.find(a=>a.id===id)||APPS[0];
-function init(){migrateGold1ELocalData();migrateELSUSFirstBootFlags1G();migrateGold1ALocalData();setTimeout(()=>$("boot")?.classList.add("hide"),850);initFirebase().then(()=>startRemoteControlListeners());applyPrefs();bindTaskbar();renderDesktop();renderStartMenu();renderNotifBadge();tickClock();setInterval(tickClock,1000);bindKeys();gold1gCloudAwareBootSetupGate();if(localStorage.getItem(PREFIX+"safemode")==="true")notify("Safe Mode","Custom apps and risky startup items are disabled.","System");restoreWorkspace(false);setInterval(publishRemoteDesktopState,1500);notify("EmeraldOS Gold 1G","Desktop is ready.","System");setTimeout(()=>{if(localStorage.getItem(PREFIX+"snapshot_request")){localStorage.removeItem(PREFIX+"snapshot_request");saveVMSnapshot()}[["open_store",openStore],["open_dev",openDeveloperCenter],["open_support",openSupport],["open_office",openOffice],["open_explorer",openExplorer],["force_restore",()=>restoreWorkspace(true)]].forEach(([k,fn])=>{if(localStorage.getItem(PREFIX+k)){localStorage.removeItem(PREFIX+k);try{fn()}catch(e){console.warn(e)}}})},1200)}
+function init(){migrateGold1FLocalData();migrateGold1ELocalData();migrateELSUSFirstBootFlags1G();migrateGold1ALocalData();setTimeout(()=>$("boot")?.classList.add("hide"),850);initFirebase().then(()=>startRemoteControlListeners());applyPrefs();bindTaskbar();renderDesktop();renderStartMenu();renderNotifBadge();tickClock();setInterval(tickClock,1000);bindKeys();gold1gCloudAwareBootSetupGate();if(localStorage.getItem(PREFIX+"safemode")==="true")notify("Safe Mode","Custom apps and risky startup items are disabled.","System");restoreWorkspace(false);setInterval(publishRemoteDesktopState,1500);notify("EmeraldOS Gold 1G","Desktop is ready.","System");setTimeout(()=>{if(localStorage.getItem(PREFIX+"snapshot_request")){localStorage.removeItem(PREFIX+"snapshot_request");saveVMSnapshot()}[["open_store",openStore],["open_dev",openDeveloperCenter],["open_support",openSupport],["open_office",openOffice],["open_explorer",openExplorer],["force_restore",()=>restoreWorkspace(true)]].forEach(([k,fn])=>{if(localStorage.getItem(PREFIX+k)){localStorage.removeItem(PREFIX+k);try{fn()}catch(e){console.warn(e)}}})},1200)}
 function logoutGold(){
   try{ saveWorkspaceNow(false); }catch(e){ console.warn('logout workspace save failed',e); }
   ['loggedIn','username','role','role2','userId',PREFIX+'loggedIn',PREFIX+'staff_session','gold14_loggedIn','gold14_staff_session','gold13_loggedIn'].forEach(k=>localStorage.removeItem(k));
@@ -1160,7 +1181,7 @@ function openGold1AUpdateCenter(latestManifest){
   const version = latest.latestVersion || latest.build || 'Unknown';
   const folder = latest.folder || '';
   const active = read('emeraldGoldShell_activeManifest', gold1gCurrentManifest());
-  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>System Update</h2><p class="muted">EmeraldOS Gold checks Firebase for the newest approved version. Updates are manual for each user, so your VM only changes when you choose Update.</p></div><button class="btn primary" onclick="Gold50.gold1gCheckForUpdatesManual()">Check now</button></div><div class="grid2"><div class="card"><h3>This VM is running</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: Gold_1G</p></div><div class="card"><h3>Latest configured build</h3><p>EmeraldOS Gold ${esc(version)}</p><p class="muted">${esc(folder)} / ${esc(latest.entry || 'OS.html')}</p></div><div class="card"><h3>User update mode</h3><p>${newer?'A newer version is available.':'This VM is on the latest configured version.'}</p><p class="muted">The shell will not move you to a new folder until you accept the update.</p></div><div class="card"><h3>Release publisher</h3><p>When a new version folder is uploaded, boot that version manually once to publish its Firebase pointer.</p><button class="btn" onclick="Gold50.gold1gPublishLatestManifest(true)">Publish Gold 1G as latest</button></div></div><h3>Release note</h3><p>${esc(latest.summary || latest.releaseTitle || 'No release note available.')}</p><div class="toolbar"><button class="btn" onclick="Gold50.gold1gSaveManualUpdateSnapshot()">Save VM snapshot</button><button class="btn primary" ${newer?'':'disabled'} onclick="Gold50.gold1gApplyManualUpdate()">Update this VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="Gold50.gold1gResetUpdateChoice()">Reset update choice</button></div>`,{width:1020,height:720});
+  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>System Update</h2><p class="muted">EmeraldOS Gold checks Firebase for the newest approved version. Updates are manual for each user, so your VM only changes when you choose Update.</p></div><button class="btn primary" onclick="Gold50.gold1gCheckForUpdatesManual()">Check now</button></div><div class="grid2"><div class="card"><h3>This VM is running</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: Gold_1G</p></div><div class="card"><h3>Latest configured build</h3><p>EmeraldOS Gold ${esc(version)}</p><p class="muted">${esc(folder)} / ${esc(latest.entry || 'OS.html')}</p></div><div class="card"><h3>User update mode</h3><p>${newer?'A newer version is available.':'This VM is on the latest configured version.'}</p><p class="muted">The shell will not move you to a new folder until you accept the update.</p></div><div class="card"><h3>Release publisher</h3><p>Publishing is Staff Edition only. Open Update Publisher Manager, enter the publisher PIN, then click Publish this Version.</p><button class="btn" onclick="Gold50.openUpdatePublisherManager1G&&Gold50.openUpdatePublisherManager1G()">Update Publisher Manager</button></div></div><h3>Release note</h3><p>${esc(latest.summary || latest.releaseTitle || 'No release note available.')}</p><div class="toolbar"><button class="btn" onclick="Gold50.gold1gSaveManualUpdateSnapshot()">Save VM snapshot</button><button class="btn primary" ${newer?'':'disabled'} onclick="Gold50.gold1gApplyManualUpdate()">Update this VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="Gold50.gold1gResetUpdateChoice()">Reset update choice</button></div>`,{width:1020,height:720});
 }
 async function gold1gCheckForUpdatesManual(){
   const latest = await gold1gFetchLatestManifest();
@@ -1175,24 +1196,15 @@ function gold1gResetUpdateChoice(){
   notify('Update choice reset','EmeraldOS Gold can show update prompts again.','System Update');
 }
 async function gold1gPublishLatestManifest(showResult=false){
-  const manualBoot = !new URLSearchParams(location.search).has('goldShell');
-  const already = localStorage.getItem(PREFIX+'latest_manifest_published') === 'true';
-  if(!manualBoot && !showResult) return null;
-  if(already && !showResult) return null;
-  try{
-    const fbm = await import('./firebase.js');
-    await fbm.setDoc(fbm.doc(fbm.db, 'system', 'emeraldGoldLatest'), GOLD1A_LATEST_MANIFEST, {merge:true});
-    localStorage.setItem(PREFIX+'latest_manifest_published','true');
-    write('emeraldGoldShell_latest', GOLD1A_LATEST_MANIFEST);
-    if(showResult || manualBoot) notify('Release pointer published','system/emeraldGoldLatest now points to Gold_1G.','System Update');
-    return {ok:true};
-  }catch(error){
-    console.warn('Could not publish Gold 1G latest pointer', error);
-    write(PREFIX+'latest_manifest_publish_error', {time:now(), error:error.message, manifest:GOLD1A_LATEST_MANIFEST});
-    if(showResult || manualBoot) notify('Release pointer not published', 'Firebase rules may require staff write access. Use Staff Edition > Update Publisher Manager, enter the publisher PIN, then click Publish this Version.', 'System Update');
-    return {ok:false, error:error.message};
+  // Gold 1G redesigned rule: no automatic publishing, no manual-boot publishing, and no query-string publishing.
+  // The only valid flow is Staff Edition > Update Publisher Manager > correct publisher PIN > Publish this Version.
+  if(showResult){
+    notify('Staff publishing required','Open Staff Edition, then Update Publisher Manager, enter the publisher PIN, and click Publish this Version.','System Update');
+    try{ if(typeof openUpdatePublisherManager1G==='function') openUpdatePublisherManager1G(); }catch(error){ console.warn('Could not open Update Publisher Manager', error); }
   }
+  return {ok:false, error:'Staff Edition and Update Publisher Manager PIN required'};
 }
+
 function gold1gInstallManualUpdateSystem(){
   try{
     const old=APPS.find(a=>a.id==='updateshell') || APPS.find(a=>a.id==='update');
@@ -1214,7 +1226,6 @@ Object.assign(window.Gold50, {
   gold1gCurrentManifest
 });
 window.addEventListener('DOMContentLoaded',()=>{
-  setTimeout(()=>gold1gPublishLatestManifest(false), 1800);
   setTimeout(()=>gold1gCheckLoginUpdateNotice(), 2600);
 });
 
@@ -2012,7 +2023,7 @@ const GOLD1G_PUBLISHER_PIN_FINAL='093013';
 const GOLD1G_MANIFEST={product:'EmeraldOS Gold',latestVersion:'1G',build:'1G',folder:'Gold_1G',entry:'OS.html',channel:'stable',status:'stable',required:false,enabled:true,setupMode:'manualUpdateSetup',releaseTitle:'EmeraldOS Gold 1G',summary:'Gold 1G fixes Update Setup loading, normal-user boot routing, shell login enforcement, and makes First-Boot Setup global for E.L.S.U.S. compatible versions.',migrationFrom:['1E','1D','1C','1B','1A'],migrationId:'gold1e-to-gold1g-setup-login-fix',minShellVersion:'1.0',rollbackFolder:'Gold_1E',rollbackVersion:'1E',releasedAt:new Date().toISOString()};
 function gold1gUpsertApp(def){try{const i=APPS.findIndex(a=>a.id===def.id); if(i>=0) Object.assign(APPS[i],def); else APPS.push(def);}catch(e){console.warn('Gold 1G app install failed',def?.id,e)}}
 function gold1gLicenseText(){return `EmeraldOS Gold 1G Virtual License\n\nProduct: EmeraldOS Gold 1G\nEdition folder: Gold_1G\nUpdate service: EmeraldOS Live Service Update System (E.L.S.U.S.)\nLicense type: virtual machine-style browser workspace license\n\nThis license allows the signed-in EmeraldOS user to access one cloud-restored EmeraldOS Gold virtual workspace through the EmeraldOS shell or this OS folder. EmeraldOS Gold stores preferences, desktop layout, app data, files, support tickets, update selections, and VM snapshots in local browser storage and, where configured, Firebase cloud storage.\n\nBy continuing, you agree that EmeraldOS Gold can save and restore your VM state, run first-boot setup, run update setup after E.L.S.U.S. updates, show support and safety notices, and create recovery snapshots before updates or rollback.\n\nStaff remote support requires user consent, keeps a visible remote-control banner, and can be ended by the user at any time. Staff-only applications and resources require Staff Edition verification.\n\nUser-installed apps and Appstore uploads can affect your VM data. Only install apps you trust. Rollback to previous versions can cause instability with applications, files, settings, and unsupported app data.\n\nYou must read and agree to the Emerald Systems Terms of Service before using EmeraldOS Gold 1G. TOS location: ${GOLD1G_TOS_URL}\n\nThis virtual license is not a guarantee of permanent availability, uninterrupted service, or compatibility with every browser/device. EmeraldOS Gold is provided as a web-based virtual desktop experience for the signed-in account.\n\nAgreement record: EmeraldOS Gold 1G / Gold_1G / ${now()}`}
-function gold1gLicenseHTML(kind){return `<div class="license-pane"><h2>${kind==='update'?'EmeraldOS Gold 1G Update Setup':'EmeraldOS Gold 1G First-Boot Setup'}</h2><p class="muted">Before continuing, read the Emerald Systems Terms of Service and accept the EmeraldOS Gold virtual license.</p><div class="license-box"><pre>${esc(gold1gLicenseText())}</pre></div><div class="tos-frame"><div class="toolbar"><a class="btn" target="_blank" href="${GOLD1G_TOS_URL}">Open Emerald Systems TOS</a><button class="btn" onclick="Gold50.gold1gCopyLicense()">Copy virtual license</button></div><iframe title="Emerald Systems TOS" src="${GOLD1G_TOS_URL}"></iframe></div><label class="license-agree"><input id="gold1g_license_${kind}" type="checkbox" onchange="Gold50.gold1gSetLicenseAgreement('${kind}',this.checked)"> I have had a chance to read the Emerald Systems TOS and I agree to the EmeraldOS Gold 1G Virtual License.</label></div>`}
+function gold1gLicenseHTML(kind){return `<div class="license-pane"><h2>${kind==='update'?'EmeraldOS Gold 1G Update Setup':'EmeraldOS Gold 1G First-Boot Setup'}</h2><p class="muted">Before continuing, read the Emerald Systems Terms of Service and accept the EmeraldOS Gold virtual license.</p><div class="license-box"><pre>${esc(gold1gLicenseText())}</pre></div><div class="tos-frame tos-card"><div class="toolbar"><a class="btn primary" target="_blank" rel="noopener" href="${GOLD1G_TOS_URL}">Open Emerald Systems TOS</a><button class="btn" onclick="Gold50.gold1gCopyLicense()">Copy virtual license</button></div><p class="muted">The Terms of Service open in a new tab so setup does not create a broken embedded resource warning if the host blocks or moves the page. After reading it, return here and check the agreement box.</p><code>${GOLD1G_TOS_URL}</code></div><label class="license-agree"><input id="gold1g_license_${kind}" type="checkbox" onchange="Gold50.gold1gSetLicenseAgreement('${kind}',this.checked)"> I have had a chance to read the Emerald Systems TOS and I agree to the EmeraldOS Gold 1G Virtual License.</label></div>`}
 function gold1gCopyLicense(){navigator.clipboard?.writeText(gold1gLicenseText()).then(()=>notify('License copied','The EmeraldOS Gold virtual license was copied.','Setup')).catch(()=>saveText('EmeraldOS-Gold-1G-Virtual-License.txt',gold1gLicenseText()))}
 function gold1gSetLicenseAgreement(kind,checked){localStorage.setItem(PREFIX+'license_agreed_'+kind,checked?'true':'false'); const b=document.querySelector('.setup-actions .primary'); if(b)b.disabled=!gold1gCanAdvanceSetup(kind)}
 function gold1gCanAdvanceSetup(kind){return localStorage.getItem(PREFIX+'license_agreed_'+kind)==='true'}
@@ -2134,6 +2145,48 @@ window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{gold1gInstall
    - Cloud VM path is emeraldOSUsers/{username}/goldVM/current.
    - Latest-version publishing is Staff Edition + Publisher Manager + PIN only.
 ========================================================= */
+
+function gold1gCollectLocalState(){
+  const localKeys={};
+  try{
+    Object.keys(localStorage)
+      .filter(k=>k.startsWith(PREFIX)||['loggedIn','username','role','role2','userId'].includes(k)||k.startsWith('emeraldos_gold_elsus_'))
+      .forEach(k=>localKeys[k]=localStorage.getItem(k));
+  }catch(error){console.warn('Gold 1G local key capture failed', error);}
+  return {
+    build: BUILD.name,
+    version: BUILD.version,
+    savedAt: now(),
+    user: username(),
+    prefs: prefs(),
+    files: files(),
+    tickets: tickets(),
+    mail: mail(),
+    notes: notes(),
+    tasks: tasks(),
+    contacts: contacts(),
+    notifications: notifs(),
+    userApps: read(PREFIX+'user_apps',[]),
+    remoteSessions: read(PREFIX+'remote_sessions',[]),
+    emergencyLogs: read(PREFIX+'emergency_logs',[]),
+    snapshots: read(PREFIX+'vm_snapshots',[]),
+    desktopPositions: read(PREFIX+'desktopPositions',{}),
+    desktopFilePins: read(PREFIX+'desktopFilePins',[]),
+    startPins: read(PREFIX+'startPins',[]),
+    taskbarPins: read(PREFIX+'taskbarPins',[]),
+    openWindows: [...document.querySelectorAll('.window')].map(w=>({
+      id:w.id,
+      title:w.dataset.title,
+      left:w.style.left,
+      top:w.style.top,
+      width:w.style.width,
+      height:w.style.height,
+      max:w.classList.contains('max'),
+      min:w.classList.contains('minimized')
+    })),
+    localKeys
+  };
+}
 async function gold1gCloudReadSetupState(){
   try{
     const api = fb || await initFirebase();
@@ -2204,7 +2257,7 @@ finishUpdateSetup1G = function(){
   }
 };
 async function gold1gSaveCloudVMState(show=true){
-  const data = gold1gLocalState();
+  const data = (typeof gold1gLocalState==='function' ? gold1gLocalState() : gold1gCollectLocalState());
   data.activeVersion = BUILD.version;
   data.activeFolder = 'Gold_1G';
   data.cloudPath = 'emeraldOSUsers/{username}/goldVM/current';
@@ -2254,6 +2307,7 @@ Object.assign(window.Gold50||{}, {
   gold1gCloudAwareBootSetupGate,
   gold1gLoadCloudSetupState,
   gold1gCloudWriteSetupState,
+  gold1gCollectLocalState,
   finishUpdateSetup1G,
   openUpdatePublisherManager1G,
   gold1gPublishLatest

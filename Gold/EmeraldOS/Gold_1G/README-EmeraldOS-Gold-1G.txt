@@ -1,39 +1,30 @@
-EmeraldOS Gold 1G OS Folder
+EmeraldOS Gold 1G — Redesigned Fix Build
+=========================================
 
-This is only the OS version folder for E.L.S.U.S.; it does not include the shell.
+Folder name:
+Gold_1G
+
+Entry file:
+OS.html
+
+This is an OS-folder-only E.L.S.U.S.-compatible build.
+Do not upload it as a replacement for the E.L.S.U.S. shell.
+
+Fixes in this redesigned 1G package:
+- Fixed the gold1gLocalState ReferenceError by adding a top-level VM state collector used by cloud saves.
+- Included firebase.js and firebase-config.js inside the Gold_1G folder so dynamic import('./firebase.js') works when this version is booted from its own folder.
+- Removed the embedded TOS iframe from setup to prevent automatic /TOS.html 404 resource warnings. The TOS now opens in a new tab from https://securly-plans.github.io/TOS.html.
+- Added Gold 1F local migration so existing Gold 1F users keep their E.L.S.U.S. first-boot setup state.
+- First-Boot Setup remains one-time per signed-in user across all E.L.S.U.S.-compatible Gold versions.
+- Update Setup remains per-version and should show for users updating into Gold 1G.
+- Publishing is Staff Edition + Update Publisher Manager + publisher PIN + clicking Publish this Version only.
+- No query-string or first-boot auto-publishing is used.
+
+Cloud VM paths:
+- emeraldOSUsers/{username}/goldVM/current
+- emeraldOSUsers/{username}/goldVM/setup
 
 Upload as:
 EmeraldOS/Gold_1G/
 
-Gold 1G is built from Gold 1F and applies the corrected E.L.S.U.S. VM model:
-- First-Boot Setup is per signed-in user across the entire E.L.S.U.S. line, not per version.
-- First-Boot Setup state is tracked locally and, when Firebase rules allow it, in emeraldOSUsers/{username}/goldVM/setup.
-- User VM state is saved/restored from emeraldOSUsers/{username}/goldVM/current.
-- Update Setup is per-version and runs for existing E.L.S.U.S. users updating into Gold 1G.
-- Normal users no longer get redirected into Staff Edition after normal login.
-- Staff apps/resources are gated in-place instead of hijacking the user desktop.
-- Publishing requires Staff Edition, Update Publisher Manager, the publisher PIN, and clicking Publish this Version.
-- No query string or first-boot flow auto-publishes the version.
-
-Gold 1G also improves user experience:
-- Cleaner EmeraldOS Gold desktop and taskbar behavior.
-- Better VM continuity wording and setup flow.
-- Improved Theme Studio and Accessibility behavior.
-- Retains Task Manager, Staff Mail Portal, Gold Games, Update Setup, First-Boot Setup, and the virtual license/TOS agreement.
-
-Recommended Firestore VM paths:
-emeraldOSUsers/{username}/goldVM/setup
-emeraldOSUsers/{username}/goldVM/current
-emeraldOSUsers/{username}/goldVMSnapshots/{snapshotId}
-
-To publish through E.L.S.U.S.:
-1. Upload EmeraldOS/Gold_1G/.
-2. Open Gold 1G normally.
-3. Sign into Staff Edition.
-4. Open Update Publisher Manager.
-5. Enter the publisher PIN.
-6. Click Publish this Version.
-
-
-
-Individual app logos are included in app-logos/. Each built-in app uses app-logos/{appId}.svg.
+Required sibling shell files remain outside this OS folder.

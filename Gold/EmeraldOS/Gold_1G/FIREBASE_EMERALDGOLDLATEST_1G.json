@@ -9,8 +9,8 @@
   "required": false,
   "enabled": true,
   "setupMode": "manualUpdateSetup",
-  "releaseTitle": "EmeraldOS Gold 1G",
-  "summary": "Gold 1G is built from Gold 1F and improves E.L.S.U.S. VM continuity: First-Boot Setup is once per signed-in user across all compatible versions, Update Setup is per-version, and VM state stays in goldVM/current.",
+  "releaseTitle": "EmeraldOS Gold 1G Redesigned Fix Build",
+  "summary": "Fixes Gold 1G cloud VM save state, includes Firebase files in the OS folder, removes the setup TOS iframe warning, preserves one-time E.L.S.U.S. first-boot setup across users, and keeps publishing Staff Edition + PIN only.",
   "migrationFrom": [
     "1F",
     "1E",
@@ -18,9 +18,10 @@
     "1C",
     "1B",
     "1A",
-    "11.0"
+    "11.0",
+    "10.0"
   ],
-  "migrationId": "gold1f-to-gold1g-global-setup-vm-continuity",
+  "migrationId": "gold1g-redesigned-fix-cloud-setup-firebase",
   "minShellVersion": "1.0",
   "rollbackFolder": "Gold_1E",
   "rollbackVersion": "1E",
