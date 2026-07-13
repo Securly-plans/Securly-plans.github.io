@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>EmeraldOS Gold 1F Rules Installer</title><link rel="stylesheet" href="gold1f.css"></head>
+<body style="padding:24px;font-family:Segoe UI,Arial,sans-serif;background:#eef3f9;color:#172033">
+<h1>EmeraldOS Gold 1F Firestore Rules Installer</h1>
+<p>This page stages the recommended rules in Firestore. Actual Security Rules deployment requires Firebase Console, Firebase CLI, or a secured backend deployer.</p>
+<textarea style="width:100%;height:480px;font-family:Consolas,monospace">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function sameUser(username) { return signedIn() &amp;&amp; request.auth.token.email != null &amp;&amp; request.auth.token.email.matches(username + '(@.*)?'); }
+    function isStaff() {
+      return signedIn() &amp;&amp; (
+        request.auth.token.admin == true ||
+        request.auth.token.staff == true ||
+        request.auth.token.role in ['admin','administrator','moderator','mod','operator','staff','executive','owner','network administrator']
+      );
+    }
+
+    match /system/emeraldGoldLatest { allow read: if true; allow write: if isStaff(); }
+    match /system/{docId} { allow read: if true; allow write: if isStaff(); }
+
+    match /users/{username} {
+      allow read: if signedIn();
+      allow create: if true;
+      allow update, delete: if isStaff() || sameUser(username);
+    }
+
+    match /EmeraldMail/{email} {
+      allow create: if true;
+      allow read, update, delete: if isStaff() || (signedIn() &amp;&amp; request.auth.token.email == email);
+    }
+
+    match /emeraldOSUsers/{username}/{document=**} {
+      allow read, write: if isStaff() || sameUser(username) || (signedIn() &amp;&amp; request.auth.token.email == username);
+    }
+
+    match /emeraldGoldSupport/{document=**} {
+      allow read, write: if signedIn() || true;
+    }
+
+    match /emeraldGoldStore/{document=**} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isStaff();
+    }
+
+    match /emeraldGoldStaff/{document=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /emeraldGoldRulesInstallRequests/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+  }
+}
+</textarea>
+<p><button onclick="navigator.clipboard.writeText(document.querySelector('textarea').value)">Copy rules</button></p>
+</body></html>
