@@ -1,0 +1,24 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1E",
+  "build": "1E",
+  "folder": "Gold_1E",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "migrationIntro",
+  "releaseTitle": "EmeraldOS Gold 1E",
+  "summary": "Gold 1E adds licensed setup/update setup, Task Manager, Staff Mail Portal iframe, built-in games, app-specific logos, stronger login/staff gates, and safe customization styling.",
+  "migrationFrom": [
+    "1D",
+    "1C",
+    "1B",
+    "1A"
+  ],
+  "migrationId": "gold1d-to-gold1e-license-setup",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1D",
+  "rollbackVersion": "1D"
+}

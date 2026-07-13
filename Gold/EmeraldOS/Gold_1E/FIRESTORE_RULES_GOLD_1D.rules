@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function sameUser(username) { return signedIn() && request.auth.token.email != null && request.auth.token.email.matches(username + '(@.*)?'); }
+    function isStaff() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.staff == true ||
+        request.auth.token.role in ['admin','administrator','moderator','mod','operator','staff','executive','owner','network administrator']
+      );
+    }
+
+    match /system/emeraldGoldLatest { allow read: if true; allow write: if isStaff(); }
+    match /system/{docId} { allow read: if true; allow write: if isStaff(); }
+
+    match /users/{username} {
+      allow read: if signedIn();
+      allow create: if true;
+      allow update, delete: if isStaff() || sameUser(username);
+    }
+
+    match /EmeraldMail/{email} {
+      allow create: if true;
+      allow read, update, delete: if isStaff() || (signedIn() && request.auth.token.email == email);
+    }
+
+    match /emeraldOSUsers/{username}/{document=**} {
+      allow read, write: if isStaff() || sameUser(username) || (signedIn() && request.auth.token.email == username);
+    }
+
+    match /emeraldGoldSupport/{document=**} {
+      allow read, write: if signedIn() || true;
+    }
+
+    match /emeraldGoldStore/{document=**} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isStaff();
+    }
+
+    match /emeraldGoldStaff/{document=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /emeraldGoldRulesInstallRequests/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+  }
+}
