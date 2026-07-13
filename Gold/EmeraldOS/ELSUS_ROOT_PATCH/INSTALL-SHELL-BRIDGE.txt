@@ -1,0 +1,6 @@
+E.L.S.U.S. SERVICE PACK ONE — GOLD 1K ROOT SHELL BRIDGE
+
+Add this before the closing body tag of the root gold-shell.html page:
+<script src="ELSUS_ROOT_PATCH/gold-shell-1k-bridge.js"></script>
+
+The bridge supports save-before-switch, shell handshakes, VM heartbeat, active update metadata delivery, Staff Center control messages, and version-switch requests. It never writes system/emeraldGoldLatest.

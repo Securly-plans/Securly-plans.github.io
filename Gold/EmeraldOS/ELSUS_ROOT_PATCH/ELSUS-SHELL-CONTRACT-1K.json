@@ -1,0 +1,29 @@
+{
+  "contract": "EmeraldOS Gold E.L.S.U.S. Shell Bridge",
+  "version": "1.2",
+  "servicePack": "E.L.S.U.S. Service Pack One",
+  "osVersion": "1K",
+  "osToShell": [
+    "elsus:ready",
+    "elsus:heartbeat",
+    "elsus:save-request",
+    "elsus:save-complete",
+    "elsus:latest-manifest",
+    "elsus:request-version-change",
+    "elsus:session",
+    "elsus:staff-control-applied"
+  ],
+  "shellToOs": [
+    "elsus:ack",
+    "elsus:pong",
+    "elsus:save",
+    "elsus:open-app",
+    "elsus:theme",
+    "elsus:staff-control",
+    "elsus:latest-manifest",
+    "elsus:navigate",
+    "elsus:logout"
+  ],
+  "activeUpdateNotifications": true,
+  "publishesFirestoreVersion": false
+}
