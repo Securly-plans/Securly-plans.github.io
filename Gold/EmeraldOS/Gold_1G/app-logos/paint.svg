@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="EmeraldOS Gold paint app icon">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4343"/><stop offset="1" stop-color="#c50f1f"/></linearGradient><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity=".22"/></filter></defs>
+  <rect x="6" y="6" width="88" height="88" rx="18" fill="url(#g)" filter="url(#s)"/>
+  <rect x="7.5" y="7.5" width="85" height="85" rx="17" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="2"/>
+  <path d="M29 20h42c10 0 18 8 18 18 0 14-14 20-24 14-6-4-13-1-13 7 0 9-7 17-17 17-18 0-29-14-29-29 0-15 9-27 23-27z" fill="#fff"/><circle cx="32" cy="41" r="5" fill="#e81123"/><circle cx="48" cy="33" r="5" fill="#ffb900"/><circle cx="64" cy="41" r="5" fill="#107c10"/><circle cx="41" cy="58" r="5" fill="#0078d4"/>
+</svg>
