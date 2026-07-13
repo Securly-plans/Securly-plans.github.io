@@ -1,0 +1,25 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1H",
+  "build": "1H",
+  "folder": "Gold_1H",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1H",
+  "summary": "EmeraldOS Gold 1H improves the desktop, Start, taskbar, window management, system tools, user friendliness, virtual HKEY registry, cloud VM storage reliability, and accessibility.",
+  "migrationFrom": [
+    "1G",
+    "1F",
+    "1E",
+    "1D"
+  ],
+  "migrationId": "gold1g-to-gold1h-windows10-ux",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1G",
+  "rollbackVersion": "1G",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}
