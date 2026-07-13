@@ -1,0 +1,28 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1G",
+  "build": "1G",
+  "folder": "Gold_1G",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1G",
+  "summary": "Gold 1G is built from Gold 1F and improves E.L.S.U.S. VM continuity: First-Boot Setup is once per signed-in user across all compatible versions, Update Setup is per-version, and VM state stays in goldVM/current.",
+  "migrationFrom": [
+    "1F",
+    "1E",
+    "1D",
+    "1C",
+    "1B",
+    "1A",
+    "11.0"
+  ],
+  "migrationId": "gold1f-to-gold1g-global-setup-vm-continuity",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1E",
+  "rollbackVersion": "1E",
+  "releasedAt": "2026-07-13T00:00:00.000Z"
+}
