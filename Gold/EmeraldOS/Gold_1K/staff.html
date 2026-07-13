@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Gold Staff Edition — EmeraldOS Gold 1K</title>
+  <link rel="icon" href="emerald-gold-1k-logo.svg">
+  <link rel="stylesheet" href="auth.css">
+  <script defer src="auth-common.js"></script>
+</head>
+<body>
+  <div class="auth-shell staff-auth-shell">
+    <section class="brand">
+      <img src="emerald-gold-1k-logo.svg" alt="EmeraldOS Gold 1K">
+      <h1>Gold Staff Edition</h1>
+      <p>Protected access for support, administration, Registry system hives, and the E.L.S.U.S. Update Publisher Manager.</p>
+      <div class="verification-summary">
+        <strong>Two-account verification</strong>
+        <span>1. Authorized EmeraldOS staff account</span>
+        <span>2. Valid Emerald Mail account</span>
+      </div>
+    </section>
+
+    <main class="auth-card staff-auth-card">
+      <h2>Staff verification</h2>
+      <p class="muted">Both accounts must verify before Staff Edition can start.</p>
+
+      <form id="staffForm" novalidate>
+        <fieldset>
+          <legend>EmeraldOS staff account</legend>
+          <label for="username">EmeraldOS username</label>
+          <input id="username" name="username" autocomplete="username" required>
+
+          <label for="password">EmeraldOS password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </fieldset>
+
+        <fieldset>
+          <legend>Emerald Mail verification</legend>
+          <label for="mailAddress">Emerald Mail address</label>
+          <input id="mailAddress" name="mailAddress" type="email" autocomplete="email" placeholder="name@mail.monroecorp.org" required>
+
+          <label for="mailPassword">Emerald Mail password</label>
+          <input id="mailPassword" name="mailPassword" type="password" autocomplete="current-password" required>
+        </fieldset>
+
+        <div class="actions">
+          <button id="verifyButton" class="primary" type="submit">Verify and open Staff Edition</button>
+          <button id="cancelButton" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <div id="verificationSteps" class="verification-steps" aria-live="polite">
+        <div id="osStep" class="verification-step"><span></span>EmeraldOS account not checked</div>
+        <div id="mailStep" class="verification-step"><span></span>Emerald Mail account not checked</div>
+      </div>
+
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+      <p class="muted staff-role-note">Allowed EmeraldOS roles include administrator, admin, operator, moderator, staff, executive, owner, VIP, and network administrator.</p>
+    </main>
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("staffForm");
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const mailInput = document.getElementById("mailAddress");
+      const mailPasswordInput = document.getElementById("mailPassword");
+      const verifyButton = document.getElementById("verifyButton");
+      const cancelButton = document.getElementById("cancelButton");
+      const messageBox = document.getElementById("message");
+      const osStep = document.getElementById("osStep");
+      const mailStep = document.getElementById("mailStep");
+
+      const currentUsername = localStorage.getItem("username") || localStorage.getItem("gold1g_username") || "";
+      if (currentUsername) usernameInput.value = currentUsername;
+
+      function setStep(element, state, text) {
+        element.className = `verification-step ${state || ""}`.trim();
+        element.lastChild.textContent = text;
+      }
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        verifyButton.disabled = true;
+        messageBox.className = "message";
+        messageBox.textContent = "Checking both accounts…";
+        setStep(osStep, "working", "Checking EmeraldOS staff account…");
+        setStep(mailStep, "", "Emerald Mail account waiting");
+
+        try {
+          const user = await GoldAuth.login(usernameInput.value, passwordInput.value);
+          if (!GoldAuth.isStaffUser(user)) {
+            throw new Error("The EmeraldOS account is valid, but it does not have an approved staff role.");
+          }
+          setStep(osStep, "verified", "EmeraldOS staff account verified");
+          setStep(mailStep, "working", "Checking Emerald Mail account…");
+
+          const mailVerification = await GoldAuth.verifyEmeraldMail(
+            mailInput.value,
+            mailPasswordInput.value
+          );
+          setStep(mailStep, "verified", `Emerald Mail verified: ${mailVerification.address}`);
+
+          GoldAuth.beginSession(user);
+          const staffSession = {
+            verified: true,
+            preview: false,
+            username: user.username,
+            userId: user.userId || user.__id || user.username,
+            role: user.role || user.role2 || "staff",
+            role2: user.role2 || "",
+            mail: mailVerification.address,
+            mailVerificationSource: mailVerification.source,
+            mailAccount: mailVerification.account || null,
+            mailVerified: true,
+            verifiedAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+            version: "1K"
+          };
+
+          localStorage.setItem("gold1g_staff_session", JSON.stringify(staffSession));
+          localStorage.setItem("gold1k_staff_session", JSON.stringify(staffSession));
+          localStorage.removeItem("gold1j_staff_session");
+          localStorage.removeItem("gold1g_publisher_unlocked");
+          localStorage.removeItem("gold1k_publisher_unlocked");
+
+          messageBox.className = "message success";
+          messageBox.textContent = "Both accounts verified. Opening Gold Staff Edition…";
+          setTimeout(() => location.href = "OS.html#staff", 350);
+        } catch (error) {
+          console.error(error);
+          if (!osStep.classList.contains("verified")) {
+            setStep(osStep, "failed", "EmeraldOS verification failed");
+          } else if (!mailStep.classList.contains("verified")) {
+            setStep(mailStep, "failed", "Emerald Mail verification failed");
+          }
+          messageBox.className = "message";
+          messageBox.textContent = error?.message || "Staff verification failed.";
+          verifyButton.disabled = false;
+        }
+      });
+
+      cancelButton.addEventListener("click", () => {
+        const loggedIn = localStorage.getItem("loggedIn") === "true" || localStorage.getItem("gold1g_loggedIn") === "true";
+        location.href = loggedIn ? "OS.html" : "index.html";
+      });
+    });
+  </script>
+</body>
+</html>
