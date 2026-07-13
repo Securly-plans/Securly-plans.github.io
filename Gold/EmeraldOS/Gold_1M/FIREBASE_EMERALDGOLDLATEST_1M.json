@@ -1,0 +1,63 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1M",
+  "build": "1M",
+  "folder": "Gold_1M",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1M",
+  "activeUpdateNotifications": true,
+  "elsusMode": "original",
+  "summary": "EmeraldOS Gold 1M adds protected full-VM migration, versioned cloud category backups, Migration & Continuity tools, and Settings layout collision fixes while keeping the Gold Windows 10-inspired appearance and original E.L.S.U.S. routing.",
+  "migrationFrom": [
+    "1L",
+    "1K",
+    "1J",
+    "1I",
+    "1H",
+    "1G",
+    "1F",
+    "1E",
+    "1D",
+    "1C",
+    "1B",
+    "1A"
+  ],
+  "migrationId": "gold-1l-to-1m-protected-full-vm-continuity",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1L",
+  "rollbackVersion": "1L",
+  "releasedAt": "2026-07-13T00:00:00.000Z",
+  "publishingPolicy": {
+    "automaticPublishing": false,
+    "queryStringPublishing": false,
+    "firstBootPublishing": false,
+    "requiresStaffEdition": true,
+    "requiresEmeraldMailVerification": true,
+    "requiresPublisherPin": true,
+    "requiresPublishButtonClick": true
+  },
+  "migrationPolicy": {
+    "blocksCloudAutosaveUntilValidated": true,
+    "mergesAllKnownLocalNamespaces": true,
+    "readsSplitSchemas": [
+      "gold1h-split-v1",
+      "gold1i-split-v1",
+      "gold1i-split-v2",
+      "gold1j-split-v1",
+      "gold1j-split-v2",
+      "gold1k-split-v1",
+      "gold1k-split-v2",
+      "gold1l-split-v1",
+      "gold1l-split-v2",
+      "gold1m-split-v2"
+    ],
+    "archivesSourceCategories": true,
+    "writesVersionSpecificBackups": true,
+    "changesReleasePointer": false
+  }
+}
