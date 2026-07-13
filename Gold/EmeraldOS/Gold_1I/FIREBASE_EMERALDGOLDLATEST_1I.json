@@ -1,0 +1,20 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1I",
+  "build": "1I",
+  "folder": "Gold_1I",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1I",
+  "summary": "EmeraldOS Gold 1I preserves the Gold 1H visual style while improving reliability, migration, search, accessibility, and utility applications.",
+  "migrationFrom": ["1H", "1G", "1F", "1E", "1D", "1C", "1B", "1A"],
+  "migrationId": "gold-legacy-to-gold1i-complete-vm-migration",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1H",
+  "rollbackVersion": "1H",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}

@@ -1,0 +1,15 @@
+EmeraldOS Gold 1I Release Notes
+July 12th, 2026
+
+Gold 1I preserves the Gold 1H Windows 10-inspired interface while concentrating
+on reliability, user friendliness, complete VM migration, and functional tools.
+
+Key changes:
+- Fixed taskbar Search losing focus after each typed character.
+- Added merge-based local and cloud file migration.
+- Added Unit Converter, Character Map, Text Tools, Checksum Utility, and Storage Manager.
+- Improved Start, panel, taskbar, flyout, window, and responsive layout behavior.
+- Preserved Gold Staff Edition plus Emerald Mail verification.
+- Added a physical-click authorization gate to Update Publisher Manager.
+- Confirmed that boot, migration, update checks, setup, and cloud saves do not
+  write system/emeraldGoldLatest.
