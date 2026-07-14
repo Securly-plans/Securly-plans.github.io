@@ -1,177 +1,488 @@
 "use strict";
-/* EmeraldOS Gold Shell 4.0
-   Purpose: invisible update router.
-   It checks Firebase for the latest approved build, but it does NOT force each user
-   to update. Each user keeps an active version until they accept an update in
-   System Update inside EmeraldOS Gold. */
 
-const SHELL_VERSION = "4.0";
-const DEFAULT_LATEST = {
-  product: "EmeraldOS Gold",
-  latestVersion: "10.0",
-  build: "10.0",
-  folder: "Gold_10.0",
-  entry: "OS.html",
-  channel: "stable",
-  status: "stable",
-  required: false,
-  enabled: true,
-  setupMode: "continue",
-  releaseTitle: "EmeraldOS Gold 10.0",
-  summary: "Manual user-controlled update architecture. The shell reads the latest build from Firebase, but users choose when to switch their VM to it.",
-  migrationFrom: ["8.0", "8.0.1", "9.0"],
-  migrationId: "gold8-gold9-to-gold10-manual-update",
-  minShellVersion: "4.0",
-  rollbackFolder: "Gold_9.0",
-  rollbackVersion: "9.0",
-  releasedAt: "2026-07-12T00:00:00.000Z"
-};
+import * as fb from "./firebase.js";
+import {
+  DEFAULT_ROUTE,
+  buildVersionLoginTarget,
+  clean,
+  isExplicitUpdateRequest,
+  normalizeRoute,
+  parseJSON,
+  pendingRouteFromStorage,
+  routeFromLegacyStorage,
+  safeFolder
+} from "./gold-shell-routing.js";
 
-let fb = null;
+const SHELL_VERSION = "2.0";
+const LOCAL_USERS_KEY = "emerald_gold_local_users";
+const USER_ROUTES_KEY = "emeraldGoldShellV2_userRoutes";
+const LAST_USER_KEY = "emeraldGoldShellV2_lastUser";
+const SESSION_KEY = "emeraldGoldShellV2_identification";
+const REDIRECT_DELAY = 1400;
+
 const $ = id => document.getElementById(id);
+const lower = value => clean(value).toLowerCase();
 const now = () => new Date().toISOString();
 
-function setStatus(message){ const n=$("bootStatus"); if(n) n.textContent = message; }
-function showFallback(){ const c=document.querySelector('.boot-card'); if(c) c.hidden=false; }
-function readJSON(key, fallback){ try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch{return fallback;} }
-function writeJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); return value; }
-function username(){ return localStorage.getItem('username') || localStorage.getItem('gold100_username') || localStorage.getItem('gold80_username') || ''; }
-function safeFolder(folder){ folder=String(folder||DEFAULT_LATEST.folder); return /^[A-Za-z0-9_.-]+$/.test(folder) ? folder : DEFAULT_LATEST.folder; }
-function safeEntry(entry){ entry=String(entry||'OS.html'); return /^[A-Za-z0-9_.-]+\.html$/.test(entry) ? entry : 'OS.html'; }
-function manifestFromStored(folder, version, entry='OS.html'){
-  return {...DEFAULT_LATEST, latestVersion: version || folder?.replace(/^Gold_/, '') || DEFAULT_LATEST.latestVersion, build: version || folder?.replace(/^Gold_/, '') || DEFAULT_LATEST.build, folder: folder || DEFAULT_LATEST.folder, entry};
+let redirectTimer = null;
+let resolvedAccount = null;
+let resolvedRoute = null;
+let routeSource = "";
+
+function setStatus(text, type = "") {
+  const element = $("shellStatus");
+  if (!element) return;
+  element.textContent = text;
+  element.className = `shell-status ${type}`.trim();
 }
-function targetUrl(manifest){
-  const url = new URL(`./${safeFolder(manifest.folder)}/${safeEntry(manifest.entry)}`, location.href);
-  url.searchParams.set('goldShell', '1');
-  url.searchParams.set('runningVersion', manifest.latestVersion || manifest.build || '10.0');
-  url.searchParams.set('shell', SHELL_VERSION);
-  return url.href;
+
+function setMessage(text, type = "") {
+  const element = $("loginMessage");
+  if (!element) return;
+  element.textContent = text;
+  element.className = `message ${type}`.trim();
 }
-async function loadFirebase(){
-  try{ fb = await import('./firebase.js'); return fb; }
-  catch(error){ console.warn('EmeraldOS Gold shell Firebase unavailable', error); return null; }
+
+function setBusy(busy) {
+  const button = $("loginBtn");
+  if (button) {
+    button.disabled = busy;
+    button.textContent = busy ? "Checking account..." : "Continue";
+  }
+  ["loginUsername", "loginPassword", "showPassword"].forEach(id => {
+    const element = $(id);
+    if (element) element.disabled = busy;
+  });
 }
-async function readLatest(){
-  const firebase = fb || await loadFirebase();
-  if(!firebase) return {...DEFAULT_LATEST, firebaseUnavailable: true};
-  try{
-    const snap = await firebase.getDoc(firebase.doc(firebase.db, 'system', 'emeraldGoldLatest'));
-    const latest = snap.exists() ? {...DEFAULT_LATEST, ...snap.data()} : {...DEFAULT_LATEST};
-    if(latest.enabled === false) throw new Error('The latest EmeraldOS Gold build is disabled.');
-    writeJSON('emeraldGoldShell_latest', latest);
-    return latest;
-  }catch(error){
-    console.warn('Could not read system/emeraldGoldLatest', error);
-    const cached = readJSON('emeraldGoldShell_latest', null);
-    return cached ? {...DEFAULT_LATEST, ...cached, firebaseReadFailed: true} : {...DEFAULT_LATEST, firebaseReadFailed: true, errorMessage: error.message};
+
+async function sha256(text) {
+  if (!crypto?.subtle) throw new Error("Secure password verification is unavailable in this browser.");
+  const bytes = new TextEncoder().encode(String(text ?? ""));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function passwordMatches(record, hash, plainPassword) {
+  if (!record || typeof record !== "object") return false;
+  const hashes = [
+    record.passwordHash,
+    record.password_hash,
+    record.hashedPassword,
+    record.sha256
+  ].map(lower).filter(Boolean);
+  if (hashes.includes(lower(hash))) return true;
+
+  // Compatibility with very old EmeraldOS account records.
+  const legacyPlain = [record.password, record.pass]
+    .map(value => String(value ?? ""))
+    .filter(Boolean);
+  return legacyPlain.includes(String(plainPassword ?? ""));
+}
+
+function accountUsername(record, fallback = "") {
+  return clean(record?.username || record?.displayUsername || record?.userName || fallback);
+}
+
+async function readDirectUser(collectionName, id) {
+  if (!fb.db || !id) return null;
+  try {
+    const snapshot = await fb.getDoc(fb.doc(fb.db, collectionName, id));
+    if (!snapshot.exists()) return null;
+    return {...snapshot.data(), __id: snapshot.id, __collection: collectionName};
+  } catch (error) {
+    console.debug(`Shell V2 could not read ${collectionName}/${id}.`, error?.message || error);
+    return null;
   }
 }
-async function cloudGetCurrent(user){
-  if(!fb || !user) return null;
-  try{
-    const snap = await fb.getDoc(fb.doc(fb.db, 'emeraldOSUsers', user, 'goldVM', 'current'));
-    return snap.exists() ? snap.data() : null;
-  }catch(error){ console.warn('Could not read user active Gold VM version', error); return null; }
-}
-async function cloudSetCurrent(user, data){
-  if(!fb || !user) return false;
-  try{ await fb.setDoc(fb.doc(fb.db, 'emeraldOSUsers', user, 'goldVM', 'current'), data, {merge:true}); return true; }
-  catch(error){ console.warn('Could not write user Gold VM version', error); return false; }
-}
-async function cloudAddSnapshot(user, snapshot){
-  if(!fb || !user) return false;
-  try{ await fb.setDoc(fb.doc(fb.db, 'emeraldOSUsers', user, 'goldVMSnapshots', `snapshot_${Date.now()}`), snapshot); return true; }
-  catch(error){ console.warn('Could not write Gold VM snapshot', error); return false; }
-}
-async function cloudAddHistory(user, history){
-  if(!fb || !user) return false;
-  try{ await fb.setDoc(fb.doc(fb.db, 'emeraldOSUsers', user, 'goldVMUpdateHistory', `update_${Date.now()}`), history); return true; }
-  catch(error){ console.warn('Could not write Gold update history', error); return false; }
-}
-function createSnapshot(reason, fromManifest, toManifest){
-  const snapshot = {product:'EmeraldOS Gold', reason, time:now(), shellVersion:SHELL_VERSION, user:username(), from:fromManifest||null, to:toManifest||null, storage:{}};
-  for(let i=0;i<localStorage.length;i++){
-    const key = localStorage.key(i);
-    if(key && /^(gold|emeraldGoldShell_|emeraldOS|loggedIn|username|role|Emerald)/.test(key)) snapshot.storage[key] = localStorage.getItem(key);
+
+async function scanForUser(collectionName, requestedLower) {
+  if (!fb.db) return null;
+  try {
+    const snapshot = await fb.getDocs(fb.collection(fb.db, collectionName));
+    let match = null;
+    snapshot.forEach(item => {
+      if (match) return;
+      const data = item.data();
+      if (lower(accountUsername(data, item.id)) === requestedLower || lower(item.id) === requestedLower) {
+        match = {...data, __id: item.id, __collection: collectionName};
+      }
+    });
+    return match;
+  } catch (error) {
+    console.debug(`Shell V2 could not scan ${collectionName}.`, error?.message || error);
+    return null;
   }
-  writeJSON('emeraldGoldShell_lastSnapshot', snapshot);
-  return snapshot;
 }
-function getLocalActive(){
-  const manifest = readJSON('emeraldGoldShell_activeManifest', null);
-  if(manifest && manifest.folder) return {...DEFAULT_LATEST, ...manifest};
-  const folder = localStorage.getItem('emeraldGoldShell_activeFolder');
-  const version = localStorage.getItem('emeraldGoldShell_activeVersion');
-  const entry = localStorage.getItem('emeraldGoldShell_activeEntry') || 'OS.html';
-  if(folder) return manifestFromStored(folder, version, entry);
+
+async function findCloudAccount(username) {
+  if (!fb.db) return null;
+  const requested = clean(username);
+  const requestedLower = lower(requested);
+  const ids = [...new Set([requested, requestedLower])].filter(Boolean);
+  const collections = ["users", "emeraldOSUsers"];
+
+  for (const collectionName of collections) {
+    for (const id of ids) {
+      const account = await readDirectUser(collectionName, id);
+      if (!account) continue;
+      const foundName = lower(accountUsername(account, account.__id));
+      if (!foundName || foundName === requestedLower || lower(account.__id) === requestedLower) return account;
+    }
+  }
+
+  for (const collectionName of collections) {
+    const account = await scanForUser(collectionName, requestedLower);
+    if (account) return account;
+  }
   return null;
 }
-function saveActive(manifest){
-  const active = {...DEFAULT_LATEST, ...manifest, folder:safeFolder(manifest.folder), entry:safeEntry(manifest.entry)};
-  writeJSON('emeraldGoldShell_activeManifest', active);
-  localStorage.setItem('emeraldGoldShell_activeVersion', active.latestVersion || active.build || '');
-  localStorage.setItem('emeraldGoldShell_activeFolder', active.folder);
-  localStorage.setItem('emeraldGoldShell_activeEntry', active.entry);
-  localStorage.setItem('emeraldGoldShell_lastBoot', now());
-  return active;
-}
-async function decideActive(latest){
-  const params = new URLSearchParams(location.search);
-  const applyRequested = params.get('applyUpdate') === '1' || localStorage.getItem('emeraldGoldShell_applyUpdate') === 'true';
-  const forceLatest = params.get('forceLatest') === '1';
-  const user = username();
-  let active = getLocalActive();
 
-  const cloudCurrent = await cloudGetCurrent(user);
-  if(!active && cloudCurrent?.activeFolder){
-    active = manifestFromStored(cloudCurrent.activeFolder, cloudCurrent.activeVersion || cloudCurrent.version, cloudCurrent.entry || 'OS.html');
+function readLocalAccount(username) {
+  const users = parseJSON(localStorage.getItem(LOCAL_USERS_KEY), {});
+  return users && typeof users === "object" ? users[lower(username)] || null : null;
+}
+
+async function authenticate(username, password) {
+  const requested = clean(username);
+  if (!requested || !password) throw new Error("Enter your EmeraldOS username and password.");
+  const hash = await sha256(password);
+
+  const cloud = await findCloudAccount(requested);
+  if (cloud) {
+    if (cloud.locked === true) throw new Error(cloud.lockReason || "This EmeraldOS account is locked.");
+    if (!passwordMatches(cloud, hash, password)) throw new Error("Incorrect username or password.");
+    const resolvedUsername = accountUsername(cloud, requested) || requested;
+    return {
+      ...cloud,
+      username: resolvedUsername,
+      userId: clean(cloud.userId || cloud.__id || resolvedUsername),
+      cloud: true
+    };
   }
 
-  if(!active) active = {...latest};
+  const local = readLocalAccount(requested);
+  if (!local || !passwordMatches(local, hash, password)) throw new Error("Incorrect username or password.");
+  if (local.locked === true) throw new Error(local.lockReason || "This EmeraldOS account is locked.");
+  return {
+    ...local,
+    username: clean(local.username || requested),
+    userId: clean(local.userId || local.username || requested),
+    cloud: false,
+    __id: clean(local.userId || local.username || requested),
+    __collection: "local"
+  };
+}
 
-  const latestVersion = latest.latestVersion || latest.build || '';
-  const activeVersion = active.latestVersion || active.build || '';
-  const updateAvailable = safeFolder(latest.folder) !== safeFolder(active.folder) || latestVersion !== activeVersion;
-  writeJSON('emeraldGold_updateAvailable', {available:updateAvailable, latest, active, checkedAt:now()});
+function routeCandidates(account) {
+  return [...new Set([
+    clean(account?.__id),
+    clean(account?.userId),
+    clean(account?.username),
+    lower(account?.username),
+    lower(account?.__id)
+  ])].filter(Boolean);
+}
 
-  if((applyRequested || forceLatest || latest.required === true) && updateAvailable){
-    const from = active;
-    const to = latest;
-    setStatus(`Applying EmeraldOS Gold ${latestVersion} for this user...`);
-    const snapshot = createSnapshot('before-manual-user-update', from, to);
-    localStorage.removeItem('emeraldGoldShell_applyUpdate');
-    active = saveActive(to);
-    await cloudAddSnapshot(user, snapshot);
-    await cloudAddHistory(user, {from:from.latestVersion||from.build||'', fromFolder:from.folder||'', to:to.latestVersion||to.build||'', toFolder:to.folder||'', manual:true, required:!!latest.required, date:now(), successful:true});
-    await cloudSetCurrent(user, {activeVersion:active.latestVersion||active.build||'', activeFolder:active.folder, entry:active.entry, channel:active.channel||'stable', lastManualUpdate:now(), lastShellVersion:SHELL_VERSION, cloudSync:true});
-    writeJSON('emeraldGold_updateNotice', {from:from.latestVersion||from.build||'', to:active.latestVersion||active.build||'', title:active.releaseTitle||`EmeraldOS Gold ${active.latestVersion||active.build}`, summary:active.summary||'Update applied.', time:now()});
-    return active;
+function routeDataFromDocument(data, id, source) {
+  if (!data || typeof data !== "object") return null;
+  const hasRoute = data.activeFolder || data.currentFolder || data.versionFolder || data.folder;
+  if (!hasRoute) return null;
+  return normalizeRoute({...data, source: `${source}:${id}`});
+}
+
+async function readCloudRoute(account) {
+  if (!fb.db || !account?.cloud) return null;
+  for (const id of routeCandidates(account)) {
+    try {
+      const current = await fb.getDoc(fb.doc(fb.db, "emeraldOSUsers", id, "goldVM", "current"));
+      if (current.exists()) {
+        const route = routeDataFromDocument(current.data(), id, "goldVM/current");
+        if (route) return {route, vmDocumentId: id};
+      }
+    } catch (error) {
+      console.debug(`Shell V2 could not read ${id}/goldVM/current.`, error?.message || error);
+    }
+
+    try {
+      const root = await fb.getDoc(fb.doc(fb.db, "emeraldOSUsers", id));
+      if (root.exists()) {
+        const route = routeDataFromDocument(root.data(), id, "emeraldOSUsers");
+        if (route) return {route, vmDocumentId: id};
+      }
+    } catch (error) {
+      console.debug(`Shell V2 could not read emeraldOSUsers/${id}.`, error?.message || error);
+    }
+  }
+  return null;
+}
+
+function readPerUserRoute(username) {
+  const map = parseJSON(localStorage.getItem(USER_ROUTES_KEY), {});
+  const value = map?.[lower(username)];
+  return value?.folder ? normalizeRoute({...value, source: "shell-v2-user-cache"}) : null;
+}
+
+function savePerUserRoute(username, route) {
+  const map = parseJSON(localStorage.getItem(USER_ROUTES_KEY), {});
+  const next = map && typeof map === "object" ? map : {};
+  next[lower(username)] = {...normalizeRoute(route), savedAt: now()};
+  localStorage.setItem(USER_ROUTES_KEY, JSON.stringify(next));
+}
+
+function readCompatibleDeviceRoute(username) {
+  const knownUser = lower(
+    localStorage.getItem(LAST_USER_KEY) ||
+    localStorage.getItem("emeraldGoldShell_lastUser") ||
+    localStorage.getItem("username") ||
+    ""
+  );
+  if (knownUser && knownUser !== lower(username)) return null;
+  return routeFromLegacyStorage(localStorage);
+}
+
+async function readLatestManifest() {
+  const cached = parseJSON(localStorage.getItem("emeraldGoldShell_latest"), null);
+  if (fb.db) {
+    try {
+      const snapshot = await fb.getDoc(fb.doc(fb.db, "system", "emeraldGoldLatest"));
+      if (snapshot.exists()) {
+        const latest = normalizeRoute({...snapshot.data(), source: "system/emeraldGoldLatest"}, cached || DEFAULT_ROUTE);
+        localStorage.setItem("emeraldGoldShell_latest", JSON.stringify(latest));
+        return latest;
+      }
+    } catch (error) {
+      console.debug("Shell V2 used the cached latest manifest.", error?.message || error);
+    }
+  }
+  return normalizeRoute(cached || DEFAULT_ROUTE);
+}
+
+function updateRequested() {
+  return isExplicitUpdateRequest(location, localStorage);
+}
+
+async function resolveUserRoute(account) {
+  const cloud = await readCloudRoute(account);
+  const cached = readPerUserRoute(account.username);
+  const compatibleDevice = readCompatibleDeviceRoute(account.username);
+  const latest = await readLatestManifest();
+  const pending = pendingRouteFromStorage(localStorage);
+  const applyingUpdate = updateRequested();
+
+  if (applyingUpdate) {
+    const target = normalizeRoute(pending || latest, latest);
+    return {
+      route: target,
+      source: pending ? "user-approved-pending-update" : "user-approved-latest-update",
+      vmDocumentId: cloud?.vmDocumentId || routeCandidates(account)[0] || account.username,
+      applyingUpdate: true
+    };
   }
 
-  active = saveActive(active);
-  await cloudSetCurrent(user, {activeVersion:active.latestVersion||active.build||'', activeFolder:active.folder, entry:active.entry, channel:active.channel||'stable', latestKnownVersion:latestVersion, latestKnownFolder:safeFolder(latest.folder), updateAvailable, lastShellBoot:now(), lastShellVersion:SHELL_VERSION, cloudSync:true});
-  return active;
+  if (cloud?.route) return {route: cloud.route, source: "cloud-vm", vmDocumentId: cloud.vmDocumentId, applyingUpdate: false};
+  if (cached) return {route: cached, source: "shell-v2-user-cache", vmDocumentId: routeCandidates(account)[0], applyingUpdate: false};
+  if (compatibleDevice) return {route: compatibleDevice, source: "compatible-device-route", vmDocumentId: routeCandidates(account)[0], applyingUpdate: false};
+  return {route: latest, source: "first-use-latest-fallback", vmDocumentId: routeCandidates(account)[0], applyingUpdate: false};
 }
-async function boot(){
-  try{
-    setStatus('Checking EmeraldOS Gold update pointer...');
-    const latest = await readLatest();
-    setStatus('Checking your selected EmeraldOS Gold version...');
-    const active = await decideActive(latest);
-    setStatus(`Starting ${active.releaseTitle || active.latestVersion || active.build || 'EmeraldOS Gold'}...`);
-    setTimeout(()=>location.replace(targetUrl(active)), 120);
-  }catch(error){
+
+function persistCompatibilityRoute(account, route) {
+  const normalized = normalizeRoute(route);
+  savePerUserRoute(account.username, normalized);
+  localStorage.setItem(LAST_USER_KEY, account.username);
+  localStorage.setItem("emeraldGoldShell_lastUser", account.username);
+  localStorage.setItem("emeraldGoldShell_activeVersion", normalized.latestVersion || normalized.build || "");
+  localStorage.setItem("emeraldGoldShell_activeFolder", normalized.folder);
+  localStorage.setItem("emeraldGoldShell_activeEntry", normalized.entry || "OS.html");
+  localStorage.setItem("emeraldGoldShell_activeLoginEntry", normalized.loginEntry || "index.html");
+  localStorage.setItem("emeraldGoldShell_activeManifest", JSON.stringify(normalized));
+  localStorage.setItem("emeraldGoldShell_lastBoot", now());
+}
+
+async function persistApprovedUpdate(account, route, vmDocumentId) {
+  if (!fb.db || !account.cloud) return false;
+  const id = clean(vmDocumentId || routeCandidates(account)[0] || account.username);
+  if (!id) return false;
+  const normalized = normalizeRoute(route);
+  try {
+    // Merge routing metadata only. Existing files, settings, preferences and split
+    // VM categories are never replaced by Shell V2.
+    await fb.setDoc(fb.doc(fb.db, "emeraldOSUsers", id, "goldVM", "current"), {
+      activeVersion: normalized.latestVersion || normalized.build || "",
+      activeFolder: normalized.folder,
+      entry: normalized.entry || "OS.html",
+      loginEntry: normalized.loginEntry || "index.html",
+      channel: normalized.channel || "stable",
+      lastManualUpdate: now(),
+      lastShellVersion: SHELL_VERSION,
+      shellV2RoutingOnly: true
+    }, {merge: true});
+    return true;
+  } catch (error) {
+    console.warn("Shell V2 could not merge approved update routing metadata.", error);
+    return false;
+  }
+}
+
+function clearApprovedUpdateFlags() {
+  [
+    "emeraldGoldShell_applyUpdate",
+    "emeraldGoldShell_forceCheck",
+    "emeraldGoldShell_pendingManifest",
+    "emeraldGoldShell_pendingVersion",
+    "emeraldGoldShell_pendingFolder",
+    "emeraldGoldShell_pendingEntry"
+  ].forEach(key => localStorage.removeItem(key));
+}
+
+function saveIdentificationSession(account, route) {
+  const value = {
+    username: account.username,
+    userId: account.userId,
+    cloud: Boolean(account.cloud),
+    version: route.latestVersion || route.build || "",
+    folder: route.folder,
+    verifiedAt: now(),
+    shellVersion: SHELL_VERSION
+  };
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(value));
+  localStorage.setItem("emeraldGoldShell_prefillUsername", account.username);
+  // Deliberately do not set loggedIn=true. The selected version must show and
+  // enforce its own normal login page.
+}
+
+function describeSource(source) {
+  const names = {
+    "cloud-vm": "your cloud VM profile",
+    "shell-v2-user-cache": "your Shell V2 device profile",
+    "compatible-device-route": "the compatible E.L.S.U.S. device route",
+    "first-use-latest-fallback": "the latest staff-published release",
+    "user-approved-pending-update": "the update you approved inside EmeraldOS",
+    "user-approved-latest-update": "the latest update you approved"
+  };
+  return names[source] || source || "your EmeraldOS profile";
+}
+
+function showResolved(account, route, source) {
+  resolvedAccount = account;
+  resolvedRoute = normalizeRoute(route);
+  routeSource = source;
+  $("loginPanel")?.classList.add("hidden");
+  $("routePanel")?.classList.remove("hidden");
+  $("routeUser").textContent = account.username;
+  $("routeVersion").textContent = resolvedRoute.releaseTitle || `EmeraldOS Gold ${resolvedRoute.latestVersion || resolvedRoute.build}`;
+  $("routeFolder").textContent = `${resolvedRoute.folder}/${resolvedRoute.loginEntry}`;
+  $("routeSource").textContent = `Selected from ${describeSource(source)}.`;
+  setStatus(`Opening ${resolvedRoute.releaseTitle || resolvedRoute.folder}.`, "good");
+
+  redirectTimer = setTimeout(openResolvedVersion, REDIRECT_DELAY);
+}
+
+function clearVersionLoginState() {
+  const directKeys = [
+    "loggedIn",
+    "role",
+    "role2",
+    "userId"
+  ];
+  directKeys.forEach(key => localStorage.removeItem(key));
+
+  // Each Gold release uses its own namespace. Clear only session/authentication
+  // markers so the selected version displays its own login page. Files, settings,
+  // preferences and VM data are not touched.
+  const removable = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    if (/(^|[_-])loggedin$/i.test(key) || /staff_session$/i.test(key) || /publisher_(unlocked|pin_unlocked)$/i.test(key)) {
+      removable.push(key);
+    }
+  }
+  removable.forEach(key => localStorage.removeItem(key));
+}
+
+function openResolvedVersion() {
+  if (!resolvedAccount || !resolvedRoute) return;
+  if (redirectTimer) clearTimeout(redirectTimer);
+  clearVersionLoginState();
+  const target = buildVersionLoginTarget(resolvedRoute, resolvedAccount.username);
+  location.replace(target);
+}
+
+async function handleLogin() {
+  const username = $("loginUsername")?.value || "";
+  const password = $("loginPassword")?.value || "";
+  setMessage("");
+  setBusy(true);
+  setStatus("Verifying your EmeraldOS account.");
+
+  try {
+    const account = await authenticate(username, password);
+    setStatus("Finding this user’s active EmeraldOS Gold version.");
+    const resolution = await resolveUserRoute(account);
+    const route = normalizeRoute(resolution.route);
+    if (!safeFolder(route.folder)) throw new Error("The saved EmeraldOS version folder is invalid.");
+
+    persistCompatibilityRoute(account, route);
+    if (resolution.applyingUpdate) {
+      await persistApprovedUpdate(account, route, resolution.vmDocumentId);
+      clearApprovedUpdateFlags();
+      localStorage.setItem("emeraldGold_updateJustApplied", "true");
+      localStorage.setItem("emeraldGold_updateNotice", JSON.stringify({
+        to: route.latestVersion || route.build || "",
+        title: route.releaseTitle || `EmeraldOS Gold ${route.latestVersion || route.build || ""}`,
+        summary: route.summary || "Your selected EmeraldOS Gold update is ready.",
+        time: now()
+      }));
+    }
+    saveIdentificationSession(account, route);
+    showResolved(account, route, resolution.source);
+  } catch (error) {
     console.error(error);
-    showFallback();
-    setStatus('The EmeraldOS Gold update router could not continue.');
-    const f=$("bootFallback"); if(f) f.hidden=false;
+    setMessage(error?.message || "EmeraldOS account verification failed.", "bad");
+    setStatus("Sign-in was not completed.", "bad");
+  } finally {
+    setBusy(false);
   }
 }
-window.addEventListener('DOMContentLoaded',()=>{
-  $("bootFallbackBtn")?.addEventListener('click',()=>location.href=targetUrl(getLocalActive() || DEFAULT_LATEST));
-  $("bootLatestBtn")?.addEventListener('click',()=>{localStorage.setItem('emeraldGoldShell_applyUpdate','true');location.href='gold-shell.html?applyUpdate=1';});
-  $("retryBtn")?.addEventListener('click',()=>location.reload());
-  setTimeout(showFallback, 1800);
-  boot();
+
+function resetLogin() {
+  if (redirectTimer) clearTimeout(redirectTimer);
+  resolvedAccount = null;
+  resolvedRoute = null;
+  routeSource = "";
+  $("routePanel")?.classList.add("hidden");
+  $("loginPanel")?.classList.remove("hidden");
+  $("loginPassword").value = "";
+  setMessage("");
+  setStatus("Sign in so E.L.S.U.S. can locate your active Gold version.");
+  $("loginUsername")?.focus();
+}
+
+function initialize() {
+  $("shellVersion").textContent = `Shell ${SHELL_VERSION}`;
+  setStatus("Sign in so E.L.S.U.S. can locate your active Gold version.");
+  $("loginBtn")?.addEventListener("click", handleLogin);
+  $("loginPassword")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") handleLogin();
+  });
+  $("loginUsername")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") $("loginPassword")?.focus();
+  });
+  $("showPassword")?.addEventListener("change", event => {
+    $("loginPassword").type = event.currentTarget.checked ? "text" : "password";
+  });
+  $("openVersionBtn")?.addEventListener("click", openResolvedVersion);
+  $("differentUserBtn")?.addEventListener("click", resetLogin);
+
+  const previousUser = clean(localStorage.getItem(LAST_USER_KEY) || localStorage.getItem("emeraldGoldShell_prefillUsername"));
+  if (previousUser) $("loginUsername").value = previousUser;
+  (previousUser ? $("loginPassword") : $("loginUsername"))?.focus();
+}
+
+window.ELSUSShellV2 = Object.freeze({
+  version: SHELL_VERSION,
+  mode: "identify-then-route-to-version-login",
+  getResolvedRoute: () => resolvedRoute ? {...resolvedRoute, source: routeSource} : null
 });
+
+window.addEventListener("DOMContentLoaded", initialize);
