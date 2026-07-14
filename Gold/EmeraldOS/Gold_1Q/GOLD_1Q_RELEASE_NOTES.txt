@@ -1,0 +1,15 @@
+EmeraldOS Gold 1Q
+
+Gold 1Q is built directly on the unchanged Gold 1P interface.
+
+Added applications and capabilities only:
+- Emerald Games
+- Emerald Snake
+- Emerald Mines
+- Memory Match
+- Secure password change
+- Account History
+- Interactive Calendar month, week, and agenda views
+- Event editing, reminders, drag rescheduling, and ICS export
+
+No Gold 1P shell, Settings layout, Quick Settings, taskbar, window chrome, spacing, or existing application styling was redesigned.

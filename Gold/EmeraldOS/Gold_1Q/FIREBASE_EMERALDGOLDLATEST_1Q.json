@@ -1,0 +1,16 @@
+{
+  "latestVersion": "1Q",
+  "releaseTitle": "EmeraldOS Gold 1Q",
+  "folder": "Gold_1Q",
+  "entry": "OS.html",
+  "enabled": true,
+  "summary": "Built-in games, secure password changes, account history, and an interactive calendar on the unchanged Gold 1P interface.",
+  "required": false,
+  "vmSchema": "gold1q-split-v2",
+  "elsusCompatible": true,
+  "shellV2Compatible": true,
+  "publishingMode": "staff-edition-publisher-pin-button-only",
+  "autoPublish": false,
+  "backwardFileCompatibility": true,
+  "migrationBeforeAutosave": true
+}
