@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="EmeraldOS Gold 1T">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6c7"/><stop offset=".36" stop-color="#e3ad22"/><stop offset=".68" stop-color="#0078d7"/><stop offset="1" stop-color="#008c6a"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".35"/></filter></defs>
+<rect x="18" y="18" width="220" height="220" rx="38" fill="url(#g)" filter="url(#s)"/>
+<path d="M76 72h104v26H105v30h62v25h-62v31h75v26H76z" fill="#fff" opacity=".96"/>
+<text x="128" y="231" text-anchor="middle" font-family="Segoe UI,Arial" font-size="26" font-weight="700" fill="#0c2942">1T</text>
+</svg>

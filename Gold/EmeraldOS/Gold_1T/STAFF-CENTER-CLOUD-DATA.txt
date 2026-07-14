@@ -1,0 +1,46 @@
+EmeraldOS Gold 1T — Staff Center Cloud Data
+
+Gold 1T uses the following Firestore records when your deployment permissions
+allow them. This document describes data shape only and does not replace your
+existing security rules.
+
+system/emeraldGoldLiveControl
+  enabled: boolean
+  maintenanceMode: boolean
+  supportOnlyMode: boolean
+  userAppsDisabled: boolean
+  developerDisabled: boolean
+  mailDisabled: boolean
+  forceFocusAssist: boolean
+  announcement: string
+  emergencyMessage: string
+  revision: number
+  updatedAt: ISO date string
+  updatedBy: staff username
+  serverUpdatedAt: Firestore server timestamp
+
+emeraldGoldAppSubmissions/{appId}
+  id, name, description, code, iconData
+  owner, submittedBy, requestedPermissions
+  verificationStatus: draft | pending | approved | rejected | legacy-review
+  codeHash: SHA-256 hex string
+  verified, verifiedBy, verifiedAt, staffNotes
+  targetVersion, product, createdAt, updatedAt, submittedAt
+
+emeraldGoldSessions/{normalizedUsername}
+  username, normalizedUser, version, folder, entry
+  shellManaged, shellConnected, staff, online
+  lastSeenISO, lastSeen, openWindows, userAgent
+
+emeraldGoldStaffLogs/{logId}
+  action, by, version, folder, createdAt
+  Optional control/app review fields depending on action
+
+Compatibility reads:
+  system/config
+  system/announcement
+  system/emergency
+
+Release pointer safety:
+  Staff Center does not write system/emeraldGoldLatest.
+  Only Update Publisher Manager's guarded Publish this Version action may do so.

@@ -1,0 +1,9 @@
+EMERALDOS GOLD 1T VIRTUAL LICENSE
+
+Product: EmeraldOS Gold 1T
+Update Service: Original EmeraldOS Live Service Update System (E.L.S.U.S.)
+Cloud VM: emeraldOSUsers/{username}/goldVM/current
+
+First-Boot Setup is completed once per user across compatible Gold releases. Gold 1T displays Update Setup only when appropriate and preserves files, settings, applications, registry data, and workspace state.
+
+Gold 1T does not publish itself. Publishing requires Staff Edition, Emerald Mail verification, the correct publisher PIN, and clicking Publish this Version.

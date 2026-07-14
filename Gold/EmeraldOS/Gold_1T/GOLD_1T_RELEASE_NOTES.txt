@@ -1,0 +1,12 @@
+EmeraldOS Gold 1T
+
+- Separate cloud VM owner path for every authenticated user ID
+- Per-user local IndexedDB cache for same-browser account separation
+- Owner metadata and mismatch rejection on cloud VM categories
+- Files & Sharing for exact selected files only
+- Share revocation and recipient import/download controls
+- Notification Can-Notify permissions per application
+- Only updates, support, security, emergency, and critical notices enabled by default
+- Gold 1S guide, games, radio, universal file system, and UI retained
+- Migration from Gold 1S and every earlier supported Gold version
+- Manual Staff Publisher protection retained

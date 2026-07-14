@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(userId) { return signedIn() && request.auth.uid == userId; }
+
+    match /emeraldOSUsers/{userId}/{document=**} {
+      allow read, write: if owns(userId);
+    }
+
+    match /emeraldGoldFileShares/{shareId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.visibility == 'specific-user';
+      allow read: if signedIn()
+        && (resource.data.ownerId == request.auth.uid
+            || resource.data.recipientId == request.auth.uid);
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /chunks/{chunkId} {
+        allow create: if signedIn()
+          && request.resource.data.ownerId == request.auth.uid;
+        allow read: if signedIn()
+          && (resource.data.ownerId == request.auth.uid
+              || resource.data.recipientId == request.auth.uid);
+        allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+      }
+    }
+
+    match /system/emeraldGoldLatest {
+      allow read: if true;
+      // Keep your existing Staff Publisher server-side authorization here.
+      allow write: if false;
+    }
+  }
+}
