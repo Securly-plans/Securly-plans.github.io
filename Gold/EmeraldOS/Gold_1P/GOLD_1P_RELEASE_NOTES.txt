@@ -1,0 +1,38 @@
+EMERALDOS GOLD 1P
+
+NOTIFICATION CALM MODE
+- Limits normal startup banners and keeps suppressed events in Action Center.
+- Shows one optional Welcome back summary after migration and workspace restoration.
+- Keeps critical alerts visible.
+- Deduplicates repeated banners.
+- Prevents an update prompt and identical update toast from appearing together.
+
+CLOUD VM CONTINUITY
+- Adds Startup & Continuity settings.
+- Restores safe applications and window layouts after migration validation.
+- Saves session state as a normal split-cloud VM category.
+- Preserves display, volume, notification, and update preferences.
+- Excludes sensitive Staff, publisher, credential, setup, and permission windows from automatic restoration.
+
+COMPATIBILITY
+- Reads Gold 1O split-v1 and split-v2 data and all earlier supported Gold schemas.
+- Migrates all known files, folders, settings, preferences, Registry data, mail, app data, logos, verification state, and other VM categories.
+- Preserves same-ID files when their contents differ.
+- Blocks cloud autosave until migration validation completes.
+- Maintains backward compatibility with previous EmeraldOS Gold file formats.
+
+QUICK SETTINGS AND UI
+- Refines Quick Settings spacing and responsive behavior.
+- Adds brightness and volume sliders.
+- Adds quiet-startup and update-alert toggles.
+- Improves Settings navigation, cards, tables, toolbars, forms, and narrow windows.
+- Improves taskbar, flyout, toast, and resized-application behavior.
+
+EXISTING FEATURES RETAINED
+- Gold Home, Command Palette, My Workspace, Backup & Sync, File Compatibility Center, System Health, Accessibility Center, and Routines.
+- Staff Center, live staff control, Emerald Mail verification, staff app verification, and custom app logos.
+- Original E.L.S.U.S. and Shell V2 compatibility.
+
+PUBLISHING
+- Gold 1P does not auto-publish or auto-set system/emeraldGoldLatest.
+- Publishing requires Staff Edition, Emerald Mail verification, the publisher PIN, and a direct Publish this Version click.
