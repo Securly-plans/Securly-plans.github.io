@@ -1,0 +1,16 @@
+EmeraldOS Gold 1R
+
+Gold 1R keeps the Gold 1P user interface and the Gold 1Q applications while rebuilding the file system for durable cloud VM continuity.
+
+New and corrected:
+- Universal Gold file record compatible with previous Gold file versions
+- Stable universal IDs with preserved legacy IDs
+- Cloud-synced permanent-deletion tombstones
+- Permanently deleted files no longer return after restart, another deletion, migration, backup scan, or update
+- Current file lists are authoritative
+- Files found only in old backups are placed in Historical Recovery instead of silently restored
+- Recycle Bin can be emptied with deletion protection
+- Universal File System app shows active files, trash, deletion records, and recovery candidates
+- Gold 1Q files, settings, preferences, apps, games, account history, Calendar data, and all prior VM categories migrate
+- Original E.L.S.U.S. and Shell V2 compatibility remain intact
+- Update publishing remains Staff Edition/PIN/click protected
