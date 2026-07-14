@@ -1,0 +1,29 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1S",
+  "build": "1S",
+  "folder": "Gold_1S",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1S",
+  "elsusMode": "original",
+  "shellV2Compatible": true,
+  "summary": "Restores Emerald Games and adds the Complete Guide and Gold Radio while retaining the universal file system and cloud VM continuity.",
+  "migrationFrom": [
+    "1R",
+    "1Q",
+    "1P",
+    "1O",
+    "1N",
+    "1M",
+    "1L",
+    "1K",
+    "1J",
+    "1I",
+    "1H"
+  ]
+}

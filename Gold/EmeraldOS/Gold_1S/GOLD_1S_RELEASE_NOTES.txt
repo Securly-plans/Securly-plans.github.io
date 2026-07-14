@@ -1,0 +1,19 @@
+EmeraldOS Gold 1S
+
+Gold 1S keeps the Gold 1P-based interface and Gold 1R Universal File System while improving learning, entertainment, and cloud-VM usability.
+
+New and restored:
+- Emerald Games restored and registered as normal Gold applications
+- Emerald Snake, Emerald Mines, and Memory Match with cloud-saved statistics
+- Complete searchable EmeraldOS Gold Guide
+- Guide pinned to the desktop and taskbar by default
+- First-Boot Setup and Update Setup offer to open the Guide
+- F1 opens the Complete Guide
+- Gold Radio plays compatible HTTPS internet simulcasts published by FM and AM stations
+- Saved radio stations, radio preferences, and guide preferences follow the cloud VM
+- Gold 1R Universal File System, deletion tombstones, Historical Recovery, and backward compatibility retained
+- Shell V2 and original E.L.S.U.S. compatibility retained
+- Manual Staff Edition/PIN/click update publishing retained
+
+Gold Radio limitation:
+Web browsers cannot receive direct over-the-air AM or FM signals without radio hardware. Gold Radio accepts direct internet audio stream URLs supplied by stations. Stream compatibility depends on HTTPS, format, browser support, CORS, geographic access, and station availability.
