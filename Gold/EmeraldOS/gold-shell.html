@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>EmeraldOS Gold E.L.S.U.S. Shell V2</title>
+<link rel="icon" href="app-logos/emerald-gold-shell-v2.svg" type="image/svg+xml">
+<link rel="stylesheet" href="gold-shell.css">
+<script type="module" src="gold-shell.js"></script>
+</head>
+<body>
+<div class="shell-background" aria-hidden="true"></div>
+<main class="shell-layout">
+  <header class="shell-header">
+    <div class="brand">
+      <img src="app-logos/emerald-gold-shell-v2.svg" alt="" class="brand-logo">
+      <div>
+        <div class="brand-name">EmeraldOS Gold</div>
+        <div class="brand-subtitle">EmeraldOS Live Service Update System</div>
+      </div>
+    </div>
+    <span id="shellVersion" class="version-badge">Shell 2.0</span>
+  </header>
+
+  <section id="loginPanel" class="shell-card login-card">
+    <div class="card-heading">
+      <p class="eyebrow">E.L.S.U.S. Shell V2</p>
+      <h1>Find your EmeraldOS version</h1>
+      <p>Sign in to identify your cloud VM and current Gold version. Your selected version will still display its own normal login page.</p>
+    </div>
+
+    <div class="notice">
+      <strong>Two-step sign-in</strong>
+      <span>This shell verifies which VM belongs to you. It does not bypass the version’s account login.</span>
+    </div>
+
+    <div class="field-grid">
+      <label class="field-label" for="loginUsername">EmeraldOS username</label>
+      <input id="loginUsername" class="field" autocomplete="username" spellcheck="false" placeholder="Username">
+
+      <label class="field-label" for="loginPassword">Password</label>
+      <input id="loginPassword" class="field" type="password" autocomplete="current-password" placeholder="Password">
+
+      <label class="checkbox-row">
+        <input id="showPassword" type="checkbox">
+        <span>Show password</span>
+      </label>
+    </div>
+
+    <button id="loginBtn" class="button primary full" type="button">Continue</button>
+    <div id="loginMessage" class="message" aria-live="polite"></div>
+
+    <div class="privacy-note">
+      Shell V2 does not save your password and does not set the operating system’s login state.
+    </div>
+  </section>
+
+  <section id="routePanel" class="shell-card route-card hidden" aria-live="polite">
+    <div class="success-mark">G</div>
+    <p class="eyebrow">Version located</p>
+    <h1 id="routeVersion">EmeraldOS Gold</h1>
+    <p>Signed in for routing as <strong id="routeUser"></strong>.</p>
+    <div class="route-detail">
+      <span>Login destination</span>
+      <code id="routeFolder"></code>
+    </div>
+    <p id="routeSource" class="muted"></p>
+    <div class="button-row">
+      <button id="openVersionBtn" class="button primary" type="button">Open version login</button>
+      <button id="differentUserBtn" class="button" type="button">Use a different user</button>
+    </div>
+    <p class="redirect-note">Opening the version login automatically...</p>
+  </section>
+
+  <footer>
+    <span id="shellStatus" class="shell-status" aria-live="polite">Starting E.L.S.U.S. Shell V2.</span>
+    <span>Routing metadata only. Files and settings are not replaced by the shell.</span>
+  </footer>
+</main>
+<noscript>EmeraldOS Gold E.L.S.U.S. requires JavaScript.</noscript>
+</body>
+</html>
