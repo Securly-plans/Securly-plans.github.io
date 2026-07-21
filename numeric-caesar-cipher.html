@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Encode and decode a numeric Caesar cipher using keys A through F.">
+  <title>Numeric Caesar Cipher</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #07130f;
+      --panel: #10251d;
+      --panel-light: #17382b;
+      --border: #3b735d;
+      --accent: #48d597;
+      --accent-dark: #1f9b68;
+      --text: #f2fff8;
+      --muted: #acd1c0;
+      --danger: #ff8e8e;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 16px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, rgba(72, 213, 151, 0.14), transparent 42%),
+        var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      width: min(920px, 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(16, 37, 29, 0.97);
+      box-shadow: 0 20px 60px var(--shadow);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--panel-light), var(--panel));
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.65rem, 4vw, 2.35rem);
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    main {
+      padding: 24px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(150px, 220px) 1fr;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    select,
+    textarea {
+      width: 100%;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #091b14;
+      outline: none;
+    }
+
+    select {
+      min-height: 45px;
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 190px;
+      padding: 14px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(72, 213, 151, 0.15);
+    }
+
+    .mode-note {
+      min-height: 45px;
+      display: flex;
+      align-items: center;
+      padding: 10px 13px;
+      border: 1px solid rgba(72, 213, 151, 0.24);
+      border-radius: 9px;
+      background: rgba(72, 213, 151, 0.08);
+      color: var(--muted);
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      min-height: 34px;
+    }
+
+    .field-header label {
+      margin: 0;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      min-height: 43px;
+      padding: 10px 16px;
+      border: 1px solid var(--accent);
+      border-radius: 9px;
+      background: var(--accent);
+      color: #032116;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      border-color: var(--border);
+      background: var(--panel-light);
+      color: var(--text);
+    }
+
+    button.danger {
+      border-color: #945151;
+      background: #582c2c;
+      color: #ffe7e7;
+    }
+
+    button.small {
+      min-height: 32px;
+      padding: 6px 10px;
+      font-size: 0.86rem;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    details {
+      margin-top: 22px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0b1c16;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    details p,
+    details li {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    code {
+      color: var(--accent);
+    }
+
+    footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 720px) {
+      .controls,
+      .editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      main,
+      header {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="app" aria-labelledby="app-title">
+    <header>
+      <h1 id="app-title">Numeric Caesar Cipher</h1>
+      <p>
+        Select a key from A through F. Letters are shifted, then converted using
+        A=26, B=25, C=24 … Z=1.
+      </p>
+    </header>
+
+    <main>
+      <div class="controls">
+        <div>
+          <label for="cipher-key">Cipher key</label>
+          <select id="cipher-key">
+            <option value="1">A — shift 1</option>
+            <option value="2">B — shift 2</option>
+            <option value="3">C — shift 3</option>
+            <option value="4">D — shift 4</option>
+            <option value="5">E — shift 5</option>
+            <option value="6">F — shift 6</option>
+          </select>
+        </div>
+
+        <div class="mode-note">
+          Encoding shifts forward. Decoding shifts backward using the same key.
+        </div>
+      </div>
+
+      <div class="editor-grid">
+        <div>
+          <div class="field-header">
+            <label for="input-text">Input</label>
+            <button class="small secondary" id="paste-button" type="button">Paste</button>
+          </div>
+          <textarea
+            id="input-text"
+            spellcheck="false"
+            placeholder="Type normal text to encode, or cipher text to decode..."
+          ></textarea>
+        </div>
+
+        <div>
+          <div class="field-header">
+            <label for="output-text">Output</label>
+            <button class="small secondary" id="copy-button" type="button">Copy</button>
+          </div>
+          <textarea
+            id="output-text"
+            spellcheck="false"
+            readonly
+            placeholder="The result will appear here..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="encode-button" type="button">Encode</button>
+        <button id="decode-button" type="button">Decode</button>
+        <button class="secondary" id="swap-button" type="button">Use Output as Input</button>
+        <button class="danger" id="clear-button" type="button">Clear</button>
+      </div>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <details>
+        <summary>Encoding format</summary>
+        <ul>
+          <li>Letters become numbers from <code>1</code> through <code>26</code>.</li>
+          <li>A normal space becomes <code>/</code>.</li>
+          <li>A line break becomes <code>//</code>.</li>
+          <li>
+            Numbers and punctuation are safely stored as literal tokens beginning
+            with <code>~</code>.
+          </li>
+        </ul>
+        <p>
+          Example with key A: <code>ABC</code> shifts to <code>BCD</code>, then
+          becomes <code>25 24 23</code>.
+        </p>
+      </details>
+    </main>
+
+    <footer>
+      Runs entirely in the browser. No server or external library is required.
+    </footer>
+  </section>
+
+  <script>
+    "use strict";
+
+    const inputText = document.getElementById("input-text");
+    const outputText = document.getElementById("output-text");
+    const cipherKey = document.getElementById("cipher-key");
+    const statusText = document.getElementById("status");
+
+    function getShift() {
+      return Number.parseInt(cipherKey.value, 10);
+    }
+
+    function positiveModulo(number, divisor) {
+      return ((number % divisor) + divisor) % divisor;
+    }
+
+    function setStatus(message, isError = false) {
+      statusText.textContent = message;
+      statusText.classList.toggle("error", isError);
+    }
+
+    /*
+      Step 1: Caesar-shift a letter forward.
+      Step 2: Convert it to reverse alphabet numbering:
+              A=26, B=25, ... Z=1.
+    */
+    function encodeText(text, shift) {
+      const tokens = [];
+
+      for (const character of text) {
+        if (/[A-Za-z]/.test(character)) {
+          const originalIndex = character.toUpperCase().charCodeAt(0) - 65;
+          const shiftedIndex = positiveModulo(originalIndex + shift, 26);
+          const reverseNumber = 26 - shiftedIndex;
+          tokens.push(String(reverseNumber));
+        } else if (character === " ") {
+          tokens.push("/");
+        } else if (character === "\n") {
+          tokens.push("//");
+        } else {
+          // Preserve digits, tabs, punctuation, and other Unicode characters.
+          tokens.push("~" + encodeURIComponent(character));
+        }
+      }
+
+      return tokens.join(" ");
+    }
+
+    /*
+      Step 1: Convert reverse alphabet number back to a shifted letter.
+      Step 2: Caesar-shift backward using the selected key.
+    */
+    function decodeText(cipherText, shift) {
+      const trimmed = cipherText.trim();
+
+      if (!trimmed) {
+        return "";
+      }
+
+      const tokens = trimmed.split(/\s+/);
+      let decoded = "";
+
+      for (const token of tokens) {
+        if (token === "/") {
+          decoded += " ";
+          continue;
+        }
+
+        if (token === "//") {
+          decoded += "\n";
+          continue;
+        }
+
+        if (token.startsWith("~")) {
+          try {
+            decoded += decodeURIComponent(token.slice(1));
+          } catch {
+            throw new Error(`Invalid literal token: ${token}`);
+          }
+          continue;
+        }
+
+        if (!/^\d+$/.test(token)) {
+          throw new Error(`Invalid token: "${token}"`);
+        }
+
+        const reverseNumber = Number.parseInt(token, 10);
+
+        if (reverseNumber < 1 || reverseNumber > 26) {
+          throw new Error(`Cipher number must be from 1 to 26: ${reverseNumber}`);
+        }
+
+        const shiftedIndex = 26 - reverseNumber;
+        const originalIndex = positiveModulo(shiftedIndex - shift, 26);
+        decoded += String.fromCharCode(65 + originalIndex);
+      }
+
+      return decoded;
+    }
+
+    document.getElementById("encode-button").addEventListener("click", () => {
+      outputText.value = encodeText(inputText.value, getShift());
+      setStatus("Text encoded successfully.");
+    });
+
+    document.getElementById("decode-button").addEventListener("click", () => {
+      try {
+        outputText.value = decodeText(inputText.value, getShift());
+        setStatus("Cipher decoded successfully.");
+      } catch (error) {
+        outputText.value = "";
+        setStatus(error instanceof Error ? error.message : "Unable to decode the cipher.", true);
+      }
+    });
+
+    document.getElementById("swap-button").addEventListener("click", () => {
+      inputText.value = outputText.value;
+      outputText.value = "";
+      inputText.focus();
+      setStatus("Output moved to the input box.");
+    });
+
+    document.getElementById("clear-button").addEventListener("click", () => {
+      inputText.value = "";
+      outputText.value = "";
+      inputText.focus();
+      setStatus("");
+    });
+
+    document.getElementById("copy-button").addEventListener("click", async () => {
+      if (!outputText.value) {
+        setStatus("There is no output to copy.", true);
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(outputText.value);
+        setStatus("Output copied to the clipboard.");
+      } catch {
+        outputText.select();
+        document.execCommand("copy");
+        setStatus("Output copied to the clipboard.");
+      }
+    });
+
+    document.getElementById("paste-button").addEventListener("click", async () => {
+      try {
+        inputText.value = await navigator.clipboard.readText();
+        setStatus("Clipboard text pasted.");
+      } catch {
+        setStatus("Clipboard access was blocked. Paste with Ctrl+V instead.", true);
+      }
+    });
+  </script>
+</body>
+</html>
