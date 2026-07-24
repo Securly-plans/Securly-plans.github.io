@@ -1,0 +1,119 @@
+EMERALDOS GOLD 1V FILE LOCATIONS
+
+PACKAGE ENTRY
+/Gold_1V/index.html
+  Standard Gold 1V account login.
+/Gold_1V/register.html
+  Account registration.
+/Gold_1V/staff.html
+  Staff Edition and Emerald Mail verification.
+/Gold_1V/loading.html
+  Loading transition into the desktop.
+/Gold_1V/OS.html
+  Desktop document and CSS/JavaScript load order.
+/Gold_1V/bios.html
+  Emerald BIOS and recovery DOS interface.
+
+AUTHENTICATION
+/Gold_1V/auth-common.js
+  Shared login, registration, password hashing, account lookup, and session functions.
+/Gold_1V/auth.css
+  Login, registration, loading, and Staff Edition styling.
+/Gold_1V/firebase-config.js
+  Firebase project configuration.
+/Gold_1V/firebase.js
+  Firebase module imports and exports.
+
+CORE DESKTOP
+/Gold_1V/gold1v-core.js
+  Core application registry, desktop, Start, Search, window manager, Settings, Files, Mail, notifications, preferences, and default VM documents.
+/Gold_1V/gold1v.js
+  Main Gold runtime, Registry Editor, Task Manager, Control Panel, update workflow, guarded Publisher Manager, split cloud VM save/restore, shortcuts, First-Boot Setup, and Update Setup.
+/Gold_1V/gold1v-preboot.js
+  Quota-safe startup preparation.
+/Gold_1V/gold1v-core.css
+  Core desktop, taskbar, Start, Settings, windows, forms, and shared application styling.
+/Gold_1V/gold1v.css
+  Main Gold shell styling.
+
+APPLICATIONS
+/Gold_1V/gold1v-features.js
+  Application Editor, safe user-app iframe runtime, User Appstore, app verification, Staff Center, and live staff control.
+  Application Editor iframe sandbox: allow-scripts allow-forms allow-modals allow-downloads allow-same-origin.
+  Cache API protection: sandboxUserApp() creates the SAFE_CACHES try/catch facade.
+/Gold_1V/gold1v-extras.js
+  Additional utilities, update notification controls, and Focus Sessions.
+/Gold_1V/gold1v-improvements.js
+  Gold Home and Shell V2 compatibility checks.
+/Gold_1V/gold1v-flagship.js
+  My Workspace, Clipboard Manager, Backup and Sync, System Health, Accessibility, routines, and flagship tools.
+/Gold_1V/gold1v-polish.js
+  Startup continuity preferences and supplementary behaviors.
+/Gold_1V/gold1v-experience.js
+  Emerald Games, interactive Calendar, password change, and Account History.
+/Gold_1V/gold1v-guide-radio.js
+  Complete Guide, guide topics, Gold Radio, stations, and guide setup options.
+/Gold_1V/gold1v-privacy-sharing.js
+  Private user isolation controls, specific-file sharing, revocation/import, and Can-Notify permissions.
+/Gold_1V/gold1v-utility.js
+  Personalization Studio, saved customization profiles, configurable desktop/Start/taskbar pins, Utility Center, File Finder, new guide topics, and Gold 1V shortcuts.
+
+APPLICATION STYLES
+/Gold_1V/gold1v-extras.css
+  Extra application styles.
+/Gold_1V/gold1v-improvements.css
+  Improvement application styles.
+/Gold_1V/gold1v-flagship.css
+  Flagship application styles.
+/Gold_1V/gold1v-polish.css
+  Supplementary layout fixes.
+/Gold_1V/gold1v-experience.css
+  Games, Calendar, password, and Account History styles.
+/Gold_1V/gold1v-guide-radio.css
+  Complete Guide and Gold Radio styles.
+/Gold_1V/gold1v-privacy-sharing.css
+  Privacy, sharing, and notification-permission styles.
+/Gold_1V/gold1v-utility.css
+  Scoped Personalization Studio, Utility Center, File Finder, and taskbar-pin styles. Does not replace the Gold 1U shell layout.
+
+CLOUD VM, FILES, AND MIGRATION
+/Gold_1V/gold1v-migration.js
+  Local migration from Gold 1U and all earlier supported versions. Blocks cloud autosave until cloud validation.
+/Gold_1V/gold1v-continuity.js
+  Resumable cloud scan, per-operation timeouts, retries with exponential backoff, progress state, cloud error classification, migration merge, and autosave gate.
+/Gold_1V/gold1v-filesystem.js
+  Universal File System, file normalization, permanent-deletion tombstones, Historical Recovery, and compatibility.
+/Gold_1V/gold1v-user-isolation.js
+  Per-user IndexedDB cache sealing/restoration and same-browser user separation.
+/Gold_1V/FIRESTORE-RULES-GOLD-1V.rules
+  Firestore rules template for authenticated VM ownership and explicit sharing.
+/Gold_1V/PRIVACY-AND-SHARING-DEPLOYMENT-1V.txt
+  Production authentication, rules, privacy, and sharing deployment notes.
+
+BRANDING AND RELEASE DATA
+/Gold_1V/emerald-gold-1v-logo.svg
+  Gold 1V product logo and favicon.
+/Gold_1V/app-logos/
+  Built-in application SVG icons, including themestudio.svg, utilitycenter.svg, and filefinder.svg.
+/Gold_1V/FIREBASE_EMERALDGOLDLATEST_1V.json
+  Release manifest for the guarded manual Publisher Manager workflow.
+/Gold_1V/GOLD_1V_RELEASE_NOTES.txt
+  Gold 1V feature and compatibility notes.
+/Gold_1V/README-EmeraldOS-Gold-1V.txt
+  Installation and deployment overview.
+/Gold_1V/EMERALDOS_GOLD_1V_VIRTUAL_LICENSE.txt
+  EmeraldOS Gold virtual-machine license.
+/Gold_1V/STAFF-CENTER-CLOUD-DATA.txt
+  Staff Center cloud document locations.
+
+CLOUD CATEGORIES ADDED IN GOLD 1V
+gold1g_personalization_profiles_1v
+  Saved Personalization Studio profiles.
+gold1g_utility_history_1v
+  Recent Utility Center result descriptions.
+gold1g_migration_1v_progress
+  Local resumable cloud-migration progress.
+
+PROTECTED RELEASE POINTER
+system/emeraldGoldLatest
+  Written only by gold1v.js publishLatest() after verified Staff Edition, Emerald Mail verification, correct publisher PIN, and a direct Publish this Version click.

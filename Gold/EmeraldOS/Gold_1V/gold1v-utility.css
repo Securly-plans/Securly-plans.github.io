@@ -1,0 +1,49 @@
+/* Gold 1V additions are scoped to new applications and their taskbar pin holder. */
+.gold1v-taskbar-pins{display:flex;height:100%;align-items:stretch;flex:0 0 auto}
+.gold1v-taskbar-pins button{width:48px;min-width:42px;border:0;border-bottom:2px solid transparent;background:transparent;color:inherit;padding:5px;display:flex;align-items:center;justify-content:center;position:relative}
+.gold1v-taskbar-pins button:hover{background:rgba(255,255,255,.16);border-bottom-color:var(--accent)}
+.gold1v-taskbar-pins img{width:24px;height:24px;object-fit:contain}
+.gold1v-taskbar-pins span{display:none}
+.gold1v-customization .app-body,.gold1v-utility .app-body,.gold1v-file-finder .app-body{overflow:auto}
+.gold1v-page-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.gold1v-page-title h1{margin:0 0 5px}
+.gold1v-page-title p{margin:0;color:#5f6670}
+.dark .gold1v-page-title p{color:#bac2cd}
+.gold1v-version-chip,.gold1v-local-chip{background:var(--accent);color:#fff;border-radius:14px;padding:6px 11px;white-space:nowrap;font-size:12px}
+.gold1v-custom-grid,.gold1v-utility-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.gold1v-customization .card,.gold1v-utility .card{display:flex;flex-direction:column;gap:11px}
+.gold1v-customization label,.gold1v-utility label{display:flex;flex-direction:column;gap:5px}
+.gold1v-check{flex-direction:row!important;align-items:center;gap:8px!important}
+.gold1v-accent-swatches{display:flex;flex-wrap:wrap;gap:7px}
+.gold1v-accent-swatches button{width:28px;height:28px;border:2px solid #fff;box-shadow:0 0 0 1px #777;border-radius:2px}
+.gold1v-app-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:6px;max-height:230px;overflow:auto;border:1px solid #b8b8b8;padding:8px;background:rgba(255,255,255,.5)}
+.dark .gold1v-app-picker{border-color:#575757;background:rgba(0,0,0,.16)}
+.gold1v-app-picker label{display:grid;grid-template-columns:auto 26px minmax(0,1fr);align-items:center;gap:7px;padding:5px;border:1px solid transparent}
+.gold1v-app-picker label:hover{border-color:var(--accent);background:rgba(0,120,215,.09)}
+.gold1v-app-picker img{width:24px;height:24px;object-fit:contain}
+.gold1v-section-heading{display:flex;align-items:center;justify-content:space-between}
+.gold1v-profile-list{display:flex;flex-direction:column;gap:7px}
+.gold1v-profile-list article{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;border:1px solid #c8c8c8;padding:8px}
+.dark .gold1v-profile-list article{border-color:#555}
+.gold1v-profile-list article div{display:flex;flex-direction:column}
+.gold1v-profile-list small{color:#6b6b6b}
+.dark .gold1v-profile-list small{color:#bbb}
+.gold1v-inline-checks{display:flex;flex-wrap:wrap;gap:12px}
+.gold1v-inline-checks label{flex-direction:row;align-items:center}
+.gold1v-utility textarea{resize:vertical;min-height:68px}
+.gold1v-utility-history{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px}
+.gold1v-utility-history button{display:flex;flex-direction:column;text-align:left;border:1px solid #bbb;background:rgba(255,255,255,.55);color:inherit;padding:8px;min-width:0}
+.dark .gold1v-utility-history button{border-color:#555;background:rgba(0,0,0,.15)}
+.gold1v-utility-history span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gold1v-utility-history small{opacity:.7;margin-top:4px}
+.gold1v-finder-results{display:flex;flex-direction:column;gap:8px}
+.gold1v-finder-results article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+.gold1v-finder-results article div:first-child{min-width:0}
+.gold1v-finder-results small{display:block;color:#686868;margin-top:3px}
+.dark .gold1v-finder-results small{color:#bbb}
+.gold1v-finder-results p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 0 0;color:#555}
+.dark .gold1v-finder-results p{color:#ccc}
+.gold1v-no-transparency .start-menu,.gold1v-no-transparency .action-center,.gold1v-no-transparency .side-panel{backdrop-filter:none!important}
+.gold1v-hide-desktop-labels .desktop-icon>span:last-child{visibility:hidden}
+.gold1v-hide-desktop-labels .desktop-icon:focus>span:last-child,.gold1v-hide-desktop-labels .desktop-icon:hover>span:last-child{visibility:visible}
+@media(max-width:780px){.gold1v-custom-grid,.gold1v-utility-grid{grid-template-columns:1fr}.gold1v-page-title{flex-direction:column}.gold1v-taskbar-pins button{width:38px}.gold1v-app-picker{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}.gold1v-finder-results article{grid-template-columns:1fr}}
