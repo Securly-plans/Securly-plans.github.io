@@ -27,10 +27,10 @@
 <body>
 
 <div class="container">
-  <!-- Auth Block -->
+  <!-- Auth Section -->
   <div id="authSection" class="auth-section">
     <h2>Monroe Corp Admin Portal</h2>
-    <p>Please log in using your authorized administrator account.</p>
+    <p>Sign in using your designated administrator Google Account.</p>
     <button id="btnLogin" class="btn">Sign In with Google</button>
   </div>
 
@@ -89,28 +89,24 @@
 </div>
 
 <script type="module">
-  import { auth, db } from "./js/firebase.js";
-  import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "firebase/auth";
-  import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+  import { auth, db, doc, getDoc, collection, getDocs } from "./js/firebase.js";
+  import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { gradeSubmission } from "./js/examManager.js";
 
-  // --- REPLACE THIS WITH YOUR ACTUAL ADMIN EMAIL ---
+  // --- REPLACE THIS WITH YOUR OWN GOOGLE EMAIL ACCOUNT ---
   const ADMIN_EMAIL = "your-email@example.com"; 
 
   const provider = new GoogleAuthProvider();
   let currentActiveSubmission = null;
 
-  // UI elements
   const authSection = document.getElementById("authSection");
   const adminDashboard = document.getElementById("adminDashboard");
   const submissionsList = document.getElementById("submissionsList");
   const gradingView = document.getElementById("gradingView");
   const queueView = document.getElementById("queueView");
 
-  // Auth Observer
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // Check if user is the Admin (Via hardcoded email or Firestore role)
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
       const isDbAdmin = userDoc.exists() && userDoc.data().role === "admin";
@@ -121,7 +117,7 @@
         document.getElementById("welcomeTitle").innerText = `Welcome Admin, ${user.displayName}`;
         loadPendingSubmissions();
       } else {
-        alert("Access Denied: You do not have administrator privileges.");
+        alert("Access Denied: This account is not an authorized Admin.");
         await signOut(auth);
       }
     } else {
@@ -130,7 +126,6 @@
     }
   });
 
-  // Login / Logout Click Listeners
   document.getElementById("btnLogin").addEventListener("click", () => signInWithPopup(auth, provider).catch(console.error));
   document.getElementById("btnLogout").addEventListener("click", () => signOut(auth));
   document.getElementById("btnBack").addEventListener("click", () => {
@@ -139,7 +134,6 @@
     loadPendingSubmissions();
   });
 
-  // Fetch pending reviews
   async function loadPendingSubmissions() {
     submissionsList.innerHTML = "Fetching submissions...";
     try {
@@ -171,7 +165,6 @@
     }
   }
 
-  // Open candidate review
   function openGradingView(submissionId, submission) {
     currentActiveSubmission = submissionId;
     queueView.classList.add("hidden");
@@ -179,13 +172,10 @@
 
     document.getElementById("candidateName").innerText = `Grading: ${submission.studentName}`;
     document.getElementById("student_q1").innerText = submission.answers.q1 || "No answer submitted.";
-    
-    // Display sketch canvases using the base64 JPG strings saved in Firestore
     document.getElementById("student_q27").src = submission.answers.q27 || "";
     document.getElementById("student_q30").src = submission.answers.q30 || "";
   }
 
-  // Handle Score Submission
   document.getElementById("gradingForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!currentActiveSubmission) return;
@@ -198,7 +188,7 @@
 
     try {
       await gradeSubmission(currentActiveSubmission, auth.currentUser.uid, manualScores);
-      alert("Submission scored successfully!");
+      alert("Submission graded and saved!");
       gradingView.classList.add("hidden");
       queueView.classList.remove("hidden");
       loadPendingSubmissions();
