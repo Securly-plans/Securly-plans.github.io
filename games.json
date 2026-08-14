@@ -129,7 +129,7 @@
   },
   {
     "id": 17,
-    "title": "EmeraldOS Gold",
+    "title": "EmeraldOS Gold Live",
     "thumbnail": "assets/images/EmeraldOS_Gold.png",
     "category": "OSProject",
     "url": "Gold/EmeraldOS/emeraldos-gold-introduction.html",
@@ -143,8 +143,16 @@
    "url": "EmeraldOS",
    "vip": false
   },
+{
+   "id": 20,
+   "title": "EmeraldOS Gold Original - 8.0.1",
+   "category": "OSProject",
+   "thumbnail": "assets/images/EmeraldOS_Gold.png",
+   "url": "EmeralOS/Gold_8.0.1",
+   "vip": false
+  },
  {
-   "id": 19,
+   "id": 20,
    "title": "Dreadhead Parkour",
    "category": "Casual",
    "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.hHZuRplArS-FkxEogwbaPQHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -152,7 +160,7 @@
    "vip": false
   },
   {
-   "id": 20,
+   "id": 21,
    "title": "Monkey Mart",
    "category": "Casual",
    "thumbnail": "https://tse3.mm.bing.net/th/id/OIP.tZZhGVHN4DoR5woRMtNsaAHaFD?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
