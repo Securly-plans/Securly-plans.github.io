@@ -145,10 +145,10 @@
   },
 {
    "id": 20,
-   "title": "Kindergarten",
+   "title": "Drive Mad",
    "category": "Casual",
-   "thumbnail": "games/wacky-nursery/2560607/loading.png",
-   "url": "games/wacky-nursery/index.html",
+   "thumbnail": "./games/drive-mad/menu-assets/new-logo.png",
+   "url": "./games/drive-mad/index.html",
    "vip": false
   },
  {
