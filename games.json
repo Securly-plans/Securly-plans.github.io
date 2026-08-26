@@ -161,10 +161,10 @@
   },
   {
    "id": 22,
-   "title": "Hotel Tycoon",
-   "category": "Casual",
-   "thumbnail": "",
-   "url": "games/hotel/index.html",
+   "title": "Level Devil",
+   "category": "Platformer",
+   "thumbnail": "https://tse3.mm.bing.net/th/id/OIP.2Z-ayaVWEH6FDgF3sYE0XQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+   "url": "./games/level-devil/index.html",
    "vip": false
   }
 ]
