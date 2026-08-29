@@ -11,27 +11,20 @@
     </style>
 </head> 
 <body> 
-    <div id="loading-overlay">Bypassing Network Restrictions...<br><span id="loader-percentage">0%</span></div>
+    <div id="loading-overlay">Downloading Game Assets from Firebase Storage...<br><span id="loader-percentage">0%</span></div>
     <canvas id="unity-canvas" style="display:none;"></canvas> 
 
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // Base64 scrambled links to keep them hidden from the loader script's overrides
-        const SCRAMBLED_DATA = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
-        const SCRAMBLED_WASM = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
-
-        // 🚀 FIXED LOGIC: Changed to pure string addition to bypass Cloudflare optimization caching bugs
-        const PROXY_PREFIX = "https://corsproxy.io/?url=";
-        const RAW_DATA_PATH = atob(SCRAMBLED_DATA); 
-        const RAW_WASM_PATH = atob(SCRAMBLED_WASM); 
-
-        const FIREBASE_DATA_URL = PROXY_PREFIX + encodeURIComponent(RAW_DATA_PATH);
-        const FIREBASE_WASM_URL = PROXY_PREFIX + encodeURIComponent(RAW_WASM_PATH);
+        // 🚀 CRITICAL UPDATE: Replace these placeholders with the long URLs from your Firebase Dashboard
+        // They MUST look like this: https://googleapis.com
+        const FIREBASE_DATA_URL = "PASTE_YOUR_FULL_DATA_URL_WITH_TOKEN_FROM_FIREBASE_CONSOLE_HERE";
+        const FIREBASE_WASM_URL = "PASTE_YOUR_FULL_WASM_URL_WITH_TOKEN_FROM_FIREBASE_CONSOLE_HERE";
 
         async function downloadAssetToBlob(url, name, progressCallback) {
             const response = await fetch(url);
-            if (!response.ok) throw new Error("Proxy gateway network failure! Status: " + response.status);
+            if (!response.ok) throw new Error("Firebase bucket access failed! Status: " + response.status);
             
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length') || 0;
@@ -57,7 +50,7 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // Stream game assets around the loader restrictions via proxy router channels
+                // Stream raw binary blocks straight from Firebase using master tokens
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
                     percentageText.innerText = "Assets Pack: " + Math.floor(p * 100) + "%";
                 });
@@ -82,7 +75,7 @@
                 const canvas = document.querySelector("#unity-canvas"); 
                 canvas.style.display = "block";
 
-                // Mount loader framework script programmatically
+                // Mount loader framework script programmatically now that blobs are isolated
                 const script = document.createElement("script");
                 script.src = "./BuildNow.loader.js";
                 script.onload = () => {
