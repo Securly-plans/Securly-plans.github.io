@@ -17,12 +17,14 @@
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // 1. FIXED PREFIX: Appended the mandatory query routing structure required by the proxy gateway API
+        // 1. HIDDEN ROUTING: Obfuscated URLs to prevent BuildNow.loader.js from finding and overwriting them
+        // These decrypt at runtime into your exact securly-plans-main Firebase endpoints!
+        const SCRAMBLED_DATA = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
+        const SCRAMBLED_WASM = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
+
         const PROXY = "https://corsproxy.io";
-        
-        // 2. FIXED PATHS: Hardcoding your explicit public Firebase download endpoints to break the truncation loop
-        const RAW_DATA = "https://googleapis.com";
-        const RAW_WASM = "https://googleapis.com";
+        const RAW_DATA = atob(SCRAMBLED_DATA); // Decodes string instantly at boot
+        const RAW_WASM = atob(SCRAMBLED_WASM); // Decodes string instantly at boot
 
         const FIREBASE_DATA_URL = PROXY + encodeURIComponent(RAW_DATA);
         const FIREBASE_WASM_URL = PROXY + encodeURIComponent(RAW_WASM);
@@ -55,7 +57,7 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // Stream game assets using proxy tracking channels
+                // Stream game assets securely around the loader's restrictions
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
                     percentageText.innerText = `Assets Pack: ${Math.floor(p * 100)}%`;
                 });
@@ -80,7 +82,7 @@
                 const canvas = document.querySelector("#unity-canvas"); 
                 canvas.style.display = "block";
 
-                // Mount loader script natively
+                // Mount loader framework script programmatically
                 const script = document.createElement("script");
                 script.src = "./BuildNow.loader.js";
                 script.onload = () => {
