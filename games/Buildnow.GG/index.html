@@ -17,10 +17,10 @@
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // 🚀 CRITICAL UPDATE: Replace these placeholders with the long URLs from your Firebase Dashboard
-        // They MUST look like this: https://googleapis.com
-        const FIREBASE_DATA_URL = "PASTE_YOUR_FULL_DATA_URL_WITH_TOKEN_FROM_FIREBASE_CONSOLE_HERE";
-        const FIREBASE_WASM_URL = "PASTE_YOUR_FULL_WASM_URL_WITH_TOKEN_FROM_FIREBASE_CONSOLE_HERE";
+        // 🚀 TOKEN-FREE DATA TARGET ROUTING
+        // Since public read access is enabled, we access your assets directly through Google's open media cluster
+        const FIREBASE_DATA_URL = "https://googleapis.com";
+        const FIREBASE_WASM_URL = "https://googleapis.com";
 
         async function downloadAssetToBlob(url, name, progressCallback) {
             const response = await fetch(url);
@@ -50,7 +50,7 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // Stream raw binary blocks straight from Firebase using master tokens
+                // Stream your files cleanly into isolated browser memory blocks
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
                     percentageText.innerText = "Assets Pack: " + Math.floor(p * 100) + "%";
                 });
@@ -75,7 +75,7 @@
                 const canvas = document.querySelector("#unity-canvas"); 
                 canvas.style.display = "block";
 
-                // Mount loader framework script programmatically now that blobs are isolated
+                // Mount loader framework script programmatically
                 const script = document.createElement("script");
                 script.src = "./BuildNow.loader.js";
                 script.onload = () => {
