@@ -1,4 +1,3 @@
-
 <!DOCTYPE html> 
 <html lang="en-us"> 
 <head> 
@@ -12,14 +11,13 @@
     </style>
 </head> 
 <body> 
-    <div id="loading-overlay">Downloading Game Assets from Firebase Storage...<br><span id="loader-percentage">0.0%</span></div>
+    <div id="loading-overlay">Downloading Game Assets from Firebase Storage...<br><span id="loader-percentage">0%</span></div>
     <canvas id="unity-canvas" style="display:none;"></canvas> 
 
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // 🚀 TOKEN-FREE DATA TARGET ROUTING
-        // Since public read access is enabled, we access your assets directly through Google's open media cluster
+        // Public token-free endpoints reading straight from your open bucket rules
         const FIREBASE_DATA_URL = "https://googleapis.com";
         const FIREBASE_WASM_URL = "https://googleapis.com";
 
