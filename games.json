@@ -185,10 +185,10 @@
   },
  {
    "id": 25,
-   "title": "Subway Surfers",
-   "category": "Casual",
-   "thumbnail": "https://i.pinimg.com/originals/5e/06/06/5e0606fa24129d51e2fda7608e9b079a.jpg",
-   "url": "./games/surfers/index.html",
+   "title": "BuildNow.GG (Test/WIP)",
+   "category": "FPS",
+   "thumbnail": "https://play-lh.googleusercontent.com/MdtXwEOt43tY6GV3-IHAwhdmoW-jY4B1rqvA0m1Yj89Bj4et8FfWGL3cCt_lkDvWbWk",
+   "url": "./games/BuildNow/index.html",
    "vip": false
   }
 ]
