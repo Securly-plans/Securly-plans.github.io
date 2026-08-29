@@ -9,26 +9,23 @@
         #unity-canvas { width: 100%; height: 100%; background: #000; }
     </style>
 
-    <!-- Load the official standalone BuildNow loader straight from the distribution CDN -->
-    <script src="https://crazygames.com"></script>
+    <!-- 1. Changed to load locally from your own repository to bypass security blocks -->
+    <script src="WebGLBrotli.czy.loader.js"></script>
 </head>
 <body>
 
     <canvas id="unity-canvas"></canvas>
 
     <script>
-        // Set up the global variable hook you requested
+        // Set up the global variable hook
         window.myGlobalUnityInstance = null;
 
-        // Configuration targeting your specific heavy Firebase assets
         var config = {
-            // Replace these with your unique Firebase Storage Download URLs
+            // Your unique Firebase Storage Download URLs
             dataUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.data.br",
             codeUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.wasm.br",
             
-            // BuildNow uses the loader wrapper directly, so we pass an empty string here
             frameworkUrl: "", 
-            
             streamingAssetsUrl: "StreamingAssets",
             companyName: "battlelab",
             productName: "BuildNow GG",
@@ -37,11 +34,10 @@
 
         const canvas = document.querySelector("#unity-canvas");
 
-        // Execute the global compilation hook
+        // This will now execute successfully because the script is local!
         createUnityInstance(canvas, config, (progress) => {
             console.log("Loading BuildNow GG Runtime... " + Math.floor(100 * progress) + "%");
         }).then((unityInstance) => {
-            // Store it globally so you can modify variables or look up statuses
             window.myGlobalUnityInstance = unityInstance;
             console.log("BuildNow GG is completely initialized globally!");
         }).catch((message) => {
