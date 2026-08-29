@@ -7,20 +7,57 @@
     <style> 
         body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; } 
         #unity-canvas { width: 100%; height: 100%; background: #000; } 
-    </style> 
+    </style>
+
+    <script>
+        // --- 1. FIREBASE REDIRECT INTERCEPTOR ---
+        // This intercepts the broken loader logic and safely maps local requests to your high-capacity Firebase URLs
+        
+        const FIREBASE_DATA_URL = "https://googleapis.com";
+        const FIREBASE_WASM_URL = "https://googleapis.com";
+
+        // Intercept modern Fetch API requests
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            let url = args[0];
+            if (typeof url === 'string') {
+                if (url.includes('BuildNow.data.br') || url.includes('googleapis.com')) {
+                    if (!url.includes('wasm')) args[0] = FIREBASE_DATA_URL;
+                }
+                if (url.includes('BuildNow.wasm.br') || (url.includes('googleapis.com') && url.includes('wasm'))) {
+                    args[0] = FIREBASE_WASM_URL;
+                }
+            }
+            return originalFetch.apply(this, args);
+        };
+
+        // Intercept legacy XMLHttpRequest requests (which Unity's loader relies heavily on)
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            if (typeof url === 'string') {
+                if (url.includes('BuildNow.data.br') || url === 'https://googleapis.com/' || url === 'https://googleapis.com') {
+                    url = FIREBASE_DATA_URL;
+                } else if (url.includes('BuildNow.wasm.br')) {
+                    url = FIREBASE_WASM_URL;
+                }
+            }
+            return originalOpen.apply(this, [method, url, ...rest]);
+        };
+    </script>
+
     <!-- Load the clean loader script natively from your GitHub repo --> 
     <script src="./BuildNow.loader.js"></script> 
 </head> 
 <body> 
     <canvas id="unity-canvas"></canvas> 
     <script> 
-        // 1. Declare global variable hook
+        // 2. Declare global variable hook
         window.myGlobalUnityInstance = null; 
 
-        // 2. Clear, exact URL configuration definitions
+        // 3. We pass dummy local paths here so the Unity loader doesn't choke or truncate the URL strings!
         var config = { 
-            dataUrl: "https://googleapis.com", 
-            codeUrl: "https://googleapis.com", 
+            dataUrl: "./BuildNow.data.br", 
+            codeUrl: "./BuildNow.wasm.br", 
             frameworkUrl: "./BuildNow.framework.js.br", 
             streamingAssetsUrl: "StreamingAssets", 
             companyName: "battlelab", 
@@ -30,7 +67,7 @@
 
         const canvas = document.querySelector("#unity-canvas"); 
 
-        // 3. Execution
+        // 4. Execution Engine
         createUnityInstance(canvas, config, (progress) => { 
             console.log("Streaming BuildNow GG Engine: " + Math.floor(100 * progress) + "%"); 
         }).then((unityInstance) => { 
