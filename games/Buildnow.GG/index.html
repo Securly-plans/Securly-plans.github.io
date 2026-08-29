@@ -1,105 +1,680 @@
-<!DOCTYPE html> 
-<html lang="en-us"> 
-<head> 
-    <meta charset="utf-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>BuildNow GG</title> 
-    <style> 
-        body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; } 
-        #unity-canvas { width: 100%; height: 100%; background: #000; } 
-        #loading-overlay { position: absolute; color: white; font-family: sans-serif; font-size: 24px; font-weight: bold; text-align: center; } 
-    </style> 
-</head> 
-<body> 
-    <div id="loading-overlay">Bypassing Network Restrictions...<br><span id="loader-percentage">0%</span></div> 
-    <canvas id="unity-canvas" style="display:none;"></canvas> 
+<!DOCTYPE html>
 
-    <script> 
-        window.myGlobalUnityInstance = null; 
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        // 🚀 OBFUSCATED URL BLOCKS: This prevents BuildNow.loader.js from finding and corrupting the strings!
-        // These decrypt natively right at boot into your exact Firebase endpoints.
-        const DATA_SECRET = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
-        const WASM_SECRET = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
+```
+<title>BuildNow GG</title>
 
-        const FIREBASE_DATA_URL = atob(DATA_SECRET); 
-        const FIREBASE_WASM_URL = atob(WASM_SECRET); 
+<style>
+    html,
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #111;
+    }
 
-        async function downloadAssetToBlob(url, name, progressCallback) {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Firebase bucket access failed! Status: " + response.status); 
-            
-            const reader = response.body.getReader();
-            const contentLength = +response.headers.get('Content-Length') || 0; 
-            
-            let receivedLength = 0;
-            let chunks = []; 
-            
-            while(true) {
-                const {done, value} = await reader.read();
-                if (done) break; 
-                
-                chunks.push(value);
-                receivedLength += value.length;
-                if (contentLength > 0) {
-                    progressCallback(receivedLength / contentLength);
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #unity-canvas {
+        width: 100%;
+        height: 100%;
+        display: none;
+        background: #000;
+    }
+
+    #loading-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+
+        color: white;
+        background: #111;
+
+        font-family: Arial, sans-serif;
+        font-size: 24px;
+        font-weight: bold;
+
+        text-align: center;
+        z-index: 9999;
+    }
+
+    #loader-percentage {
+        margin-top: 10px;
+        font-size: 18px;
+        font-weight: normal;
+    }
+
+    #loading-error {
+        max-width: 700px;
+        margin-top: 20px;
+        padding: 15px;
+        color: #ff6b6b;
+        font-size: 15px;
+        font-weight: normal;
+        line-height: 1.5;
+        display: none;
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<div id="loading-overlay">
+    <div id="loading-message">
+        Loading BuildNow GG...
+    </div>
+
+    <div id="loader-percentage">
+        Initializing...
+    </div>
+
+    <div id="loading-error"></div>
+</div>
+
+<canvas id="unity-canvas"></canvas>
+
+<script>
+    "use strict";
+
+    /*
+     * ============================================================
+     * BUILDNOW GG SELF-HOSTED LOADER
+     * ============================================================
+     */
+
+    window.myGlobalUnityInstance = null;
+
+    let unityStarting = false;
+    let unityStarted = false;
+
+    /*
+     * ============================================================
+     * CRAZYGAMES COMPATIBILITY
+     * ============================================================
+     *
+     * The Unity build contains CrazyGames integration.
+     *
+     * The self-hosted version is NOT running on CrazyGames, so
+     * CrazyGames functionality must not be allowed to crash Unity.
+     *
+     * We create a minimal compatibility object only if the real
+     * CrazyGames SDK isn't available.
+     */
+
+    function installCrazyGamesCompatibility() {
+
+        if (window.CrazyGames) {
+            console.log("[BuildNow] CrazyGames SDK detected.");
+            return;
+        }
+
+        console.warn(
+            "[BuildNow] CrazyGames SDK is not available. " +
+            "Installing self-hosted compatibility layer."
+        );
+
+        window.CrazyGames = {
+            SDK: {
+
+                environment: "disabled",
+
+                init: async function () {
+                    console.log(
+                        "[BuildNow] CrazyGames SDK compatibility init."
+                    );
+
+                    return true;
+                },
+
+                game: {
+                    gameplayStart: function () {},
+                    gameplayStop: function () {},
+                    happytime: function () {},
+
+                    getInviteParam: function () {
+                        return null;
+                    },
+
+                    settings: {
+                        disableChat: false
+                    },
+
+                    isInstantMultiplayer: false
+                },
+
+                ad: {
+                    requestAd: function () {
+                        console.log(
+                            "[BuildNow] Advertisement request ignored " +
+                            "because this is the self-hosted version."
+                        );
+                    }
+                },
+
+                banner: {
+                    requestBanner: function () {},
+                    clearBanner: function () {},
+                    hideBanner: function () {},
+                    showBanner: function () {}
+                },
+
+                user: {
+                    isUserAccountAvailable: false,
+
+                    getUser: async function () {
+                        return null;
+                    },
+
+                    getSystemInfo: async function () {
+                        return null;
+                    }
+                },
+
+                data: {
+                    getItem: function (key) {
+                        return localStorage.getItem(key);
+                    },
+
+                    setItem: function (key, value) {
+                        localStorage.setItem(key, value);
+                    },
+
+                    removeItem: function (key) {
+                        localStorage.removeItem(key);
+                    },
+
+                    clear: function () {
+                        localStorage.clear();
+                    }
                 }
-            } 
-            
-            const blob = new Blob(chunks);
-            return URL.createObjectURL(blob);
-        } 
-
-        async function prebootApplication() {
-            const percentageText = document.getElementById("loader-percentage");
-            try {
-                // Stream your files cleanly into isolated browser memory blocks
-                const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
-                    percentageText.innerText = "Assets Pack: " + Math.floor(p * 100) + "%";
-                });
-
-                const localWasmBlobUrl = await downloadAssetToBlob(FIREBASE_WASM_URL, "Wasm", (p) => {
-                    percentageText.innerText = "Engine Core: " + Math.floor(p * 100) + "%";
-                });
-
-                percentageText.innerText = "Spawning WebGL Elements..."; 
-                
-                var config = { 
-                    dataUrl: localDataBlobUrl, 
-                    codeUrl: localWasmBlobUrl, 
-                    frameworkUrl: "./BuildNow.framework.js.br", 
-                    streamingAssetsUrl: "StreamingAssets", 
-                    companyName: "battlelab", 
-                    productName: "BuildNow GG", 
-                    productVersion: "1.0" 
-                }; 
-
-                document.getElementById("loading-overlay").style.display = "none";
-                const canvas = document.querySelector("#unity-canvas"); 
-                canvas.style.display = "block";
-
-                // Mount loader framework script programmatically
-                const script = document.createElement("script");
-                script.src = "./BuildNow.loader.js";
-                script.onload = () => {
-                    createUnityInstance(canvas, config, (progress) => {
-                        console.log("Unity Loader Synchronized: " + Math.floor(100 * progress) + "%");
-                    }).then((unityInstance) => {
-                        window.myGlobalUnityInstance = unityInstance;
-                        console.log("BuildNow GG Is Completely Ready and Accessible Natively!");
-                    }).catch((message) => {
-                        console.error("Unity component compile layout error:", message);
-                    });
-                };
-                document.body.appendChild(script);
-
-            } catch (error) {
-                document.getElementById("loading-overlay").innerHTML = "<span style='color:red;'>Initialization Error: " + error.message + "</span>";
-                console.error("Critical execution mapping fault:", error);
             }
-        } 
+        };
+    }
 
-        window.addEventListener("DOMContentLoaded", prebootApplication);
-    </script> 
-</body> 
+    installCrazyGamesCompatibility();
+
+
+    /*
+     * ============================================================
+     * ASSET URLS
+     * ============================================================
+     */
+
+    const DATA_SECRET =
+        "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
+
+    const WASM_SECRET =
+        "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
+
+    const FIREBASE_DATA_URL = atob(DATA_SECRET);
+    const FIREBASE_WASM_URL = atob(WASM_SECRET);
+
+
+    /*
+     * ============================================================
+     * UI HELPERS
+     * ============================================================
+     */
+
+    function setLoading(message, percentage) {
+
+        const messageElement =
+            document.getElementById("loading-message");
+
+        const percentageElement =
+            document.getElementById("loader-percentage");
+
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+
+        if (percentageElement) {
+            percentageElement.textContent =
+                percentage || "";
+        }
+    }
+
+
+    function showError(error) {
+
+        console.error("[BuildNow] Fatal error:", error);
+
+        const errorElement =
+            document.getElementById("loading-error");
+
+        if (errorElement) {
+
+            errorElement.style.display = "block";
+
+            errorElement.textContent =
+                "BuildNow GG could not start: " +
+                (error && error.message
+                    ? error.message
+                    : String(error));
+        }
+    }
+
+
+    /*
+     * ============================================================
+     * LOAD SCRIPT
+     * ============================================================
+     */
+
+    function loadScript(src) {
+
+        return new Promise(function (resolve, reject) {
+
+            const existing =
+                document.querySelector(
+                    'script[src="' + src + '"]'
+                );
+
+            if (existing) {
+
+                if (existing.dataset.loaded === "true") {
+                    resolve();
+                    return;
+                }
+
+                existing.addEventListener("load", resolve, {
+                    once: true
+                });
+
+                existing.addEventListener("error", reject, {
+                    once: true
+                });
+
+                return;
+            }
+
+            const script =
+                document.createElement("script");
+
+            script.src = src;
+            script.async = false;
+
+            script.onload = function () {
+                script.dataset.loaded = "true";
+                resolve();
+            };
+
+            script.onerror = function () {
+                reject(
+                    new Error(
+                        "Failed to load " + src
+                    )
+                );
+            };
+
+            document.head.appendChild(script);
+        });
+    }
+
+
+    /*
+     * ============================================================
+     * DOWNLOAD ASSET
+     * ============================================================
+     */
+
+    async function downloadAssetToBlob(
+        url,
+        progressCallback
+    ) {
+
+        const response = await fetch(url, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Asset download failed: HTTP " +
+                response.status
+            );
+        }
+
+        if (!response.body) {
+
+            throw new Error(
+                "Browser does not support streaming asset downloads."
+            );
+        }
+
+        const reader =
+            response.body.getReader();
+
+        const contentLength =
+            Number(
+                response.headers.get("Content-Length")
+            ) || 0;
+
+        const chunks = [];
+
+        let receivedLength = 0;
+
+        while (true) {
+
+            const result =
+                await reader.read();
+
+            if (result.done) {
+                break;
+            }
+
+            chunks.push(result.value);
+
+            receivedLength +=
+                result.value.length;
+
+            if (contentLength > 0) {
+
+                progressCallback(
+                    receivedLength /
+                    contentLength
+                );
+            }
+        }
+
+        const blob =
+            new Blob(chunks);
+
+        return URL.createObjectURL(blob);
+    }
+
+
+    /*
+     * ============================================================
+     * START UNITY
+     * ============================================================
+     */
+
+    async function prebootApplication() {
+
+        if (unityStarting || unityStarted) {
+
+            console.warn(
+                "[BuildNow] Unity startup already requested."
+            );
+
+            return;
+        }
+
+        unityStarting = true;
+
+        try {
+
+            /*
+             * ----------------------------------------------------
+             * CrazyGames compatibility
+             * ----------------------------------------------------
+             */
+
+            setLoading(
+                "Preparing BuildNow GG...",
+                "Initializing SDK..."
+            );
+
+            if (
+                window.CrazyGames &&
+                window.CrazyGames.SDK &&
+                typeof window.CrazyGames.SDK.init === "function"
+            ) {
+
+                try {
+
+                    await window.CrazyGames.SDK.init();
+
+                    console.log(
+                        "[BuildNow] CrazyGames compatibility initialized."
+                    );
+
+                } catch (sdkError) {
+
+                    console.warn(
+                        "[BuildNow] CrazyGames SDK unavailable:",
+                        sdkError
+                    );
+                }
+            }
+
+
+            /*
+             * ----------------------------------------------------
+             * DATA
+             * ----------------------------------------------------
+             */
+
+            setLoading(
+                "Downloading game data...",
+                "Assets Pack: 0%"
+            );
+
+            const localDataBlobUrl =
+                await downloadAssetToBlob(
+                    FIREBASE_DATA_URL,
+                    function (progress) {
+
+                        setLoading(
+                            "Downloading game data...",
+                            "Assets Pack: " +
+                            Math.floor(
+                                progress * 100
+                            ) +
+                            "%"
+                        );
+                    }
+                );
+
+
+            /*
+             * ----------------------------------------------------
+             * WASM
+             * ----------------------------------------------------
+             */
+
+            setLoading(
+                "Downloading engine...",
+                "Engine Core: 0%"
+            );
+
+            const localWasmBlobUrl =
+                await downloadAssetToBlob(
+                    FIREBASE_WASM_URL,
+                    function (progress) {
+
+                        setLoading(
+                            "Downloading engine...",
+                            "Engine Core: " +
+                            Math.floor(
+                                progress * 100
+                            ) +
+                            "%"
+                        );
+                    }
+                );
+
+
+            /*
+             * ----------------------------------------------------
+             * UNITY CONFIG
+             * ----------------------------------------------------
+             */
+
+            setLoading(
+                "Preparing WebGL...",
+                "Starting Unity..."
+            );
+
+            const config = {
+
+                dataUrl:
+                    localDataBlobUrl,
+
+                codeUrl:
+                    localWasmBlobUrl,
+
+                frameworkUrl:
+                    "./BuildNow.framework.js.br",
+
+                streamingAssetsUrl:
+                    "./StreamingAssets",
+
+                companyName:
+                    "battlelab",
+
+                productName:
+                    "BuildNow GG",
+
+                productVersion:
+                    "1.0"
+            };
+
+
+            /*
+             * ----------------------------------------------------
+             * CANVAS
+             * ----------------------------------------------------
+             */
+
+            const canvas =
+                document.getElementById(
+                    "unity-canvas"
+                );
+
+            if (!canvas) {
+
+                throw new Error(
+                    "Unity canvas was not found."
+                );
+            }
+
+            canvas.style.display = "block";
+
+
+            /*
+             * ----------------------------------------------------
+             * UNITY LOADER
+             * ----------------------------------------------------
+             */
+
+            await loadScript(
+                "./BuildNow.loader.js"
+            );
+
+            if (
+                typeof window.createUnityInstance !==
+                "function"
+            ) {
+
+                throw new Error(
+                    "BuildNow.loader.js loaded, but createUnityInstance is unavailable."
+                );
+            }
+
+
+            /*
+             * ----------------------------------------------------
+             * START UNITY ONCE
+             * ----------------------------------------------------
+             */
+
+            console.log(
+                "[BuildNow] Starting Unity..."
+            );
+
+            const unityInstance =
+                await window.createUnityInstance(
+                    canvas,
+                    config,
+                    function (progress) {
+
+                        setLoading(
+                            "Starting BuildNow GG...",
+                            "Unity: " +
+                            Math.floor(
+                                progress * 100
+                            ) +
+                            "%"
+                        );
+                    }
+                );
+
+            window.myGlobalUnityInstance =
+                unityInstance;
+
+            unityStarted = true;
+            unityStarting = false;
+
+            /*
+             * ----------------------------------------------------
+             * CLEANUP
+             * ----------------------------------------------------
+             */
+
+            const overlay =
+                document.getElementById(
+                    "loading-overlay"
+                );
+
+            if (overlay) {
+                overlay.style.display = "none";
+            }
+
+            console.log(
+                "[BuildNow] Unity initialized successfully."
+            );
+
+        } catch (error) {
+
+            unityStarting = false;
+
+            showError(error);
+        }
+    }
+
+
+    /*
+     * ============================================================
+     * START ONLY ONCE
+     * ============================================================
+     */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            prebootApplication,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        prebootApplication();
+    }
+
+</script>
+```
+
+</body>
 </html>
