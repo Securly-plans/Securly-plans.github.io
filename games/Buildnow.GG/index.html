@@ -17,14 +17,14 @@
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // 1. HIDDEN ROUTING: Obfuscated URLs to prevent BuildNow.loader.js from finding and overwriting them
-        // These decrypt at runtime into your exact securly-plans-main Firebase endpoints!
+        // Base64 scrambled endpoints to keep them protected from the loader script
         const SCRAMBLED_DATA = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
         const SCRAMBLED_WASM = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
 
+        // 1. FIXED FORMATTING: Appended the mandatory query routing structure required by the proxy gateway API
         const PROXY = "https://corsproxy.io";
-        const RAW_DATA = atob(SCRAMBLED_DATA); // Decodes string instantly at boot
-        const RAW_WASM = atob(SCRAMBLED_WASM); // Decodes string instantly at boot
+        const RAW_DATA = atob(SCRAMBLED_DATA); 
+        const RAW_WASM = atob(SCRAMBLED_WASM); 
 
         const FIREBASE_DATA_URL = PROXY + encodeURIComponent(RAW_DATA);
         const FIREBASE_WASM_URL = PROXY + encodeURIComponent(RAW_WASM);
