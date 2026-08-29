@@ -10,11 +10,11 @@
     </style>
 
     <script>
-        // --- NUCLEAR RESOURCE INTERCEPTOR FORCE LAYER ---
+        // --- FIXED SEQUENTIAL RESOURCE INTERCEPTOR ---
         const FIREBASE_DATA_URL = "https://googleapis.com";
         const FIREBASE_WASM_URL = "https://googleapis.com";
 
-        // 1. Completely rewrite the Fetch API layer to return a completely new clean request
+        // 1. Intercept Unity's Fetch Engine Layer (Exclusively targets the WASM file layout)
         const originalFetch = window.fetch;
         window.fetch = async function(input, init) {
             let urlString = "";
@@ -22,24 +22,20 @@
             else if (input instanceof Request) urlString = input.url;
             else if (input instanceof URL) urlString = input.href;
 
-            if (urlString.includes('googleapis.com') || urlString.includes('BuildNow.data.br') || urlString.includes('BuildNow.wasm.br')) {
-                const targetUrl = urlString.includes('wasm') ? FIREBASE_WASM_URL : FIREBASE_DATA_URL;
-                console.log(`[NUCLEAR FETCH] Killing old request. Forcing clean, raw fetch straight to: ${targetUrl}`);
-                
-                // Throw away Unity's mutated config and execute a totally clean, unadulterated request
-                return originalFetch(targetUrl);
+            if (urlString.includes('googleapis.com') || urlString.includes('BuildNow')) {
+                console.log("[FIXED FETCH] Swapping broken Google address directly with Firebase WASM URL!");
+                return originalFetch(FIREBASE_WASM_URL);
             }
             return originalFetch.call(this, input, init);
         };
 
-        // 2. Completely rewrite XMLHttpRequest to ignore internal string parsing
+        // 2. Intercept Unity's XHR Asset Layer (Exclusively targets the .DATA file bundle layout)
         const originalOpen = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function(method, url, ...rest) {
             if (typeof url === 'string') {
-                if (url.includes('googleapis.com') || url.includes('BuildNow.data.br') || url.includes('BuildNow.wasm.br')) {
-                    const targetUrl = url.includes('wasm') ? FIREBASE_WASM_URL : FIREBASE_DATA_URL;
-                    console.log(`[NUCLEAR XHR] Rewriting open track destination to: ${targetUrl}`);
-                    url = targetUrl;
+                if (url.includes('googleapis.com') || url.includes('BuildNow')) {
+                    console.log("[FIXED XHR] Swapping broken Google address directly with Firebase DATA URL!");
+                    url = FIREBASE_DATA_URL;
                 }
             }
             return originalOpen.apply(this, [method, url, ...rest]);
