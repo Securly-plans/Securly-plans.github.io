@@ -182,8 +182,17 @@
    "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.vVS4QOmxlrqRYJ1L4VhbXAHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
    "url": "./games/mario/index.html",
    "vip": false
+  },
+ {
+   "id": 25,
+   "title": "Subway Surfers",
+   "category": "Casual",
+   "thumbnail": "https://i.pinimg.com/originals/5e/06/06/5e0606fa24129d51e2fda7608e9b079a.jpg",
+   "url": "./games/surfers/index.html",
+   "vip": false
   }
 ]
+
 
 
 
