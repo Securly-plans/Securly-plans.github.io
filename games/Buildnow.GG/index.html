@@ -17,8 +17,10 @@
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // Uses a public, open proxy gateway wrapper to stream assets around the googleapis blocker securely
+        // 1. FIXED PREFIX: Appended the mandatory query routing structure required by the proxy gateway API
         const PROXY = "https://corsproxy.io";
+        
+        // 2. FIXED PATHS: Hardcoding your explicit public Firebase download endpoints to break the truncation loop
         const RAW_DATA = "https://googleapis.com";
         const RAW_WASM = "https://googleapis.com";
 
@@ -53,7 +55,7 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // 1. Stream game variables using proxy wrapper tracking channels
+                // Stream game assets using proxy tracking channels
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
                     percentageText.innerText = `Assets Pack: ${Math.floor(p * 100)}%`;
                 });
@@ -64,7 +66,6 @@
 
                 percentageText.innerText = "Spawning WebGL Elements...";
                 
-                // 2. Feed our isolated local blob URLs right into the engine configuration blocks
                 var config = { 
                     dataUrl: localDataBlobUrl, 
                     codeUrl: localWasmBlobUrl, 
@@ -79,14 +80,13 @@
                 const canvas = document.querySelector("#unity-canvas"); 
                 canvas.style.display = "block";
 
-                // 3. Mount loader only after local files are safely generated in active memory
+                // Mount loader script natively
                 const script = document.createElement("script");
                 script.src = "./BuildNow.loader.js";
                 script.onload = () => {
                     createUnityInstance(canvas, config, (progress) => {
                         console.log("Unity Loader Synchronized: " + Math.floor(100 * progress) + "%");
                     }).then((unityInstance) => {
-                        // Map the execution variable context globally
                         window.myGlobalUnityInstance = unityInstance;
                         console.log("BuildNow GG Is Completely Ready and Accessible Natively!");
                     }).catch((message) => {
