@@ -14,13 +14,13 @@
 <body> 
     <canvas id="unity-canvas"></canvas> 
     <script> 
+        // 1. Declare global variable hook
         window.myGlobalUnityInstance = null; 
 
+        // 2. Clear, exact URL configuration definitions
         var config = { 
-            // 🚀 CORRECTED CDNs: Fully updated gateway mappings matching your firebasestorage.app bucket
             dataUrl: "https://googleapis.com", 
             codeUrl: "https://googleapis.com", 
-            
             frameworkUrl: "./BuildNow.framework.js.br", 
             streamingAssetsUrl: "StreamingAssets", 
             companyName: "battlelab", 
@@ -30,6 +30,7 @@
 
         const canvas = document.querySelector("#unity-canvas"); 
 
+        // 3. Execution
         createUnityInstance(canvas, config, (progress) => { 
             console.log("Streaming BuildNow GG Engine: " + Math.floor(100 * progress) + "%"); 
         }).then((unityInstance) => { 
