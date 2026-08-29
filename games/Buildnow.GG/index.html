@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+```
 <title>BuildNow GG</title>
 
 <style>
@@ -34,7 +35,7 @@
     #loading-overlay {
         position: fixed;
         inset: 0;
-        z-index: 9999;
+        z-index: 99999;
 
         display: flex;
         flex-direction: column;
@@ -62,9 +63,9 @@
     #loading-error {
         display: none;
 
-        width: min(700px, 90vw);
+        width: min(750px, 90vw);
         margin-top: 20px;
-        padding: 14px;
+        padding: 15px;
 
         box-sizing: border-box;
 
@@ -74,17 +75,18 @@
 
         color: #ff7777;
         font-size: 14px;
-        font-weight: 400;
         line-height: 1.5;
 
         word-break: break-word;
     }
 </style>
+```
 
 </head>
 
 <body>
 
+```
 <!-- =========================================================
      LOADING SCREEN
 ========================================================== -->
@@ -112,15 +114,14 @@
 
 
 <!-- =========================================================
-     BUILDNOW / CRAZYGAMES COMPATIBILITY
+     LEGACY CRAZYGAMES COMPATIBILITY LAYER
      
-     IMPORTANT:
-     The compiled BuildNow framework references the exact
-     global identifier "Crazygames".
+     The BuildNow Unity framework expects a legacy global
+     named "Crazygames".
 
-     "window.Crazygames = ..." alone is not sufficient for
-     every compiled JavaScript/WASM bridge, so this is declared
-     as an actual global variable with "var".
+     IMPORTANT:
+     This build calls several functions directly on
+     Crazygames rather than under Crazygames.game.
 ========================================================== -->
 
 <script>
@@ -128,11 +129,9 @@
 
     var Crazygames = window.Crazygames = {
 
-        /*
-         * -----------------------------------------------------
-         * Initialization
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           INITIALIZATION
+        ===================================================== */
 
         init: function () {
 
@@ -153,11 +152,9 @@
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * Environment
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           ENVIRONMENT
+        ===================================================== */
 
         environment: "disabled",
 
@@ -166,58 +163,141 @@
         isAvailable: false,
 
 
-        /*
-         * -----------------------------------------------------
-         * Game API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           DIRECT GAMEPLAY FUNCTIONS
+           
+           BuildNow specifically calls:
+           
+               Crazygames.gameplayStart()
+               Crazygames.gameplayStop()
+           
+           These MUST be top-level.
+        ===================================================== */
+
+        gameplayStart: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.gameplayStart()"
+            );
+
+            return Promise.resolve();
+        },
+
+        gameplayStop: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.gameplayStop()"
+            );
+
+            return Promise.resolve();
+        },
+
+
+        /* =====================================================
+           OTHER DIRECT FUNCTIONS
+        ===================================================== */
+
+        happytime: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.happytime()"
+            );
+
+            return Promise.resolve();
+        },
+
+        pause: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.pause()"
+            );
+        },
+
+        resume: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.resume()"
+            );
+        },
+
+        getInviteParam: function () {
+
+            return null;
+        },
+
+
+        /* =====================================================
+           GAME NAMESPACE
+           
+           Some portions of older integrations use:
+           
+               Crazygames.game.*
+           
+           Keep both forms available.
+        ===================================================== */
 
         game: {
 
             gameplayStart: function () {
 
-                console.log(
-                    "[BuildNow] Crazygames.gameplayStart()"
-                );
+                return Crazygames.gameplayStart();
             },
 
             gameplayStop: function () {
 
-                console.log(
-                    "[BuildNow] Crazygames.gameplayStop()"
-                );
+                return Crazygames.gameplayStop();
             },
 
             happytime: function () {
 
-                console.log(
-                    "[BuildNow] Crazygames.game.happytime()"
-                );
+                return Crazygames.happytime();
             },
 
-            pause: function () {},
+            pause: function () {
 
-            resume: function () {},
+                return Crazygames.pause();
+            },
+
+            resume: function () {
+
+                return Crazygames.resume();
+            },
 
             getInviteParam: function () {
 
-                return null;
+                return Crazygames.getInviteParam();
             }
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * Advertisement API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           ADVERTISEMENT API
+        ===================================================== */
+
+        requestAd: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.requestAd() ignored."
+            );
+
+            return Promise.resolve();
+        },
+
+        showAd: function () {
+
+            console.log(
+                "[BuildNow] Crazygames.showAd() ignored."
+            );
+
+            return Promise.resolve();
+        },
 
         ad: {
 
             requestAd: function () {
 
                 console.log(
-                    "[BuildNow] Crazygames ad request ignored."
+                    "[BuildNow] Crazygames.ad.requestAd() ignored."
                 );
 
                 return Promise.resolve();
@@ -226,7 +306,7 @@
             showAd: function () {
 
                 console.log(
-                    "[BuildNow] Crazygames showAd ignored."
+                    "[BuildNow] Crazygames.ad.showAd() ignored."
                 );
 
                 return Promise.resolve();
@@ -234,11 +314,17 @@
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * Banner API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           BANNER API
+        ===================================================== */
+
+        requestBanner: function () {},
+
+        showBanner: function () {},
+
+        hideBanner: function () {},
+
+        clearBanner: function () {},
 
         banner: {
 
@@ -252,11 +338,9 @@
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * User API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           USER API
+        ===================================================== */
 
         user: {
 
@@ -276,26 +360,73 @@
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * Data API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           DATA API
+        ===================================================== */
+
+        getItem: function (key) {
+
+            try {
+
+                return localStorage.getItem(
+                    key
+                );
+
+            } catch (error) {
+
+                return null;
+            }
+        },
+
+        setItem: function (
+            key,
+            value
+        ) {
+
+            try {
+
+                localStorage.setItem(
+                    key,
+                    String(value)
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "[BuildNow] localStorage write failed:",
+                    error
+                );
+            }
+        },
+
+        removeItem: function (key) {
+
+            try {
+
+                localStorage.removeItem(
+                    key
+                );
+
+            } catch (error) {}
+        },
+
+        clear: function () {
+
+            try {
+
+                localStorage.clear();
+
+            } catch (error) {}
+        },
+
 
         data: {
 
             getItem: function (key) {
 
-                try {
-
-                    return localStorage.getItem(
-                        key
-                    );
-
-                } catch (error) {
-
-                    return null;
-                }
+                return Crazygames.getItem(
+                    key
+                );
             },
 
             setItem: function (
@@ -303,49 +434,29 @@
                 value
             ) {
 
-                try {
-
-                    localStorage.setItem(
-                        key,
-                        String(value)
-                    );
-
-                } catch (error) {
-
-                    console.warn(
-                        "[BuildNow] Could not save data:",
-                        error
-                    );
-                }
+                return Crazygames.setItem(
+                    key,
+                    value
+                );
             },
 
             removeItem: function (key) {
 
-                try {
-
-                    localStorage.removeItem(
-                        key
-                    );
-
-                } catch (error) {}
+                return Crazygames.removeItem(
+                    key
+                );
             },
 
             clear: function () {
 
-                try {
-
-                    localStorage.clear();
-
-                } catch (error) {}
+                return Crazygames.clear();
             }
         },
 
 
-        /*
-         * -----------------------------------------------------
-         * Storage API
-         * -----------------------------------------------------
-         */
+        /* =====================================================
+           STORAGE API
+        ===================================================== */
 
         storage: {
 
@@ -375,13 +486,7 @@
                         String(value)
                     );
 
-                } catch (error) {
-
-                    console.warn(
-                        "[BuildNow] Storage write failed:",
-                        error
-                    );
-                }
+                } catch (error) {}
             },
 
             removeItem: function (key) {
@@ -398,21 +503,35 @@
     };
 
 
-    /*
-     * Verify that the compiled Unity bridge can see the
-     * expected identifier.
-     */
+    /* =========================================================
+       VERIFY REQUIRED BUILDNOW FUNCTIONS
+    ========================================================== */
 
     console.log(
         "[BuildNow] Crazygames global:",
         typeof Crazygames
     );
 
+    console.log(
+        "[BuildNow] Crazygames.init:",
+        typeof Crazygames.init
+    );
+
+    console.log(
+        "[BuildNow] Crazygames.gameplayStart:",
+        typeof Crazygames.gameplayStart
+    );
+
+    console.log(
+        "[BuildNow] Crazygames.gameplayStop:",
+        typeof Crazygames.gameplayStop
+    );
+
 </script>
 
 
 <!-- =========================================================
-     APPLICATION
+     BUILDNOW APPLICATION
 ========================================================== -->
 
 <script>
@@ -420,7 +539,7 @@
 
 
     /* =========================================================
-       GLOBAL UNITY STATE
+       UNITY STATE
     ========================================================== */
 
     window.myGlobalUnityInstance = null;
@@ -573,7 +692,9 @@
                     existingScript.addEventListener(
                         "load",
                         function () {
+
                             resolve();
+
                         },
                         {
                             once: true
@@ -647,7 +768,7 @@
 
 
     /* =========================================================
-       ASSET DOWNLOADER
+       DOWNLOAD FIREBASE ASSET
     ========================================================== */
 
     async function downloadAssetToBlob(
@@ -682,7 +803,7 @@
         if (!response.body) {
 
             throw new Error(
-                "Streaming asset downloads are not supported by this browser."
+                "Streaming asset downloads are not supported."
             );
         }
 
@@ -700,6 +821,7 @@
 
 
         const chunks = [];
+
 
         let receivedLength =
             0;
@@ -753,13 +875,13 @@
 
 
     /* =========================================================
-       UNITY STARTUP
+       START UNITY
     ========================================================== */
 
     async function prebootApplication() {
 
         /*
-         * Prevent duplicate startup.
+         * Never create two Unity instances.
          */
 
         if (
@@ -782,7 +904,7 @@
         try {
 
             /* -------------------------------------------------
-               STEP 1
+               VERIFY CRAZYGAMES
             ------------------------------------------------- */
 
             setLoading(
@@ -797,19 +919,40 @@
             ) {
 
                 throw new Error(
-                    "The required Crazygames global could not be created."
+                    "Crazygames global is unavailable."
+                );
+            }
+
+
+            if (
+                typeof Crazygames.gameplayStart !==
+                "function"
+            ) {
+
+                throw new Error(
+                    "Crazygames.gameplayStart is unavailable."
+                );
+            }
+
+
+            if (
+                typeof Crazygames.gameplayStop !==
+                "function"
+            ) {
+
+                throw new Error(
+                    "Crazygames.gameplayStop is unavailable."
                 );
             }
 
 
             console.log(
-                "[BuildNow] Crazygames is available."
+                "[BuildNow] Required Crazygames functions are available."
             );
 
 
             /* -------------------------------------------------
-               STEP 2
-               Initialize legacy SDK compatibility.
+               INITIALIZE
             ------------------------------------------------- */
 
             if (
@@ -832,8 +975,7 @@
 
 
             /* -------------------------------------------------
-               STEP 3
-               Download DATA.
+               DATA
             ------------------------------------------------- */
 
             setLoading(
@@ -868,8 +1010,7 @@
 
 
             /* -------------------------------------------------
-               STEP 4
-               Download WASM.
+               WASM
             ------------------------------------------------- */
 
             setLoading(
@@ -904,8 +1045,7 @@
 
 
             /* -------------------------------------------------
-               STEP 5
-               Unity configuration.
+               UNITY CONFIG
             ------------------------------------------------- */
 
             setLoading(
@@ -945,8 +1085,7 @@
 
 
             /* -------------------------------------------------
-               STEP 6
-               Canvas.
+               CANVAS
             ------------------------------------------------- */
 
             const canvas =
@@ -968,8 +1107,7 @@
 
 
             /* -------------------------------------------------
-               STEP 7
-               Load Unity loader.
+               UNITY LOADER
             ------------------------------------------------- */
 
             setLoading(
@@ -1000,8 +1138,7 @@
 
 
             /* -------------------------------------------------
-               STEP 8
-               Create Unity instance.
+               CREATE UNITY INSTANCE
             ------------------------------------------------- */
 
             setLoading(
@@ -1032,8 +1169,7 @@
 
 
             /* -------------------------------------------------
-               STEP 9
-               Save instance.
+               SAVE UNITY INSTANCE
             ------------------------------------------------- */
 
             window.myGlobalUnityInstance =
@@ -1054,8 +1190,7 @@
 
 
             /* -------------------------------------------------
-               STEP 10
-               Hide loading screen.
+               HIDE LOADING SCREEN
             ------------------------------------------------- */
 
             const overlay =
@@ -1083,7 +1218,7 @@
 
 
     /* =========================================================
-       GLOBAL ERROR HANDLERS
+       ERROR HANDLERS
     ========================================================== */
 
     window.addEventListener(
@@ -1116,7 +1251,7 @@
 
 
     /* =========================================================
-       START APPLICATION ONCE
+       START ONCE
     ========================================================== */
 
     if (
@@ -1138,6 +1273,7 @@
     }
 
 </script>
+```
 
 </body>
 </html>
