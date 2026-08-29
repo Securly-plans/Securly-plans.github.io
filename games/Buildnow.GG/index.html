@@ -11,19 +11,23 @@
     </style>
 </head> 
 <body> 
-    <div id="loading-overlay">Downloading Game Assets from Firebase... <br><span id="loader-percentage">0%</span></div>
+    <div id="loading-overlay">Bypassing Network Restrictions...<br><span id="loader-percentage">0%</span></div>
     <canvas id="unity-canvas" style="display:none;"></canvas> 
 
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        const FIREBASE_DATA_URL = "https://googleapis.com";
-        const FIREBASE_WASM_URL = "https://googleapis.com";
+        // Uses a public, open proxy gateway wrapper to stream assets around the googleapis blocker securely
+        const PROXY = "https://corsproxy.io";
+        const RAW_DATA = "https://googleapis.com";
+        const RAW_WASM = "https://googleapis.com";
 
-        // Helper function to track download progress and convert to a local blob URL
+        const FIREBASE_DATA_URL = PROXY + encodeURIComponent(RAW_DATA);
+        const FIREBASE_WASM_URL = PROXY + encodeURIComponent(RAW_WASM);
+
         async function downloadAssetToBlob(url, name, progressCallback) {
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`Firebase returned HTTP error! Status: ${response.status}`);
+            if (!response.ok) throw new Error(`Proxy gateway network failure! Status: ${response.status}`);
             
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length') || 0;
@@ -49,19 +53,18 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // 1. Download data asset first
+                // 1. Stream game variables using proxy wrapper tracking channels
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
-                    percentageText.innerText = `Data Pack: ${Math.floor(p * 100)}%`;
+                    percentageText.innerText = `Assets Pack: ${Math.floor(p * 100)}%`;
                 });
 
-                // 2. Download Wasm binary next
                 const localWasmBlobUrl = await downloadAssetToBlob(FIREBASE_WASM_URL, "Wasm", (p) => {
-                    percentageText.innerText = `Engine Binary: ${Math.floor(p * 100)}%`;
+                    percentageText.innerText = `Engine Core: ${Math.floor(p * 100)}%`;
                 });
 
-                percentageText.innerText = "Initializing Engine Components...";
+                percentageText.innerText = "Spawning WebGL Elements...";
                 
-                // 3. Inject our newly generated local blob URLs directly into Unity's configuration
+                // 2. Feed our isolated local blob URLs right into the engine configuration blocks
                 var config = { 
                     dataUrl: localDataBlobUrl, 
                     codeUrl: localWasmBlobUrl, 
@@ -72,29 +75,29 @@
                     productVersion: "1.0" 
                 }; 
 
-                // Hide overlay, reveal canvas screen target container
                 document.getElementById("loading-overlay").style.display = "none";
                 const canvas = document.querySelector("#unity-canvas"); 
                 canvas.style.display = "block";
 
-                // 4. Load loader framework programmatically now that blobs are mapped
+                // 3. Mount loader only after local files are safely generated in active memory
                 const script = document.createElement("script");
                 script.src = "./BuildNow.loader.js";
                 script.onload = () => {
                     createUnityInstance(canvas, config, (progress) => {
-                        console.log("Unity Loader Initializing: " + Math.floor(100 * progress) + "%");
+                        console.log("Unity Loader Synchronized: " + Math.floor(100 * progress) + "%");
                     }).then((unityInstance) => {
+                        // Map the execution variable context globally
                         window.myGlobalUnityInstance = unityInstance;
-                        console.log("BuildNow GG Global Instance Live and Ready!");
+                        console.log("BuildNow GG Is Completely Ready and Accessible Natively!");
                     }).catch((message) => {
-                        console.error("Unity internal boot exception:", message);
+                        console.error("Unity component compile layout error:", message);
                     });
                 };
                 document.body.appendChild(script);
 
             } catch (error) {
-                document.getElementById("loading-overlay").innerHTML = `<span style='color:red;'>Pre-load crash: ${error.message}</span>`;
-                console.error("Asset processing exception triggered:", error);
+                document.getElementById("loading-overlay").innerHTML = `<span style='color:red;'>Initialization Error: ${error.message}</span>`;
+                console.error("Critical execution mapping fault:", error);
             }
         }
 
