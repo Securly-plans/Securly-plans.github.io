@@ -9,7 +9,7 @@
         #unity-canvas { width: 100%; height: 100%; background: #000; }
     </style>
 
-    <!-- Load the clean, uncorrupted loader script directly from your local repository folder -->
+    <!-- Load the clean loader script natively from your GitHub repo -->
     <script src="./WebGLBrotli.czy.loader.js"></script>
 </head>
 <body>
@@ -17,14 +17,18 @@
     <canvas id="unity-canvas"></canvas>
 
     <script>
-        // 1. Declare your requested global variables hook
+        // 1. Declare the global variable window object segment you requested
         window.myGlobalUnityInstance = null;
 
-        // 2. Define the localized configuration maps targeting your GitHub repository files
+        // 2. Map the URLs. Scripts stay on GitHub, Heavy binaries stream from Firebase Storage
         var config = {
-            dataUrl: "./YourDataFile.data.br",                  // Replace with your exact filename
-            codeUrl: "./YourWasmFile.wasm.br",                  // Replace with your exact filename
-            frameworkUrl: "./WebGLBrotli.czy.framework.js.br",  // Replace with your exact filename
+            // Replace these two strings with your actual Firebase Storage Download URLs
+            dataUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.data.br",
+            codeUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.wasm.br",
+            
+            // This stays local on your GitHub Pages repo
+            frameworkUrl: "./BuildNow.framework.js", 
+            
             streamingAssetsUrl: "StreamingAssets",
             companyName: "battlelab",
             productName: "BuildNow GG",
@@ -33,15 +37,15 @@
 
         const canvas = document.querySelector("#unity-canvas");
 
-        // 3. Fire up the localized execution engine instance
+        // 3. Instantiate the execution engine
         createUnityInstance(canvas, config, (progress) => {
-            console.log("Loading BuildNow GG Locally: " + Math.floor(100 * progress) + "%");
+            console.log("Streaming BuildNow GG Engine: " + Math.floor(100 * progress) + "%");
         }).then((unityInstance) => {
-            // Assign instance data to the window object global memory segment
+            // Bind the active game framework engine context to the global space
             window.myGlobalUnityInstance = unityInstance;
-            console.log("BuildNow GG Initialization Finalized. Engine live on window.myGlobalUnityInstance!");
+            console.log("BuildNow GG Global Instance Live and Ready!");
         }).catch((message) => {
-            console.error("Unity local runtime startup exception:", message);
+            console.error("Unity boot crash exception logged:", message);
         });
     </script>
 </body>
