@@ -2,50 +2,50 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8">
-    <title>My Unity Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildNow GG</title>
     <style>
-        body { margin: 0; background-color: #233342; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        canvas { width: 960px; height: 600px; background: #000; display: block; }
+        body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #unity-canvas { width: 100%; height: 100%; background: #000; }
     </style>
 
-    <!-- 1. Pulling a universal Unity WebGL Loader directly from jsDelivr CDN -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Load the official standalone BuildNow loader straight from the distribution CDN -->
+    <script src="https://crazygames.com"></script>
 </head>
 <body>
 
-    <!-- Your Unity Game Screen Target Container -->
     <canvas id="unity-canvas"></canvas>
 
     <script>
-        // 2. Global variables to hook into the runtime later
+        // Set up the global variable hook you requested
         window.myGlobalUnityInstance = null;
 
-        // 3. Define the configuration mapping directly to your Firebase Storage Bucket URLs
-        const config = {
-            // Replace these with your unique Firebase Storage download URL tokens
+        // Configuration targeting your specific heavy Firebase assets
+        var config = {
+            // Replace these with your unique Firebase Storage Download URLs
             dataUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.data.br",
             codeUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.wasm.br",
             
-            // If you find your framework.js.br file, upload it to Firebase and reference it here:
-            frameworkUrl: "https://googleapis.com",
+            // BuildNow uses the loader wrapper directly, so we pass an empty string here
+            frameworkUrl: "", 
             
             streamingAssetsUrl: "StreamingAssets",
-            companyName: "DefaultCompany",
-            productName: "UnityGame",
-            productVersion: "1.0",
+            companyName: "battlelab",
+            productName: "BuildNow GG",
+            productVersion: "1.0"
         };
 
         const canvas = document.querySelector("#unity-canvas");
 
-        // 4. Initialize using the native Unity Loader Engine wrapper
+        // Execute the global compilation hook
         createUnityInstance(canvas, config, (progress) => {
-            console.log("Loading Progress: " + (100 * progress) + "%");
+            console.log("Loading BuildNow GG Runtime... " + Math.floor(100 * progress) + "%");
         }).then((unityInstance) => {
-            // Store the instantiated context globally
+            // Store it globally so you can modify variables or look up statuses
             window.myGlobalUnityInstance = unityInstance;
-            console.log("Unity engine is fully ready and globally accessible!");
-        }).catch((error) => {
-            console.error("Unity initialization failed due to version mismatch or missing framework file:", error);
+            console.log("BuildNow GG is completely initialized globally!");
+        }).catch((message) => {
+            console.error("Initialization issue:", message);
         });
     </script>
 </body>
