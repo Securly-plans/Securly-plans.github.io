@@ -7,69 +7,98 @@
     <style> 
         body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; } 
         #unity-canvas { width: 100%; height: 100%; background: #000; } 
+        #loading-overlay { position: absolute; color: white; font-family: sans-serif; font-size: 24px; font-weight: bold; text-align: center; }
     </style>
-
-    <script>
-        // --- FIXED SEQUENTIAL RESOURCE INTERCEPTOR ---
-        const FIREBASE_DATA_URL = "https://googleapis.com";
-        const FIREBASE_WASM_URL = "https://googleapis.com";
-
-        // 1. Intercept Unity's Fetch Engine Layer (Exclusively targets the WASM file layout)
-        const originalFetch = window.fetch;
-        window.fetch = async function(input, init) {
-            let urlString = "";
-            if (typeof input === 'string') urlString = input;
-            else if (input instanceof Request) urlString = input.url;
-            else if (input instanceof URL) urlString = input.href;
-
-            if (urlString.includes('googleapis.com') || urlString.includes('BuildNow')) {
-                console.log("[FIXED FETCH] Swapping broken Google address directly with Firebase WASM URL!");
-                return originalFetch(FIREBASE_WASM_URL);
-            }
-            return originalFetch.call(this, input, init);
-        };
-
-        // 2. Intercept Unity's XHR Asset Layer (Exclusively targets the .DATA file bundle layout)
-        const originalOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-            if (typeof url === 'string') {
-                if (url.includes('googleapis.com') || url.includes('BuildNow')) {
-                    console.log("[FIXED XHR] Swapping broken Google address directly with Firebase DATA URL!");
-                    url = FIREBASE_DATA_URL;
-                }
-            }
-            return originalOpen.apply(this, [method, url, ...rest]);
-        };
-    </script>
-
-    <!-- Load the clean loader script natively from your GitHub repo --> 
-    <script src="./BuildNow.loader.js"></script> 
 </head> 
 <body> 
-    <canvas id="unity-canvas"></canvas> 
+    <div id="loading-overlay">Downloading Game Assets from Firebase... <br><span id="loader-percentage">0%</span></div>
+    <canvas id="unity-canvas" style="display:none;"></canvas> 
+
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        var config = { 
-            dataUrl: "./BuildNow.data.br", 
-            codeUrl: "./BuildNow.wasm.br", 
-            frameworkUrl: "./BuildNow.framework.js.br", 
-            streamingAssetsUrl: "StreamingAssets", 
-            companyName: "battlelab", 
-            productName: "BuildNow GG", 
-            productVersion: "1.0" 
-        }; 
+        const FIREBASE_DATA_URL = "https://googleapis.com";
+        const FIREBASE_WASM_URL = "https://googleapis.com";
 
-        const canvas = document.querySelector("#unity-canvas"); 
+        // Helper function to track download progress and convert to a local blob URL
+        async function downloadAssetToBlob(url, name, progressCallback) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Firebase returned HTTP error! Status: ${response.status}`);
+            
+            const reader = response.body.getReader();
+            const contentLength = +response.headers.get('Content-Length') || 0;
+            
+            let receivedLength = 0;
+            let chunks = []; 
+            
+            while(true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                
+                chunks.push(value);
+                receivedLength += value.length;
+                if (contentLength > 0) {
+                    progressCallback(receivedLength / contentLength);
+                }
+            }
+            
+            const blob = new Blob(chunks);
+            return URL.createObjectURL(blob);
+        }
 
-        createUnityInstance(canvas, config, (progress) => { 
-            console.log("Streaming BuildNow GG Engine: " + Math.floor(100 * progress) + "%"); 
-        }).then((unityInstance) => { 
-            window.myGlobalUnityInstance = unityInstance; 
-            console.log("BuildNow GG Global Instance Live and Ready!"); 
-        }).catch((message) => { 
-            console.error("Unity boot crash exception logged:", message); 
-        }); 
+        async function prebootApplication() {
+            const percentageText = document.getElementById("loader-percentage");
+            try {
+                // 1. Download data asset first
+                const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
+                    percentageText.innerText = `Data Pack: ${Math.floor(p * 100)}%`;
+                });
+
+                // 2. Download Wasm binary next
+                const localWasmBlobUrl = await downloadAssetToBlob(FIREBASE_WASM_URL, "Wasm", (p) => {
+                    percentageText.innerText = `Engine Binary: ${Math.floor(p * 100)}%`;
+                });
+
+                percentageText.innerText = "Initializing Engine Components...";
+                
+                // 3. Inject our newly generated local blob URLs directly into Unity's configuration
+                var config = { 
+                    dataUrl: localDataBlobUrl, 
+                    codeUrl: localWasmBlobUrl, 
+                    frameworkUrl: "./BuildNow.framework.js.br", 
+                    streamingAssetsUrl: "StreamingAssets", 
+                    companyName: "battlelab", 
+                    productName: "BuildNow GG", 
+                    productVersion: "1.0" 
+                }; 
+
+                // Hide overlay, reveal canvas screen target container
+                document.getElementById("loading-overlay").style.display = "none";
+                const canvas = document.querySelector("#unity-canvas"); 
+                canvas.style.display = "block";
+
+                // 4. Load loader framework programmatically now that blobs are mapped
+                const script = document.createElement("script");
+                script.src = "./BuildNow.loader.js";
+                script.onload = () => {
+                    createUnityInstance(canvas, config, (progress) => {
+                        console.log("Unity Loader Initializing: " + Math.floor(100 * progress) + "%");
+                    }).then((unityInstance) => {
+                        window.myGlobalUnityInstance = unityInstance;
+                        console.log("BuildNow GG Global Instance Live and Ready!");
+                    }).catch((message) => {
+                        console.error("Unity internal boot exception:", message);
+                    });
+                };
+                document.body.appendChild(script);
+
+            } catch (error) {
+                document.getElementById("loading-overlay").innerHTML = `<span style='color:red;'>Pre-load crash: ${error.message}</span>`;
+                console.error("Asset processing exception triggered:", error);
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", prebootApplication);
     </script> 
 </body> 
 </html>
