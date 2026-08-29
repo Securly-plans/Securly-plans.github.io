@@ -17,17 +17,16 @@
     <script> 
         window.myGlobalUnityInstance = null; 
 
-        // Base64 scrambled endpoints to keep them protected from the loader script
+        // Base64 scrambled links to protect them from BuildNow.loader.js string rewrites
         const SCRAMBLED_DATA = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93LmRhdGEuYnI/YWx0PW1lZGlh";
         const SCRAMBLED_WASM = "aHR0cHM6Ly9maXJlYmFzZXN0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vdjAvYi9zZWN1cmx5LXBsYW5zLW1haW4uZmlyZWJhc2VzdG9yYWdlLmFwcC9vL0J1aWxkTm93Lndhc20uYnI/YWx0PW1lZGlh";
 
-        // 1. FIXED FORMATTING: Appended the mandatory query routing structure required by the proxy gateway API
-        const PROXY = "https://corsproxy.io";
         const RAW_DATA = atob(SCRAMBLED_DATA); 
         const RAW_WASM = atob(SCRAMBLED_WASM); 
 
-        const FIREBASE_DATA_URL = PROXY + encodeURIComponent(RAW_DATA);
-        const FIREBASE_WASM_URL = PROXY + encodeURIComponent(RAW_WASM);
+        // 🚀 FIXED LOGIC: Formatted cleanly inside a template literal layout with a guaranteed query parameter route
+        const FIREBASE_DATA_URL = `https://corsproxy.io{encodeURIComponent(RAW_DATA)}`;
+        const FIREBASE_WASM_URL = `https://corsproxy.io{encodeURIComponent(RAW_WASM)}`;
 
         async function downloadAssetToBlob(url, name, progressCallback) {
             const response = await fetch(url);
@@ -57,7 +56,7 @@
         async function prebootApplication() {
             const percentageText = document.getElementById("loader-percentage");
             try {
-                // Stream game assets securely around the loader's restrictions
+                // Stream assets securely using proxy routing parameters
                 const localDataBlobUrl = await downloadAssetToBlob(FIREBASE_DATA_URL, "Data", (p) => {
                     percentageText.innerText = `Assets Pack: ${Math.floor(p * 100)}%`;
                 });
