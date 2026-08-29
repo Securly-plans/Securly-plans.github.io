@@ -9,23 +9,22 @@
         #unity-canvas { width: 100%; height: 100%; background: #000; }
     </style>
 
-    <!-- 1. Changed to load locally from your own repository to bypass security blocks -->
-    <script src="WebGLBrotli.czy.loader.js"></script>
+    <!-- Load the clean, uncorrupted loader script directly from your local repository folder -->
+    <script src="./WebGLBrotli.czy.loader.js"></script>
 </head>
 <body>
 
     <canvas id="unity-canvas"></canvas>
 
     <script>
-        // Set up the global variable hook
+        // 1. Declare your requested global variables hook
         window.myGlobalUnityInstance = null;
 
+        // 2. Define the localized configuration maps targeting your GitHub repository files
         var config = {
-            // Your unique Firebase Storage Download URLs
-            dataUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.data.br",
-            codeUrl: "gs://securly-plans-main.firebasestorage.app/BuildNow.wasm.br",
-            
-            frameworkUrl: "", 
+            dataUrl: "./YourDataFile.data.br",                  // Replace with your exact filename
+            codeUrl: "./YourWasmFile.wasm.br",                  // Replace with your exact filename
+            frameworkUrl: "./WebGLBrotli.czy.framework.js.br",  // Replace with your exact filename
             streamingAssetsUrl: "StreamingAssets",
             companyName: "battlelab",
             productName: "BuildNow GG",
@@ -34,14 +33,15 @@
 
         const canvas = document.querySelector("#unity-canvas");
 
-        // This will now execute successfully because the script is local!
+        // 3. Fire up the localized execution engine instance
         createUnityInstance(canvas, config, (progress) => {
-            console.log("Loading BuildNow GG Runtime... " + Math.floor(100 * progress) + "%");
+            console.log("Loading BuildNow GG Locally: " + Math.floor(100 * progress) + "%");
         }).then((unityInstance) => {
+            // Assign instance data to the window object global memory segment
             window.myGlobalUnityInstance = unityInstance;
-            console.log("BuildNow GG is completely initialized globally!");
+            console.log("BuildNow GG Initialization Finalized. Engine live on window.myGlobalUnityInstance!");
         }).catch((message) => {
-            console.error("Initialization issue:", message);
+            console.error("Unity local runtime startup exception:", message);
         });
     </script>
 </body>
