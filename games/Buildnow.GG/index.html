@@ -10,11 +10,11 @@
     </style>
 
     <script>
-        // --- ULTIMATE FIREBASE REDIRECT INTERCEPTOR ---
+        // --- HARD RESOURCE INTERCEPTOR FORCE LAYER ---
         const FIREBASE_DATA_URL = "https://googleapis.com";
         const FIREBASE_WASM_URL = "https://googleapis.com";
 
-        // 1. Intercept Fetch API (Catching strings, Request objects, or URL objects)
+        // 1. Force override Fetch requests entirely by ignoring broken request objects
         const originalFetch = window.fetch;
         window.fetch = async function(input, init) {
             let urlString = "";
@@ -22,37 +22,29 @@
             else if (input instanceof Request) urlString = input.url;
             else if (input instanceof URL) urlString = input.href;
 
-            // Catch any broken variations of googleapis.com or local file configurations
             if (urlString.includes('googleapis.com') || urlString.includes('BuildNow.data.br') || urlString.includes('BuildNow.wasm.br')) {
-                if (urlString.includes('wasm')) {
-                    console.log("Interceptor redirected Fetch -> WASM URL");
-                    if (input instanceof Request) {
-                        input = new Request(FIREBASE_WASM_URL, input);
-                    } else {
-                        input = FIREBASE_WASM_URL;
-                    }
+                // If it asks for the Wasm file or a broken googleapis loop containing wasm context
+                if (urlString.includes('wasm') || (init && init.headers && JSON.stringify(init.headers).includes('wasm'))) {
+                    console.log("Forcing fresh Fetch stream to Firebase WASM...");
+                    return originalFetch.call(this, FIREBASE_WASM_URL);
                 } else {
-                    console.log("Interceptor redirected Fetch -> DATA URL");
-                    if (input instanceof Request) {
-                        input = new Request(FIREBASE_DATA_URL, input);
-                    } else {
-                        input = FIREBASE_DATA_URL;
-                    }
+                    console.log("Forcing fresh Fetch stream to Firebase DATA Pack...");
+                    return originalFetch.call(this, FIREBASE_DATA_URL);
                 }
             }
             return originalFetch.call(this, input, init);
         };
 
-        // 2. Intercept Legacy XMLHttpRequest (Forces the open destination URL)
+        // 2. Force override XHR open calls by throwing away the broken URL strings
         const originalOpen = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function(method, url, ...rest) {
             if (typeof url === 'string') {
                 if (url.includes('googleapis.com') || url.includes('BuildNow.data.br') || url.includes('BuildNow.wasm.br')) {
                     if (url.includes('wasm')) {
-                        console.log("Interceptor redirected XHR -> WASM URL");
+                        console.log("Forcing raw XHR redirect -> Firebase WASM...");
                         url = FIREBASE_WASM_URL;
                     } else {
-                        console.log("Interceptor redirected XHR -> DATA URL");
+                        console.log("Forcing raw XHR redirect -> Firebase DATA Pack...");
                         url = FIREBASE_DATA_URL;
                     }
                 }
@@ -67,10 +59,8 @@
 <body> 
     <canvas id="unity-canvas"></canvas> 
     <script> 
-        // Declare requested global variable hook
         window.myGlobalUnityInstance = null; 
 
-        // Keep local fallback references inside the layout config block
         var config = { 
             dataUrl: "./BuildNow.data.br", 
             codeUrl: "./BuildNow.wasm.br", 
