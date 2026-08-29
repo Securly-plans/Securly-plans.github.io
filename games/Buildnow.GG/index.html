@@ -10,11 +10,11 @@
     </style>
 
     <script>
-        // --- HARD RESOURCE INTERCEPTOR FORCE LAYER ---
+        // --- NUCLEAR RESOURCE INTERCEPTOR FORCE LAYER ---
         const FIREBASE_DATA_URL = "https://googleapis.com";
         const FIREBASE_WASM_URL = "https://googleapis.com";
 
-        // 1. Force override Fetch requests entirely by ignoring broken request objects
+        // 1. Completely rewrite the Fetch API layer to return a completely new clean request
         const originalFetch = window.fetch;
         window.fetch = async function(input, init) {
             let urlString = "";
@@ -23,30 +23,23 @@
             else if (input instanceof URL) urlString = input.href;
 
             if (urlString.includes('googleapis.com') || urlString.includes('BuildNow.data.br') || urlString.includes('BuildNow.wasm.br')) {
-                // If it asks for the Wasm file or a broken googleapis loop containing wasm context
-                if (urlString.includes('wasm') || (init && init.headers && JSON.stringify(init.headers).includes('wasm'))) {
-                    console.log("Forcing fresh Fetch stream to Firebase WASM...");
-                    return originalFetch.call(this, FIREBASE_WASM_URL);
-                } else {
-                    console.log("Forcing fresh Fetch stream to Firebase DATA Pack...");
-                    return originalFetch.call(this, FIREBASE_DATA_URL);
-                }
+                const targetUrl = urlString.includes('wasm') ? FIREBASE_WASM_URL : FIREBASE_DATA_URL;
+                console.log(`[NUCLEAR FETCH] Killing old request. Forcing clean, raw fetch straight to: ${targetUrl}`);
+                
+                // Throw away Unity's mutated config and execute a totally clean, unadulterated request
+                return originalFetch(targetUrl);
             }
             return originalFetch.call(this, input, init);
         };
 
-        // 2. Force override XHR open calls by throwing away the broken URL strings
+        // 2. Completely rewrite XMLHttpRequest to ignore internal string parsing
         const originalOpen = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function(method, url, ...rest) {
             if (typeof url === 'string') {
                 if (url.includes('googleapis.com') || url.includes('BuildNow.data.br') || url.includes('BuildNow.wasm.br')) {
-                    if (url.includes('wasm')) {
-                        console.log("Forcing raw XHR redirect -> Firebase WASM...");
-                        url = FIREBASE_WASM_URL;
-                    } else {
-                        console.log("Forcing raw XHR redirect -> Firebase DATA Pack...");
-                        url = FIREBASE_DATA_URL;
-                    }
+                    const targetUrl = url.includes('wasm') ? FIREBASE_WASM_URL : FIREBASE_DATA_URL;
+                    console.log(`[NUCLEAR XHR] Rewriting open track destination to: ${targetUrl}`);
+                    url = targetUrl;
                 }
             }
             return originalOpen.apply(this, [method, url, ...rest]);
