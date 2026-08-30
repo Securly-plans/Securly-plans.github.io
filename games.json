@@ -73,7 +73,7 @@
   },
   {
     "id": 10,
-    "title": "Ragdoll Hit (May Work.)",
+    "title": "Ragdoll Hit",
     "thumbnail": "./games/Ragdoll-hit/3c892779be9dabb3589586c83ad3eeed.png",
     "category": "Action",
     "url": "./games/Ragdoll-hit/index.html",
@@ -185,7 +185,7 @@
   },
  {
    "id": 25,
-   "title": "BuildNow.GG (FUNCTIONAL!)",
+   "title": "BuildNow.GG",
    "category": "FPS",
    "thumbnail": "https://play-lh.googleusercontent.com/MdtXwEOt43tY6GV3-IHAwhdmoW-jY4B1rqvA0m1Yj89Bj4et8FfWGL3cCt_lkDvWbWk",
    "url": "./games/Buildnow.GG/index.html",
