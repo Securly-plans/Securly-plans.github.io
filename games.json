@@ -193,6 +193,14 @@
   },
  {
    "id": 26,
+   "title": "Escaping the Prison",
+   "category": "Emulator",
+   "thumbnail": "./games/escapingtheprison/escapingtheprison.png",
+   "url": "./games/escapingtheprison/index.html",
+   "vip": false
+  },
+ {
+   "id": 27,
    "title": "BuildNow.GG",
    "category": "FPS",
    "thumbnail": "https://play-lh.googleusercontent.com/MdtXwEOt43tY6GV3-IHAwhdmoW-jY4B1rqvA0m1Yj89Bj4et8FfWGL3cCt_lkDvWbWk",
