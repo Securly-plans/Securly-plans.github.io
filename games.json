@@ -187,7 +187,7 @@
    "id": 25,
    "title": "Retro Bowl College",
    "category": "Emulator",
-   "thumbnail": "",
+   "thumbnail": "./games/retrobowlcollege/retrobowlcollege.png",
    "url": "./games/retrobowlcollege/index.html",
    "vip": false
   },
