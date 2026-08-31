@@ -214,6 +214,14 @@
    "thumbnail": "./games/fnaf/fnaf.png",
    "url": "./games/fnaf/index.html",
    "vip": false
+  },
+ {
+   "id": 29,
+   "title": "Happy Wheels",
+   "category": "Fun",
+   "thumbnail": "./games/happywheels/happywheels.png",
+   "url": "./games/happywheels/happywheels.html",
+   "vip": false
   }
 ]
 
