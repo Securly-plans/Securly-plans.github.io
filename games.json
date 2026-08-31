@@ -211,7 +211,7 @@
    "id": 28,
    "title": "FNAF",
    "category": "Horror",
-   "thumbnail": ".games/fnaf/fnaf.png",
+   "thumbnail": "./games/fnaf/fnaf.png",
    "url": "./games/fnaf/index.html",
    "vip": false
   }
