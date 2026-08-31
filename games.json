@@ -206,6 +206,14 @@
    "thumbnail": "https://play-lh.googleusercontent.com/MdtXwEOt43tY6GV3-IHAwhdmoW-jY4B1rqvA0m1Yj89Bj4et8FfWGL3cCt_lkDvWbWk",
    "url": "./games/Buildnow.GG/index.html",
    "vip": false
+  },
+ {
+   "id": 28,
+   "title": "FNAF",
+   "category": "Horror",
+   "thumbnail": ".games/fnaf/fnaf.png",
+   "url": "./games/fnaf/index.html",
+   "vip": false
   }
 ]
 
