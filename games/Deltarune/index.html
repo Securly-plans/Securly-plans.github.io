@@ -3,47 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Content Viewer</title>
+    <title>Deltarune / Undertale</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 20px; }
-        #loader { font-size: 1.2rem; color: #666; font-weight: 500; }
-        #error-msg { color: #d32f2f; font-weight: bold; display: none; margin-top: 10px; }
+        /* Force the game to fill the absolute entire window cleanly */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Keeps screen black while loading */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Visual UI Containers -->
-    <div id="loader">⏳ Loading content from the cloud...</div>
-    <div id="error-msg">❌ Error: Could not fetch cloud file. (Check browser console for errors)</div>
-    <div id="cloud-content"></div>
-
-    <!-- Injector Logic Engine -->
-    <script>
-        async function loadCloudFile() {
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('error-msg');
-            const contentDiv = document.getElementById('cloud-content');
-
-            // Explicit target URL
-            const FIREBASE_URL = "https://googleapis.com";
-
-            try {
-                const response = await fetch(FIREBASE_URL);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
-                const htmlText = await response.text();
-                
-                loader.style.display = 'none';
-                contentDiv.innerHTML = htmlText;
-            } catch (error) {
-                console.error("Firebase Fetch Error:", error);
-                loader.style.display = 'none';
-                errorMsg.style.display = 'block';
-            }
-        }
-
-        loadCloudFile();
-    </script>
+    <!-- Direct embed bypasses browser JavaScript fetch limits -->
+    <iframe src="https://googleapis.com"></iframe>
 
 </body>
 </html>
