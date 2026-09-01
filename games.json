@@ -302,5 +302,13 @@
     "thumbnail": "./games/fnaf4/fnaf4.png",
     "url": "./games/fnaf4/index.html",
     "vip": false
+  },
+  {
+    "id": 39,
+    "title": "RiddleSchool 1",
+    "category": "Casual!",
+    "thumbnail": "./games/riddleschool/riddleschool.png",
+    "url": "./games/riddleschool/index.html",
+    "vip": false
   }
 ]
