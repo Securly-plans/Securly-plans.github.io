@@ -310,5 +310,13 @@
     "thumbnail": "./games/riddleschool/riddleschool.png",
     "url": "./games/riddleschool/index.html",
     "vip": false
+  },
+  {
+    "id": 40,
+    "title": "RiddleSchool 2",
+    "category": "Casual!",
+    "thumbnail": "./games/riddleschool_2/riddleschool2.png",
+    "url": "./games/riddleschool_2/index.html",
+    "vip": false
   }
 ]
