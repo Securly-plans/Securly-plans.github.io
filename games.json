@@ -222,6 +222,14 @@
    "thumbnail": "./games/happywheels/happywheels.png",
    "url": "./games/happywheels/index.html",
    "vip": false
+  },
+ {
+   "id": 30,
+   "title": "Flappy Bird",
+   "category": "Ragebait",
+   "thumbnail": "./games/flappybird/flappybird.png",
+   "url": "./games/flappybird/index.html",
+   "vip": false
   }
 ]
 
