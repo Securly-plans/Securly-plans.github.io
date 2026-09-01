@@ -220,7 +220,7 @@
    "title": "Happy Wheels",
    "category": "Fun",
    "thumbnail": "./games/happywheels/happywheels.png",
-   "url": "./games/happywheels/happywheels.html",
+   "url": "./games/happywheels/index.html",
    "vip": false
   }
 ]
