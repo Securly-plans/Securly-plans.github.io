@@ -191,8 +191,16 @@
     "url": "./games/motox3m/index.html",
     "vip": false
   },
-  {
+   {
     "id": 25,
+    "title": "Paper.io",
+    "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.o0bwZ1gWz9Kkj6j-ZMjCoAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "category": "Strategy",
+    "url": "./games/paper/index.html",
+    "vip": false
+  },
+  {
+    "id": 26,
     "title": "Pixel Balatro",
     "thumbnail": "https://camo.githubusercontent.com/011e5013eb3ea62b547090a6492d0a8844dfab4286e2842c55b77fe35cb12ed3/68747470733a2f2f6f7574626c6164652e6769746875622e696f2f62616c6174726f2d7765622f736f6369616c2e706e67",
     "category": "Strategy",
@@ -200,7 +208,7 @@
     "vip": true
   },
   {
-    "id": 26,
+    "id": 27,
     "title": "Ragdoll Archers",
     "thumbnail": "./assets/images/alone.webp",
     "category": "Action",
@@ -208,7 +216,7 @@
     "vip": false
   },
   {
-    "id": 27,
+    "id": 28,
     "title": "Ragdoll Hit",
     "thumbnail": "./games/Ragdoll-hit/3c892779be9dabb3589586c83ad3eeed.png",
     "category": "Action",
@@ -216,7 +224,7 @@
     "vip": false
   },
   {
-    "id": 28,
+    "id": 29,
     "title": "Retro Bowl",
     "category": "FOOTBALL!",
     "thumbnail": "./games/retrobowl/retrobowl.png",
@@ -224,7 +232,7 @@
     "vip": false
   },
   {
-    "id": 29,
+    "id": 30,
     "title": "Retro Bowl College",
     "category": "Emulator",
     "thumbnail": "./games/retrobowlcollege/retrobowlcollege.png",
@@ -232,7 +240,7 @@
     "vip": false
   },
   {
-    "id": 30,
+    "id": 31,
     "title": "Spacewaves",
     "thumbnail": "./games/spacewaves/logo.png",
     "category": "Casual",
@@ -240,7 +248,7 @@
     "vip": false
   },
   {
-    "id": 31,
+    "id": 32,
     "title": "Station 141",
     "category": "FPS",
     "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.HlH71fp8msCIUfdg_mS5eAHaEK?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -248,7 +256,7 @@
     "vip": false
   },
   {
-    "id": 32,
+    "id": 33,
     "title": "Super Mario Bros.",
     "category": "Emulator",
     "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.vVS4QOmxlrqRYJ1L4VhbXAHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -256,7 +264,7 @@
     "vip": false
   },
   {
-    "id": 33,
+    "id": 34,
     "title": "Tiny Fishing",
     "thumbnail": "assets/images/tiny-fishing.png",
     "category": "Casual",
@@ -264,7 +272,7 @@
     "vip": false
   },
   {
-    "id": 34,
+    "id": 35,
     "title": "Tomb Of The Mask",
     "thumbnail": "./assets/images/61ljJZNJV0L.png",
     "category": "Action",
@@ -272,7 +280,7 @@
     "vip": false
   },
   {
-    "id": 35,
+    "id": 36,
     "title": "Undertale",
     "category": "Casual!",
     "thumbnail": "./games/Deltarune/Undertale.png",
