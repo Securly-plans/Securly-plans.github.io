@@ -12,15 +12,9 @@
 </head>
 <body>
 
-    <!-- Target File Configuration -->
-    <script>
-        // Ensure this entire URL string is exactly intact
-        const FIREBASE_URL = "https://googleapis.com";
-    </script>
-
     <!-- Visual UI Containers -->
     <div id="loader">⏳ Loading content from the cloud...</div>
-    <div id="error-msg">❌ Error: Access blocked by CORS configuration. Please complete Step 2.</div>
+    <div id="error-msg">❌ Error: Could not fetch cloud file. (Check browser console for errors)</div>
     <div id="cloud-content"></div>
 
     <!-- Injector Logic Engine -->
@@ -29,6 +23,9 @@
             const loader = document.getElementById('loader');
             const errorMsg = document.getElementById('error-msg');
             const contentDiv = document.getElementById('cloud-content');
+
+            // Explicit target URL
+            const FIREBASE_URL = "https://googleapis.com";
 
             try {
                 const response = await fetch(FIREBASE_URL);
