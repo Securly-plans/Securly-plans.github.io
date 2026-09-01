@@ -278,6 +278,14 @@
    "thumbnail": "./games/fnaf3/fnaf3.png",
    "url": "./games/fnaf3/index.html",
    "vip": false
+  },
+  {
+   "id": 37,
+   "title": "Blocky Snakes",
+   "category": "Casual",
+   "thumbnail": "https://img.gamesgo.net/storage/images/games/blocky-snakes/sn300jpg.jpg",
+   "url": "./games/Blocky/index.html",
+   "vip": false
   }
 ]
 
