@@ -246,6 +246,14 @@
    "thumbnail": "./games/retrobowl/retrobowl.png",
    "url": "./games/retrobowl/index.html",
    "vip": false
+  },
+  {
+   "id": 33,
+   "title": "Eaglecraft Indev",
+   "category": "Minecraft!",
+   "thumbnail": "./games/Indev/retrobowl.png",
+   "url": "./games/Indev/index.html",
+   "vip": false
   }
 ]
 
