@@ -256,11 +256,11 @@
    "vip": false
   },
   {
-   "id": 34,
-   "title": "Blocky Snakes",
+   "id": 35,
+   "title": "Undertale",
    "category": "Casual!",
-   "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.P67aBi9wiMVPhNZJP1PqeAAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
-   "url": "./games/Blocky/index.html",
+   "thumbnail": "./games/Deltarune/Undertale.html",
+   "url": "./games/Deltarune/index.html",
    "vip": false
   }
 ]
