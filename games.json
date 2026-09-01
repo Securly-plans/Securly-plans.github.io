@@ -294,5 +294,13 @@
     "thumbnail": "./games/motox3m3/motox3m3.png",
     "url": "./games/motox3m/index.html",
     "vip": false
+  },
+  {
+    "id": 38,
+    "title": "FNAF 4",
+    "category": "Casual!",
+    "thumbnail": "./games/fnaf4/fnaf4.png",
+    "url": "./games/fnaf4/index.html",
+    "vip": false
   }
 ]
