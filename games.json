@@ -19,7 +19,7 @@
     "id": 3,
     "title": "BTD5",
     "category": "Casual",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.dUZq4gDVinYqFV9-PCyAbQHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "url": "./games/BTD5/bloonsTD5.html",
     "vip": false
   },
@@ -27,7 +27,7 @@
     "id": 4,
     "title": "BuildNow.GG",
     "category": "FPS",
-    "thumbnail": "https://googleusercontent.com",
+    "thumbnail": "https://play-lh.googleusercontent.com/MdtXwEOt43tY6GV3-IHAwhdmoW-jY4B1rqvA0m1Yj89Bj4et8FfWGL3cCt_lkDvWbWk",
     "url": "./games/Buildnow.GG/index.html",
     "vip": false
   },
@@ -35,7 +35,7 @@
     "id": 5,
     "title": "Dreadhead Parkour",
     "category": "Casual",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.hHZuRplArS-FkxEogwbaPQHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "url": "games/dreadhead/index.html",
     "vip": false
   },
@@ -138,7 +138,7 @@
   {
     "id": 18,
     "title": "GD Lite",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.3J-W1CO_-Y-zz0TgtHw0ugHaJ4?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Platformer",
     "url": "games/GeometryDashLite-main/index.html",
     "vip": false
@@ -171,14 +171,14 @@
     "id": 22,
     "title": "Level Devil",
     "category": "Platformer",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse3.mm.bing.net/th/id/OIP.2Z-ayaVWEH6FDgF3sYE0XQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "url": "./games/level-devil/index.html",
     "vip": false
   },
   {
     "id": 23,
     "title": "Melon Sandbox (WIP)",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.zvyCdf9ovMm9tJQilYB3xgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Action",
     "url": "./games/melon/index.html",
     "vip": false
@@ -186,7 +186,7 @@
   {
     "id": 24,
     "title": "MotoX3M",
-    "thumbnail": "https://playmox.com",
+    "thumbnail": "https://img.playmox.com/game-icons/5b0abd4c0faa4f5eb190a9a16d5a1b4c-1200x630.jpg",
     "category": "Casual",
     "url": "./games/motox3m/index.html",
     "vip": false
@@ -210,7 +210,7 @@
   {
     "id": 27,
     "title": "Paper.io",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.o0bwZ1gWz9Kkj6j-ZMjCoAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Strategy",
     "url": "./games/paper/index.html",
     "vip": false
@@ -218,7 +218,7 @@
   {
     "id": 28,
     "title": "Pixel Balatro",
-    "thumbnail": "https://githubusercontent.com",
+    "thumbnail": "https://camo.githubusercontent.com/011e5013eb3ea62b547090a6492d0a8844dfab4286e2842c55b77fe35cb12ed3/68747470733a2f2f6f7574626c6164652e6769746875622e696f2f62616c6174726f2d7765622f736f6369616c2e706e67",
     "category": "Strategy",
     "url": "./games/px-webatro/index.html",
     "vip": true
@@ -299,7 +299,7 @@
     "id": 38,
     "title": "Station 141",
     "category": "FPS",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.HlH71fp8msCIUfdg_mS5eAHaEK?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "url": "./games/station141/index.html",
     "vip": false
   },
@@ -307,7 +307,7 @@
     "id": 39,
     "title": "Super Mario Bros.",
     "category": "Emulator",
-    "thumbnail": "https://bing.net",
+    "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.vVS4QOmxlrqRYJ1L4VhbXAHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "url": "./games/mario/index.html",
     "vip": false
   },
