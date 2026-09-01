@@ -283,8 +283,8 @@
     "id": 36,
     "title": "Undertale",
     "category": "Casual!",
-    "thumbnail": "./games/Deltarune/Undertale.png",
-    "url": "./games/Deltarune/index.html",
+    "thumbnail": "./games/Undertale/undertale.png",
+    "url": "./games/Undertale/index.html",
     "vip": false
   }
 ]
