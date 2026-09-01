@@ -185,7 +185,7 @@
   },
   {
     "id": 24,
-    "title": "moto x3m",
+    "title": "MotoX3M",
     "thumbnail": "https://img.playmox.com/game-icons/5b0abd4c0faa4f5eb190a9a16d5a1b4c-1200x630.jpg",
     "category": "Casual",
     "url": "./games/motox3m/index.html",
@@ -285,6 +285,14 @@
     "category": "Casual!",
     "thumbnail": "./games/Undertale/undertale.png",
     "url": "./games/Undertale/index.html",
+    "vip": false
+  },
+  {
+    "id": 37,
+    "title": "MotoX3M3",
+    "category": "Casual!",
+    "thumbnail": "./games/motox3m3/motox3m3.png",
+    "url": "./games/motox3m/index.html",
     "vip": false
   }
 ]
