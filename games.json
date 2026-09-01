@@ -33,10 +33,10 @@
   },
   {
     "id": 5,
-    "title": "Death By AI, (UnFinsihed)",
-    "thumbnail": "https://gr4ys0n.github.io/public/assets/images/deathbyai.jpeg",
+    "title": "MotoX3M2",
+    "thumbnail": "./games/motox3m2/motox3m2.png",
     "category": "Casual",
-    "url": "./games/deathbyai.gg/index.html",
+    "url": "./games/motox3m2/index.html",
     "vip": false
   },
   {
