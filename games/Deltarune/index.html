@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Content Viewer</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; }
+        #loader { font-size: 1.2rem; color: #666; font-weight: 500; }
+        #error-msg { color: #d32f2f; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. DROP YOUR FIREBASE DOWNLOAD URL BETWEEN THE QUOTES BELOW -->
+    <script>
+        const FIREBASE_URL = "gs://securly-plans-main.firebasestorage.app/UNDERTALE.html";
+    </script>
+
+    <!-- UI Containers -->
+    <div id="loader">⏳ Loading content from the cloud...</div>
+    <div id="error-msg">❌ Error: Could not load the cloud file. (Check browser console for CORS errors)</div>
+    <div id="cloud-content"></div>
+
+    <!-- Injector Logic -->
+    <script>
+        async function loadCloudFile() {
+            const loader = document.getElementById('loader');
+            const errorMsg = document.getElementById('error-msg');
+            const contentDiv = document.getElementById('cloud-content');
+
+            if (FIREBASE_URL === "gs://securly-plans-main.firebasestorage.app/UNDERTALE.html" || !FIREBASE_URL) {
+                loader.innerText = "⚠️ Please open index.html and update the FIREBASE_URL variable with your actual link.";
+                return;
+            }
+
+            try {
+                const response = await fetch(FIREBASE_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const htmlText = await response.text();
+                
+                // Hide loader and inject HTML
+                loader.style.display = 'none';
+                contentDiv.innerHTML = htmlText;
+            } catch (error) {
+                console.error("Firebase Fetch Error:", error);
+                loader.style.display = 'none';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // Run immediately on page load
+        loadCloudFile();
+    </script>
+
+</body>
+</html>
