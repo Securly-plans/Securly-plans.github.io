@@ -7,32 +7,27 @@
     <style>
         body { font-family: system-ui, sans-serif; margin: 20px; }
         #loader { font-size: 1.2rem; color: #666; font-weight: 500; }
-        #error-msg { color: #d32f2f; font-weight: bold; display: none; }
+        #error-msg { color: #d32f2f; font-weight: bold; display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. DROP YOUR FIREBASE DOWNLOAD URL BETWEEN THE QUOTES BELOW -->
+    <!-- Target File Configuration -->
     <script>
-        const FIREBASE_URL = "gs://securly-plans-main.firebasestorage.app/UNDERTALE.html";
+        const FIREBASE_URL = "https://googleapis.com";
     </script>
 
-    <!-- UI Containers -->
+    <!-- Visual UI Containers -->
     <div id="loader">⏳ Loading content from the cloud...</div>
     <div id="error-msg">❌ Error: Could not load the cloud file. (Check browser console for CORS errors)</div>
     <div id="cloud-content"></div>
 
-    <!-- Injector Logic -->
+    <!-- Injector Logic Engine -->
     <script>
         async function loadCloudFile() {
             const loader = document.getElementById('loader');
             const errorMsg = document.getElementById('error-msg');
             const contentDiv = document.getElementById('cloud-content');
-
-            if (FIREBASE_URL === "gs://securly-plans-main.firebasestorage.app/UNDERTALES.html" || !FIREBASE_URL) {
-                loader.innerText = "⚠️ Please open index.html and update the FIREBASE_URL variable with your actual link.";
-                return;
-            }
 
             try {
                 const response = await fetch(FIREBASE_URL);
@@ -40,7 +35,7 @@
                 
                 const htmlText = await response.text();
                 
-                // Hide loader and inject HTML
+                // Content successfully fetched; update the page layout
                 loader.style.display = 'none';
                 contentDiv.innerHTML = htmlText;
             } catch (error) {
@@ -50,7 +45,7 @@
             }
         }
 
-        // Run immediately on page load
+        // Execute immediately upon page initialization
         loadCloudFile();
     </script>
 
