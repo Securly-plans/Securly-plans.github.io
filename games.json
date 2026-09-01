@@ -251,16 +251,32 @@
    "id": 33,
    "title": "Eaglecraft",
    "category": "Minecraft!",
-   "thumbnail": "./games/Eagle 1.8/Eagle 1.8.png",
+   "thumbnail": "./games/Eagle_1.8/Eagle 1.8.png",
    "url": "./games/Eagle_1.8/index.html",
    "vip": false
   },
   {
-   "id": 35,
+   "id": 34,
    "title": "Undertale",
    "category": "Casual!",
-   "thumbnail": "./games/Deltarune/Undertale.html",
+   "thumbnail": "./games/Deltarune/Undertale.png",
    "url": "./games/Deltarune/index.html",
+   "vip": false
+  },
+  {
+   "id": 35,
+   "title": "FNAF 2",
+   "category": "Horror",
+   "thumbnail": "./games/fnaf2/fnaf2.png",
+   "url": "./games/fnaf2/index.html",
+   "vip": false
+  },
+  {
+   "id": 36,
+   "title": "FNAF 3",
+   "category": "Horror",
+   "thumbnail": "./games/fnaf3/fnaf3.png",
+   "url": "./games/fnaf3/index.html",
    "vip": false
   }
 ]
