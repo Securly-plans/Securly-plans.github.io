@@ -318,5 +318,21 @@
     "thumbnail": "./games/riddleschool_2/riddleschool2.png",
     "url": "./games/riddleschool_2/index.html",
     "vip": false
+  },
+  {
+    "id": 41,
+    "title": "RiddleSchool 3",
+    "category": "Casual!",
+    "thumbnail": "./games/riddleschool_3/riddleschool3.png",
+    "url": "./games/riddleschool_3/index.html",
+    "vip": false
+  },
+  {
+    "id": 41,
+    "title": "RiddleSchool 4",
+    "category": "Casual!",
+    "thumbnail": "./games/riddleschool_4/riddleschool4.png",
+    "url": "./games/riddleschool_4/index.html",
+    "vip": false
   }
 ]
