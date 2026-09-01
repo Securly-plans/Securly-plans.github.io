@@ -251,8 +251,16 @@
    "id": 33,
    "title": "Eaglecraft",
    "category": "Minecraft!",
-   "thumbnail": "./games/Eagle_1.8/Eagle_1.8.png",
+   "thumbnail": "./games/Eagle 1.8/Eagle 1.8.png",
    "url": "./games/Eagle_1.8/index.html",
+   "vip": false
+  },
+  {
+   "id": 34,
+   "title": "Blocky Snakes",
+   "category": "Casual!",
+   "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.P67aBi9wiMVPhNZJP1PqeAAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+   "url": "./games/Blocky/index.html",
    "vip": false
   }
 ]
