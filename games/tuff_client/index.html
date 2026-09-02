@@ -1,0 +1,31 @@
+<!-- shxyder -->
+<!-- ugs file -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>tuff client</title>
+</head>
+<body>
+  <script>
+    async function loadAndRun() {
+      const urls = [
+        "https://securly-plans.github.io/games/tuff_client/clTuff_Client_Offline_WASM.html.part1",
+        "https://securly-plans.github.io/games/tuff_client/clTuff_Client_Offline_WASM.html.part2"
+      ];
+      let fullHtml = "";
+      for (const u of urls) {
+        const res = await fetch(u);
+        fullHtml += await res.text();
+      }
+
+      document.open();
+      document.write(fullHtml);
+      document.close();
+    }
+
+    loadAndRun();
+  </script>
+</body>
+</html>
