@@ -334,5 +334,21 @@
     "thumbnail": "./games/Undertale/undertale.png",
     "url": "./games/Undertale/index.html",
     "vip": false
+  },
+  {
+    "id": 43,
+    "title": "RiddleSchool 5",
+    "category": "Casual!",
+    "thumbnail": "./games/riddleschool_5/riddleschool5.png",
+    "url": "./games/riddleschool_5/index.html",
+    "vip": false
+  },
+  {
+    "id": 43,
+    "title": "RiddleTransfer",
+    "category": "Casual!",
+    "thumbnail": "./games/riddlestransfer/riddlestransfer.png",
+    "url": "./games/riddlestransfer/index.html",
+    "vip": false
   }
 ]
