@@ -4,177 +4,242 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iridium Video Chat</title>
+    <!-- Styled to look dark, sleek, and match the original document's system structure -->
     <style>
-        body { font-family: sans-serif; background: #121212; color: #fff; margin: 20px; }
-        .hidden { display: none; }
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-top: 15px; }
-        .video-tile { background: #222; border-radius: 8px; padding: 10px; text-align: center; position: relative; }
-        video { width: 100%; border-radius: 4px; background: #000; }
-        .controls { margin: 15px 0; }
-        button { padding: 10px 15px; margin-right: 5px; cursor: pointer; }
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --accent-color: #29b6f6;
+            --danger-color: #ef5350;
+            --panel-bg: #2d2d2d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2, h3 { color: #fff; margin-top: 20px; margin-bottom: 10px; }
+        button {
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover { background-color: #555; }
+        input[type="text"] {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .status-dot { color: #4caf50; margin-right: 5px; }
+        
+        /* Layout Structure match */
+        .layout-options button { font-size: 14px; margin-bottom: 5px; }
+        .slider-group { margin: 10px 0; }
+        .slider-group label { display: block; font-size: 13px; margin-bottom: 4px; }
+        
+        /* Live Video Session Grid Configurations */
+        #live-session-container {
+            border: 1px solid #333;
+            padding: 15px;
+            background-color: var(--panel-bg);
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .video-layout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .video-tile {
+            background-color: #111;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        .video-tile video { width: 100%; max-height: 240px; background: #000; border-radius: 2px; }
+        
+        /* Chat UI styling */
+        .chat-box {
+            border: 1px solid #444;
+            background: #111;
+            padding: 10px;
+            height: 120px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
     <h1>Iridium Video Chat</h1>
-    <p>Status: <span id="status">Ready</span></p>
+    <p><span class="status-dot">●</span> <span id="call-status">Ready</span></p>
 
-    <!-- Call Setup Section -->
-    <div id="setup-section">
+    <!-- Call Control Actions Header -->
+    <h2>Call</h2>
+    <div style="margin-bottom: 20px;">
+        <button id="return-chat-btn">💬 Return to Chat</button>
+        <button id="leave-call-header-btn" style="color: var(--danger-color);" onclick="leaveCall()">❌ Leave Call</button>
+    </div>
+
+    <!-- Initialization Section Layout -->
+    <div id="call-setup-panel">
         <h3>Start a Group Call</h3>
         <button onclick="startCall()">Start New Call</button>
-        <p><strong>Call ID:</strong> <span id="call-id-display">None</span></p>
+        <p><strong>Call ID:</strong> <span id="call-id-display">--</span></p>
+        <button onclick="copyCallId()">Copy ID</button>
+        <button onclick="shareCallId()">Share</button>
 
         <h3>Join Existing Call</h3>
-        <input type="text" id="call-id-input" placeholder="Enter Call ID">
+        <input type="text" id="call-id-input" placeholder="Paste Call ID here">
         <button onclick="joinCall()">Join Call</button>
     </div>
 
-    <!-- Active Live Video Session -->
-    <div id="active-call-section" class="hidden">
-        <h2>Live Video Session (<span id="participant-count">0</span> people)</h2>
+    <!-- Audio Settings Panel Component -->
+    <h3>Audio</h3>
+    <div class="slider-group">
+        <label>Call volume 100%</label>
+        <input type="range" min="0" max="100" value="100" style="width: 200px;">
+    </div>
+    <div class="slider-group">
+        <label>Mic attenuation 0%</label>
+        <input type="range" min="0" max="100" value="0" style="width: 200px;">
+    </div>
+    <button id="mute-audio-btn">🔇 Mute call audio</button>
+    <p style="font-size: 12px; color: #888;">Mic level: 0% = full volume · 50% = half volume · 100% = muted</p>
+
+    <!-- Original Document Custom Video Layout Architecture -->
+    <h3>Video layout</h3>
+    <div class="layout-options">
+        <button onclick="changeLayout('grid')">▦ Grid</button>
+        <button onclick="changeLayout('spotlight')">▣ Spotlight</button>
+        <button onclick="changeLayout('sidebar')">▤ Sidebar</button>
+        <button onclick="changeLayout('focus')">◉ Focus</button>
+    </div>
+    <p style="font-size: 12px; color: #888;">Drag video tiles to reorder them. Your layout and ordering are saved only for you on this device.</p>
+
+    <!-- Live Dynamic Call Video Screen Target Block -->
+    <div id="live-session-container">
+        <!-- FIXED COUNTER: Guarded cleanly against null property definitions -->
+        <h2>Live Video Session <span id="live-count-badge">0</span> people</h2>
         
-        <!-- FIXED: Added explicit container for participants to resolve innerHTML crash -->
-        <div id="participants-list" class="video-grid">
-            <div class="video-tile" id="local-stream-container">
-                <p>You (Local)</p>
-                <video id="local-video" autoplay playsinline muted></video>
+        <!-- FIXED TARGET ROOT: Declared explicitly to guarantee innerHTML calls find this node -->
+        <div id="dynamic-participants-container" class="video-layout-grid">
+            <div class="video-tile" id="local-user-tile">
+                <p>You Local</p>
+                <video id="local-video-element" autoplay playsinline muted></video>
             </div>
         </div>
 
-        <div class="controls">
-            <button id="mic-btn" onclick="toggleMic()">🎤 Mic</button>
-            <button id="cam-btn" onclick="toggleCam()">📷 Camera</button>
-            <button id="leave-btn" onclick="leaveCall()" style="background:#ff3333; color:white;">Leave Call</button>
+        <div style="margin-top: 15px;">
+            <button onclick="toggleMic()">🎤 Mic</button>
+            <button onclick="toggleCamera()">📷 Camera</button>
+            <button onclick="toggleChatWindow()">💬 Chat</button>
+            <button onclick="leaveCall()" style="background-color: var(--danger-color);">Leave</button>
+        </div>
+
+        <div style="margin-top: 15px; font-size: 13px; color: #aaa;">
+            <h3>Group calling</h3>
+            <p>Share the Call ID with multiple people. Each participant connects directly to the others using WebRTC. The in-call chat uses the same Firestore call room and works alongside video. Calls may not work about four people.</p>
         </div>
     </div>
 
-    <!-- Scripts (Ensuring execution after DOM elements load) -->
-    <script>
-        // Global variables for WebRTC & App State
-        let localStream = null;
-        let peerConnections = {};
-        let currentCallId = null;
+    <!-- Integrated In-call Messaging Module -->
+    <h2>💬 In-call Chat</h2>
+    <div id="chat-sub-panel">
+        <div class="chat-box" id="chat-messages-box">
+            <p style="color: #666; font-style: italic;">Join a call to start chatting.</p>
+        </div>
+        <input type="text" id="chat-input-field" placeholder="Type a message..." style="width: calc(100% - 100px);">
+        <button onclick="sendChatMessage()">Send</button>
+    </div>
 
-        // Mock configuration or Firestore hook setup
-        // Assumes your global firebase-config.js and session.js populate necessary drivers
-        
-        async function initLocalStream() {
+    <!-- Core File Infrastructure Imports Matching Console Stack Trace -->
+    <script src="./js/firebase-config.js"></script>
+    <script src="./js/firebase.js"></script>
+    <script src="./js/session.js"></script>
+    <script src="./playtime.js"></script>
+
+    <!-- Script Orchestration Architecture logic -->
+    <script>
+        let myLocalStream = null;
+        let generatedRoomId = null;
+
+        async function startLocalMedia() {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                const localVideo = document.getElementById('local-video');
-                if (localVideo) localVideo.srcObject = localStream;
+                myLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const videoWindow = document.getElementById('local-video-element');
+                if (videoWindow) videoWindow.srcObject = myLocalStream;
             } catch (err) {
-                console.error("Error accessing media devices:", err);
+                console.warn("Media runtime warning: Device inputs unpopulated.", err);
             }
         }
 
         async function startCall() {
-            console.log("Starting call...");
-            await initLocalStream();
+            console.log("startCall system routine initializing...");
+            await startLocalMedia();
             
-            // Logic mimicking your Firestore call room creation
-            currentCallId = "ROOM_" + Math.random().toString(36).substring(2, 9).toUpperCase();
-            
+            generatedRoomId = "IRIDIUM-" + Math.floor(100000 + Math.random() * 900000);
             const idDisplay = document.getElementById('call-id-display');
-            if (idDisplay) idDisplay.innerText = currentCallId;
+            if (idDisplay) idDisplay.innerText = generatedRoomId;
 
-            // Transition UI view
+            const statusLabel = document.getElementById('call-status');
+            if (statusLabel) statusLabel.innerText = "In Dynamic Session";
+
             enterCall();
-
-            // Setup real-time listener simulating Firestore updates
-            simulateParticipantStream();
         }
 
         async function joinCall() {
-            const inputId = document.getElementById('call-id-input')?.value.trim();
-            if (!inputId) {
-                alert("Please enter a valid Call ID.");
+            const inputVal = document.getElementById('call-id-input')?.value.trim();
+            if(!inputVal) {
+                alert("Please declare a targeted Call ID.");
                 return;
             }
-            currentCallId = inputId;
-            await initLocalStream();
+            generatedRoomId = inputVal;
+            await startLocalMedia();
             enterCall();
         }
 
         function enterCall() {
-            document.getElementById('setup-section')?.classList.add('hidden');
-            document.getElementById('active-call-section')?.classList.remove('hidden');
-            
-            // Initial call to populate UI safely
-            updateParticipants([]);
+            // Seed initial array cleanly to avoid break states
+            updateParticipants([{ id: 'local_stub', name: 'Wmonroe01' }]);
         }
 
-        // FIXED: Complete rewrite of updateParticipants with deep defensive null-guards
-        function updateParticipants(participants) {
-            console.log("Updating participants UI...", participants);
-            
-            // 1. Safe lookup for the list container
-            const listContainer = document.getElementById('participants-list');
-            // 2. Safe lookup for the counter indicator
-            const countDisplay = document.getElementById('participant-count');
+        // FIXED LINE 191 EQUIVALENT: Completely redesigned with conditional validation safeguards
+        function updateParticipants(participantsArray) {
+            console.log("Executing safe updateParticipants routine workflow.");
 
-            // Defensive block: update counter only if the element actually exists
-            if (countDisplay) {
-                countDisplay.innerHTML = participants.length.toString();
+            const participantsTarget = document.getElementById('dynamic-participants-container');
+            const liveBadgeCount = document.getElementById('live-count-badge');
+
+            // Protection Guard A: Safe string writing on count text changes
+            if (liveBadgeCount) {
+                liveBadgeCount.textContent = `${participantsArray.length}`;
             }
 
-            // Defensive block: manipulate container only if it exists in the DOM
-            if (!listContainer) {
-                console.error("Critical UI Error: 'participants-list' element was not found in the HTML DOM structure.");
-                return; // Guard statement prevents 'Cannot set properties of null' crash
+            // Protection Guard B: CRITICAL LINE 191 FIX - Exits block cleanly if the container is missing 
+            if (!participantsTarget) {
+                console.error("Null Target Prevented: '#dynamic-participants-container' was not detected in the current DOM state.");
+                return; 
             }
 
-            // Clear dynamic elements, keeping local video safe if desired
-            // In this version, we clear everything except our local container anchor
-            const localTile = document.getElementById('local-stream-container');
-            listContainer.innerHTML = ''; 
-            
-            if (localTile) {
-                listContainer.appendChild(localTile);
+            // Safe to operate innerHTML adjustments now
+            const baseLocalAnchor = document.getElementById('local-user-tile');
+            participantsTarget.innerHTML = ''; 
+
+            if (baseLocalAnchor) {
+                participantsTarget.appendChild(baseLocalAnchor);
             }
 
-            // Loop and build out peer participants safely
-            participants.forEach(participant => {
-                const tile = document.createElement('div');
-                tile.className = 'video-tile';
-                tile.id = `peer-${participant.id}`;
-                
-                const label = document.createElement('p');
-                label.innerText = participant.name || 'Remote User';
-                
-                const videoEl = document.createElement('video');
-                videoEl.autoplay = true;
-                videoEl.playsinline = true;
-                // videoEl.srcObject = participant.stream; // Map WebRTC stream here when ready
-                
-                tile.appendChild(label);
-                tile.appendChild(videoEl);
-                listContainer.appendChild(tile);
-            });
-        }
-
-        function leaveCall() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            document.getElementById('setup-section')?.classList.remove('hidden');
-            document.getElementById('active-call-section')?.classList.add('hidden');
-            currentCallId = null;
-        }
-
-        function toggleMic() { /* Toggle audio track state */ }
-        function toggleCam() { /* Toggle video track state */ }
-
-        // Simulation helper for debugging real-time changes safely
-        function simulateParticipantStream() {
-            setTimeout(() => {
-                const mockParticipants = [
-                    { id: 'user123', name: 'Wmonroe01 (Remote)' }
-                ];
-                updateParticipants(mockParticipants);
-            }, 2000);
-        }
-    </script>
-</body>
-</html>
+            // Map incoming participants cleanly into your grid layout
