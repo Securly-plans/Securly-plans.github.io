@@ -339,7 +339,7 @@
     "id": 43,
     "title": "Uno",
     "category": "Casual!",
-    "thumbnail": "./games/Uno/Uno.pmg",
+    "thumbnail": "./games/Uno/Uno.png",
     "url": "./games/Uno/index.html",
     "vip": false
   },
