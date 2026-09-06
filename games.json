@@ -337,6 +337,14 @@
   },
   {
     "id": 43,
+    "title": "Uno",
+    "category": "Casual!",
+    "thumbnail": "./games/Uno/Uno.pmg",
+    "url": "./games/Uno/index.html",
+    "vip": false
+  },
+  {
+    "id": 44,
     "title": "RiddleSchool 5",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool_5/riddleschool5.png",
@@ -344,7 +352,7 @@
     "vip": false
   },
   {
-    "id": 44,
+    "id": 45,
     "title": "RiddleTransfer",
     "category": "Casual!",
     "thumbnail": "./games/riddletransfer/riddletransfer.png",
