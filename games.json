@@ -366,5 +366,13 @@
     "thumbnail": "./games/riddletransfer/riddletransfer.png",
     "url": "./games/riddletransfer/index.html",
     "vip": false
+  },
+  {
+    "id": 47,
+    "title": "Friday Night Funkin",
+    "category": "Rhythm",
+    "thumbnail": "./games/riddletransfer/riddletransfer.png",
+    "url": "./games/FNF/index.html",
+    "vip": false
   }
 ]
