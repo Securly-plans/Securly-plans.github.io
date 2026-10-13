@@ -55,8 +55,16 @@
     "url": "./games/drive-mad/index.html",
     "vip": false
   },
-  {
+   {
     "id": 8,
+    "title": "Chicken War",
+    "category": "FPS",
+    "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.95OQYbHSczFFRcG_V67aawAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "url": "./games/chicken-war/index.html",
+    "vip": false
+  },
+  {
+    "id": 9,
     "title": "Eaglecraft",
     "category": "Minecraft!",
     "thumbnail": "./games/Eagle_1.12/Eagle_1.12.png",
@@ -64,7 +72,7 @@
     "vip": false
   },
   {
-    "id": 9,
+    "id": 10,
     "title": "EmeraldOS Classic",
     "category": "OSProject",
     "thumbnail": "EmeraldOS/assets/EmeraldOS.png",
@@ -72,7 +80,7 @@
     "vip": false
   },
   {
-    "id": 10,
+    "id": 11,
     "title": "EmeraldOS Gold Live",
     "thumbnail": "assets/images/EmeraldOS_Gold.png",
     "category": "OSProject",
@@ -80,7 +88,7 @@
     "vip": false
   },
   {
-    "id": 11,
+    "id": 12,
     "title": "Escape Road City 2",
     "thumbnail": "./games/escape-road-city-2/25030706/loading.png",
     "category": "Action",
@@ -88,7 +96,7 @@
     "vip": false
   },
   {
-    "id": 12,
+    "id": 13,
     "title": "Escaping the Prison",
     "category": "Emulator",
     "thumbnail": "./games/escapingtheprison/escapingtheprison.png",
@@ -96,7 +104,7 @@
     "vip": false
   },
   {
-    "id": 13,
+    "id": 14,
     "title": "Flappy Bird",
     "category": "Ragebait",
     "thumbnail": "./games/flappybird/flappybird.png",
@@ -104,7 +112,7 @@
     "vip": false
   },
   {
-    "id": 14,
+    "id": 15,
     "title": "FNAF",
     "category": "Horror",
     "thumbnail": "./games/fnaf/fnaf.png",
@@ -112,7 +120,7 @@
     "vip": false
   },
   {
-    "id": 15,
+    "id": 16,
     "title": "FNAF 2",
     "category": "Horror",
     "thumbnail": "./games/fnaf2/fnaf2.png",
@@ -120,7 +128,7 @@
     "vip": false
   },
   {
-    "id": 16,
+    "id": 17,
     "title": "FNAF 3",
     "category": "Horror",
     "thumbnail": "./games/fnaf3/fnaf3.png",
@@ -128,7 +136,7 @@
     "vip": false
   },
   {
-    "id": 17,
+    "id": 18,
     "title": "FNAF 4",
     "category": "Casual!",
     "thumbnail": "./games/fnaf4/fnaf4.png",
@@ -136,7 +144,7 @@
     "vip": false
   },
   {
-    "id": 18,
+    "id": 19,
     "title": "GD Lite",
     "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.3J-W1CO_-Y-zz0TgtHw0ugHaJ4?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Platformer",
@@ -144,7 +152,7 @@
     "vip": false
   },
   {
-    "id": 19,
+    "id": 20,
     "title": "GladdiHoppers",
     "thumbnail": "./assets/images/glad.webp",
     "category": "Strategy",
@@ -152,7 +160,7 @@
     "vip": false
   },
   {
-    "id": 20,
+    "id": 21,
     "title": "GunSpin",
     "thumbnail": "./assets/images/GUNSPIN-f320x180.webp",
     "category": "Casual",
@@ -160,7 +168,7 @@
     "vip": true
   },
   {
-    "id": 21,
+    "id": 22,
     "title": "Happy Wheels",
     "category": "Fun",
     "thumbnail": "./games/happywheels/happywheels.png",
@@ -168,7 +176,7 @@
     "vip": false
   },
   {
-    "id": 22,
+    "id": 23,
     "title": "Level Devil",
     "category": "Platformer",
     "thumbnail": "https://tse3.mm.bing.net/th/id/OIP.2Z-ayaVWEH6FDgF3sYE0XQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -176,7 +184,7 @@
     "vip": false
   },
   {
-    "id": 23,
+    "id": 24,
     "title": "Melon Sandbox (WIP)",
     "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.zvyCdf9ovMm9tJQilYB3xgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Action",
@@ -184,7 +192,7 @@
     "vip": false
   },
   {
-    "id": 24,
+    "id": 25,
     "title": "MotoX3M",
     "thumbnail": "https://img.playmox.com/game-icons/5b0abd4c0faa4f5eb190a9a16d5a1b4c-1200x630.jpg",
     "category": "Casual",
@@ -192,7 +200,7 @@
     "vip": false
   },
   {
-    "id": 25,
+    "id": 26,
     "title": "MotoX3M2",
     "thumbnail": "./games/motox3m2/motox3m2.png",
     "category": "Casual",
@@ -200,7 +208,7 @@
     "vip": false
   },
   {
-    "id": 26,
+    "id": 27,
     "title": "MotoX3M3",
     "category": "Casual!",
     "thumbnail": "./games/motox3m3/motox3m3.png",
@@ -208,7 +216,7 @@
     "vip": false
   },
   {
-    "id": 27,
+    "id": 28,
     "title": "Paper.io",
     "thumbnail": "https://tse4.mm.bing.net/th/id/OIP.o0bwZ1gWz9Kkj6j-ZMjCoAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
     "category": "Strategy",
@@ -216,7 +224,7 @@
     "vip": false
   },
   {
-    "id": 28,
+    "id": 29,
     "title": "Pixel Balatro",
     "thumbnail": "https://camo.githubusercontent.com/011e5013eb3ea62b547090a6492d0a8844dfab4286e2842c55b77fe35cb12ed3/68747470733a2f2f6f7574626c6164652e6769746875622e696f2f62616c6174726f2d7765622f736f6369616c2e706e67",
     "category": "Strategy",
@@ -224,7 +232,7 @@
     "vip": true
   },
   {
-    "id": 29,
+    "id": 30,
     "title": "Ragdoll Archers",
     "thumbnail": "./assets/images/alone.webp",
     "category": "Action",
@@ -232,7 +240,7 @@
     "vip": false
   },
   {
-    "id": 30,
+    "id": 31,
     "title": "Ragdoll Hit",
     "thumbnail": "./games/Ragdoll-hit/3c892779be9dabb3589586c83ad3eeed.png",
     "category": "Action",
@@ -240,7 +248,7 @@
     "vip": false
   },
   {
-    "id": 31,
+    "id": 32,
     "title": "Retro Bowl",
     "category": "FOOTBALL!",
     "thumbnail": "./games/retrobowl/retrobowl.png",
@@ -248,7 +256,7 @@
     "vip": false
   },
   {
-    "id": 32,
+    "id": 33,
     "title": "Retro Bowl College",
     "category": "Emulator",
     "thumbnail": "./games/retrobowlcollege/retrobowlcollege.png",
@@ -256,7 +264,7 @@
     "vip": false
   },
   {
-    "id": 33,
+    "id": 34,
     "title": "RiddleSchool 1",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool/riddleschool.png",
@@ -264,7 +272,7 @@
     "vip": false
   },
   {
-    "id": 34,
+    "id": 35,
     "title": "RiddleSchool 2",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool_2/riddleschool2.png",
@@ -272,7 +280,7 @@
     "vip": false
   },
   {
-    "id": 35,
+    "id": 36,
     "title": "RiddleSchool 3",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool_3/riddleschool3.png",
@@ -280,7 +288,7 @@
     "vip": false
   },
   {
-    "id": 36,
+    "id": 37,
     "title": "RiddleSchool 4",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool_4/riddleschool4.png",
@@ -288,7 +296,7 @@
     "vip": false
   },
   {
-    "id": 37,
+    "id": 38,
     "title": "Spacewaves",
     "thumbnail": "./games/spacewaves/logo.png",
     "category": "Casual",
@@ -296,7 +304,7 @@
     "vip": false
   },
   {
-    "id": 38,
+    "id": 39,
     "title": "Station 141",
     "category": "FPS",
     "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.HlH71fp8msCIUfdg_mS5eAHaEK?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -304,7 +312,7 @@
     "vip": false
   },
   {
-    "id": 39,
+    "id": 40,
     "title": "Super Mario Bros.",
     "category": "Emulator",
     "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.vVS4QOmxlrqRYJ1L4VhbXAHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -312,7 +320,7 @@
     "vip": false
   },
   {
-    "id": 40,
+    "id": 41,
     "title": "Tiny Fishing",
     "thumbnail": "assets/images/tiny-fishing.png",
     "category": "Casual",
@@ -320,7 +328,7 @@
     "vip": false
   },
   {
-    "id": 41,
+    "id": 42,
     "title": "Tomb Of The Mask",
     "thumbnail": "./assets/images/61ljJZNJV0L.png",
     "category": "Action",
@@ -328,7 +336,7 @@
     "vip": false
   },
   {
-    "id": 42,
+    "id": 43,
     "title": "Undertale",
     "category": "Casual!",
     "thumbnail": "./games/Undertale/undertale.png",
@@ -336,7 +344,7 @@
     "vip": false
   },
   {
-    "id": 43,
+    "id": 44,
     "title": "Uno",
     "category": "Casual!",
     "thumbnail": "./games/Uno/Uno.png",
@@ -344,7 +352,7 @@
     "vip": false
   },
   {
-    "id": 44,
+    "id": 45,
     "title": "RiddleSchool 5",
     "category": "Casual!",
     "thumbnail": "./games/riddleschool_5/riddleschool5.png",
@@ -352,7 +360,7 @@
     "vip": false
   },
   {
-    "id": 45,
+    "id": 46,
     "title": "RiddleTransfer",
     "category": "Casual!",
     "thumbnail": "./games/riddletransfer/riddletransfer.png",
