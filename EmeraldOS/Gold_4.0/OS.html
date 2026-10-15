@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold 4.0</title>
+<link rel="icon" type="image/svg+xml" href="emerald-gold-40-logo.svg">
+<link rel="stylesheet" href="gold40.css">
+<script>
+(function(){
+  const loggedIn = localStorage.getItem('loggedIn') === 'true' || localStorage.getItem('gold40_loggedIn') === 'true';
+  if(!loggedIn){ location.replace('index.html?next=OS.html'); }
+})();
+</script>
+<script>
+(function(){
+  function openStartupOptions(){
+    if(document.getElementById('gold40-startup-options')) return;
+    const d=document.createElement('div');
+    d.id='gold40-startup-options';
+    d.className='startup-options';
+    d.innerHTML=`<div class="startup-card">
+      <div class="startup-logo">G</div>
+      <h1>Emerald Systems BIOS A3</h1>
+      <p>Startup options for EmeraldOS Gold 4.0</p>
+      <button onclick="location.href='bios.html'">Open modern BIOS / Emerald DOS</button>
+      <button onclick="location.href='staff.html'">Open Gold Staff Edition</button>
+      <button onclick="localStorage.setItem('gold40_safemode','true');location.href='OS.html'">Boot Safe Mode</button>
+      <button onclick="localStorage.removeItem('gold40_setup_done');location.href='OS.html'">Run First-Boot Setup</button>
+      <button onclick="location.href='register.html'">Register New User</button>
+      <button onclick="document.getElementById('gold40-startup-options').remove()">Continue Boot</button>
+      <small>F12 = BIOS/DOS · F9 = Staff Edition · F1 = Support · Esc = Continue</small>
+    </div>`;
+    document.body.appendChild(d);
+  }
+  window.addEventListener('keydown',function(e){
+    if(e.key==='F12'){ e.preventDefault(); if(document.body) openStartupOptions(); else window.__gold40_f12=true; }
+    if(e.key==='F9'){ e.preventDefault(); location.href='staff.html'; }
+    if(e.key==='F1'){ e.preventDefault(); location.href='OS.html#support'; }
+    if(e.key==='Escape'){ const d=document.getElementById('gold40-startup-options'); if(d)d.remove(); }
+  });
+  window.addEventListener('DOMContentLoaded',function(){ if(window.__gold40_f12) openStartupOptions(); });
+})();
+</script>
+<script defer src="gold40.js"></script>
+</head>
+<body class="gold40" data-build="4.0">
+  <div id="boot" class="boot-screen">
+    <div class="gold-logo-xl">G</div>
+    <h1>EmeraldOS Gold 4.0</h1>
+    <p>Starting your cloud VM desktop, User Appstore, Development tools, BIOS A3, and workspace continuity.</p>
+    <div class="boot-hint">Press F12 for Emerald Systems BIOS A3 / Emerald DOS · F9 Staff Edition · F1 Support Center</div>
+    <div class="boot-progress"><span></span></div>
+  </div>
+  <main id="desktop" aria-label="EmeraldOS Gold desktop"></main>
+  <section id="startMenu" class="start-menu hidden" aria-label="Start menu"></section>
+  <section id="searchPanel" class="side-panel hidden" aria-label="Search panel"></section>
+  <section id="taskView" class="task-view hidden" aria-label="Task view"></section>
+  <section id="actionCenter" class="action-center hidden" aria-label="Action center"></section>
+  <section id="setupWizard" class="setup-overlay hidden" aria-label="First boot setup"></section>
+  <div id="windowLayer" aria-label="Windows"></div>
+  <footer id="taskbar" aria-label="Taskbar">
+    <button id="startBtn" class="start-btn" title="Start">G</button>
+    <button id="searchBtn" class="task-btn search-wide" title="Search">Search EmeraldOS Gold</button>
+    <button id="taskViewBtn" class="task-btn" title="Task View">▣</button>
+    <div id="taskApps" class="task-apps"></div>
+    <button id="widgetsBtn" class="task-btn" title="Widgets">☰</button>
+    <button id="actionBtn" class="task-btn" title="Action Center">🔔 0</button>
+    <button id="staffBtn" class="task-btn staff-shortcut" title="Gold Staff Edition">Staff</button>
+    <button id="logoutBtn" class="task-btn logout-shortcut" title="Log out">Log out</button>
+    <div id="clock" class="clock"></div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,18 @@
+EmeraldOS Silver Product Line
+==============================
+
+EmeraldOS Silver Beta 3.0 is treated as a separate Silver product-line shell, not just a skin of the base EmeraldOS desktop.
+
+Design rules:
+- Vista-inspired glass UI made with original CSS.
+- No Microsoft logos, Windows icons, copied wallpapers, or copied assets.
+- Silver apps and hubs are user-facing. Base EmeraldOS platform services remain only as compatibility services underneath.
+- Silver uses its own localStorage keys and Silver desktop renderer.
+
+Beta 3.0 focus:
+- More faithful glass/orb/sidebar visual language.
+- Separate Silver desktop and Start experience.
+- Consolidated hubs.
+- Unique Vista-like CSS logos for apps.
+- Better responsive layout.
+- Application folders remain available through All Silver Apps even when removed from the desktop.

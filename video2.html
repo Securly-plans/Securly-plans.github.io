@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Iridium Video Chat</title>
+<script type="module" src="./js/session.js"></script>
+<script type="module" src="js/playtime.js"></script>
+<style>
+:root{--bg:#0f1115;--panel:#1a1d24;--panel2:#222630;--border:#2e3440;--text:#f3f4f6;--muted:#9ca3af;--primary:#4ade80;--danger:#ef4444;--warning:#f59e0b;--info:#3b82f6}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+body{padding-bottom:env(safe-area-inset-bottom)}
+button,input{font:inherit}
+button{border:0;border-radius:10px;cursor:pointer;transition:.2s;font-weight:700}
+button:hover{opacity:.9}
+button:disabled{opacity:.5;cursor:not-allowed}
+.header{background:#111827;padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.header h1{margin:0;color:var(--danger);font-size:clamp(20px,4vw,28px)}
+.status{color:var(--primary);font-size:14px}
+.container{max-width:1500px;margin:auto;padding:20px}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 320px;gap:20px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;min-width:0}
+.panel h2{margin-top:0}
+.sidebar-btn{width:100%;padding:12px;margin-bottom:10px;background:var(--panel2);color:white;text-align:left}
+.primary{background:var(--info);color:white;padding:12px 16px}
+.success{background:var(--primary);color:#07130b;padding:12px 16px}
+.danger{background:var(--danger);color:white;padding:12px 16px}
+.warning{background:var(--warning);color:#111;padding:12px 16px}
+input{width:100%;padding:12px;margin:8px 0 12px;border-radius:10px;border:1px solid var(--border);background:#111827;color:white;outline:none}
+input:focus{border-color:var(--info)}
+.info-box{background:#111827;border:1px solid var(--border);border-radius:12px;padding:15px;margin-top:15px}
+.badge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:12px;background:#1f2937}
+.call-id-box{margin-top:15px;padding:12px;border-radius:10px;background:#111827;border:1px solid var(--border);word-break:break-all}
+.call-id-actions{display:flex;gap:8px;margin-top:10px}
+.call-id-actions button{flex:1}
+.video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.video-box{position:relative;background:#050608;border:1px solid var(--border);border-radius:16px;overflow:hidden;min-height:190px}
+.video-box video{display:block;width:100%;height:clamp(190px,28vw,340px);background:#050608;object-fit:cover}
+.video-header{position:absolute;z-index:2;left:0;right:0;top:0;padding:10px 12px;background:linear-gradient(#0009,transparent);display:flex;justify-content:space-between;align-items:center}
+.video-placeholder{height:100%;min-height:190px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+#remoteVideos{display:contents}
+.call-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.call-toolbar button{padding:11px 14px}
+.chat-panel{display:flex;flex-direction:column;min-height:560px}
+.chat-messages{flex:1;min-height:320px;max-height:520px;overflow:auto;padding:4px 2px}
+.chat-message{margin:9px 0;padding:9px 11px;border-radius:12px;background:var(--panel2);overflow-wrap:anywhere}
+.chat-message.me{background:#153c28}
+.chat-meta{font-size:11px;color:var(--muted);margin-bottom:3px}
+.chat-form{display:flex;gap:8px;margin-top:10px}
+.chat-form input{margin:0;min-width:0}
+.chat-form button{padding:0 14px;background:var(--info);color:white}
+.participant-list{display:flex;flex-direction:column;gap:7px}
+.participant{padding:8px 10px;background:var(--panel2);border-radius:9px;font-size:13px}
+.empty{color:var(--muted);font-size:13px}
+#toastContainer{position:fixed;top:15px;right:15px;z-index:9999;max-width:min(360px,calc(100vw - 30px))}
+.toast{padding:12px 16px;border-radius:10px;margin-bottom:10px;color:white;box-shadow:0 5px 15px #0005}
+.toast.success{background:#16a34a}.toast.error{background:#dc2626}.toast.info{background:#2563eb}
+.hint{color:var(--muted);line-height:1.55;font-size:14px}
+@media(max-width:1150px){.grid{grid-template-columns:280px minmax(0,1fr)}.chat-panel{grid-column:1/-1;min-height:0}.chat-messages{max-height:280px}}
+@media(max-width:720px){
+ .header{padding:13px 14px}.status{font-size:12px}
+ .container{padding:10px}.grid{grid-template-columns:1fr;gap:10px}.panel{padding:13px;border-radius:13px}
+ .video-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.video-box video{height:31vw;min-height:130px}.video-placeholder{min-height:130px}
+ .chat-panel{grid-column:auto}.chat-messages{min-height:180px;max-height:300px}
+ .call-toolbar{position:sticky;bottom:8px;z-index:5;background:#111827dd;padding:8px;border-radius:12px;backdrop-filter:blur(8px)}
+ .call-toolbar button{flex:1;min-width:110px}
+}
+@media(max-width:430px){.video-grid{grid-template-columns:1fr}.video-box video{height:58vw}.video-placeholder{min-height:200px}}
+</style>
+</head>
+<body>
+<div class="header">
+ <h1>Iridium Video Chat</h1>
+ <div class="status">● <span id="headerStatus">Ready</span></div>
+</div>
+<div id="toastContainer"></div>
+<div class="container">
+<div class="grid">
+ <aside class="panel">
+  <h2>Call Controls</h2>
+  <button class="sidebar-btn" onclick="window.location.href='chat.html'">💬 Return to Chat</button>
+  <button class="sidebar-btn" onclick="toggleMic()" id="micBtn">🎤 Mute Microphone</button>
+  <button class="sidebar-btn" onclick="toggleCamera()" id="cameraBtn">📷 Turn Camera Off</button>
+  <button class="sidebar-btn" onclick="toggleSpeaker()" id="speakerBtn">🔊 Speaker On</button>
+  <button class="sidebar-btn danger" onclick="endCall()">❌ Leave Call</button>
+
+  <div class="info-box">
+   <h3>Start a Group Call</h3>
+   <button class="success" onclick="startCall()">Start New Call</button>
+   <div id="callIdBox" class="call-id-box" style="display:none">
+    <b>Call ID:</b><br><span id="callIdText"></span>
+    <div class="call-id-actions"><button class="primary" onclick="copyCallId()">Copy ID</button><button class="warning" onclick="shareCall()">Share</button></div>
+   </div>
+  </div>
+  <div class="info-box">
+   <h3>Join Existing Call</h3>
+   <input id="joinCallId" placeholder="Enter Call ID" autocomplete="off">
+   <button class="primary" onclick="joinCall()">Join Call</button>
+  </div>
+  <div class="info-box">
+   <h3>Participants</h3>
+   <div id="participantList" class="participant-list"><div class="empty">No active call</div></div>
+  </div>
+ </aside>
+
+ <main class="panel">
+  <h2>Live Video Session <span class="badge" id="participantCount">0 people</span></h2>
+  <div class="video-grid" id="videoGrid">
+   <div class="video-box" id="localBox">
+    <div class="video-header"><span>You</span><span class="badge">Local</span></div>
+    <video id="localVideo" autoplay muted playsinline></video>
+   </div>
+   <div id="remoteVideos"></div>
+  </div>
+  <div class="call-toolbar">
+   <button class="primary" onclick="toggleMic()">🎤 Mic</button>
+   <button class="primary" onclick="toggleCamera()">📷 Camera</button>
+   <button class="primary" onclick="focusChat()">💬 In-call Chat</button>
+   <button class="danger" onclick="endCall()">Leave</button>
+  </div>
+  <div class="info-box">
+   <h3>Group calling</h3>
+   <p class="hint">Share the Call ID with multiple people. Each participant connects directly to the others using WebRTC. The in-call chat uses the same Firestore call room and works alongside video.</p>
+  </div>
+ </main>
+
+ <aside class="panel chat-panel" id="chatPanel">
+  <h2>💬 In-call Chat</h2>
+  <div id="chatMessages" class="chat-messages"><div class="empty">Join a call to start chatting.</div></div>
+  <form class="chat-form" onsubmit="sendChat(event)">
+   <input id="chatInput" placeholder="Message everyone…" autocomplete="off" maxlength="1000" disabled>
+   <button id="chatSend" disabled>Send</button>
+  </form>
+ </aside>
+</div>
+</div>
+
+<script type="module">
+import { db } from "./js/firebase.js";
+import { doc,setDoc,getDoc,updateDoc,collection,addDoc,onSnapshot,query,orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const servers={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+let localStream=null,currentCallId=null,myId=crypto.randomUUID(),isHost=false;
+const peers=new Map(), participantNames=new Map(), unsubscribers=[];
+const localVideo=document.getElementById("localVideo");
+
+function toast(msg,type="info"){const d=document.createElement("div");d.className="toast "+type;d.textContent=msg;document.getElementById("toastContainer").appendChild(d);setTimeout(()=>d.remove(),3000)}
+function setStatus(t){document.getElementById("headerStatus").textContent=t;document.getElementById("connectionStatus")?.replaceChildren(document.createTextNode(t))}
+function updateParticipants(){
+ const n=participantNames.size||0; document.getElementById("participantCount").textContent=`${n} ${n===1?"person":"people"}`;
+ const box=document.getElementById("participantList");box.innerHTML="";
+ if(!n){box.innerHTML='<div class="empty">No active call</div>';return}
+ participantNames.forEach((name,id)=>{const d=document.createElement("div");d.className="participant";d.textContent=(id===myId?"🟢 You":name||"Guest");box.appendChild(d)})
+}
+async function initMedia(){
+ if(localStream)return;
+ try{
+  localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  localVideo.srcObject=localStream;
+  toast("Camera and microphone ready","success");
+ }catch(e){console.error(e);toast("Camera/microphone access denied. Check browser permissions.","error");throw e}
+}
+function pairId(a,b){return [a,b].sort().join("__")}
+function addRemoteVideo(id,stream){
+ let box=document.getElementById("remote-"+id);
+ if(!box){
+  box=document.createElement("div");box.className="video-box";box.id="remote-"+id;
+  box.innerHTML=`<div class="video-header"><span class="remote-name"></span><span class="badge">Guest</span></div><video autoplay playsinline></video>`;
+  document.getElementById("remoteVideos").appendChild(box);
+ }
+ box.querySelector(".remote-name").textContent=participantNames.get(id)||"Guest";
+ box.querySelector("video").srcObject=stream;
+}
+function removeRemote(id){document.getElementById("remote-"+id)?.remove()}
+async function connectTo(remoteId,remoteName){
+ if(remoteId===myId||peers.has(remoteId)||!currentCallId)return;
+ const key=pairId(myId,remoteId), initiator=myId<remoteId;
+ const pc=new RTCPeerConnection(servers);peers.set(remoteId,{pc,key});
+ localStream?.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ pc.ontrack=e=>addRemoteVideo(remoteId,e.streams[0]);
+ pc.onconnectionstatechange=()=>{if(["failed","closed"].includes(pc.connectionState)){pc.close();peers.delete(remoteId);removeRemote(remoteId)}};
+ pc.onicecandidate=async e=>{if(e.candidate)await addDoc(collection(db,"calls",currentCallId,"pairs",key,"candidates"),{from:myId,to:remoteId,candidate:e.candidate.toJSON(),ts:Date.now()})};
+ const pairRef=doc(db,"calls",currentCallId,"pairs",key);
+ const pairSnap=await getDoc(pairRef);
+ if(initiator){
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  await setDoc(pairRef,{a:myId,b:remoteId,offer:{type:offer.type,sdp:offer.sdp},offerFrom:myId},{merge:true});
+ }
+ const stopPair=onSnapshot(pairRef,async snap=>{
+  const d=snap.data();if(!d)return;
+  try{
+   if(!initiator&&d.offer&&!pc.currentRemoteDescription){await pc.setRemoteDescription(d.offer);const ans=await pc.createAnswer();await pc.setLocalDescription(ans);await updateDoc(pairRef,{answer:{type:ans.type,sdp:ans.sdp},answerFrom:myId})}
+   if(initiator&&d.answer&&!pc.currentRemoteDescription)await pc.setRemoteDescription(d.answer);
+  }catch(e){console.error("signaling",e)}
+ });
+ unsubscribers.push(stopPair);
+ const stopCand=onSnapshot(collection(db,"calls",currentCallId,"pairs",key,"candidates"),snap=>snap.docChanges().forEach(async ch=>{
+  if(ch.type==="added"&&ch.doc.data().from!==myId){try{await pc.addIceCandidate(new RTCIceCandidate(ch.doc.data().candidate))}catch(e){console.warn(e)}}
+ }));
+ unsubscribers.push(stopCand);
+}
+async function enterCall(callId,host=false){
+ await initMedia();currentCallId=callId;isHost=host;
+ const callRef=doc(db,"calls",callId);
+ if(host)await setDoc(callRef,{created:Date.now(),host:myId},{merge:true});
+ else if(!(await getDoc(callRef)).exists()){toast("Invalid call ID","error");return}
+ document.getElementById("callIdBox").style.display="block";document.getElementById("callIdText").textContent=callId;
+ document.getElementById("chatInput").disabled=false;document.getElementById("chatSend").disabled=false;
+ participantNames.set(myId,"You");updateParticipants();setStatus("Connecting…");
+ const meRef=doc(db,"calls",callId,"participants",myId);
+ await setDoc(meRef,{name:"Guest",joined:Date.now()},{merge:true});
+ const stopPeople=onSnapshot(collection(db,"calls",callId,"participants"),snap=>{
+  snap.docChanges().forEach(ch=>{
+   const id=ch.doc.id,d=ch.doc.data();
+   if(ch.type==="removed"){participantNames.delete(id);peers.get(id)?.pc.close();peers.delete(id);removeRemote(id)}
+   else {participantNames.set(id,id===myId?"You":(d.name||"Guest"));if(id!==myId&&!peers.has(id))connectTo(id,d.name)}
+  });updateParticipants();setStatus(peers.size?"Connected":"Waiting for people…");
+ });
+ unsubscribers.push(stopPeople);
+ const stopChat=onSnapshot(query(collection(db,"calls",callId,"chat"),orderBy("ts","asc")),snap=>{
+  const box=document.getElementById("chatMessages");if(snap.empty){box.innerHTML='<div class="empty">No messages yet.</div>';return}
+  box.innerHTML="";snap.forEach(x=>{const m=x.data(),d=document.createElement("div");d.className="chat-message "+(m.from===myId?"me":"");d.innerHTML=`<div class="chat-meta">${escapeHtml(m.name||"Guest")} · ${new Date(m.ts||Date.now()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</div>${escapeHtml(m.text||"")}`;box.appendChild(d)});box.scrollTop=box.scrollHeight
+ });
+ unsubscribers.push(stopChat);
+ toast(host?"Call created — share the ID":"Joined group call","success");
+}
+window.startCall=async()=>{try{const ref=doc(collection(db,"calls"));await enterCall(ref.id,true)}catch(e){console.error(e);toast("Could not start call","error")}};
+window.joinCall=async()=>{const id=document.getElementById("joinCallId").value.trim();if(!id)return toast("Enter a call ID","error");try{await enterCall(id,false)}catch(e){console.error(e);toast("Could not join call","error")}};
+window.copyCallId=async()=>{if(currentCallId){await navigator.clipboard?.writeText(currentCallId);toast("Call ID copied","success")}};
+window.shareCall=async()=>{if(!currentCallId)return;const data={title:"Join my Iridium call",text:`Join my Iridium video call with this Call ID: ${currentCallId}`};if(navigator.share)await navigator.share(data);else window.copyCallId()};
+window.toggleMic=()=>{const t=localStream?.getAudioTracks()[0];if(!t)return toast("Join a call first","info");t.enabled=!t.enabled;document.getElementById("micBtn").textContent=t.enabled?"🎤 Mute Microphone":"🔇 Unmute Microphone";toast(t.enabled?"Microphone enabled":"Microphone muted","info")};
+window.toggleCamera=()=>{const t=localStream?.getVideoTracks()[0];if(!t)return toast("Join a call first","info");t.enabled=!t.enabled;document.getElementById("cameraBtn").textContent=t.enabled?"📷 Turn Camera Off":"📷 Turn Camera On";toast(t.enabled?"Camera enabled":"Camera disabled","info")};
+window.toggleSpeaker=()=>{document.querySelectorAll("#remoteVideos video").forEach(v=>v.muted=!v.muted);toast("Speaker setting toggled","info")};
+window.focusChat=()=>{document.getElementById("chatInput").focus();document.getElementById("chatPanel").scrollIntoView({behavior:"smooth",block:"nearest"})};
+window.sendChat=async e=>{e.preventDefault();const input=document.getElementById("chatInput"),text=input.value.trim();if(!text||!currentCallId)return;await addDoc(collection(db,"calls",currentCallId,"chat"),{from:myId,name:"Guest",text,ts:Date.now()});input.value=""};
+window.endCall=async()=>{if(currentCallId){try{await setDoc(doc(db,"calls",currentCallId,"participants",myId),{left:Date.now()},{merge:true})}catch(e){}}
+ unsubscribers.splice(0).forEach(fn=>fn());peers.forEach(x=>x.pc.close());peers.clear();document.getElementById("remoteVideos").innerHTML="";participantNames.clear();updateParticipants();
+ localStream?.getTracks().forEach(t=>t.stop());localStream=null;localVideo.srcObject=null;currentCallId=null;document.getElementById("chatInput").disabled=true;document.getElementById("chatSend").disabled=true;setStatus("Ready");toast("Call ended","info")};
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+window.addEventListener("beforeunload",()=>{peers.forEach(x=>x.pc.close());localStream?.getTracks().forEach(t=>t.stop())});
+setStatus("Ready");updateParticipants();
+</script>
+</body>
+</html>

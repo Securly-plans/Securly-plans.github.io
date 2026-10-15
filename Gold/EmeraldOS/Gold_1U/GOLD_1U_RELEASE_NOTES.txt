@@ -1,0 +1,24 @@
+EmeraldOS Gold 1U Release Notes
+
+BASE
+- Built directly from EmeraldOS Gold 1T.
+- Retains Gold 1T user isolation, explicit file sharing, Can-Notify permissions, Universal File System, Guide, Games, Radio, and Shell V2 compatibility.
+- Retains the established Gold 1T interface and application layout.
+
+APPLICATION EDITOR COMPATIBILITY
+- Application Editor user-app iframe wrappers now include allow-same-origin.
+- Sandbox permissions are: allow-scripts allow-forms allow-modals allow-downloads allow-same-origin.
+- User-app CacheStorage access is routed through a guarded caches facade.
+- Cache API failures are caught and converted to safe fallback results so iframe applications can continue running.
+- The safe cache facade is available through both the caches variable and api.cache.
+
+DOCUMENTATION
+- Added Locations.txt at the package root and inside Gold_1U.
+- Locations.txt identifies the file containing each major EmeraldOS Gold 1U system and the purpose of each file.
+
+MIGRATION
+- Explicitly recognizes Gold 1T local files, workspace keys, categories, versioned preferences, privacy data, and gold1t-split-v1/v2 cloud schemas.
+- Migration and cloud continuity complete before Gold 1U autosave is enabled.
+
+PUBLISHING
+- system/emeraldGoldLatest remains writable only through the guarded Staff Edition Update Publisher Manager flow.

@@ -1,0 +1,73 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1O",
+  "build": "1O",
+  "folder": "Gold_1O",
+  "entry": "OS.html",
+  "loginEntry": "index.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1O",
+  "activeUpdateNotifications": true,
+  "elsusMode": "original",
+  "shellV2Compatible": true,
+  "summary": "EmeraldOS Gold 1O is the flagship Gold release with a refined Windows 10-inspired desktop, complete productivity and utility suite, protected cross-version file compatibility, full VM continuity, accessibility, backup, health, Staff Center, and verified user applications.",
+  "migrationFrom": ["1N", "1M", "1L", "1K", "1J", "1I", "1H", "1G", "1F", "1E", "1D", "1C", "1B", "1A"],
+  "migrationId": "gold-1n-to-1o-flagship-full-vm-continuity",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1N",
+  "rollbackVersion": "1N",
+  "releasedAt": "2026-07-14T00:00:00.000Z",
+  "publishingPolicy": {
+    "automaticPublishing": false,
+    "queryStringPublishing": false,
+    "firstBootPublishing": false,
+    "requiresStaffEdition": true,
+    "requiresEmeraldMailVerification": true,
+    "requiresPublisherPin": true,
+    "requiresPublishButtonClick": true
+  },
+  "migrationPolicy": {
+    "blocksCloudAutosaveUntilValidated": true,
+    "mergesAllKnownLocalNamespaces": true,
+    "readsSplitSchemas": [
+      "gold1h-split-v1", "gold1h-split-v2",
+      "gold1i-split-v1", "gold1i-split-v2",
+      "gold1j-split-v1", "gold1j-split-v2",
+      "gold1k-split-v1", "gold1k-split-v2",
+      "gold1l-split-v1", "gold1l-split-v2",
+      "gold1m-split-v1", "gold1m-split-v2",
+      "gold1n-split-v1", "gold1n-split-v2",
+      "gold1o-split-v1", "gold1o-split-v2"
+    ],
+    "archivesSourceCategories": true,
+    "writesVersionSpecificBackups": true,
+    "changesReleasePointer": false
+  },
+  "testedShellVersions": ["1.0", "2.0"],
+  "fileCompatibilityPolicy": {
+    "opensPreviousGoldFileVersions": true,
+    "preservesUnknownMetadata": true,
+    "migratesWithoutDeletingOriginals": true,
+    "conflictStrategy": "preserve-both",
+    "supportedLegacyTypes": ["doc", "edoc", "note", "text", "txt", "sheet", "esheet", "slide", "eslide", "form", "image", "audio", "video", "json", "html", "css", "js", "user-app"]
+  },
+  "flagshipFeatures": [
+    "Gold Home",
+    "Command Palette",
+    "My Workspace",
+    "Clipboard Manager",
+    "Backup & Sync",
+    "File Compatibility Center",
+    "System Health",
+    "Accessibility Center",
+    "Routines",
+    "Staff Center",
+    "Staff-verified user apps",
+    "Active update notifications",
+    "Shell V2 compatibility testing"
+  ]
+}

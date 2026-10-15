@@ -1,0 +1,3051 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>𝐒𝐄𝐀𝐌𝐋𝐄𝐒𝐒-𝐎𝐒</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+@font-face {
+    font-family: 'Azonix';
+    src: url('https://db.onlinewebfonts.com/t/04e1f7fb2b58d60eb24df50a9807fa36.woff2') format('woff2');
+}
+
+:root {
+    --glass-bg: rgba(20, 20, 20, 0.6);
+    --glass-border: #333;
+    --accent-main: #fff;
+    --font-main: 'Rajdhani', sans-serif;
+    --font-header: 'Azonix', 'Orbitron', sans-serif;
+    --z-bg: 0;
+    --z-snow: 1;
+    --z-desktop: 10;
+    --z-windows: 500;
+    --z-dock: 1000;
+    --z-triggers: 2000;
+    --z-modal: 3000;
+    --z-noti: 8000;
+    --z-lock: 90000;
+    --z-ciri: 95000;
+    --z-boot: 99999;
+    --bg-page: #000;
+    --bg-window: rgba(15, 15, 15, 0.95);
+    --dark-gray: #111;
+    --mid-gray: #222;
+    --user-gray: #333;
+    --text-white: #fff;
+    --text-muted: #888;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-drag: none;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+::selection { background: #444; color: #fff; }
+::-moz-selection { background: #444; color: #fff; }
+
+body {
+    background: #000;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    font-family: var(--font-main);
+    color: white;
+}
+
+#mobile-warning {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: none;
+}
+
+#mobile-warning.show-warning { display: flex; }
+
+.mobile-box {
+    background: #111;
+    border: 2px solid #333;
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 80%;
+    box-shadow: 0 10px 40px rgba(255,255,255,0.05);
+}
+
+.mobile-box i { font-size: 3rem; color: #fff; margin-bottom: 15px; }
+.mobile-box h2 { font-family: var(--font-header); font-size: 1.2rem; color: #fff; margin-bottom: 10px; }
+.mobile-box p { color: #888; font-size: 1rem; font-weight: 600; }
+
+#boot-layer {
+    position: fixed; inset: 0; background: #000; z-index: var(--z-boot);
+    display: none; transition: opacity 0.6s ease;
+}
+
+#boot-content { 
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; z-index: 2; width: 100%;
+}
+
+.boot-logo {
+    font-family: var(--font-header);
+    font-size: 3rem;
+    color: #fff;
+    letter-spacing: 10px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 30px rgba(255,255,255,0.2);
+}
+
+.boot-sub {
+    font-family: var(--font-main);
+    color: #888;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    margin-bottom: 50px;
+    text-transform: uppercase;
+}
+
+.boot__hint {
+    margin-top: 20px; font-size: 0.8rem; color: #555;
+}
+
+#boot-btn {
+    padding: 15px 50px;
+    background: transparent;
+    border: 1px solid #555;
+    color: #fff;
+    font-family: var(--font-header);
+    font-size: 18px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: 0.3s;
+    border-radius: 4px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+
+#boot-btn:hover { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.4); }
+
+#boot-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    z-index: 1;
+}
+
+#bg-video, #bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: var(--z-bg);
+    opacity: 0.9;
+}
+
+#snow-fx {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: var(--z-snow);
+}
+
+#lock-screen {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-lock);
+    background: #000;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.6s cubic-bezier(0.7,0,0.3,1), opacity 0.4s;
+}
+
+#lock-screen.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+#lock-screen.slide-up { transform: translateY(-100%); opacity: 1; pointer-events: none; }
+
+#lock-video, #lock-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+#lock-ui {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    width: 100%;
+}
+
+.lock-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-shadow: 0 5px 25px rgba(0,0,0,0.9);
+}
+
+.l-day, .l-date, .l-time {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+#lock-screen.active .l-day { animation: slideUpTxt 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards 0.2s; }
+#lock-screen.active .l-date { animation: slideUpTxt 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards 0.35s; }
+#lock-screen.active .l-time { animation: slideUpTxt 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards 0.5s; }
+
+@keyframes slideUpTxt {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.l-day { font-family: 'Azonix', sans-serif; font-size: 5rem; letter-spacing: 12px; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; font-weight: normal; }
+.l-date { font-family: var(--font-main); font-size: 1.3rem; letter-spacing: 4px; font-weight: 700; color: #fff; margin-bottom: 8px; text-transform: uppercase; }
+.l-time { font-family: var(--font-main); font-size: 1.1rem; letter-spacing: 3px; font-weight: 700; color: #fff; }
+
+#hud-top {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 5;
+    pointer-events: none;
+    text-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+
+.hud-day { font-family: 'Azonix', sans-serif; font-size: 3rem; color: rgba(255,255,255,0.7); letter-spacing: 10px; text-transform: uppercase; }
+
+#right-sidebar {
+    position: fixed;
+    right: 25px;
+    top: 8%;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 50;
+}
+
+.sidebar__section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar__title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+}
+
+.sidebar__card {
+    background: rgba(15, 15, 15, 0.75);
+    backdrop-filter: blur(15px);
+    border: 1px solid #333;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.sidebar__card:hover {
+    background: rgba(30, 30, 30, 0.9);
+    border-color: #fff;
+    transform: translateX(-5px) scale(1.02);
+}
+
+.sidebar__info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar__info strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar__info small {
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 600;
+}
+
+#last-game-icon, #spotify-album-art {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.play-overlay {
+    position: absolute;
+    right: 15px;
+    color: #fff;
+    font-size: 16px;
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.sidebar__card:hover .play-overlay {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.txt-highlight { font-weight: bold; color: #fff; }
+.sidebar__chevron { color: #888; }
+
+#fps-counter { position: fixed; bottom: 24px; left: 24px; background: #111; border: 1px solid #333; padding: 6px 12px; border-radius: 8px; font-family: var(--font-main); font-size: 12px; font-weight: bold; color: #fff; z-index: 99999; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.9); }
+
+#dock-container {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 52px;
+    background: rgba(10,10,10,0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid #333;
+    border-radius: 18px;
+    z-index: var(--z-dock);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.4s;
+    padding: 0 15px;
+}
+
+.dock-hidden { transform: translate(-50%, 150%) !important; }
+
+.dock-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.dock-item:hover { background: rgba(255,255,255,0.1); transform: translateY(-5px); }
+.dock-item img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+.dock-sep { width: 1px; height: 24px; background: #555; margin: 0 4px; }
+
+.desktop-app {
+    position: absolute;
+    width: 80px;
+    height: 95px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: var(--z-desktop);
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                width 0.3s ease, height 0.3s ease, 
+                background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.desktop-app:hover { transform: scale(1.05); }
+
+.d-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    pointer-events: none;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+    transition: all 0.3s;
+}
+
+.d-label {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 0 2px 5px #000, 0 0 2px #000;
+    width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.3s;
+}
+
+.name-hidden .d-label { opacity: 0 !important; display: none !important; }
+
+.desktop-app.expanded-folder {
+    transform: scale(1) !important;
+    background: rgba(15, 15, 15, 0.98);
+    border: 1px solid #444;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+    cursor: default;
+    z-index: 900 !important;
+    padding: 15px;
+    display: block; 
+}
+
+.folder-header {
+    font-family: var(--font-main);
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.folder-header i { color: #888; transition: 0.2s; cursor: pointer; }
+.folder-header i:hover { color: #fff; transform: scale(1.2); }
+
+.folder-grid-expanded {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.folder-grid-expanded::-webkit-scrollbar { width: 4px; }
+.folder-grid-expanded::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; }
+
+.f-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.f-app:hover { transform: scale(1.1); }
+.f-app img { width: 38px; height: 38px; border-radius: 8px; }
+.f-app span { font-size: 11px; color: #ccc; max-width: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;}
+
+.desktop-large-mode .desktop-app { width: 90px; height: 90px; }
+.desktop-large-mode .d-icon { width: 70px; height: 70px; }
+.desktop-large-mode .d-label { opacity: 0; pointer-events: none; }
+
+.d-folder-grid {
+    width: 50px;
+    height: 50px;
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid #555;
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    padding: 4px;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+}
+
+.desktop-large-mode .d-folder-grid { width: 70px; height: 70px; padding: 6px; gap: 4px; }
+.d-folder-grid img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+
+#drag-proxy { position: fixed; z-index: 9999; pointer-events: none; opacity: 0.8; display: none; width: 50px; height: 50px; }
+#drag-proxy img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
+.hidden-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center; z-index: 2; }
+
+.os-menu {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 90%;
+    max-width: 600px;
+    max-height: 70vh;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 16px;
+    z-index: var(--z-modal);
+    display: none;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.2,0.8,0.2,1);
+    flex-direction: column;
+    padding: 25px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.os-menu.open { display: flex; opacity: 1; transform: translateX(-50%) translateY(0); }
+.start-search-bar, .drawer-search-wrap { width: 100%; padding: 12px 15px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: white; font-family: var(--font-main); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.start-search-bar input, .drawer-search-input { background: transparent; border: none; color: white; width: 100%; outline: none; }
+.start-search-bar input::placeholder, .drawer-search-input::placeholder { color: #666; }
+
+.pinned-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.pinned-header h3 { font-size: 15px; color: #fff; font-weight: 600; }
+.pinned-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+    justify-content: center;
+}
+.pinned-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; padding: 12px; border-radius: 12px; transition: 0.2s; }
+.pinned-item:hover { background: #222; }
+.pinned-item img { width: 38px; height: 38px; object-fit: contain; border-radius: 10px; }
+.pinned-item span { font-size: 12px; color: #aaa; }
+.start-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+.user-profile { display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 30px; height: 30px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.user-role { font-size: 12px; color: #ddd; }
+.power-btn { cursor: pointer; color: #fff; font-size: 18px; }
+
+#app-drawer {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    z-index: var(--z-modal);
+    display: none;
+    opacity: 0;
+    transition: 0.3s ease;
+    padding: 80px 40px;
+    border: none;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+#app-drawer.open { display: block; opacity: 1; }
+.drawer-search-wrap { max-width: 600px; margin: 0 auto 40px auto; }
+.drawer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 30px; max-width: 900px; margin: 0 auto; }
+.drawer-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
+.drawer-item:hover { transform: scale(1.1); }
+.drawer-item img { width: 60px; height: 60px; border-radius: 16px; object-fit: contain; }
+.drawer-item span { color: #fff; font-size: 13px; font-weight: 600; }
+
+.window {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    z-index: var(--z-windows);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95);
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.window.active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: var(--z-windows); }
+.window.minimized { transform: translateY(100%) scale(0.5); opacity: 0; pointer-events: none; }
+.win-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 45px;
+    background: #111;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.header-visible .win-header { transform: translateY(0); }
+.win-title { font-family: var(--font-header); font-size: 13px; color: #aaa; letter-spacing: 2px; }
+.win-controls { display: flex; gap: 15px; align-items: center; }
+.win-btn {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+}
+.win-btn:hover { color: #fff; }
+.btn-max { 
+    background: #444; 
+    border: 1px solid #666; 
+    color: transparent; 
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.btn-max:hover { 
+    background: #888; 
+    transform: scale(1.15); 
+    color: #fff; 
+}
+/* Minimize button - horizontal line */
+.btn-min { background: #444; border: 1px solid #666; }
+.btn-min:hover { background: #888; transform: scale(1.15); }
+.btn-min::before { content: ''; width: 8px; height: 2px; background: currentColor; border-radius: 2px; }
+.btn-close { background: #555; border: 1px solid #777; }
+.btn-close:hover { transform: scale(1.15); box-shadow: 0 0 8px #fff; background: #fff; color: #000; }
+.btn-close::before, .btn-close::after { content: ''; position: absolute; width: 8px; height: 2px; background: currentColor; border-radius: 2px; }
+.btn-close::before { transform: rotate(45deg); }
+.btn-close::after { transform: rotate(-45deg); }
+.win-body { width: 100%; height: 100%; overflow: hidden; position: relative; background: #000; }
+iframe { width: 100%; height: 100%; border: none; display: block; }
+
+#top-trigger { position: fixed; top: 0; left: 0; width: 100%; height: 20px; z-index: var(--z-triggers); }
+#bottom-trigger { position: fixed; bottom: 0; left: 0; width: 100%; height: 30px; z-index: var(--z-triggers); }
+
+.os-context-menu {
+    position: fixed;
+    display: none;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 220px;
+     z-index: 9999999 !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+    font-family: var(--font-main);
+    list-style: none; margin: 0;
+}
+.ctx-item { padding: 10px 15px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-radius: 6px; }
+.ctx-item i { color: #888; font-size: 16px; transition: 0.2s; width: 20px; text-align: center; }
+.ctx-item:hover { background: #222; }
+.ctx-item:hover i { color: #fff; }
+.ctx-separator { height: 1px; background: #333; margin: 6px 0; }
+.ctx-row { display: flex; gap: 8px; padding: 0 4px; }
+.ctx-btn { flex: 1; background: #222; border: 1px solid #444; color: #ccc; border-radius: 6px; padding: 8px 0; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
+.ctx-btn:hover { background: #fff; color: #000; border-color: #fff; }
+
+#ciri-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); opacity: 0; pointer-events: none; transition: opacity 0.5s ease; z-index: var(--z-ciri); }
+#ciri-window {
+    position: fixed;
+    bottom: 8vh;
+    left: 50%;
+    transform: translate(-50%, 40px) scale(0.92);
+    width: 90%;
+    max-width: 740px;
+    height: 85vh;
+    max-height: 820px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 32px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s cubic-bezier(0.2,0.8,0.2,1);
+    z-index: calc(var(--z-ciri) + 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: white;
+}
+body.ciri-active #ciri-backdrop { opacity: 1; pointer-events: all; }
+body.ciri-active #ciri-window { opacity: 1; pointer-events: all; transform: translate(-50%, 0) scale(1); }
+#ciri-boot-screen { position: absolute; inset: 0; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.8s ease, filter 0.8s ease; border-radius: 32px; }
+.boot-ciri { font-size: 42px; font-weight: 800; color: #fff; font-family: monospace; border-right: 3px solid #fff; white-space: nowrap; overflow: hidden; width: 0; letter-spacing: -1px; }
+.boot-ciri.typing { animation: typeCiri 0.5s steps(5, end) forwards, blinkCiri 0.8s step-end infinite; }
+.boot-sub { font-size: 12px; font-weight: 700; color: #888; letter-spacing: 3px; margin-top: 16px; opacity: 0; transform: translateY(20px) scale(0.95); transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.boot-sub.show { opacity: 1; transform: translateY(0) scale(1); }
+.boot-loader { margin-top: 40px; display: flex; flex-direction: column; align-items: center; opacity: 0; transition: opacity 0.6s ease; }
+.spinner { width: 24px; height: 24px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin-bottom: 16px; }
+.boot-status { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: 0.5px; }
+.boot-warning { font-size: 11px; color: #666; max-width: 280px; text-align: center; line-height: 1.5; font-weight: 500; }
+@keyframes typeCiri { from { width: 0; } to { width: 115px; } }
+@keyframes blinkCiri { 50% { border-color: transparent; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#status-pill { background: #1a1a1a; border-radius: 20px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #333; font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-bottom: 10px; flex-shrink: 0; text-transform: uppercase; }
+.status-icon svg { width: 14px; height: 14px; }
+.secure { color: #fff; } .secure-svg { stroke: #fff; }
+.unstable { color: #888; } .unstable-svg { stroke: #888; }
+#chat-history { width: 100%; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; overflow-x: hidden; flex-grow: 1; padding: 20px 10px; }
+#chat-history::-webkit-scrollbar { width: 4px; }
+#chat-history::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+.message { max-width: 85%; padding: 18px 24px; border-radius: 18px; font-size: 15px; line-height: 1.6; word-wrap: break-word; font-weight: 500; animation: slideUp 0.4s cubic-bezier(0.2,0.8,0.2,1); }
+.message p { margin: 0 0 12px 0; } .message p:last-child { margin: 0; }
+.message pre { background: #0a0a0a; padding: 12px; border-radius: 10px; overflow-x: auto; border: 1px solid #222; }
+.message code { font-family: monospace; font-size: 13.5px; color: #ccc; }
+.message.user { background: #333; color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; border: 1px solid #444; }
+.message.ciri { background: #1a1a1a; color: #fff; align-self: flex-start; position: relative; padding-right: 24px; border-bottom-left-radius: 6px; border: 1px solid #333; }
+details.thought-process { background: #0a0a0a; border-radius: 12px; padding: 12px; margin-bottom: 16px; font-size: 13.5px; border: 1px solid #222; }
+details.thought-process summary { cursor: pointer; font-weight: 600; color: #888; display: flex; align-items: center; gap: 8px; outline: none; }
+details.thought-process summary:hover { color: #fff; }
+details.thought-process summary::before { content: "🧠"; font-size: 15px; }
+.thought-content { margin-top: 12px; color: #888; font-family: monospace; line-height: 1.6; border-top: 1px solid #222; padding-top: 12px; white-space: pre-wrap; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+#bottom-wrapper { width: 100%; display: flex; align-items: center; gap: 12px; margin-top: 10px; position: relative; flex-shrink: 0; background: #1a1a1a; padding: 12px 16px; border-radius: 24px; border: 1px solid #333; }
+.icon-btn { background: none; border: none; color: #888; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 8px; border-radius: 50%; transition: 0.2s; }
+.icon-btn:hover { background: #333; color: #fff; }
+#chat-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 15.5px; font-family: var(--font-main); padding: 0 5px; outline: none; resize: none; max-height: 120px; line-height: 1.4; font-weight: 600; }
+#chat-input::placeholder { color: #888; font-weight: 500; }
+#mode-toggle { background: #222; color: #888; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; padding: 8px 14px; border-radius: 14px; transition: all 0.2s; border: 1px solid #444; }
+#mode-toggle:hover { background: #fff; color: #000; border-color: #fff; }
+#mode-toggle.live-active { background: #fff; color: #000; border-color: #fff; animation: pulseWhite 2s infinite; }
+@keyframes pulseWhite { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); } 70% { box-shadow: 0 0 0 8px rgba(255,255,255,0); } 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
+#action-orb { width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fff 0%, #aaa 20%, #444 60%, #111 100%); box-shadow: 0 8px 20px rgba(0,0,0,0.8), inset -4px -4px 10px rgba(0,0,0,0.9), inset 2px 2px 8px rgba(255,255,255,0.4); transition: all 0.3s cubic-bezier(0.2,0.8,0.2,1); flex-shrink: 0; cursor: pointer; }
+#action-orb:hover { transform: scale(1.08); box-shadow: 0 12px 25px rgba(255,255,255,0.1); }
+#action-orb.thinking { animation: orbAlive 2s infinite ease-in-out; filter: contrast(1.2) brightness(1.1); }
+@keyframes orbAlive { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255,255,255,0.1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(255,255,255,0.3); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255,255,255,0.1); } }
+#img-preview-box { position: absolute; bottom: 85px; left: 10px; background: #1a1a1a; padding: 6px; border-radius: 12px; display: none; align-items: center; gap: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.8); border: 1px solid #333; }
+#img-preview-box img { height: 44px; border-radius: 8px; }
+#img-preview-box span { color: #fff; font-size: 13px; cursor: pointer; padding-right: 10px; font-weight: 800; }
+.hidden-media { display: none; }
+.hidden-input { display: none; }
+
+#restore-btn { position: fixed; bottom: 24px; right: 0; background: #111; border: 1px solid #444; border-right: none; padding: 14px; border-radius: 16px 0 0 16px; color: #fff; cursor: pointer; transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.2,0.8,0.2,1); z-index: 9998; display: flex; align-items: center; justify-content: center; }
+#restore-btn.visible { transform: translateX(0); }
+#restore-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+#cine-noti { position: fixed; bottom: 24px; right: 24px; width: 320px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 16px; box-shadow: 0 24px 48px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.05); color: #fff; transform: translateY(150%) scale(0.9); opacity: 0; transition: transform 0.6s cubic-bezier(0.2,0.8,0.2,1), opacity 0.5s ease; z-index: var(--z-noti); display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+#cine-noti.active { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+#cine-noti.minimized { transform: translateX(150%) scale(0.9); opacity: 0; pointer-events: none; }
+.window-actions { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: -4px; }
+.action-btn { background: #222; border: 1px solid #444; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #888; transition: all 0.2s ease; }
+.action-btn:hover { background: #fff; color: #000; }
+.action-btn svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.player-main { display: flex; align-items: center; gap: 14px; }
+.album-art { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.8); border: 1px solid #333; }
+.track-info { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; margin-bottom: 2px; }
+.artist { font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#visualizer { width: 100%; height: 14px; margin-top: 6px; }
+.time-wrapper { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #888; font-variant-numeric: tabular-nums; font-weight: 600; }
+.progress-hit-area { flex-grow: 1; height: 16px; display: flex; align-items: center; cursor: pointer; outline: none; }
+.progress-bg { width: 100%; height: 5px; background: #333; border-radius: 5px; position: relative; overflow: hidden; pointer-events: none; }
+.progress-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: #fff; border-radius: 5px; }
+.controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 4px; }
+.ctrl-btn { background: none; border: none; padding: 0; cursor: pointer; display: flex; justify-content: center; align-items: center; color: #888; transition: transform 0.15s ease, color 0.2s; }
+.ctrl-btn:hover { color: #fff; }
+.ctrl-btn:active { transform: scale(0.85); }
+.ctrl-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.play-pause-btn { background: #fff; color: #000; width: 36px; height: 36px; border-radius: 50%; }
+.play-pause-btn:hover { color: #000; transform: scale(1.05); background: #ccc; }
+.play-pause-btn:active { transform: scale(0.95); }
+.hidden-svg { display: none; }
+.visible-svg { display: block; }
+
+.modal__backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999999;
+  align-items: center; justify-content: center; backdrop-filter: blur(10px); border: none;
+  width: 100%; height: 100%;
+}
+.modal__content {
+  background: #111; border: 1px solid #333; border-radius: 16px; padding: 30px;
+  width: 400px; max-width: 90%; font-family: var(--font-main);
+}
+.modal__header {
+  margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; font-family: 'Orbitron', sans-serif; color: #fff;
+}
+.modal__list {
+  color: #ccc; font-size: 14px; margin-left: 20px; line-height: 1.8; margin-bottom: 20px;
+}
+.modal__btn {
+  width: 100%; padding: 12px; background: #fff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+}
+
+#wallpaper-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0.95); width: 800px; max-height: 80vh; background: #111; border: 1px solid #333; border-radius: 16px; z-index: var(--z-modal); display: none; opacity: 0; transition: all 0.3s ease; flex-direction: column; padding: 30px; box-shadow: 0 30px 80px rgba(0,0,0,0.9); }
+#wallpaper-menu.open { display: flex; opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.wp-modal-header { border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.wp-modal-header h2 { font-family: 'Orbitron'; color: #fff; letter-spacing: 2px; margin: 0; }
+.wp-controls-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.segmented-control { display: flex; background: #222; border: 1px solid #333; border-radius: 8px; padding: 4px; gap: 4px; border-style: solid; }
+.segmented-control label { flex: 1; text-align: center; cursor: pointer; }
+.segmented-control input[type="radio"] { display: none; }
+.segmented-control span { display: block; padding: 8px 16px; border-radius: 6px; font-family: var(--font-main); font-weight: bold; color: #888; transition: 0.3s; }
+.segmented-control input[type="radio"]:checked + span { background: #fff; color: #000; }
+.loop-toggle-container { display: flex; align-items: center; gap: 10px; background: #222; border: 1px solid #333; padding: 6px 16px; border-radius: 8px; }
+.loop-label { color: #fff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .3s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
+input:checked + .slider { background-color: #fff; }
+input:checked + .slider:before { transform: translateX(20px); background-color: #000; }
+
+.wp-grid-container { overflow-y: auto; flex: 1; padding-right: 10px; }
+.wp-grid-container::-webkit-scrollbar { width: 6px; }
+.wp-grid-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+.wp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+.wp-section-title { font-size: 12px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.wp-card { background: #000; border: 1px solid #333; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.3s; position: relative; aspect-ratio: 16/9; }
+.wp-card:hover { border-color: #fff; transform: translateY(-4px); }
+.wp-card.active-wp { border: 2px solid #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+.wp-card video, .wp-card img { width: 100%; height: 100%; object-fit: cover; }
+.wp-info { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding: 10px; font-size: 12px; font-weight: bold; text-shadow: 0 1px 3px black; color: #fff; }
+.wp-locked { filter: grayscale(1) brightness(0.4); pointer-events: none; border-style: dashed; }
+.close-icon { cursor: pointer; font-size: 1.5rem; color: #fff; }
+
+#toast-container { position: fixed; bottom: 70px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast-notification { background: #111; border: 1px solid #333; border-radius: 8px; width: 340px; padding: 15px; color: #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.9); transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1); pointer-events: auto; cursor: pointer; }
+.toast-notification.show { transform: translateX(0); }
+.toast-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.toast-app-info { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #888; font-weight: 700; }
+.toast-icon { width: 16px; height: 16px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; }
+.toast-close { color: #888; font-size: 14px; cursor: pointer; transition: 0.2s; }
+.toast-close:hover { color: #fff; }
+.toast-title { font-family: var(--font-main); font-weight: bold; font-size: 15px; margin-bottom: 4px; letter-spacing: 0.5px; }
+.toast-body { font-family: var(--font-main); font-size: 13px; color: #ccc; line-height: 1.4; }
+
+.faq-box {
+  background: #111; border: 1px solid #333; border-radius: 16px; padding: 30px;
+  width: 500px; max-width: 90%; font-family: var(--font-main); color: #fff;
+}
+.faq-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px;
+}
+.faq-header h2 { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+.faq-item { margin-bottom: 20px; }
+.faq-item h3 { font-size: 16px; color: #fff; margin-bottom: 5px; }
+.faq-item p { font-size: 13px; color: #aaa; line-height: 1.5; }
+
+.config__main-header {
+  color: #fff; border-bottom: 2px solid #333; padding-bottom: 10px; font-weight: 700; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+}
+.config__category {
+  color: #fff; font-weight: bold; margin-top: 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.config__card {
+  background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center; transition: 0.2s;
+}
+.config__card--clickable { cursor: pointer; }
+.config__card--clickable:hover { background: #1a1a1a; border-color: #555; transform: translateX(5px); }
+.config__info { display: flex; gap: 15px; align-items: center; }
+.config__icon { color: #888; font-size: 1.5rem; width: 30px; text-align: center; }
+.config__text { display: flex; flex-direction: column; }
+.config__text strong { color: #fff; font-size: 15px; }
+.config__text small { color: #888; font-size: 13px; }
+.config__select {
+  background: #222; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 6px; outline: none; font-family: inherit;
+}
+.config__input-sm {
+  width: 40px; height: 30px; color: #fff; background: #222; border: 1px solid #555; text-align: center;
+  font-size: 1.2rem; font-weight: bold; outline: none; border-radius: 4px;
+}
+.config__input-sm:focus, .config__select:focus { border-color: #888; }
+
+/* Custom scrollbar for app drawer and start menu */
+#app-drawer::-webkit-scrollbar,
+.os-menu::-webkit-scrollbar,
+.pinned-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#app-drawer::-webkit-scrollbar-track,
+.os-menu::-webkit-scrollbar-track,
+.pinned-grid::-webkit-scrollbar-track {
+    background: rgba(20, 20, 20, 0.5);
+    border-radius: 3px;
+}
+
+#app-drawer::-webkit-scrollbar-thumb,
+.os-menu::-webkit-scrollbar-thumb,
+.pinned-grid::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+#app-drawer::-webkit-scrollbar-thumb:hover,
+.os-menu::-webkit-scrollbar-thumb:hover,
+.pinned-grid::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Firefox scrollbar support */
+#app-drawer,
+.os-menu,
+.pinned-grid {
+    scrollbar-width: thin;
+    scrollbar-color: #444 rgba(20, 20, 20, 0.5);
+}
+
+#boot-layer.boot-animation {
+    cursor: none !important;
+}
+
+#boot-layer.boot-animation * {
+    cursor: none !important;
+}
+
+</style>
+</head>
+
+<body id="desktop-area" role="application">
+
+<!-- accessibility wrapper for screen readers -->
+<div id="fps-counter" aria-live="polite"><span id="fps-val">60</span> FPS</div>
+
+<dialog id="mobile-warning" aria-modal="true">
+  <div class="mobile-box">
+    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+    <h2>Device is not fully supported</h2>
+    <p>Double tap anywhere to continue</p>
+  </div>
+</dialog>
+
+<div id="top-trigger" aria-hidden="true"></div>
+<div id="bottom-trigger" aria-hidden="true"></div>
+
+<section id="boot-layer" aria-label="System Boot Sequence">
+  <div id="boot-content">
+    <h1 class="boot-logo">𝐒𝐄𝐀𝐌𝐋𝐄𝐒𝐒-𝐎𝐒</h1>
+    <p class="boot-sub">Seamless-Hub Softwares // V1</p>
+    <button id="boot-btn" onclick="startBootSequence()" tabindex="1">Enter SEAMLESS</button>
+    <div class="boot__hint">Double-Tap ENTER to skip sequence</div>
+  </div>
+  <video id="boot-video" playsinline aria-hidden="true"><source src="cine-os/Videos/Boot.mp4" type="video/mp4"></video>
+</section>
+
+<main id="lock-screen" onclick="unlockSystem()" role="presentation">
+  <video id="lock-video" autoplay loop muted playsinline aria-hidden="true"></video>
+  <img id="lock-img" class="media__fallback" alt="Lockscreen Background">
+  
+ <article id="lock-ui">
+    <div class="lock-content">
+      <div class="l-day" id="lock-day-large">FRIDAY</div>
+      <div class="l-date" id="lock-date">03 APRIL, 2026.</div>
+      <div class="l-time" id="lock-time">- 08:43 -</div>
+    </div>
+  </article>
+</main>
+
+<!-- Base OS Backgrounds -->
+<video id="bg-video" loop muted playsinline aria-hidden="true"></video>
+<img id="bg-img" class="media__fallback" alt="Desktop Background">
+<canvas id="snow-fx" aria-hidden="true"></canvas>
+
+<header id="hud-top">
+  <div class="hud-day" id="lbl-day">FRIDAY</div>
+</header>
+
+<div id="drag-proxy" aria-hidden="true">
+  <div id="folder-badge" class="hidden-badge">2</div>
+  <img id="proxy-img" src="" alt="Dragging">
+</div>
+
+<!-- Taskbar -->
+<nav id="dock-container" aria-label="System Taskbar"></nav>
+<section id="windows-layer" aria-live="assertive"></section>
+
+<!-- Modals -->
+<dialog id="wallpaper-menu" aria-label="Wallpaper Settings">
+  <header class="wp-modal-header">
+    <h2>WALLPAPER PROTOCOLS</h2>
+    <i class="fas fa-times close-icon" role="button" tabindex="0" onclick="var menu = document.getElementById('wallpaper-menu'); menu.classList.remove('open'); if (menu.close) { menu.close(); }"></i>
+  </header>
+  
+  <div class="wp-controls-row">
+    <fieldset class="segmented-control">
+      <label><input type="radio" name="wpmd" value="both" checked onclick="window.wpMode='both'"><span>Both</span></label>
+      <label><input type="radio" name="wpmd" value="home" onclick="window.wpMode='home'"><span>Homescreen</span></label>
+      <label><input type="radio" name="wpmd" value="lock" onclick="window.wpMode='lock'"><span>Lockscreen</span></label>
+    </fieldset>
+    
+    <div class="loop-toggle-container">
+      <span class="loop-label">Loop Wallpaper</span>
+      <label class="switch wp-loop-switch">
+        <input type="checkbox" id="wp-loop-chk">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="wp-grid-container">
+    <div id="wp-grid-unlocked" class="wp-grid"></div>
+    <h3 class="wp-section-title">Encrypted</h3>
+    <div id="wp-grid-locked" class="wp-grid"></div>
+  </div>
+</dialog>
+
+<aside id="start-menu" class="os-menu" aria-label="Start Menu">
+  <div class="start-search-bar">
+    <i class="fas fa-search search-icon" aria-hidden="true"></i>
+    <input type="text" id="start-search-input" placeholder="Type secret code to unlock papers..." aria-label="Search Settings">
+  </div>
+  <header class="pinned-header">
+    <h3>Pinned</h3>
+  </header>
+  <div class="pinned-grid" id="pinned-grid"></div>
+  <footer class="start-footer">
+    <div class="user-profile">
+      <div class="user-avatar"><i class="fas fa-user" aria-hidden="true"></i></div>
+      <span class="user-role">Administrator</span>
+    </div>
+    <i class="fas fa-power-off power-btn" role="button" tabindex="0" onclick="location.reload()" aria-label="Restart OS"></i>
+  </footer>
+</aside>
+
+<dialog id="app-drawer" aria-label="All Applications" onclick="if(event.target.id==='app-drawer')toggleAppDrawer()">
+  <div class="drawer-search-wrap">
+    <i class="fas fa-search search-icon" aria-hidden="true"></i>
+    <input type="text" class="drawer-search-input" placeholder="Search apps..." onkeyup="filterDrawer(this.value)">
+  </div>
+  <div class="drawer-grid" id="drawer-grid"></div>
+</dialog>
+
+<menu id="app-context-menu" class="os-context-menu" role="menu">
+  <li class="ctx-item" id="ctx-rename" role="menuitem" tabindex="0"><i class="fas fa-edit fa-fw" aria-hidden="true"></i> Rename</li>
+  <li class="ctx-item" id="ctx-hidename" role="menuitem" tabindex="0"><i class="fas fa-eye-slash fa-fw" aria-hidden="true"></i> Toggle Name</li>
+  <li class="ctx-item" id="ctx-changeicon" role="menuitem" tabindex="0"><i class="fas fa-image fa-fw" aria-hidden="true"></i> Change Icon</li>
+  <li class="ctx-item" id="ctx-open-newtab-desktop" role="menuitem" tabindex="0"><i class="fas fa-plus fa-fw" aria-hidden="true"></i> Open in New Tab</li>
+  <li class="ctx-item" id="ctx-copylink" role="menuitem" tabindex="0"><i class="fas fa-link fa-fw" aria-hidden="true"></i> Copy Link</li>
+  <li class="ctx-separator" role="separator"></li>
+  <li class="ctx-item" id="ctx-delete" role="menuitem" tabindex="0"><i class="fas fa-trash fa-fw" style="color:#aaa;" aria-hidden="true"></i> Remove</li>
+</menu>
+
+<menu id="drawer-ctx-menu" class="os-context-menu" role="menu">
+    <li class="ctx-item" id="ctx-pin-app" role="menuitem" tabindex="0"><i class="fas fa-thumbtack fa-fw" aria-hidden="true"></i> Pin to Taskbar</li>
+    <li class="ctx-item" id="ctx-open-newtab-drawer" role="menuitem" tabindex="0"><i class="fas fa-plus fa-fw" aria-hidden="true"></i> Open in New Tab</li>
+    <li class="ctx-item" id="ctx-copylink-drawer" role="menuitem" tabindex="0"><i class="fas fa-link fa-fw" aria-hidden="true"></i> Copy Link</li>
+</menu>
+
+<menu id="dock-ctx-menu" class="os-context-menu" role="menu">
+    <li class="ctx-item" id="ctx-unpin-app" role="menuitem" tabindex="0"><i class="fas fa-unlink fa-fw" aria-hidden="true"></i> Unpin from Taskbar</li>
+    <li class="ctx-item" id="ctx-open-newtab-dock" role="menuitem" tabindex="0"><i class="fas fa-plus fa-fw" aria-hidden="true"></i> Open in New Tab</li>
+    <li class="ctx-item" id="ctx-copylink-dock" role="menuitem" tabindex="0"><i class="fas fa-link fa-fw" aria-hidden="true"></i> Copy Link</li>
+</menu>
+
+<menu id="desktop-context-menu" class="os-context-menu" role="menu">
+  <li class="ctx-item" role="menuitem" tabindex="0" onclick="openWallpaperMenu(); document.getElementById('desktop-context-menu').style.display='none';"><i class="fas fa-image fa-fw"></i> Change Wallpaper</li>
+  <li class="ctx-separator" role="separator"></li>
+  <li class="ctx-row" role="none">
+    <button class="ctx-btn" onclick="toggleDesktopSize(true)" title="Large Icons (Hide Names)"><i class="fas fa-expand-arrows-alt"></i></button>
+    <button class="ctx-btn" onclick="toggleDesktopSize(false)" title="Default Size"><i class="fas fa-compress-arrows-alt"></i></button>
+  </li>
+  <li class="ctx-separator" role="separator"></li>
+  <li class="ctx-item" role="menuitem" tabindex="0" onclick="location.reload()"><i class="fas fa-sync fa-fw"></i> Refresh System</li>
+</menu>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- Assistant -->
+<div id="ciri-backdrop" onclick="closeCiri()" aria-hidden="true"></div>
+<aside id="ciri-window" aria-label="Ciri AI Assistant">
+  <div id="ciri-boot-screen">
+    <div id="boot-ciri-text" class="boot-ciri">CIRI.</div>
+    <div id="boot-sub-text" class="boot-sub">Seamless-Hub SOFTWARES</div>
+    <div id="boot-loader" class="boot-loader">
+      <div id="boot-spinner" class="spinner"></div>
+      <div id="boot-status-text" class="boot-status">Connecting To Gemini...</div>
+      <div class="boot-warning">If network restricts Gemini, This webOS needs to be launched through a proxy giving up LIVE mode.</div>
+    </div>
+  </div>
+
+  <header id="status-pill">
+    <span>CIRI</span>
+    <div id="status-icon" class="status-icon"></div>
+    <span id="status-text"></span>
+  </header>
+  <main id="chat-history" aria-live="polite"></main>
+
+  <footer id="bottom-wrapper">
+    <div id="img-preview-box">
+      <img id="img-preview" src="" alt="preview">
+      <span onclick="clearImage()" role="button" tabindex="0">✕</span>
+    </div>
+    <input type="file" id="file-upload" accept="image/*" class="hidden-input" onchange="handleFileUpload(event)">
+    <button class="icon-btn" onclick="document.getElementById('file-upload').click()" aria-label="Upload Image">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+    </button>
+    <textarea id="chat-input" placeholder="Message Ciri..." rows="1" oninput="autoGrow(this)" aria-label="Chat Input"></textarea>
+    <div id="mode-toggle" onclick="cycleMode()" role="button" tabindex="0">FAST</div>
+    <div id="action-orb" onclick="handleSend()" role="button" tabindex="0" aria-label="Send Message"></div>
+  </footer>
+</aside>
+
+<video id="screen-video" autoplay playsinline class="hidden-media"></video>
+<canvas id="screen-canvas" class="hidden-media"></canvas>
+
+<!-- Media Player -->
+<button id="restore-btn" title="Restore Player" aria-label="Restore Media Player">
+  <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+</button>
+
+<aside id="cine-noti" aria-label="Now Playing">
+  <header class="window-actions">
+    <button class="action-btn" id="minimize-noti-btn" title="Minimize" aria-label="Minimize Player">
+      <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+    <button class="action-btn" id="close-noti-btn" title="Close" aria-label="Close Player">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </header>
+  <div class="player-main">
+    <img class="album-art" id="noti-album-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop" alt="Album Art">
+    <div class="track-info">
+      <strong class="title" id="noti-title">System Audio</strong>
+      <span class="artist" id="noti-artist">Now Playing</span>
+      <canvas id="visualizer" aria-hidden="true"></canvas>
+    </div>
+  </div>
+  <div class="time-wrapper">
+    <span id="current-time">0:00</span>
+    <div class="progress-hit-area" id="progress-hit-area" role="slider" tabindex="0">
+      <div class="progress-bg">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <span id="total-time">LIVE</span>
+  </div>
+  <nav class="controls" aria-label="Media Controls">
+    <button class="ctrl-btn" id="skip-back" title="Back 15s" aria-label="Rewind">
+      <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C20.48 10.9 16.85 8 12.5 8z"/></svg>
+    </button>
+    <button class="ctrl-btn play-pause-btn" id="play-pause" aria-label="Play or Pause">
+      <svg id="icon-play" class="hidden-svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="icon-pause" class="visible-svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <button class="ctrl-btn" id="skip-forward" title="Skip 15s" aria-label="Fast Forward">
+      <svg viewBox="0 0 24 24"><path d="M11.5 8c-4.35 0-7.98 2.9-9.98 7.22l2.37.78c1.05-3.19 4.06-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6c-1.84-1.61-4.24-2.6-6.9-2.6z"/></svg>
+    </button>
+  </nav>
+</aside>
+
+<!-- Update Modal (Inline styles stripped out) -->
+<dialog id="update-modal" class="modal__backdrop" aria-modal="true">
+  <article class="modal__content">
+    <h2 class="modal__header">UPDATE LOG v3.0</h2>
+    <ul class="modal__list">
+      <li>Added Right Sidebar for quick game & music access.</li>
+      <li>Dynamic image-based lock screen days.</li>
+      <li>Smooth slide-out lock screen animations.</li>
+      <li>Fixed desktop folder expansion physics.</li>
+      <li>Wallpaper engine now fully supports PNG, MOV, and MP4.</li>
+      <li>Added Taskbar Pin/Unpin capability for all apps.</li>
+    </ul>
+    <button class="modal__btn" onclick="document.getElementById('update-modal').style.display='none'">Dismiss</button>
+  </article>
+</dialog>
+
+<!-- Settings Iframe Template (Inline styles stripped out) -->
+<template id="code-settings">
+  <dialog id="faq-modal" class="modal__backdrop">
+    <div class="faq-box">
+      <header class="faq-header">
+        <h2>SYSTEM FAQ</h2>
+        <i class="fas fa-times faq-close" role="button" tabindex="0" onclick="toggleFaq()"></i>
+      </header>
+      <article class="faq-item">
+        <h3>MOVIE NOT WORKING!</h3>
+        <p>If the movies do not work for you, open the Browser app, click on Ultraviolet, and search for anything. This will fix the issue. Go back to Movies and they should play!</p>
+      </article>
+      <article class="faq-item">
+        <h3>TOO MANY GAMES</h3>
+        <p>If you downloaded too many games and want to start fresh, open a new tab in your normal browser, press Ctrl + H, and clear your cache. This resets your saved data so you can start over.</p>
+      </article>
+    </div>
+  </dialog>
+  
+  <h2 class="config__main-header">SYSTEM SETTINGS</h2>
+  
+  <section class="config__category"><i class="fas fa-microchip"></i> PERFORMANCE</section>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-film config__icon"></i>
+      <div class="config__text"><strong>Optimized Background</strong><small>Disables video background to save resources</small></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="chk-bg" onchange="window.parent.updateSysSetting('optBg',this.checked)"><span class="slider"></span></label>
+  </div>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-bolt config__icon"></i>
+      <div class="config__text"><strong>Fast Boot</strong><small>Skips the startup sequence</small></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="chk-boot" onchange="window.parent.updateSysSetting('shortBoot',this.checked)"><span class="slider"></span></label>
+  </div>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-lock config__icon"></i>
+      <div class="config__text"><strong>Idle Lock Screen</strong><small>Locks system when away for 3 minutes</small></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="chk-idle" onchange="window.parent.updateSysSetting('idleLock',this.checked)"><span class="slider"></span></label>
+  </div>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-shield-alt config__icon"></i>
+      <div class="config__text"><strong>Redirect Confirmation</strong><small>Helps protect against GoGuardian</small></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="chk-redir" onchange="window.parent.updateSysSetting('redirectConfirm',this.checked)"><span class="slider"></span></label>
+  </div>
+
+  <section class="config__category"><i class="fas fa-user-secret"></i> CLOAKING & STEALTH</section>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-mask config__icon"></i>
+      <div class="config__text"><strong>Tab Cloak</strong><small>Disguises the OS tab name and icon</small></div>
+    </div>
+    <select class="config__select" id="cloak-select" onchange="window.parent.updateCloak(this.value)">
+      <option value="none">None (Seamless-OS)</option>
+      <option value="google">Google</option>
+      <option value="drive">Google Drive</option>
+      <option value="canvas">Canvas</option>
+      <option value="classroom">Google Classroom</option>
+    </select>
+  </div>
+
+  <section class="config__category"><i class="fas fa-keyboard"></i> SHORTCUTS & LINKS</section>
+  
+  <div class="config__card">
+    <div class="config__info">
+      <i class="fas fa-exclamation-triangle config__icon"></i>
+      <div class="config__text"><strong>Panic Key</strong><small>Quick close tab key</small></div>
+    </div>
+    <input type="text" id="panic-input" class="config__input-sm" maxlength="1" onkeyup="window.parent.updateSysSetting('panicKey',this.value)">
+  </div>
+  
+  <div class="config__card config__card--clickable" onclick="window.open('https://discord.gg/bQCRJgtC74','_blank')" role="button" tabindex="0">
+    <div class="config__info">
+      <i class="fab fa-discord config__icon"></i>
+      <div class="config__text"><strong>Join Discord</strong><small>Official Community Hub</small></div>
+    </div>
+  </div>
+  
+  <div class="config__card config__card--clickable" onclick="toggleFaq()" role="button" tabindex="0">
+    <div class="config__info">
+      <i class="fas fa-question-circle config__icon"></i>
+      <div class="config__text"><strong>System FAQ</strong><small>Troubleshooting & Help</small></div>
+    </div>
+  </div>
+</template>
+
+<script>
+var _SYSTEM_PATHS = ["C:/Windows/System32/kernel32.dll", "/var/www/html/cine-os/", "https://cine-os.local/api/v1/auth"];
+var _devBuildVer = "3.0.1";
+
+var APPS = {
+  '1on1soccer': {title: 'Soccer', path: 'https://menist.free.je/core/1on1soccer/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-wDyrUDPQKy5G-nNTUNM0UzoRldrqqPXWvQ&s', pinned: false, openInNewTab: false},
+  '1on1tennis': {title: 'Tennis', path: 'https://menist.free.je/core/1on1tennis/', icon: 'https://igre.games/wp-content/uploads/thumbs/custom/0-9/1-On-1-Tennis.jpg', pinned: false, openInNewTab: false},
+  '1v1lol': {title: '1v1.lol', path: 'https://menist.free.je/big/1v1.lol/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://1v1lol.us.com/&size=256', pinned: false, openInNewTab: false},
+  '8ballclassic': {title: '8 Ball Pool', path: 'https://menist.free.je/core/8ballclassic/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://8ballpool.com/&size=256', pinned: false, openInNewTab: false},
+  'ageofwar': {title: 'Age of War', path: 'https://menist.free.je/core/ageofwar/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://ageofwargame.io/&size=256', pinned: false, openInNewTab: false},
+  'ageofwar2': {title: 'Age of War 2', path: 'https://menist.free.je/core/ageofwar2/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://ageofwargame.io/&size=256', pinned: false, openInNewTab: false},
+  'agesofconflict': {title: 'Ages of Conflict', path: 'https://menist.free.je/core/agesofconflict/', icon: 'https://static.wikitide.net/agesofconflictwiki/0/01/Ages_of_Conflict_IOS.png', pinned: false, openInNewTab: false},
+  'amongus': { title: 'Among Us', path: 'https://menist.free.je/core/amongus/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://amongusfree.io/&size=256', pinned: false, openInNewTab: false },
+  'angrybirds': {title: 'Angry Birds', path: 'https://menist.free.je/big/angry-birds/', icon: 'https://upload.wikimedia.org/wikipedia/en/2/2d/Angry_Birds_promo_art.png', pinned: false, openInNewTab: false},
+  'backrooms': {title: 'Backrooms', path: 'https://menist.free.je/core/backrooms/', icon: 'https://i.ibb.co/XkM86cvy/backrooms-icon.png', pinned: false, openInNewTab: false},
+  'badicecream': {title: 'Bad Ice Cream', path: 'https://menist.free.je/core/badicecream/', icon: 'https://i.ibb.co/nMQLkyKK/bad-ice-cream.webp', pinned: false, openInNewTab: false},
+  'badparenting': {title: 'Bad Parenting', path: 'https://menist.free.je/core/badparenting/', icon: 'https://play-lh.googleusercontent.com/XBF1VnU6eOPWTuS1drE-JWWQK_Atv52nJr9OZEpvonL2nXiemQ-tQCScII__2I_9jHnt01P8VQVxk8J1SNEr', pinned: false, openInNewTab: false},
+  'badpiggies': {title: 'Bad Piggies', path: 'https://menist.free.je/core/badpiggies/', icon: 'https://play-lh.googleusercontent.com/WUXuQ9MrEYeU-blZesAEqdIIQv03OknruPCrNQGOxXop1pFZai0BWT4kKUqaz_rcpRiB=w240-h480-rw', pinned: false, openInNewTab: false},
+  'baldisbasics': {title: 'Baldis Basics', path: 'https://menist.free.je/core/baldisbasics/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/Purple113/v4/cc/c4/73/ccc473fc-6e53-3f8d-f02d-1717c3f0df95/AppIcon-0-1x_U007emarketing-0-85-220-0-7.png/200x200ia-75.webp', pinned: false, openInNewTab: false},
+  'basketball': {title: 'Basketball Stars', path: 'https://menist.free.je/big/basketball/', icon: 'https://m.media-amazon.com/images/I/81BL1Hx2KuL.png', pinned: false, openInNewTab: false},
+  'basketbros': {title: 'Basket Bros', path: 'https://menist.free.je/core/basketbros/', icon: 'https://imgs.crazygames.com/basketbros_1x1/20251107022434/basketbros_1x1-cover?format=auto&quality=100&metadata=none&width=1200', pinned: false, openInNewTab: false},
+  'basketrandom': {title: 'Basket Random', path: 'https://menist.free.je/big/volley-random/', icon: 'https://play-lh.googleusercontent.com/sq0SQaq1utgwfeqovNMo61DhsHzVioadbBhAAr6OXJMBrrNG-8ybkyawexKk0viVCTYxTIdkarcRfoDKdcqi6uI', pinned: false, openInNewTab: false},
+  'bitplanes': {title: 'Bit Planes', path: 'https://menist.free.je/core/bitplanes/', icon: 'https://thumbnails.gamenora.com/Bit%20Planes.webp', pinned: false, openInNewTab: false},
+  'blackjack': {title: 'Black Jack', path: 'https://menist.free.je/black-jack/', icon: 'https://i.ibb.co/JRCqTjrz/Blackjack.png', pinned: false, openInNewTab: false},
+  'blockblast': {title: 'Block Blast', path: 'https://menist.free.je/peak/block-blast/', icon: 'https://play-lh.googleusercontent.com/5FLR-EBlfNvoV9ydZkOMDqRF10nV64XcKdZzW_oQzmz2e8Me9PS5Zncnvviki0J3XumjO2a_lg6_IdwOqwnV', pinned: false, openInNewTab: false},
+  'blockysnakes': {title: 'Blocky Snakes', path: 'https://menist.free.je/core/blockysnakes/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://slither.io/Extended_BACK-NET_Website_List&size=256', pinned: false, openInNewTab: false},
+  'bloonstd5': {title: 'Bloons TD 5', path: 'https://menist.free.je/big/bloonstd5/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/88/6f/65/886f652c-cbfa-fc19-c12c-5e8b47d8ea0e/Placeholder.mill/200x200bb-75.webp', pinned: false, openInNewTab: false},
+  'bloxorz': {title: 'Bloxorz', path: 'https://menist.free.je/core/bloxorz/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://bloxorz.org/Extended_BACK-NET_Website_List&size=256', pinned: false, openInNewTab: false},
+  'blumgiracers': {title: 'Blumgi Racers', path: 'https://menist.free.je/core/blumgiracers/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/dbeb9170182271f87ecd5626b68a73aa/blumgi-racers-logo.png', pinned: false, openInNewTab: false},
+  'blumgirocket': {title: 'Blumgi Rocket', path: 'https://menist.free.je/core/blumgirocket/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/672fb98802b00740e3c885cb2b31fc51/blumgi-rocket-logo.png', pinned: false, openInNewTab: false},
+  'bobtherobber5': {title: 'Bob the Robber 5', path: 'https://menist.free.je/core/bobtherobber5/', icon: 'https://kizicdn.com/system/static/thumbs/big_tile_thumb/5366/thumb300_2b89b70d201b443991360f2ba5622c17-512x512.jpg?1556203839', pinned: false, openInNewTab: false},
+  'bowmasters': {title: 'Bowmasters', path: 'https://menist.free.je/big/bowmasters/', icon: 'https://play-lh.googleusercontent.com/rsQyCuie6S8Munc2Hv6IMpePP1g3c0okLkyKRXd1IimOryIBMZqymGKaOg7bZ6NMkhj3', pinned: false, openInNewTab: false},
+  'boxingrandom': {title: 'Boxing Random', path: 'https://menist.free.je/core/boxingrandom/', icon: 'https://play-lh.googleusercontent.com/ZuMoNX6xiIBRwdtSL-FN0xCdXyahk8SRaPZ5_4HzkdQEp2Tm_GAsha9OcsRoSDgSw8Y', pinned: false, openInNewTab: false},
+  'bubbleshooter': {title: 'Bubble Shooter', path: 'https://menist.free.je/core/bubbleshooter/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/2d5e417ea0fc1ef06d746b2cef691c07/bubble-shooter-lak-logo.png', pinned: false, openInNewTab: false},
+  'buildnowgg': {title: 'Buildnow.GG', path: 'https://menist.free.je/Buildnow.GG/index.html', icon: 'https://play-lh.googleusercontent.com/Jkx-IPLeRDk4uKeDyIMWKQ6jv9RquAC0WErGzWIMZQK7Z8FKzsqbUtC0J7vTm24xIqnme3TZR-6a8WAj6EXP_DA', pinned: false, openInNewTab: true},
+  'candycrush': {title: 'Candy Crush', path: 'https://menist.free.je/big/candy-crush/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/90/df/c9/90dfc984-51c1-6764-be93-2d4bc12ace6d/Placeholder.mill/200x200bb-75.webp', pinned: false, openInNewTab: false},
+  'capyclicker': {title: 'Capy Clicker', path: 'https://menist.free.je/core/capybaraclicker/', icon: 'https://play-lh.googleusercontent.com/MIFfA82vOfNj3--R7Bw7HUIHUGjNiNtNRR3QJn3qCrdM085YPonGcBq6QcpsA3MsMVZy', pinned: false, openInNewTab: false},
+  'cardrawing': {title: 'Car Drawing', path: 'https://menist.free.je/core/cardrawing/', icon: 'https://play-lh.googleusercontent.com/1btzRy3IwWiPif85v6FbsDLuCW6XjMLXz8MOtucDHi0Yit0xbigmrEbKMDQEi0EI6_8', pinned: false, openInNewTab: false},
+  'carkingarena': {title: 'Car King Arena', path: 'https://menist.free.je/core/carkingarena/', icon: 'https://igre.games/wp-content/uploads/thumbs/custom/C/Car-King-Arena.webp', pinned: false, openInNewTab: false},
+  'chess': {title: 'Chess', path: 'https://menist.free.je/core/chess/', icon: 'https://downloadr2.apkmirror.com/wp-content/uploads/2023/03/32/64148b0cc8487.png', pinned: false, openInNewTab: false},
+  'choppyorc': {title: 'Choppy Orc', path: 'https://menist.free.je/core/choppyorc/', icon: 'https://www.speedrun.com/static/game/j1ll8jv1/cover.png?v=dc5fcfb', pinned: false, openInNewTab: false},
+  'circloo': {title: 'CircloO', path: 'https://menist.free.je/core/circloO/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/971353830f129fd3f1446398792e6997/circloo-logo.png', pinned: false, openInNewTab: false},
+  'circloo2': {title: 'CircloO 2', path: 'https://menist.free.je/core/circloO2/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/971353830f129fd3f1446398792e6997/circloo-logo.png', pinned: false, openInNewTab: false},
+  'cleanupio': {title: 'Cleanup.io', path: 'https://menist.free.je/core/cleanupio/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0q491cJs4358-ulCPuAvlQy3KgKxB6WQy8A&s', pinned: false, openInNewTab: false},
+  'clusterrush': {title: 'Cluster Rush', path: 'https://menist.free.je/core/clusterrush/', icon: 'https://nargames.com/storage/uploads/thumbs/cluster-rush.webp', pinned: false, openInNewTab: false},
+  'cooltanks': {title: 'Cool Tanks', path: 'https://menist.free.je/big/awesome-tanks/', icon: 'https://www.coolmathgames.com/sites/default/files/awesome-tanks-2-icon.png', pinned: false, openInNewTab: false},
+  'crazycattle': {title: 'Crazy Cattle', path: 'https://menist.free.je/big/crazy-cattle-3d/', icon: 'https://f4.bcbits.com/img/a3604041864_16.jpg', pinned: false, openInNewTab: false},
+  'crazycars': {title: 'Crazy Cars', path: 'https://menist.free.je/core/crazycars/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/2bc8004fcbb4387908a636e2a9d9ab4a/crazy-cars-logo.png', pinned: false, openInNewTab: false},
+  'crazycrash': {title: 'Crazy Crash', path: 'https://menist.free.je/core/crazycrashlanding/', icon: 'https://m.media-amazon.com/images/I/81m2YZvpC7L.png', pinned: false, openInNewTab: false},
+  'crazymotor': {title: 'Crazy Motor', path: 'https://menist.free.je/core/crazymotorcycle/', icon: 'https://imgs.crazygames.com/crazy-motorcycle_1x1/20250711063031/crazy-motorcycle_1x1-cover?format=auto&quality=100&metadata=none&width=1200', pinned: false, openInNewTab: false},
+  'crossyroad': {title: 'Crossy Road', path: 'https://menist.free.je/big/crossy-road/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d4/1f/43/d41f4367-5cb8-7e6c-a39c-d71dd6ab3371/Placeholder.mill/400x400bb-75.webp', pinned: false, openInNewTab: false},
+  'csgoclicker': {title: 'CS:GO Clicker', path: 'https://menist.free.je/peak/csgo-clicker/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://counter-strike.net&size=256', pinned: false, openInNewTab: false},
+  'cuttherope': {title: 'Cut the Rope', path: 'https://menist.free.je/core/cuttherope/', icon: 'https://upload.wikimedia.org/wikipedia/en/6/66/Cut_the_Rope_%28App_icon%29.png', pinned: false, openInNewTab: false},
+  'deanwithers': {title: 'Dean Withers', path: 'https://menist.free.je/dean-withers/autoplay/', icon: 'https://i.ibb.co/W4yDPTXS/ddb9532a24d47986ccafc8e9ec56d1f2-tplv-tiktokx-cropcenter-1080-1080.jpg', pinned: false, openInNewTab: false},
+  'deathchase': {title: 'Death Chase', path: 'https://menist.free.je/core/deathchase/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzSj_vyBQIYKf98BU4ILSwPP4PH8gQ3k9EuQ&s', pinned: false, openInNewTab: false},
+  'deathrun3d': {title: 'Death Run 3D', path: 'https://menist.free.je/core/deathrun3D/', icon: 'https://i.ibb.co/chXgY5cG/Death-Run-3d.jpg', pinned: false, openInNewTab: false},
+  'demolitionderby': {title: 'Demolition Derby', path: 'https://menist.free.je/core/demolitionderbycrashracing/', icon: 'https://play-lh.googleusercontent.com/_96MKqR7vQJfEunLKi4oJVuv2jWrB3VEoAr6Rg2jSYic1fIqliqAX2F9zO4fENgZUE4', pinned: false, openInNewTab: false},
+  'doodlejump': {title: 'Doodle Jump', path: 'https://menist.free.je/core/doodlejump/', icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Doodle_Jump.png', pinned: false, openInNewTab: false},
+  'drawclimber': {title: 'Draw Climber', path: 'https://menist.free.je/core/drawclimber/', icon: 'https://play-lh.googleusercontent.com/70T7qV9LvT2RyB7WtE2Z88I6oZfS6Gq9Wd6mTUbFweoLUHkEjduBsc2rprDuxfa7lw', pinned: false, openInNewTab: false},
+  'dreadhead': {title: 'Dread Head', path: 'https://menist.free.je/core/dreadheadparkour/', icon: 'https://play-lh.googleusercontent.com/5HX-jzTrtP-J8uu6TiX4FF0JWpJjae50a3QvswgfbKc3GiHEalWzm4b846GpiB4Hx22L', pinned: false, openInNewTab: false},
+  'driftboss': {title: 'Drift Boss', path: 'https://menist.free.je/big/drift-boss/', icon: 'https://play-lh.googleusercontent.com/Zu0LoruCtIG45qs6iffZkWqGTuzEWflNoH8TNRtfMJ2NGgJxQGfw8kqSrxKtXGjPqeqFLNsnubW6EnPUJvOi8g=w240-h480-rw', pinned: false, openInNewTab: false},
+  'droppymerge': {title: 'Droppy Merge', path: 'https://menist.free.je/droppy-merge/', icon: 'https://australianpaving.com/wp-content/uploads/2024/04/Old-Red-Sandstock-Bricks-225-x-106-600x600.jpg', pinned: false, openInNewTab: false},
+  'ducklife': {title: 'Duck Life', path: 'https://menist.free.je/big/duck-life/', icon: 'https://play-lh.googleusercontent.com/vtJKdZwiBoQ0m0QVBvCj6oFBEVCehcPktS58KspbJeQdHOfcpAuGu4eWET97KQMH7M0UChLFxMoaErlpq4isSkE', pinned: false, openInNewTab: false},
+  'ducklingsio': {title: 'Ducklings.io', path: 'https://menist.free.je/core/ducklingsio/', icon: 'https://play-lh.googleusercontent.com/bAPhkkHwbkODYsZ1sn9BZybFL6uNWWFOskvXCdK86HiLsqBHWyO8Nt0NephFBY1lQkV9', pinned: false, openInNewTab: false},
+  'eagleride': {title: 'Eagle Ride', path: 'https://menist.free.je/core/eagleride/', icon: 'https://i.ibb.co/cqrp4Tr/eagle-ride.jpg', pinned: false, openInNewTab: false},
+  'earntodie': {title: 'Earn to Die', path: 'https://menist.free.je/core/earntodie/', icon: 'https://m.media-amazon.com/images/I/81dUvAW1ADL.png', pinned: false, openInNewTab: false},
+  'eggycar': {title: 'Eggy Car', path: 'https://menist.free.je/core/eggycar/', icon: 'https://eggycar76.io/data/image/game/eggy-car.png', pinned: false, openInNewTab: false},
+  'escapeprison': {title: 'Escape Prison', path: 'https://menist.free.je/core/escapingtheprison/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/b0940b784e8eb55a3e40327e1afb42d5256045bf6601515f02c6fe45ab49e56c/escaping-the-prison-logo.png', pinned: false, openInNewTab: false},
+  'escaperoad': {title: 'Escape Road', path: 'https://menist.free.je/core/escaperoad/', icon: 'https://hollowknight.io/data/image/game/escape-road/escape-road.png', pinned: false, openInNewTab: false},
+  'escaperoad2': {title: 'Escape Road 2', path: 'https://menist.free.je/core/escaperoad2/', icon: 'https://i.ibb.co/0VZQV8HN/Escape-Road-City-2.png', pinned: false, openInNewTab: false},
+  'evilglitch': {title: 'Evil Glitch', path: 'https://menist.free.je/core/evilglitch/', icon: 'https://kickthebuddy.lol/cache/data/image/game/evil-glitch.webp', pinned: false, openInNewTab: false},
+  'flappybird': {title: 'Flappy Bird', path: 'https://menist.free.je/flappy-bird/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDSrnL5NqB3aNtfL3X6QdGGFeefxw0PCDatA&s', pinned: false, openInNewTab: false},
+  'floodrunner2': {title: 'Flood Runner 2', path: 'https://menist.free.je/core/floodrunner2/', icon: 'https://i.ibb.co/5W43MTSv/IMG-4498.jpg', pinned: false, openInNewTab: false},
+  'fnaf': {title: 'FNAF', path: 'https://menist.free.je/core/fnaf/', icon: 'https://i.ibb.co/PzzXXWLK/81-P6-YZOi-BL.png', pinned: false, openInNewTab: false},
+  'fnaf2': {title: 'FNAF 2', path: 'https://menist.free.je/core/fnaf2/', icon: 'https://i.ibb.co/C3MqDCJc/81-HBp-Jd2h8-L.png', pinned: false, openInNewTab: false},
+  'fnaf3': {title: 'FNAF 3', path: 'https://menist.free.je/core/fnaf3/', icon: 'https://i.ibb.co/DHJ3F2qL/81pax-GYlcq-L.png', pinned: false, openInNewTab: false},
+  'fnaf4': {title: 'FNAF 4', path: 'https://menist.free.je/core/fnaf4/', icon: 'https://i.ibb.co/6QfRR0j/fnaf4.webp', pinned: false, openInNewTab: false},
+  'foodcases': {title: 'Food Cases', path: 'https://menist.free.je/case-opener/', icon: 'https://i.ibb.co/rfXbRZfh/IMG-4499.jpg', pinned: false, openInNewTab: false},
+  'fruitninja': {title: 'Fruit Ninja', path: 'https://menist.free.je/core/fruitninja/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2aydz3dAabZ7lsnbNLBGVVrH7itr-lkTZrQ&s', pinned: false, openInNewTab: false},
+  'funnybattle': {title: 'Funny Battle', path: 'https://menist.free.je/core/funnybattle/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRkwLsQJqdfuHFFFMaxRvph3s8uP37Vivgiw&s', pinned: false, openInNewTab: false},
+  'funnybattle2': {title: 'Funny Battle 2', path: 'https://menist.free.je/core/funnybattle2/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRkwLsQJqdfuHFFFMaxRvph3s8uP37Vivgiw&s', pinned: false, openInNewTab: false},
+  'funnyshooter2': {title: 'Funny Shooter 2', path: 'https://menist.free.je/core/funnyshooter2/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiaH_ivyc_xu8ZWMFUjF5-epxpHUC3EuvzSw&s', pinned: false, openInNewTab: false},
+  'geodash': {title: 'Geo Dash', path: 'https://menist.free.je/big/geometrydash/', icon: 'https://geometrylitepc.com/assets/upload/geometry-dash.webp', pinned: false, openInNewTab: false},
+  'geometryvibes': {title: 'Geometry Vibes', path: 'https://menist.free.je/core/geometryvibes/', icon: 'https://play-lh.googleusercontent.com/FRj1dX1U-hdtQVSZkEtjzyo1iRh-cVGidQwMo_Mcp_-HBvVw7ojiEhayL7wrsOQNLOk', pinned: false, openInNewTab: false},
+  'getontop': {title: 'Get on Top', path: 'https://menist.free.je/core/getontop/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/3078616e30ecc5f326bd8e6cad728a03/get-on-top-logo.png', pinned: false, openInNewTab: false},
+  'gettingoverit': {title: 'Getting Over It', path: 'https://menist.free.je/peak/getting-over-it/', icon: 'https://play-lh.googleusercontent.com/sTsE_AcnSnWtYU0H__k5IDJjupMd_sdKwmaThrJS5R2PJHWK02cAxyaOKNhU0_vbGbKrGhfWFCndsoDDkqmayw', pinned: false, openInNewTab: false},
+  'googleball': {title: 'Google Ball', path: 'https://menist.free.je/core/googlebaseball/', icon: 'https://www.gstatic.com/marketing-cms/07/7a/53c7bbbd487bbbb2d2fbf1c7c495/7.png', pinned: false, openInNewTab: false},
+  'granny': {title: 'Granny', path: 'https://menist.free.je/big/granny/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8X5JjpaXIFfsI2KKuU_kjCFDAGJZxktgz3g&s', pinned: false, openInNewTab: false},
+  'guessanswer': {title: 'Guess The Answer', path: 'https://menist.free.je/core/guesstheiranswer/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9alCsyldOea4B8Eo24bdFKa_d8l9psMX-Kw&s', pinned: false, openInNewTab: false},
+  'hanger2': {title: 'Hanger 2', path: 'https://menist.free.je/core/hanger2/', icon: 'https://www.mathnook.com/img/addthis-fun-games/hanger-2-200x200.png', pinned: false, openInNewTab: false},
+  'hillclimbrace': {title: 'Hill Climb Racing', path: 'https://menist.free.je/core/hillclimbracinglite/', icon: 'https://play-lh.googleusercontent.com/7YJtBKClRTrPRIO-vm-_GoqAEwob4kQ-wJd0qmUMLdbor5Jxj-IKpsXOj6MQejf2XYN9YE0q6IUgYnu-fcAGIg', pinned: false, openInNewTab: false},
+  'holeio': {title: 'Hole.io', path: 'https://menist.free.je/big/hole-io/', icon: 'https://upload.wikimedia.org/wikipedia/en/c/ca/Hole.io_logo.jpg', pinned: false, openInNewTab: false},
+  'houseofhazards': {title: 'House of Hazards', path: 'https://menist.free.je/big/house-of-hazards/', icon: 'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://houseofhazards.com&size=256', pinned: false, openInNewTab: false},
+  'hoverracer': {title: 'Hover Racer', path: 'https://menist.free.je/core/hoverracerdrive/', icon: 'https://store-images.s-microsoft.com/image/apps.45264.14020183947105412.3fca8873-c649-48d4-b9f9-136a39ffcc74.119e5f11-8afe-428c-afa9-039881c92cd5', pinned: false, openInNewTab: false},
+  'idlebreakout': {title: 'Idle Breakout', path: 'https://menist.free.je/core/idlebreakout/', icon: 'https://blockbreaker-game.com/wp-content/uploads/2026/05/Idle-Breakout.webp', pinned: false, openInNewTab: false},
+  'impossblequiz': {title: 'Impossible Quiz', path: 'https://menist.free.je/core/theimpossiblequiz/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9byk0FzwWAmalfPmfOf3auFJaJdEk209CFg&s', pinned: false, openInNewTab: false},
+  'ironsnout': {title: 'Iron Snout', path: 'https://menist.free.je/core/ironsnout/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGX3Kc85UaaHp_9FmEdZDZRPBSdd2Dmyp4Qw&s', pinned: false, openInNewTab: false},
+  'jetpackjoy': {title: 'Jetpack Joyride', path: 'https://menist.free.je/big/jetpack-joyride/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMp6a83tWwzGzLQdtI12IvUwzOThFf2nMMIA&s', pinned: false, openInNewTab: false},
+  'johnnytrigger': {title: 'Johnny Trigger', path: 'https://menist.free.je/core/johnnytrigger/', icon: 'https://play-lh.googleusercontent.com/NR_Slq9e64fSySkgeunAHBt1P17pilcqR13FmJwEnD6NmuvhgR0XMu6JF6VD5QuFgUfArraBLVqF2p0xix43Zdc', pinned: false, openInNewTab: false},
+  'jumpingshell': {title: 'Jumping Shell', path: 'https://menist.free.je/core/jumpingshell/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgwqMzZaMBs9BRzbxupy_VYVIrz4YMnpvqqw&s', pinned: false, openInNewTab: false},
+  'kartbros': {title: 'Kart Bros', path: 'https://menist.free.je/core/kartbros/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7zEaQ6C_oilQeFWDgihTOBEdKqA6HiQi9Pg&s', pinned: false, openInNewTab: false},
+  'learntofly3': {title: 'Learn to Fly 3', path: 'https://menist.free.je/core/learntofly3/', icon: 'https://i.ibb.co/Tx6P30gn/LTF3.png', pinned: false, openInNewTab: false},
+  'learntofly4': {title: 'Learn to Fly Idle', path: 'https://menist.free.je/core/learntoflyidle/', icon: 'https://i.ibb.co/4ZcCvN8d/LTFI.webp', pinned: false, openInNewTab: false},
+  'leveldevil': {title: 'Level Devil', path: 'https://menist.free.je/big/level-devil/', icon: 'https://play-lh.googleusercontent.com/0UCmyr2ZdfeC_aLzd8Npm6mGWW5wuEhZYeCieU-1ODLIW4JwyvqfoQdxnT8GHPCEITwm5bJCx-OSTrnWH0yS', pinned: false, openInNewTab: false},
+  'mariokart': {title: 'Mario Kart', path: 'https://menist.free.je/big/mario-kart/', icon: 'https://i.ibb.co/99GTMQLh/mario-kart.png', pinned: false, openInNewTab: false},
+  'mario63': {title: 'Super Mario 63', path: 'https://menist.free.je/core/sm63/', icon: 'https://i.ibb.co/99GTMQLh/mario-kart.png', pinned: false, openInNewTab: false},
+  'mario64': {title: 'Super Mario 64', path: 'https://menist.free.je/core/sm64/', icon: 'https://i.ibb.co/99GTMQLh/mario-kart.png', pinned: false, openInNewTab: false},
+  'melonground': {title: 'Melon Playground', path: 'https://menist.free.je/core/melonplayground/', icon: 'https://play-lh.googleusercontent.com/9KgS1cF6vWMF9Fl25S36bKr8zDh0ddkTOeN7WpBcQAE-pKfahG2DjUxbQ8sespNoe3KW3qbcaVD8H6DfNys6', pinned: false, openInNewTab: false},
+  'mergeracers': {title: 'Merge Racers', path: 'https://menist.free.je/core/mergeroundracers/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3bOYEVjyV_CG8C7Fl3VVTeC8YFnqgVQHZyA&s', pinned: false, openInNewTab: false},
+  'minecraft': {title: 'Minecraft', path: 'https://menist.free.je/big/minecraft/', icon: 'https://store-images.s-microsoft.com/image/apps.21661.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.f787fea4-1e7a-4458-a112-c5ac10fec5c0', pinned: false, openInNewTab: false},
+  'minesweeper': {title: 'Minesweeper', path: 'https://menist.free.je/core/minesweeper/', icon: 'https://m.media-amazon.com/images/I/71TKVp3UnRL.png', pinned: false, openInNewTab: false},
+  'monkeymart': {title: 'Monkey Mart', path: 'https://menist.free.je/core/monkeymart/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=1200,height=1200,fit=cover,f=png/93142510b4eb8a5b81fc264e31c00b88/monkey-mart-logo.png', pinned: false, openInNewTab: false},
+  'monstertracks': {title: 'Monster Tracks', path: 'https://menist.free.je/core/monstertracks/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/41c7ae4db13e7d7596bb0528f40a4012/monster-tracks-logo.png', pinned: false, openInNewTab: false},
+  'motox3m': {title: 'Moto X3M', path: 'https://menist.free.je/core/motox3m/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'motox3m2': {title: 'Moto X3M 2', path: 'https://menist.free.je/core/motox3m2/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'motox3m3': {title: 'Moto X3M 3', path: 'https://menist.free.je/core/motox3m3/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'motox3mpool': {title: 'Moto X3M Pool', path: 'https://menist.free.je/core/motox3mpoolparty/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'motox3mspooky': {title: 'Moto X3M Spooky', path: 'https://menist.free.je/core/motox3mspookyland/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'motox3mwinter': {title: 'Moto X3M Winter', path: 'https://menist.free.je/core/motox3mwinter/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/2c6d5a46cdbceada277c870ce1c389ee/moto-x3m-logo.jpg', pinned: false, openInNewTab: false},
+  'noobminer': {title: 'Noob Miner', path: 'https://menist.free.je/core/noobminer/', icon: 'https://play-lh.googleusercontent.com/yU2xBCEG4x9JJNXj041T8SGRdq2Qos7cgqSOKB1nNOqlx-dDxCpQlVDCuc_YSX-YmJU', pinned: false, openInNewTab: false},
+  'onlylevel': {title: 'This is the Only Level', path: 'https://menist.free.je/core/thisistheonlylevel/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA3aJBdsIXdy1PVXxfr8eCToS_zHmbEudl8g&s', pinned: false, openInNewTab: false},
+  'onlyleveltoo': {title: 'This is the Only Level Too', path: 'https://menist.free.je/core/thisistheonlyleveltoo/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSFPqcwQ5i4mMknbkMOKFImfGGwtdXjVCVwzw&s', pinned: false, openInNewTab: false},
+  'oppositeday': {title: 'Opposite Day', path: 'https://menist.free.je/core/oppositeday/', icon: 'https://www.coolmathgames.com/sites/default/files/opposite-day-2-icon.png', pinned: false, openInNewTab: false},
+  'ovo': {title: 'OVO', path: 'https://menist.free.je/core/ovo/', icon: 'https://play-lh.googleusercontent.com/v7KwGdPjJGjJjRXn46sck4DwDBdKSeRzGN44CjiXUtKV0jjOi51Bt4wcXud0m-SkXg', pinned: false, openInNewTab: false},
+  'ovo2': {title: 'OVO 2', path: 'https://menist.free.je/core/ovo2/', icon: 'https://play-lh.googleusercontent.com/v7KwGdPjJGjJjRXn46sck4DwDBdKSeRzGN44CjiXUtKV0jjOi51Bt4wcXud0m-SkXg', pinned: false, openInNewTab: false},
+  'ovo3dimensions': {title: 'OVO 3 Dimensions', path: 'https://menist.free.je/core/ovo3dimensions/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/4f967f68314c35872eeab27c849d32c4/ovo-dimensions-logo.png', pinned: false, openInNewTab: false},
+  'pacman': {title: 'Pac-Man', path: 'https://menist.free.je/core/pacman/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/d9/0f/32/d90f32cf-e841-e6f6-52ac-624e08f302ff/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/200x200ia-75.webp', pinned: false, openInNewTab: false},
+  'paperio2': {title: 'Paper.io 2', path: 'https://menist.free.je/core/paperio2/', icon: 'https://tr.rbxcdn.com/180DAY-bb0f2e7d882678275f71f3d8b1d5ad35/768/432/Image/Webp/noFilter', pinned: false, openInNewTab: false},
+  'parkingfury': {title: 'Parking Fury', path: 'https://menist.free.je/core/parkingfury/', icon: 'https://play-lh.googleusercontent.com/DgyqJCW3t0o7prr-6dajdhox4p7maqchfBAArxD5JRwbG-20AxXR7RJbgs6kW8cRjkm0', pinned: false, openInNewTab: false},
+  'parkingfury2': {title: 'Parking Fury 2', path: 'https://menist.free.je/core/parkingfury2/', icon: 'https://play-lh.googleusercontent.com/DgyqJCW3t0o7prr-6dajdhox4p7maqchfBAArxD5JRwbG-20AxXR7RJbgs6kW8cRjkm0', pinned: false, openInNewTab: false},
+  'parkingfury3': {title: 'Parking Fury 3', path: 'https://menist.free.je/core/parkingfury3/', icon: 'https://play-lh.googleusercontent.com/DgyqJCW3t0o7prr-6dajdhox4p7maqchfBAArxD5JRwbG-20AxXR7RJbgs6kW8cRjkm0', pinned: false, openInNewTab: false},
+  'peggle': {title: 'Peggle', path: 'https://menist.free.je/peak/peggle/', icon: 'https://assets-prd.ignimgs.com/2022/03/18/peggle-1647580606683.jpg', pinned: false, openInNewTab: false},
+  'picosschool': {title: 'Pico\'s School', path: 'https://menist.free.je/core/picosschool/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMNaHY4qqu5FvAfUjVPxgHfg12kldTFS_8vA&s', pinned: false, openInNewTab: false},
+  'pingpongchaos': {title: 'Ping Pong Chaos', path: 'https://menist.free.je/core/pingpongchaos/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/Purple118/v4/09/d8/72/09d872a2-d9f6-a21a-4972-3ba6bab9a052/pr_source.png/320x320bb.jpg', pinned: false, openInNewTab: false},
+  'pixelspeedrun': {title: 'Pixel Speedrun', path: 'https://menist.free.je/core/pixelspeedrun/', icon: 'https://i.ibb.co/Q7gtGCNp/pixel-speedrun.jpg', pinned: false, openInNewTab: false},
+  'planvszomb': {title: 'Plants vs. Zombies', path: 'https://menist.free.je/big/plants-zombies/', icon: 'https://downloadr2.apkmirror.com/wp-content/uploads/2022/12/68/639ad89250b0a.png', pinned: false, openInNewTab: false},
+  'plonky': {title: 'Plonky', path: 'https://menist.free.je/core/plonky/', icon: 'https://play-lh.googleusercontent.com/N3VuGaJKtkngL342XiZho_eWawRbROVBy1Kg1JyDe4hHvTWEm5yiHgeAS-4tlOu8F1TPyVqrYkRApoNDq1N5=w240-h480-rw', pinned: false, openInNewTab: false},
+  'polytrack': {title: 'Poly Track', path: 'https://menist.free.je/core/polytrack/', icon: 'https://polytrackgame.cc/generate.php?path=/uploads/games/main/img_699e8ffc3fbc3.jpg&width=294&height=294', pinned: false, openInNewTab: false},
+  'poorbunny': {title: 'Poor Bunny', path: 'https://menist.free.je/core/poorbunny/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT48Wsrfu0-RuB0gcyfx6E0yIGxYT2CioxdNwcpEC-5pQ&s', pinned: false, openInNewTab: false},
+  'pou': {title: 'Pou', path: 'https://menist.free.je/core/pou/', icon: 'https://ih1.redbubble.net/image.5451949567.2518/st,small,507x507-pad,600x600,f8f8f8.jpg', pinned: false, openInNewTab: false},
+  'raft': {title: 'Raft', path: 'https://menist.free.je/peak/raft/', icon: 'https://images.steamusercontent.com/ugc/1833541252454295286/49586C84366C361A585FA8CBAD7608DC67D71C97/?imw=512&imh=512&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=true', pinned: false, openInNewTab: false},
+  'ragdollhit': {title: 'Ragdoll Hit', path: 'https://menist.free.je/core/ragdollhit/', icon: 'https://img.poki-cdn.com/cdn-cgi/image/q=78,scq=50,width=314,height=314,fit=cover,f=auto/3c892779be9dabb3589586c83ad3eeed/ragdoll-hit-logo.png', pinned: false, openInNewTab: false},
+  'ragdollsoccer': {title: 'Ragdoll Soccer', path: 'https://menist.free.je/core/ragdollsoccer/', icon: 'https://play-lh.googleusercontent.com/82qeWe3yd0ud5GhnY8_3H_ZZGV1R51lTGI_LH5z0E0iradCxvP3KC6dAvDh7coHCtk4', pinned: false, openInNewTab: false},
+  'ragdollarchers': {title: 'Ragdoll Archers', path: 'https://menist.free.je/big/ragdoll-archers/', icon: 'https://i.ibb.co/LdpnQkVt/ragdoll-archers.png', pinned: false, openInNewTab: false},
+  'repo': {title: 'REPO', path: 'https://menist.free.je/peak/repo/', icon: 'https://images.cults3d.com/Asf3MnfyGvJAja_R98G9bmn4CZo=/516x516/filters:no_upscale()/https://fbi.cults3d.com/uploaders/36009852/illustration-file/cc3d5043-387c-496a-bb64-d0135a6f2023/R.E.P.O-2.png', pinned: false, openInNewTab: false},
+  'retrobowl': {title: 'Retro Bowl', path: 'https://menist.free.je/big/retro-bowl/', icon: 'https://play-lh.googleusercontent.com/DrvO8zMElYMrKfmdRtxwyH_kkvk6MJD87mBaC_38Bw1Pkq0DJB0h-SpfbK5SOAkoJQRJ2TpUU0QvW3bSdUe8', pinned: false, openInNewTab: false},
+  'retrobowlcol': {title: 'Retro Bowl College', path: 'https://menist.free.je/core/retrobowlcollege/', icon: 'https://play-lh.googleusercontent.com/DrvO8zMElYMrKfmdRtxwyH_kkvk6MJD87mBaC_38Bw1Pkq0DJB0h-SpfbK5SOAkoJQRJ2TpUU0QvW3bSdUe8', pinned: false, openInNewTab: false},
+  'retrohighway': {title: 'Retro Highway', path: 'https://menist.free.je/core/retrohighway/', icon: 'https://play-lh.googleusercontent.com/ntup46vvyYjIOiA-EhS-lmE3F2B6CK9c1GDq5ilNkFyaUVpa5OEII73AddKF1wfLs11X_2ZcXopTDFfCUCsAaA', pinned: false, openInNewTab: false},
+  'retropingpong': {title: 'Retro Ping Pong', path: 'https://menist.free.je/core/retropingpong/', icon: 'https://play-lh.googleusercontent.com/FVh_dH6e2VCHHSF90oIBpk_S-Ti7F9xlM9THukSFuktSLhf6kIp73BpWWP14bsTbX_XV=w240-h480-rw', pinned: false, openInNewTab: false},
+  'riddleschool5': {title: 'Riddle School 5', path: 'https://menist.free.je/core/riddleschool5/', icon: 'https://img.tapimg.net/market/images/12a2162a12c8e0ce1e5d387905ce452f.png/appicon?t=1', pinned: false, openInNewTab: false},
+  'riddletransfer': {title: 'Riddle Transfer', path: 'https://menist.free.je/core/riddletransfer/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQjqar1bMjSckN7tvLKBuBM-v3u0cmam5JVNQ&s', pinned: false, openInNewTab: false},
+  'rocketleague': {title: 'Rocket League', path: 'https://menist.free.je/peak/rocket-goal/', icon: 'https://ygo-assets-entities-us.yougov.net/87bb7a16-2b62-11e8-82b1-37bb0d207ced.jpg?zcw=518&zch=518&zct=10&zcl=0', pinned: false, openInNewTab: false},
+  'rocketsoccer': {title: 'Rocket Soccer', path: 'https://menist.free.je/core/rocketsoccerderby/', icon: 'https://play-lh.googleusercontent.com/KpO2HOmyC3FKcV3515gLzYTVERaYkkllE4JVOjhY3w0VEMD7kMsNgTTRyr1bxCgw7H4aczEjFoVdoCYMzL3Rvv8', pinned: false, openInNewTab: false},
+  'rooftopsnipe': {title: 'Rooftop Snipers', path: 'https://menist.free.je/core/rooftopsnipers/', icon: 'https://play-lh.googleusercontent.com/Ps7l48zNvW7bm9fxqItk-voX25soK0-B8pCUKCe7zx-sPKq-uuGCC3mDeoafq2QxHBlCujfUGu4BhxpPyVsihA=w240-h480-rw', pinned: false, openInNewTab: false},
+  'rooftopsnipe2': {title: 'Rooftop Snipers 2', path: 'https://menist.free.je/core/rooftopsnipers2/', icon: 'https://play-lh.googleusercontent.com/Ps7l48zNvW7bm9fxqItk-voX25soK0-B8pCUKCe7zx-sPKq-uuGCC3mDeoafq2QxHBlCujfUGu4BhxpPyVsihA=w240-h480-rw', pinned: false, openInNewTab: false},
+  'run': {title: 'Run', path: 'https://menist.free.je/core/run/', icon: 'https://play-lh.googleusercontent.com/pqBfDoXss1KXIA6qe-fRSt6xKwCodicAOapVxkIswE573qrr5F3mHqx_IbHPWnIb79fmz44-zy5WF7P_39B57bA', pinned: false, openInNewTab: false},
+  'run2': {title: 'Run 2', path: 'https://menist.free.je/core/run2/', icon: 'https://play-lh.googleusercontent.com/pqBfDoXss1KXIA6qe-fRSt6xKwCodicAOapVxkIswE573qrr5F3mHqx_IbHPWnIb79fmz44-zy5WF7P_39B57bA', pinned: false, openInNewTab: false},
+  'run3': {title: 'Run 3', path: 'https://menist.free.je/core/run3/', icon: 'https://play-lh.googleusercontent.com/pqBfDoXss1KXIA6qe-fRSt6xKwCodicAOapVxkIswE573qrr5F3mHqx_IbHPWnIb79fmz44-zy5WF7P_39B57bA', pinned: false, openInNewTab: false},
+  'sandgame': {title: 'Sand Game', path: 'https://menist.free.je/core/sandgame/', icon: 'https://play-lh.googleusercontent.com/_PYtjNVw6RuhlnI8lUvOLnGHaE-7CNddeqs1xisFyhWbTJaIW2-tEM5E1iAe6tUk8K4', pinned: false, openInNewTab: false},
+  'seamlesscloud': {title: 'Seamless Cloud', path: 'https://menist.free.je/seamless-cloud/index-260605.html', icon: 'https://i.ibb.co/sJ3BqHKT/Seamless-Cloud-Logo.png', pinned: true, openInNewTab: true},
+  'seamlessdesktop': {title: 'Seamless Desktop', path: 'https://menist.free.je/seamless-desktop/index.html', icon: 'https://play-lh.googleusercontent.com/P24gYqdMsXgqEBuHJtgzaRYO-Xs9scZLxqK1dvQ6sgwihd_oGBr-m16fS_ntgo2NqM0', pinned: true, openInNewTab: true},
+  'seamlessgames': {title: 'Seamless Games', path: 'https://menist.free.je/v1/', icon: 'https://i.ibb.co/M5QfsnBW/Playground-Image1.jpg', pinned: true, openInNewTab: false},
+  'seamlessplay': {title: 'Seamless Play', path: 'https://menist.free.je/cine-os/script/Apps/Ps5/', icon: 'https://i.ibb.co/spRyK3Pz/Playstation.png', pinned: false, openInNewTab: false},
+  'seamlify': {title: 'Seamlify', path: 'https://menist.free.je/cine-os/script/Apps/Spotify/', icon: 'https://i.ibb.co/Hp73qM6S/Spotify.png', pinned: true, openInNewTab: false},
+  'shootout': {title: 'Getaway Shootout', path: 'https://menist.free.je/core/getawayshootout/', icon: 'https://img.tapimg.net/market/images/a06138e73540c5c83c8873b5f916c11f.png/appicon_m?t=1', pinned: false, openInNewTab: false},
+  'shortlife': {title: 'Short Life', path: 'https://menist.free.je/core/shortlife/', icon: 'https://play-lh.googleusercontent.com/Z5rZj9NCC47YHDsEKvJ-qOxzxPLy1bBqsn1Ta1H0maa26cQB7_fwVqfTwJBGqt3MJbo', pinned: false, openInNewTab: false},
+  'slope': {title: 'Slope', path: 'https://menist.free.je/big/slope/', icon: 'https://play-lh.googleusercontent.com/uJn2i9h7KxYQarC_c3K4qH6o7gLtflFnhD_dN14MNkzHJ1NeNFzCL69jpB5mT0vCoQs=w240-h480-rw', pinned: false, openInNewTab: false},
+  'slope2player': {title: 'Slope 2 Player', path: 'https://menist.free.je/core/slope2player/', icon: 'https://play-lh.googleusercontent.com/uJn2i9h7KxYQarC_c3K4qH6o7gLtflFnhD_dN14MNkzHJ1NeNFzCL69jpB5mT0vCoQs', pinned: false, openInNewTab: false},
+  'slope3': {title: 'Slope 3', path: 'https://menist.free.je/core/slope3/', icon: 'https://play-lh.googleusercontent.com/uJn2i9h7KxYQarC_c3K4qH6o7gLtflFnhD_dN14MNkzHJ1NeNFzCL69jpB5mT0vCoQs', pinned: false, openInNewTab: false},
+  'slowroads': {title: 'Slow Roads', path: 'https://menist.free.je/core/slowroads/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9B%A3%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'smashkarts': {title: 'Smash Karts', path: 'https://menist.free.je/peak/smash-karts/', icon: 'https://play-lh.googleusercontent.com/Bo6DWfQ0pHwcNl-IvDvIpFRmZmf24Hho-DyjZnicm8vKumUyb0YA2GJs-EXxIjUdCpy8BKSuRUwN4mF6LdPpT0s', pinned: false, openInNewTab: false},
+  'snowballio': {title: 'Snowball.io', path: 'https://menist.free.je/core/snowballio/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/25/e4/93/25e4937b-a3db-5f4b-23b6-13e232bbcab2/Placeholder.mill/200x200bb-75.webp', pinned: false, openInNewTab: false},
+  'snowrider': {title: 'Snow Rider', path: 'https://menist.free.je/core/snowroad/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/a0/75/cb/a075cba3-225e-19f6-0af1-a7fce46c8222/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/200x200ia-75.webp', pinned: false, openInNewTab: false},
+  'soccerbros': {title: 'Soccer Bros', path: 'https://menist.free.je/core/soccerbros/', icon: 'https://store-images.s-microsoft.com/image/apps.8059.13822227738619976.337c8af9-a1c3-48c9-839c-648831919539.ac927f95-3cb7-4ded-bbab-1c3d95bfe6fb?h=210', pinned: false, openInNewTab: false},
+  'soccerlegends': {title: 'Soccer Legends', path: 'https://menist.free.je/core/footballlegends/', icon: 'https://i.ibb.co/DPDjT9HD/football-legends.jpg', pinned: false, openInNewTab: false},
+  'soccerrandom': {title: 'Soccer Random', path: 'https://menist.free.je/core/soccerrandom/', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWYzEaA5zf9RL_eH2GwFVoCx4Qa0zfp-57w-yawXpGtf--bePhtTGjkI60&s=10', pinned: false, openInNewTab: false},
+  'spaceclicker': {title: 'Spacebar Clicker', path: 'https://menist.free.je/core/spacebarclicker/', icon: 'https://i.ibb.co/MDsJtTFQ/spacebarclicker-300.png', pinned: false, openInNewTab: false},
+  'spaceiskey': {title: 'Space is Key', path: 'https://menist.free.je/core/spaceiskey/', icon: 'https://i.ibb.co/M59mZyLP/31g64-DBSb2-L.png', pinned: false, openInNewTab: false},
+  'spaceiskey2': {title: 'Space is Key 2', path: 'https://menist.free.je/core/spaceiskey2/', icon: 'https://i.ibb.co/DHNT0SrS/a0532328199-10.jpg', pinned: false, openInNewTab: false},
+  'spacewaves': {title: 'Space Waves', path: 'https://menist.free.je/core/spacewaves/', icon: 'https://i.ibb.co/MxS7CZKR/images.jpg', pinned: false, openInNewTab: false},
+  'speedstars': {title: 'Speed Stars', path: 'https://menist.free.je/core/speedstars/', icon: 'https://i.ibb.co/DP4R693p/images.jpg', pinned: false, openInNewTab: false},
+  'sprunki': {title: 'Sprunki', path: 'https://menist.free.je/core/sprunki/', icon: 'https://i.ibb.co/wFb0BF0c/sprunki-logo.jpg', pinned: false, openInNewTab: false},
+    'stack': {title: 'Stack', path: 'https://menist.free.je/core/stack/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A7%B1%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stacktris': {title: 'Stacktris', path: 'https://menist.free.je/core/stacktris/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A7%B1%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stateio': {title: 'State.io', path: 'https://menist.free.je/core/stateio/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%87%BA%F0%9F%87%B8%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stickarchers': {title: 'Stick Archers', path: 'https://menist.free.je/core/stickarchersbattle/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8F%B9%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stickfighter': {title: 'Stick Fighter', path: 'https://menist.free.je/core/stickfighter/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%94%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stickmanhook': {title: 'Stickman Hook', path: 'https://menist.free.je/core/stickmanhook/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%AA%9D%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'stickmerge': {title: 'Stick Merge', path: 'https://menist.free.je/core/stickmerge/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9E%95%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'subwaysurf': {title: 'Subway Surfers', path: 'https://menist.free.je/big/subway-surfers/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%87%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'superbike': {title: 'Superbike', path: 'https://menist.free.je/core/superbikethechampion/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%B2%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'supersoccer': {title: 'Super Soccer', path: 'https://menist.free.je/core/superliquidsoccer/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%BD%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'superstarcar': {title: 'Super Star Car', path: 'https://menist.free.je/core/superstarcar/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%97%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'supremeduelist': {title: 'Supreme Duelist', path: 'https://menist.free.je/peak/supreme-duelist/', icon: 'https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/75/8c/75/758c7595-9a8d-62b5-2668-fbeecde74dad/Placeholder.mill/256x256bb.png', pinned: false, openInNewTab: false},
+  'tag': {title: 'Tag', path: 'https://menist.free.je/core/tag/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8F%B7%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'taproad': {title: 'Tap Road', path: 'https://menist.free.je/big/tap-road/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9B%A3%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'templeofboom': {title: 'Temple of Boom', path: 'https://menist.free.je/core/templeofboom/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9B%95%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'templerun2': {title: 'Temple Run 2', path: 'https://menist.free.je/core/templerun2/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A6%8D%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'territorialio': {title: 'Territorial.io', path: 'https://menist.free.je/core/territorialio/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8C%8E%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'thereisnog': {title: 'There is No Game', path: 'https://menist.free.je/core/thereisnog/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%97%A3%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'timeshooter2': {title: 'Time Shooter 2', path: 'https://menist.free.je/core/timeshooter2/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%8F%B1%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'timeshooter3': {title: 'Time Shooter 3', path: 'https://menist.free.je/core/timeshooter3/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%8F%B1%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'tinyfishing': {title: 'Tiny Fishing', path: 'https://menist.free.je/core/tinyfishing/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8E%A3%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'tombofthemask': {title: 'Tomb of the Mask', path: 'https://menist.free.je/core/tombofthemask/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8E%AD%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'trafficsim': {title: 'Highway Traffic', path: 'https://menist.free.je/core/highwaytraffic/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%A6%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'trapthecat': {title: 'Trap the Cat', path: 'https://menist.free.je/core/trapthecat/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%90%88%E2%80%8D%E2%AC%9B%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'triviacrack': {title: 'Trivia Crack', path: 'https://menist.free.je/core/triviacrack/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9B%93%EF%B8%8F%E2%80%8D%F0%9F%92%A5%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'tubejumpers': {title: 'Tube Jumpers', path: 'https://menist.free.je/core/tubejumpers/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%A4%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'tunnelrush': {title: 'Tunnel Rush', path: 'https://menist.free.je/big/tunnel-rush/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'twoplayer': {title: 'Two Player Games', path: 'https://menist.free.je/big/two-player/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%94%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'unicyclehero': {title: 'Unicycle Hero', path: 'https://menist.free.je/core/unicyclehero/', icon: 'https://i.ibb.co/wNkz8nQd/unicycle-hero-logo.png', pinned: false, openInNewTab: false},
+  'vex4': {title: 'Vex 4', path: 'https://menist.free.je/core/vex4/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'vex5': {title: 'Vex 5', path: 'https://menist.free.je/core/vex5/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'vex6': {title: 'Vex 6', path: 'https://menist.free.je/core/vex6/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'vex7': {title: 'Vex 7', path: 'https://menist.free.je/core/vex7/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'vex8': {title: 'Vex 8', path: 'https://menist.free.je/core/vex8/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'vikingclash': {title: 'Clash of Vikings', path: 'https://menist.free.je/core/clashofvikings/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%94%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'wartheknights': {title: 'War of the Knights', path: 'https://menist.free.je/core/wartheknights/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%94%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'wheeliebike': {title: 'Wheelie Bike', path: 'https://menist.free.je/core/wheeliebike/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%B2%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'widgets': {title: 'Widgets', path: 'https://menist.free.je/seamless-widgets/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%95%9E%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'wordbomb': {title: 'Word Bomb', path: 'https://menist.free.je/word-bomb/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%92%A3%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'wordleunlimit': {title: 'Wordle Unlimited', path: 'https://menist.free.je/core/wordleunlimited/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A7%BE%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'wrestlebros': {title: 'Wrestle Bros', path: 'https://menist.free.je/core/wrestlebros/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A4%BC%F0%9F%8F%BB%E2%80%8D%E2%99%82%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'youtube': {title: 'YouTube', path: 'https://menist.free.je/youtube/', icon: 'https://i.ibb.co/vCfgHGFp/You-Tube.png', pinned: true, openInNewTab: false},
+  'zombierush': {title: 'Zombie Rush', path: 'https://menist.free.je/core/zombierush/', icon: 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%231a1a1a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22central%22%20text-anchor%3D%22middle%22%20font-size%3D%2242%22%20font-family%3D%22Apple%20Color%20Emoji%2C%20Segoe%20UI%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A7%9F%E2%80%8D%E2%99%82%EF%B8%8F%3C%2Ftext%3E%0A%20%20%20%20%3C%2Fsvg%3E', pinned: false, openInNewTab: false},
+  'settings': {title: 'Settings', internal: true, icon: 'https://cdn.iconscout.com/icon/free/png-256/free-apple-settings-icon-svg-download-png-493162.png', pinned: true, openInNewTab: false},
+};
+
+
+var savedPins = localStorage.getItem('c_pins_v2');
+if(savedPins) {
+    let p = JSON.parse(savedPins);
+    for(let k in p) {
+        if(APPS[k]) APPS[k].pinned = p[k];
+    }
+}
+
+function syncPins() {
+    let obj = {};
+    for(let k in APPS) obj[k] = APPS[k].pinned;
+    localStorage.setItem('c_pins_v2', JSON.stringify(obj));
+}
+
+var wallpaperRegistry = {
+    "Snake": {id: "Snake", name: "Snake Skeleton", url: "cine-os/Videos/default.mp4", locked: false},
+    "green": {id: "green", name: "Green Anime", url: "cine-os/Videos/green.mp4", locked: false},
+    "33A56": {id: "hunt_trait", name: "Hunt Showdown", url: "cine-os/Videos/33A56.mp4", locked: false},
+    "45E33": {id: "45E33", name: "45E33", url: "cine-os/Videos/45E33.mp4", locked: false},
+    "55Cine": {id: "55Cine", name: "Cine 55", url: "cine-os/Videos/55Cine.PNG", locked: false},
+    "99Med": {id: "99Med", name: "99 Med", url: "cine-os/Videos/99Med.mp4", locked: false},
+    "Brother": {id: "Brother", name: "Brother", url: "cine-os/Videos/Brother.mp4", locked: false},
+    "F-1": {id: "F-1", name: "F-1 Formula", url: "cine-os/Videos/F-1.mp4", locked: false},
+    "Gojo-Sukuna": {id: "Gojo-Sukuna", name: "Gojo vs Sukuna", url: "cine-os/Videos/Gojo-Sukuna.mp4", locked: false},
+    "Hunt": {id: "Hunt", name: "Hunt Showdown 2", url: "cine-os/Videos/Hunt.mp4", locked: false},
+    "Minecraft01": {id: "Minecraft01", name: "Minecraft 01", url: "cine-os/Videos/Minecraft01.mp4", locked: false},
+    "Minecraft02": {id: "Minecraft02", name: "Minecraft 02", url: "cine-os/Videos/Minecraft02.mp4", locked: false},
+    "Minecraft03": {id: "Minecraft03", name: "Minecraft 03", url: "cine-os/Videos/Minecraft03.mp4", locked: false},
+    "Monkey": {id: "Monkey", name: "Monkey", url: "cine-os/Videos/Monkey.mp4", locked: false},
+    "Skello": {id: "Skello", name: "Skello", url: "cine-os/Videos/Skello.MP4", locked: false},
+    "SnowFox": {id: "SnowFox", name: "Snow Fox", url: "cine-os/Videos/SnowFox.mp4", locked: false},
+    "Supra": {id: "Supra", name: "Supra Drift", url: "cine-os/Videos/Supra.PNG", locked: false},
+    "Yuji52": {id: "Yuji52", name: "Yuji 52", url: "cine-os/Videos/Yuji52.mp4", locked: false},
+    "sukuna-fire": {id: "sukuna-fire", name: "Sukuna Fire", url: "cine-os/Videos/sukuna-fire.mp4", locked: false},
+    "CozyFox": {id: "CozyFox", name: "Cozy Fox", url: "cine-os/Videos/CozyFox.mp4", locked: false},
+    "RainyCity": {id: "RainyCity", name: "Rainy City", url: "cine-os/Videos/RainyCity.mp4", locked: false},
+    "Gojo": {id: "Gojo", name: "Gojo", url: "cine-os/Videos/Gojo.mp4", locked: false},
+    "BlackHole": {id: "BlackHole", name: "Black Hole", url: "cine-os/Videos/BlackHole.mp4", locked: false},
+    "Yuta": {id: "Yuta", name: "Yuta", url: "cine-os/Videos/Yuta.mp4", locked: false},
+    "Desktop": {id: "Desktop", name: "Desktop Lines", url: "cine-os/Videos/Desktop.mp4", locked: false},
+    "MacOS": {id: "MacOS", name: "MacOS", url: "cine-os/Videos/MacOS.png", locked: false},
+    "Rainy-Lambo": { id: "RainyLambo", name: "Rainy Lambo", url: "cine-os/Videos/Rainy-Lambo.mp4", locked: false },
+    "Backrooms": { id: "Backrooms", name: "Backrooms", url: "cine-os/Videos/Backrooms.mp4", locked: false },
+    "Home": { id: "Home", name: "Default Home Screen", url: "cine-os/Videos/Rog-Home-Screen.png", locked: false },
+    "Lock": { id: "Lock", name: "Default Lock Screen", url: "cine-os/Videos/Rog-Lockscreen.png", locked: false }
+};
+
+var sysConfig = JSON.parse(localStorage.getItem('cine_sys_config')) || {};
+if(sysConfig.optBg === undefined) sysConfig.optBg = false;
+if(sysConfig.shortBoot === undefined) sysConfig.shortBoot = false;
+if(sysConfig.wpLoop === undefined) sysConfig.wpLoop = false;
+if(sysConfig.idleLock === undefined) sysConfig.idleLock = false; 
+if(sysConfig.redirectConfirm === undefined) sysConfig.redirectConfirm = false; 
+if(!sysConfig.panicKey) sysConfig.panicKey = '`';
+if(!sysConfig.homeWallpaper) sysConfig.homeWallpaper = 'MacOS';
+if(!sysConfig.lockWallpaper) sysConfig.lockWallpaper = 'Lock';
+if(!sysConfig.cloak) sysConfig.cloak = 'none';
+
+window.updateSysSetting = function(key, value) {
+    sysConfig[key] = value;
+    localStorage.setItem('cine_sys_config', JSON.stringify(sysConfig));
+    if(key === 'optBg') applySystemSettings();
+    if(key === 'wpLoop') updateWallpaperLoop();
+};
+
+var cloaks = {
+    none: {title: "Seamless-OS", icon: ""},
+    google: {title: "Google", icon: "https://www.google.comfavicon.ico"},
+    drive: {title: "My Drive - Google Drive", icon: "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png"},
+    canvas: {title: "Dashboard", icon: "https://du11hjcvx0uqb.cloudfront.net/br/dist/images/favicon-e10d657a73.ico"},
+    classroom: {title: "Classes", icon: "https://ssl.gstatic.com/classroom/favicon.png"}
+};
+
+window.updateCloak = function(key) {
+    sysConfig.cloak = key;
+    localStorage.setItem('cine_sys_config', JSON.stringify(sysConfig));
+    applyCloak();
+};
+
+function applyCloak() {
+    var k = sysConfig.cloak || 'none';
+    var sel = cloaks[k];
+    var icons = document.querySelectorAll("link[rel*='icon']");
+    for(var i=0; i<icons.length; i++) icons[i].remove();
+   
+    if(sel && k !== 'none') {
+        document.title = sel.title;
+        let n = document.createElement('link');
+        n.type = 'image/x-icon';
+        n.rel = 'shortcut icon';
+        n.href = sel.icon;
+        document.getElementsByTagName('head')[0].appendChild(n);
+    } else {
+        document.title = "𝐒𝐄𝐀𝐌𝐋𝐄𝐒𝐒-𝐎𝐒";
+        let n = document.createElement('link');
+        n.type = 'image/x-icon';
+        n.rel = 'icon';
+        n.href = 'favicon.ico';
+        document.getElementsByTagName('head')[0].appendChild(n);
+    }
+}
+
+var isDesktopActive = false;
+var bootActive = true;
+var enterCount = 0;
+var highestZ = 500;
+var activeWindowId = null;
+var isMediaPlaying = false;
+var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+var activeCtxId = null;
+
+if(isMobile) {
+    var mobWarn = document.getElementById('mobile-warning');
+    if(mobWarn && mobWarn.showModal) mobWarn.showModal();
+    else if(mobWarn) mobWarn.style.display = 'flex';
+    
+    var lastTap = 0;
+    document.addEventListener('touchstart', function(e) {
+        let t = new Date().getTime();
+        let tl = t - lastTap;
+        if(tl < 500 && tl > 0) {
+            if(mobWarn && mobWarn.close) mobWarn.close();
+            else if(mobWarn) mobWarn.style.display = 'none';
+        }
+        lastTap = t;
+    });
+}
+
+async function loadDynamicResources() {
+    renderUI();
+    initWallpapers();
+    setupAppContextMenu();
+}
+
+window.onbeforeunload = function(e) {
+    if(sysConfig.redirectConfirm) {
+        let msg = "Are you sure you want to leave? This helps block GoGuardian redirects.";
+        e.returnValue = msg;
+        return msg;
+    }
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+    applyCloak();
+    loadDynamicResources();
+    document.getElementById('boot-layer').style.display = 'block';
+    loadDesktop();
+    updateSidebarData();
+});
+
+function renderUI() {
+    let dock = document.getElementById('dock-container');
+    
+    let dHTML = 
+        '<div class="dock-item" onclick="toggleStartMenu()"><img src="https://missionsupport.archden.org/wp-content/uploads/2022/02/windows11-icon.png"></div>' +
+        '<div class="dock-sep"></div>' +
+        // App Drawer
+        '<div class="dock-item" onclick="toggleAppDrawer()" style="display:flex; align-items:center; justify-content:center;">' +
+        '<svg width="26" height="26" viewBox="0 0 24 24" fill="#ddd"><path d="M4 4h4v4H4zM10 4h4v4h-4zM16 4h4v4h-4zM4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4zM4 16h4v4H4zM10 16h4v4h-4zM16 16h4v4h-4z"/></svg>' +
+        '</div>' +
+        '<div class="dock-sep"></div>';
+    
+    // Pinned apps
+    for(let id in APPS) {
+        if(APPS[id].pinned) {
+            dHTML += '<div class="dock-item" data-id="'+id+'" onmousedown="DragSystem.start(event,this,\'dock\',\''+id+'\')" onclick="toggleApp(\''+id+'\')" oncontextmenu="openDockCtx(event, \''+id+'\')"><img src="'+APPS[id].icon+'"></div>';
+        }
+    }
+    
+    // Fancy Time + Date on the right
+    dHTML += `
+        <div class="dock-sep"></div>
+        <div id="dock-time" style="padding: 0 14px; font-size: 13px; font-weight: 600; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; min-width: 78px; user-select: none; pointer-events: none; height: 100%;">
+            <div id="dock-time-main" style="letter-spacing: 0.3px;"></div>
+            <div id="dock-date-small" style="font-size: 10.8px; color: #aaa; margin-top: 1px;"></div>
+        </div>
+    `;
+    
+    dock.innerHTML = dHTML;
+    
+    let pGrid = document.getElementById('pinned-grid');
+    let pHTML = '';
+    for(let id in APPS) {
+        if(APPS[id].pinned) {
+            pHTML += '<div class="pinned-item" onclick="toggleApp(\''+id+'\')"><img src="'+APPS[id].icon+'"><span>'+APPS[id].title+'</span></div>';
+        }
+    }
+    pGrid.innerHTML = pHTML;
+    
+    populateDrawer();
+    updateDockTime();   // Initial call
+}
+
+function openDockCtx(e, id) {
+    e.preventDefault(); 
+    e.stopPropagation();
+    hideAllCtx();
+    activeCtxId = id;
+    let m = document.getElementById('dock-ctx-menu');
+    if(m) {
+        positionContextMenu(m, e);
+    }
+}
+
+function openDrawerCtx(e, id) {
+    e.preventDefault(); 
+    e.stopPropagation();
+    hideAllCtx();
+    activeCtxId = id;
+    let m = document.getElementById('drawer-ctx-menu');
+    if(m) {
+        positionContextMenu(m, e);
+    }
+}
+
+document.getElementById('ctx-pin-app').onclick = function() {
+    if(activeCtxId && APPS[activeCtxId]) {
+        APPS[activeCtxId].pinned = true;
+        syncPins();
+        renderUI();
+    }
+    hideAllCtx();
+}
+
+document.getElementById('ctx-unpin-app').onclick = function() {
+    if(activeCtxId && APPS[activeCtxId]) {
+        APPS[activeCtxId].pinned = false;
+        syncPins();
+        renderUI();
+    }
+    hideAllCtx();
+}
+
+// New Tab Handlers
+document.getElementById('ctx-open-newtab-drawer').onclick = function() {
+    if(activeCtxId && APPS[activeCtxId]) {
+        const app = APPS[activeCtxId];
+        const url = app.newTabPath || app.path;
+        if(url) window.open(url, '_blank');
+    }
+    hideAllCtx();
+};
+
+document.getElementById('ctx-open-newtab-dock').onclick = function() {
+    if(activeCtxId && APPS[activeCtxId]) {
+        const app = APPS[activeCtxId];
+        const url = app.newTabPath || app.path;
+        if(url) window.open(url, '_blank');
+    }
+    hideAllCtx();
+};
+
+// Copy Link function
+function copyAppLink(id) {
+    const app = APPS[id];
+    if (!app) return;
+
+    navigator.clipboard.writeText(app.path).then(() => {
+        // Optional: you can add a temporary toast later if you want
+    }).catch(() => {
+        // fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = app.path;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    });
+}
+
+// Attach copy link handlers
+document.getElementById('ctx-copylink').onclick = function() {
+    if (activeCtxId) copyAppLink(activeCtxId);
+    hideAllCtx();
+};
+
+document.getElementById('ctx-copylink-drawer').onclick = function() {
+    if (activeCtxId) copyAppLink(activeCtxId);
+    hideAllCtx();
+};
+
+document.getElementById('ctx-copylink-dock').onclick = function() {
+    if (activeCtxId) copyAppLink(activeCtxId);
+    hideAllCtx();
+};
+
+function hideAllCtx() {
+    let menus = ['app-context-menu','desktop-context-menu','drawer-ctx-menu','dock-ctx-menu'];
+    for(let i=0; i<menus.length; i++) {
+        let m = document.getElementById(menus[i]);
+        if(m) m.style.display = 'none';
+    }
+}
+
+// Close menus when clicking anywhere else
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.os-context-menu')) {
+        hideAllCtx();
+    }
+});
+
+// Boot skip (Double Enter) + Panic key
+document.addEventListener('keydown', function(e) {
+    if(bootActive && e.key === 'Enter' && document.getElementById('boot-layer').style.display !== 'none') {
+        enterCount++;
+        if(enterCount >= 2) skipBootSequence();
+        setTimeout(function(){ enterCount = 0; }, 500);
+    }
+    if(e.key && sysConfig.panicKey && e.key.toLowerCase() === sysConfig.panicKey.toLowerCase()) {
+        window.location.href = "https://google.com";
+    }
+});
+
+// === SMART CONTEXT MENU POSITIONING - QUADRANT BASED ===
+function positionContextMenu(menu, e) {
+    if (!menu) return;
+    
+    menu.style.display = 'block';
+    menu.style.visibility = 'hidden';
+    menu.style.left = '0px';
+    menu.style.top = '0px';
+    
+    const menuRect = menu.getBoundingClientRect();
+    const menuWidth = menuRect.width || 240;
+    const menuHeight = menuRect.height || 220;
+    
+    menu.style.visibility = 'visible';
+    
+    let x = e.pageX;
+    let y = e.pageY;
+    
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    
+    const midX = vw / 2;
+    const midY = vh / 2;
+    
+    const isRight = x > midX;
+    const isBottom = y > midY;
+    
+    if (isRight) {
+        x = x - menuWidth - 8;
+    } else {
+        x = x + 8;
+    }
+    
+    if (isBottom) {
+        y = y - menuHeight - 8;
+    } else {
+        y = y + 8;
+    }
+    
+    x = Math.max(10, Math.min(x, vw - menuWidth - 10));
+    y = Math.max(10, Math.min(y, vh - menuHeight - 10));
+    
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+function startBootSequence() {
+    let bootLayer = document.getElementById('boot-layer');
+    let cb = document.getElementById('boot-content');
+    let bv = document.getElementById('boot-video');
+    
+    // Hide the static boot content
+    cb.style.display = 'none';
+    bv.style.display = 'block';
+    bv.muted = false;
+    bv.volume = 1.0;
+    
+    // === START HIDING CURSOR HERE ===
+    bootLayer.classList.add('boot-animation');
+    
+    if(sysConfig.shortBoot) {
+        bv.src = "cine-os/Videos/QuickBoot.mp4";
+        bv.load();
+    }
+    
+    let p = bv.play();
+    if(p !== undefined) {
+        p.catch(function() {
+            bv.muted = true;
+            bv.play();
+        });
+    }
+    
+    bv.onended = function() {
+        if(bootActive) skipBootSequence();
+    };
+}
+
+function skipBootSequence() {
+    if(!bootActive) return;
+    bootActive = false;
+    
+    let lay = document.getElementById('boot-layer');
+    let bv = document.getElementById('boot-video');
+    if(bv) bv.pause();
+    
+    // Restore cursor when boot animation ends
+    if(lay) lay.classList.remove('boot-animation');
+    
+    if(lay) {
+        lay.style.opacity = '0';
+        document.getElementById('lock-screen').classList.add('active');
+        
+        let lv = document.getElementById('lock-video');
+        if(lv.style.display !== 'none') {
+            lv.play().catch(function(e) {});
+        }
+        
+        setTimeout(function() { 
+            lay.style.display = 'none'; 
+        }, 600);
+        updateClock();
+    }
+}
+
+function showNotification(title, msg) {
+    let c = document.getElementById('toast-container');
+    let t = document.createElement('div');
+    t.className = 'toast-notification';
+    t.innerHTML = '<div class="toast-header"><div class="toast-app-info"><div class="toast-icon"><i class="fas fa-bell"></i></div><span>System</span></div><i class="fas fa-times toast-close"></i></div><div class="toast-title">' + title + '</div><div class="toast-body">' + msg + '</div>';
+    c.appendChild(t);
+    
+    setTimeout(function(){ t.classList.add('show'); }, 100);
+    t.onclick = function() {
+        t.classList.remove('show');
+        setTimeout(function(){ t.remove(); }, 400);
+    };
+    setTimeout(t.onclick, 6000);
+}
+
+var welcomeShown = false;
+window.unlockSystem = function() {
+    let scr = document.getElementById('lock-screen');
+    scr.classList.add('slide-up');
+    setTimeout(function() {
+        scr.classList.remove('active');
+        isDesktopActive = true;
+        document.getElementById('lock-video').pause();
+        
+        if(!sysConfig.optBg) {
+            let bV = document.getElementById('bg-video');
+            if(bV.style.display !== 'none') bV.play().catch(function(e){});
+        }
+        if(!welcomeShown) {
+            showNotification("Welcome To Seamless V2", "Go to The Seamless Games App to Save Your Progress!");
+            welcomeShown = true;
+        }
+        
+        // Start clock properly
+        updateClock();
+        if (!window.clockInterval) {
+            window.clockInterval = setInterval(updateClock, 500);
+        }
+    }, 600);
+    resetIdle();
+};
+
+function applyMediaToElements(url, vidEl, imgEl, isBg) {
+    if(!url) return;
+    let isImg = url.match(/\.(png|jpg|jpeg|gif)$/i);
+    if(isImg) {
+        vidEl.style.display = 'none';
+        vidEl.pause();
+        imgEl.style.display = 'block';
+        imgEl.src = url;
+    } else {
+        imgEl.style.display = 'none';
+        vidEl.style.display = 'block';
+        vidEl.src = url;
+        vidEl.load();
+        if(isBg && isDesktopActive && !sysConfig.optBg) vidEl.play().catch(function(e){});
+        if(!isBg && document.getElementById('lock-screen').classList.contains('active')) vidEl.play().catch(function(e){});
+    }
+}
+
+function initWallpapers() {
+    let bV = document.getElementById('bg-video');
+    let bI = document.getElementById('bg-img');
+    let lV = document.getElementById('lock-video');
+    let lI = document.getElementById('lock-img');
+    
+    if(wallpaperRegistry[sysConfig.homeWallpaper]) {
+        applyMediaToElements(wallpaperRegistry[sysConfig.homeWallpaper].url, bV, bI, true);
+    }
+    if(wallpaperRegistry[sysConfig.lockWallpaper]) {
+        applyMediaToElements(wallpaperRegistry[sysConfig.lockWallpaper].url, lV, lI, false);
+    } else {
+        applyMediaToElements("cine-os/Videos/green.mp4", lV, lI, false);
+    }
+    
+    updateWallpaperLoop();
+    let wChk = document.getElementById('wp-loop-chk');
+    if(wChk) wChk.checked = sysConfig.wpLoop;
+}
+
+function updateWallpaperLoop() {
+    let bV = document.getElementById('bg-video');
+    let lV = document.getElementById('lock-video');
+    if(bV) bV.loop = sysConfig.wpLoop;
+    if(lV) lV.loop = sysConfig.wpLoop;
+    if(!sysConfig.optBg && isDesktopActive && bV && bV.paused && bV.style.display !== 'none') {
+        bV.play().catch(function(e){});
+    }
+}
+
+function updateClock() {
+    let n = new Date();
+    let dArr = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    let mArr = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+    
+    let hrs = n.getHours().toString().padStart(2, '0');
+    let min = n.getMinutes().toString().padStart(2, '0');
+    let dNum = n.getDate().toString().padStart(2, '0');
+    let dName = dArr[n.getDay()];
+    let yr = n.getFullYear();
+    
+    let lDay = document.getElementById('lock-day-large');
+    let lDat = document.getElementById('lock-date');
+    let lTim = document.getElementById('lock-time');
+    let hDay = document.getElementById('lbl-day');
+    
+    if(lDay) lDay.innerText = dName;
+    if(hDay) hDay.innerText = dName;
+    if(lDat) lDat.innerText = dNum + ' ' + mArr[n.getMonth()] + ', ' + yr + '.';
+    if(lTim) lTim.innerText = '- ' + hrs + ':' + min + ' -';
+    
+    updateDockTime();   // ← Add this line
+}
+
+function updateDockTime() {
+    let n = new Date();
+    
+    let hrs = n.getHours() % 12 || 12;
+    let ampm = n.getHours() >= 12 ? 'PM' : 'AM';
+    let min = n.getMinutes().toString().padStart(2, '0');
+    let sec = n.getSeconds().toString().padStart(2, '0');
+    
+    let month = (n.getMonth() + 1).toString().padStart(2, '0');
+    let day = n.getDate().toString().padStart(2, '0');
+    let year = n.getFullYear();
+    
+    const timeMain = document.getElementById('dock-time-main');
+    const dateSmall = document.getElementById('dock-date-small');
+    
+    if(timeMain) timeMain.textContent = `${hrs}:${min}:${sec} ${ampm}`;
+    if(dateSmall) dateSmall.textContent = `${month}/${day}/${year}`;
+}
+
+var idleTime = 0;
+function resetIdle() { idleTime = 0; }
+document.addEventListener('mousemove', resetIdle);
+document.addEventListener('keypress', resetIdle);
+
+setInterval(function() {
+    idleTime++;
+    let scr = document.getElementById('lock-screen');
+    if(sysConfig.idleLock && idleTime >= 180 && !scr.classList.contains('active') && !bootActive) {
+        if(isMediaPlaying) {
+            idleTime = 0; 
+        } else {
+            isDesktopActive = false;
+            scr.classList.remove('slide-up');
+            scr.classList.add('active');
+            document.getElementById('bg-video').pause();
+            let lv = document.getElementById('lock-video');
+            if(lv.style.display !== 'none') lv.play().catch(function(e){});
+        }
+    }
+}, 1000);
+
+
+
+
+
+function populateDrawer() {
+    let g = document.getElementById('drawer-grid');
+    g.innerHTML = '';
+    for(let key in APPS) {
+        let a = APPS[key];
+        let d = document.createElement('div');
+        d.className = 'drawer-item';
+        d.dataset.id = key;
+        d.innerHTML = '<img src="' + a.icon + '" style="pointer-events:none;"><span>' + a.title + '</span>';
+        
+        d.onmousedown = function(e) { DragSystem.start(e, this, 'drawer', this.dataset.id); };
+        d.onclick = function(e) {
+            if(!DragSystem.isDragMove) {
+                toggleApp(this.dataset.id);
+                toggleAppDrawer();
+            }
+        };
+        d.oncontextmenu = function(e) { openDrawerCtx(e, this.dataset.id); }
+        g.appendChild(d);
+    }
+}
+
+function filterDrawer(val) {
+    let items = document.querySelectorAll('.drawer-item');
+    let q = val.toLowerCase();
+    for(let i=0; i<items.length; i++) {
+        let txt = items[i].innerText.toLowerCase();
+        if(txt.includes(q)) items[i].style.display = 'flex';
+        else items[i].style.display = 'none';
+    }
+}
+
+function toggleAppDrawer() {
+    let d = document.getElementById('app-drawer');
+    if(d.classList.contains('open')) {
+        d.classList.remove('open');
+        setTimeout(function(){ d.style.display='none'; }, 300);
+    } else {
+        d.style.display = 'block';
+        setTimeout(function(){ d.classList.add('open'); }, 10);
+    }
+}
+
+function toggleApp(id) {
+    let app = APPS[id];
+    if (!app) return;
+
+    // Open in new tab if specified
+    if (app.openInNewTab === true) {
+        window.location.href = app.path;
+        return;
+    }
+
+    // Normal in-OS window behavior
+    let w = document.getElementById('win-' + id);
+    if(w) {
+        if(w.classList.contains('minimized')) {
+            w.classList.remove('minimized');
+            w.classList.add('active');
+            w.style.zIndex = ++highestZ;
+            activeWindowId = id;
+            startImmersiveMode(w);
+        } else if(activeWindowId === id) {
+            minimizeWindow(id);
+        } else {
+            w.style.zIndex = ++highestZ;
+            activeWindowId = id;
+            startImmersiveMode(w);
+        }
+    } else {
+        openWindow(id);
+    }
+}
+
+function openWindow(id) {
+    let app = APPS[id];
+    if (!app) return;
+
+    // Open in new tab if specified
+    if (app.openInNewTab === true) {
+        window.location.href = app.path;
+        return;
+    }
+
+    let m = document.getElementById('start-menu');
+    if(m) {
+        m.classList.remove('open');
+        setTimeout(function(){ m.style.display='none'; }, 300);
+    }
+    
+    let layer = document.getElementById('windows-layer');
+    let win = document.getElementById('win-' + id);
+    
+    if(!win) {
+        let dat = app;
+        win = document.createElement('div');
+        win.id = 'win-' + id;
+        win.className = 'window active header-visible';
+        win.style.zIndex = ++highestZ;
+        
+        let iframeStr = dat.internal ? '<iframe id="frame-' + id + '"></iframe>' : '<iframe id="frame-' + id + '" src="' + dat.path + '"></iframe>';
+        
+        win.innerHTML = '<div class="win-header" onmousedown="DragSystem.startWinDrag(event, \'' + id + '\')"><div class="win-title">' + dat.title + '</div><div class="win-controls"><div class="win-btn btn-min" onclick="minimizeWindow(\'' + id + '\')"></div><div class="win-btn btn-max" onclick="toggleFullscreen(\'' + id + '\')">⛶</div><div class="win-btn btn-close" onclick="closeWindow(\'' + id + '\')"></div></div></div><div class="win-body">' + iframeStr + '</div>';
+        
+        layer.appendChild(win);
+        
+        if(dat.internal && id === 'settings') {
+            let f = document.getElementById('frame-' + id);
+            if(f) {
+                let html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+                    <style>
+                        body { background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; padding: 25px; margin: 0; outline: none; }
+                        * { outline: none; -webkit-tap-highlight-color: transparent; }
+                        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; font-weight: 700; letter-spacing: 1px; }
+                        .setting-card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+                        .setting-text { display: flex; flex-direction: column; }
+                        .setting-text b { color: #fff; font-size: 15px; }
+                        .setting-text small { color: #888; font-size: 13px; }
+                        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+                        .switch input { opacity: 0; width: 0; height: 0; }
+                        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .3s; border-radius: 34px; }
+                        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
+                        input:checked + .slider { background-color: #fff; }
+                        input:checked + .slider:before { transform: translateX(20px); background-color: #000; }
+                        input[type="text"], select { background: #222; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 6px; }
+                        input:focus, select:focus { border-color: #888; }
+                    </style>
+                </head>
+                <body>
+                    <h2>SYSTEM SETTINGS</h2>
+                    <div class="setting-card">
+                        <div class="setting-text"><b>Fast Boot</b><small>Skips the startup sequence</small></div>
+                        <label class="switch"><input type="checkbox" id="chk-boot" onchange="window.parent.updateSysSetting('shortBoot',this.checked)"><span class="slider"></span></label>
+                    </div>
+                    <script>
+                        var prefs = window.parent.sysConfig;
+                        document.getElementById('chk-bg').checked = prefs.optBg;
+                        document.getElementById('chk-boot').checked = prefs.shortBoot;
+                        document.getElementById('chk-idle').checked = prefs.idleLock;
+                        document.getElementById('chk-redir').checked = prefs.redirectConfirm;
+                        document.getElementById('cloak-select').value = prefs.cloak;
+                        document.getElementById('panic-input').value = prefs.panicKey;
+                    <\/script>
+                </body>
+                </html>`;
+                f.srcdoc = html;
+            }
+        }
+    } else {
+        win.classList.remove('minimized');
+        win.classList.add('active');
+        win.style.zIndex = ++highestZ;
+    }
+    
+    activeWindowId = id;
+    startImmersiveMode(win);
+}
+
+function closeWindow(id) {
+    let w = document.getElementById('win-' + id);
+    if(w) w.remove();
+    if(activeWindowId === id) activeWindowId = null;
+    endImmersiveMode();
+}
+
+function minimizeWindow(id) {
+    let w = document.getElementById('win-' + id);
+    if(w) {
+        w.classList.add('minimized');
+        w.classList.remove('active');
+        if(activeWindowId === id) activeWindowId = null;
+    }
+    endImmersiveMode();
+}
+
+function toggleFullscreen(id) {
+    let w = document.getElementById('win-' + id);
+    if (!w) return;
+    
+    if (!document.fullscreenElement) {
+        w.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function startImmersiveMode(win) {
+    document.getElementById('dock-container').classList.add('dock-hidden');
+    win.classList.remove('header-visible');
+
+    // Disable desktop background while an app window is active
+    if (!sysConfig.optBg) {
+        let bV = document.getElementById('bg-video');
+        if (bV && bV.style.display !== 'none') {
+            bV.pause();
+        }
+    }
+}
+
+function endImmersiveMode() {
+    let aw = document.querySelectorAll('.window.active:not(.minimized)');
+    if (aw.length === 0) {
+        document.getElementById('dock-container').classList.remove('dock-hidden');
+        activeWindowId = null;
+
+        // Re-enable desktop background when no apps are open
+        if (!sysConfig.optBg) {
+            let bV = document.getElementById('bg-video');
+            if (bV && bV.style.display !== 'none') {
+                bV.play().catch(function(e){});
+            }
+        }
+    } else {
+        let t = aw[aw.length - 1];
+        activeWindowId = t.id.replace('win-', '');
+        t.style.zIndex = ++highestZ;
+        startImmersiveMode(t);
+    }
+}
+
+var dockTimer;
+var dEl = document.getElementById('dock-container');
+document.getElementById('bottom-trigger').addEventListener('mouseenter', function() {
+    dEl.classList.remove('dock-hidden');
+    clearTimeout(dockTimer);
+});
+dEl.addEventListener('mouseleave', function() {
+    let aw = document.querySelectorAll('.window.active:not(.minimized)');
+    if(aw.length > 0) {
+        dockTimer = setTimeout(function() { dEl.classList.add('dock-hidden'); }, 1000);
+    }
+});
+dEl.addEventListener('mouseenter', function() { clearTimeout(dockTimer); });
+
+document.getElementById('top-trigger').addEventListener('mouseenter', function() {
+    if(activeWindowId) {
+        let w = document.getElementById('win-' + activeWindowId);
+        if(w && !w.classList.contains('minimized')) w.classList.add('header-visible');
+    }
+});
+
+document.addEventListener('mouseover', function(e) {
+    if(e.target.closest('.win-header')) {
+        if(activeWindowId) {
+            let w = document.getElementById('win-' + activeWindowId);
+            if(w) w.classList.add('header-visible');
+        }
+    } else if(activeWindowId && !e.target.closest('#top-trigger')) {
+        let w = document.getElementById('win-' + activeWindowId);
+        if(w) w.classList.remove('header-visible');
+    }
+});
+
+var desktopLayout = JSON.parse(localStorage.getItem('cine_desktop_v2')) || [];
+
+function saveDesktop() {
+    localStorage.setItem('cine_desktop_v2', JSON.stringify(desktopLayout));
+    loadDesktop();
+}
+
+function loadDesktop() {
+    let c = document.getElementById('desktop-area');
+    let ex = document.querySelectorAll('.desktop-app');
+    for(let j=0; j<ex.length; j++) ex[j].remove();
+    
+    desktopLayout.forEach(function(item, idx) {
+        let d = document.createElement('div');
+        d.className = 'desktop-app';
+        d.style.left = item.x + 'px';
+        d.style.top = item.y + 'px';
+        d.setAttribute('data-idx', idx);
+        
+        if(item.type === 'folder') {
+            let gHTML = '<div class="d-folder-grid">';
+            let mx = item.apps.slice(0, 4);
+            mx.forEach(function(a) {
+                if(APPS[a]) gHTML += '<img src="' + APPS[a].icon + '">';
+            });
+            gHTML += '</div>';
+            if(!item.hideName) gHTML += '<div class="d-label">' + (item.customName || 'Folder') + '</div>';
+            
+            d.innerHTML = gHTML;
+            d.onclick = function(ev) {
+                if(DragSystem.isDragMove) return;
+                ev.stopPropagation();
+                if(!this.classList.contains('expanded-folder')) {
+                    closeAllFolders();
+                    expandFolder(this, item, idx);
+                }
+            };
+        } else {
+            let a = APPS[item.id];
+            if(a) {
+                let iSrc = item.customIcon || a.icon;
+                let lbl = item.customName || a.title;
+                let h = '<img src="' + iSrc + '" class="d-icon">';
+                if(!item.hideName) h += '<div class="d-label">' + lbl + '</div>';
+                d.innerHTML = h;
+                d.ondblclick = function(ev) { ev.stopPropagation(); toggleApp(item.id); };
+            }
+        }
+        
+        d.onmousedown = function(ev) {
+            ev.stopPropagation();
+            if(ev.button === 0) DragSystem.start(ev, d, 'desktop', idx);
+        };
+        
+        d.oncontextmenu = function(ev) {
+    ev.preventDefault(); 
+    ev.stopPropagation();
+    hideAllCtx();
+    let m = document.getElementById('app-context-menu');
+    if(m) {
+        positionContextMenu(m, ev);
+        m.setAttribute('data-target-idx', idx);
+    }
+};
+        
+        c.appendChild(d);
+    });
+}
+
+function expandFolder(el, dat, idx) {
+    el.classList.add('expanded-folder');
+    
+    let h = '<div class="folder-header">' + (dat.customName || 'Folder') + ' <i class="fas fa-times" onclick="closeAllFolders(event)"></i></div>';
+    h += '<div class="folder-grid-expanded">';
+    for(let k=0; k<dat.apps.length; k++) {
+        let aId = dat.apps[k];
+        let info = APPS[aId];
+        if(info) {
+            h += '<div class="f-app" onclick="event.stopPropagation(); toggleApp(\'' + aId + '\')"><img src="' + info.icon + '"><span>' + info.title + '</span></div>';
+        }
+    }
+    h += '</div>';
+    el.innerHTML = h;
+    
+    setTimeout(function() {
+        let rect = el.getBoundingClientRect();
+        let sibs = document.querySelectorAll('.desktop-app:not(.expanded-folder)');
+        for(let s=0; s<sibs.length; s++) {
+            let sib = sibs[s];
+            let sr = sib.getBoundingClientRect();
+            if(!(rect.right < sr.left || rect.left > sr.right || rect.bottom < sr.top || rect.top > sr.bottom)) {
+                let push = (rect.bottom - sr.top) + 20;
+                sib.style.transform = 'translateY(' + push + 'px)';
+                sib.setAttribute('data-pushed', 'true');
+            }
+        }
+    }, 50);
+}
+
+function closeAllFolders(ev) {
+    if(ev) ev.stopPropagation();
+    let op = document.querySelectorAll('.expanded-folder');
+    if(op.length === 0) return;
+    
+    for(let i=0; i<op.length; i++) op[i].classList.remove('expanded-folder');
+    
+    let push = document.querySelectorAll('.desktop-app[data-pushed="true"]');
+    for(let j=0; j<push.length; j++) {
+        push[j].style.transform = '';
+        push[j].removeAttribute('data-pushed');
+    }
+    setTimeout(loadDesktop, 250);
+}
+
+function setupAppContextMenu() {
+    let m = document.getElementById('app-context-menu');
+    if(!m) return;
+    m.innerHTML = `
+        <li class="ctx-item" id="ctx-rename" role="menuitem" tabindex="0"><i class="fas fa-edit fa-fw" aria-hidden="true"></i> Rename</li>
+        <li class="ctx-item" id="ctx-hidename" role="menuitem" tabindex="0"><i class="fas fa-eye-slash fa-fw" aria-hidden="true"></i> Toggle Name</li>
+        <li class="ctx-item" id="ctx-changeicon" role="menuitem" tabindex="0"><i class="fas fa-image fa-fw" aria-hidden="true"></i> Change Icon</li>
+        <li class="ctx-item" id="ctx-open-newtab-desktop" role="menuitem" tabindex="0"><i class="fas fa-plus fa-fw" aria-hidden="true"></i> Open in New Tab</li>
+        <li class="ctx-separator" role="separator"></li>
+        <li class="ctx-item" id="ctx-delete" role="menuitem" tabindex="0"><i class="fas fa-trash fa-fw" style="color:#aaa;" aria-hidden="true"></i> Remove</li>
+    `;
+    
+    document.getElementById('ctx-rename').onclick = function() {
+        let i = m.getAttribute('data-target-idx');
+        let nm = prompt("Enter new name:", desktopLayout[i].customName || "");
+        if(nm !== null) {
+            desktopLayout[i].customName = nm.trim() === "" ? "App" : nm;
+            saveDesktop();
+        }
+        m.style.display = 'none';
+    };
+    
+    document.getElementById('ctx-hidename').onclick = function() {
+        let i = m.getAttribute('data-target-idx');
+        desktopLayout[i].hideName = !desktopLayout[i].hideName;
+        saveDesktop();
+        m.style.display = 'none';
+    };
+    
+    document.getElementById('ctx-changeicon').onclick = function() {
+        let i = m.getAttribute('data-target-idx');
+        let url = prompt("Enter image URL for custom icon:");
+        if(url) {
+            desktopLayout[i].customIcon = url;
+            saveDesktop();
+        }
+        m.style.display = 'none';
+    };
+
+        document.getElementById('ctx-open-newtab-desktop').onclick = function() {
+        let i = m.getAttribute('data-target-idx');
+        let item = desktopLayout[i];
+        if (item && item.type === 'app' && APPS[item.id]) {
+            const app = APPS[item.id];
+            const url = app.newTabPath || app.path;
+            if(url) window.open(url, '_blank');
+        }
+        m.style.display = 'none';
+    };
+    
+    document.getElementById('ctx-delete').onclick = function() {
+        let i = m.getAttribute('data-target-idx');
+        desktopLayout.splice(i, 1);
+        saveDesktop();
+        m.style.display = 'none';
+    };
+}
+
+document.addEventListener('contextmenu', function(e) {
+    let ids = ['desktop-area', 'windows-layer', 'bg-video', 'bg-img', 'snow-fx', 'right-sidebar'];
+    if(ids.includes(e.target.id) || e.target.tagName === 'BODY' || e.target.closest('#right-sidebar')) {
+        e.preventDefault();
+        hideAllCtx();
+        let m = document.getElementById('desktop-context-menu');
+        if(m) {
+            positionContextMenu(m, e);
+        }
+    }
+});
+
+var DragSystem = {
+    dragging: false, startPos: {x:0,y:0}, sourceType: null, sourceEl: null,
+    idx: null, appId: null, proxy: document.getElementById('drag-proxy'),
+    pImg: document.getElementById('proxy-img'), badge: document.getElementById('folder-badge'),
+    
+    init: function() {
+        window.addEventListener('mousemove', e => this.move(e));
+        window.addEventListener('mouseup', e => this.end(e));
+    },
+    
+    start: function(e, el, type, id) {
+        this.startPos = {x: e.clientX, y: e.clientY};
+        this.sourceType = type; this.sourceEl = el; this.isDragMove = false;
+        if(type === 'drawer' || type === 'dock') this.appId = id;
+        else if(type === 'desktop') { this.idx = id; this.sourceEl.style.opacity = '0.5'; }
+    },
+    
+    startWinDrag: function(e, id) {
+        this.startPos = {x: e.clientX, y: e.clientY};
+        this.sourceType = 'window'; this.sourceEl = document.getElementById('win-' + id);
+        this.isDragMove = false;
+    },
+    
+    move: function(e) {
+        if(!this.sourceEl) return;
+        let dx = Math.abs(e.clientX - this.startPos.x);
+        let dy = Math.abs(e.clientY - this.startPos.y);
+        
+        if(dx > 3 || dy > 3) {
+            this.dragging = true; this.isDragMove = true;
+            if(this.sourceType === 'desktop' || this.sourceType === 'drawer' || this.sourceType === 'dock') {
+                if(this.sourceType === 'drawer') toggleAppDrawer();
+                this.proxy.style.display = 'block';
+                this.proxy.style.left = (e.clientX - 25) + 'px';
+                this.proxy.style.top = (e.clientY - 25) + 'px';
+                
+                if(this.sourceType === 'drawer' || this.sourceType === 'dock') {
+                    if(APPS[this.appId]) this.pImg.src = APPS[this.appId].icon;
+                } else {
+                    let itm = desktopLayout[this.idx];
+                    if(itm.type === 'app') {
+                        if(APPS[itm.id]) this.pImg.src = APPS[itm.id].icon;
+                    } else {
+                        this.pImg.src = '';
+                        this.badge.style.display = 'flex';
+                        this.badge.innerText = itm.apps.length;
+                    }
+                }
+            }
+        }
+    },
+    
+    end: function(e) {
+        if(!this.sourceEl) return;
+        if(!this.isDragMove && this.sourceType === 'desktop') { this.reset(); return; }
+        if(!this.dragging) { this.reset(); return; }
+        
+        if(this.sourceType === 'desktop' || this.sourceType === 'drawer' || this.sourceType === 'dock') {
+            let nx = Math.round((e.clientX - 40) / 90) * 90;
+            let ny = Math.round((e.clientY - 40) / 100) * 100;
+            
+            if(e.clientY > window.innerHeight - 80) {
+                if(this.sourceType === 'desktop') desktopLayout.splice(this.idx, 1);
+            } else {
+                let tIdx = -1;
+                let aAll = document.querySelectorAll('.desktop-app');
+                for(let i=0; i<aAll.length; i++) {
+                    if(aAll[i] !== this.sourceEl) {
+                        let r = aAll[i].getBoundingClientRect();
+                        if(e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) tIdx = aAll[i].dataset.idx;
+                    }
+                }
+                
+                if(tIdx > -1) {
+                    let targ = desktopLayout[tIdx];
+                    let drp = (this.sourceType === 'drawer' || this.sourceType === 'dock') ? [this.appId] : (desktopLayout[this.idx].type === 'app' ? [desktopLayout[this.idx].id] : desktopLayout[this.idx].apps);
+                    
+                    if(targ.type === 'app') {
+                        targ.type = 'folder';
+                        targ.apps = [targ.id].concat(drp);
+                        delete targ.id;
+                    } else {
+                        targ.apps.push.apply(targ.apps, drp);
+                    }
+                    if(this.sourceType === 'desktop') desktopLayout.splice(this.idx, 1);
+                } else {
+                    if(this.sourceType === 'drawer' || this.sourceType === 'dock') {
+                        desktopLayout.push({type: 'app', id: this.appId, x: nx, y: ny});
+                    } else {
+                        desktopLayout[this.idx].x = nx;
+                        desktopLayout[this.idx].y = ny;
+                    }
+                }
+            }
+            saveDesktop();
+        }
+        this.reset();
+    },
+    
+    reset: function() {
+        this.dragging = false;
+        if(this.sourceEl) this.sourceEl.style.opacity = '1';
+        this.sourceEl = null;
+        this.proxy.style.display = 'none';
+        this.badge.style.display = 'none';
+    }
+};
+DragSystem.init();
+
+window.toggleDesktopSize = function(l) {
+    if(l) document.getElementById('desktop-area').classList.add('desktop-large-mode');
+    else document.getElementById('desktop-area').classList.remove('desktop-large-mode');
+    document.getElementById('desktop-context-menu').style.display = 'none';
+};
+
+var unlockedWallpapers = JSON.parse(localStorage.getItem('cine_unlocked_wp')) || ['default'];
+window.wpMode = 'both';
+
+function setWallpaper(k, noti=false) {
+    let d = wallpaperRegistry[k];
+    if(!d) return;
+    
+    if(noti && d.locked && !unlockedWallpapers.includes(d.id)) {
+        unlockedWallpapers.push(d.id);
+        localStorage.setItem('cine_unlocked_wp', JSON.stringify(unlockedWallpapers));
+        alert("Wallpaper: [ " + d.name + " ] Unlocked.");
+    }
+    
+    if(window.wpMode === 'home' || window.wpMode === 'both') {
+        let bV = document.getElementById('bg-video');
+        let bI = document.getElementById('bg-img');
+        applyMediaToElements(d.url, bV, bI, true);
+        updateSysSetting('homeWallpaper', k);
+    }
+    
+    if(window.wpMode === 'lock' || window.wpMode === 'both') {
+        let lV = document.getElementById('lock-video');
+        let lI = document.getElementById('lock-img');
+        applyMediaToElements(d.url, lV, lI, false);
+        updateSysSetting('lockWallpaper', k);
+    }
+    
+    updateWallpaperLoop();
+    openWallpaperMenu();
+}
+
+function openWallpaperMenu() {
+    let m = document.getElementById('wallpaper-menu');
+    let gu = document.getElementById('wp-grid-unlocked');
+    let gl = document.getElementById('wp-grid-locked');
+    if(!m) return;
+    
+    if(m.showModal) m.showModal();
+    else m.style.display = 'flex';
+    m.classList.add('open');
+    
+    gu.innerHTML = '';
+    gl.innerHTML = '';
+    
+    for(let k in wallpaperRegistry) {
+        let d = wallpaperRegistry[k];
+        let ul = !d.locked || unlockedWallpapers.includes(d.id);
+        let c = document.createElement('div');
+        c.className = "wp-card " + (ul ? "" : "wp-locked");
+        
+        if(ul) {
+            let mHtml = "";
+            if(d.url.match(/\.(png|jpg|jpeg|gif)$/i)) mHtml = '<img src="' + d.url + '" alt="wp">';
+            else mHtml = '<video src="' + d.url + '" preload="auto" playsinline muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>';
+            
+            c.innerHTML = mHtml + '<div class="wp-info">' + d.name + '</div>';
+            c.setAttribute('data-key', k);
+            c.onclick = function() {
+                setWallpaper(this.getAttribute('data-key'));
+                let crds = document.querySelectorAll('.wp-card');
+                for(let j=0; j<crds.length; j++) crds[j].classList.remove('active-wp');
+                this.classList.add('active-wp');
+            };
+            gu.appendChild(c);
+        } else {
+            c.innerHTML = '<div class="wp-info"><i class="fas fa-lock"></i></div>';
+            gl.appendChild(c);
+        }
+    }
+    
+    let chk = document.getElementById('wp-loop-chk');
+    if(chk) {
+        chk.checked = sysConfig.wpLoop;
+        chk.onchange = e => updateSysSetting('wpLoop', e.target.checked);
+    }
+}
+
+var sInp = document.getElementById('start-search-input');
+if(sInp) {
+    sInp.addEventListener('keydown', function(e) {
+        if(e.key === 'Enter') {
+            let q = this.value.trim();
+            if(wallpaperRegistry[q]) {
+                setWallpaper(q, true);
+                this.value = "";
+                this.blur();
+            }
+        }
+    });
+}
+
+function toggleStartMenu() {
+    let sm = document.getElementById('start-menu');
+    if(sm.classList.contains('open')) {
+        sm.classList.remove('open');
+        setTimeout(function(){ sm.style.display='none'; }, 300);
+    } else {
+        sm.style.display = 'flex';
+        setTimeout(function(){ sm.classList.add('open'); }, 10);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    let sm = document.getElementById('start-menu');
+    if(sm && !sm.contains(e.target) && !e.target.closest('.dock-item')) {
+        sm.classList.remove('open');
+        setTimeout(function(){ sm.style.display='none'; }, 300);
+    }
+});
+
+var cvsSnow = document.getElementById('snow-fx');
+if(cvsSnow) {
+    var ctxSnow = cvsSnow.getContext('2d');
+    var sW = window.innerWidth, sH = window.innerHeight;
+    cvsSnow.width = sW; cvsSnow.height = sH;
+    
+    var flakes = [];
+    for(var f=0; f<30; f++) flakes.push({x: Math.random()*sW, y: Math.random()*sH, r: Math.random()*2, s: Math.random()+0.5});
+    
+    function drawSnow() {
+        if(isDesktopActive) {
+            ctxSnow.clearRect(0, 0, sW, sH);
+            ctxSnow.fillStyle = "rgba(255,255,255,0.3)";
+            for(let i=0; i<flakes.length; i++) {
+                let fl = flakes[i];
+                ctxSnow.beginPath();
+                ctxSnow.arc(fl.x, fl.y, fl.r, 0, Math.PI * 2);
+                ctxSnow.fill();
+                fl.y += fl.s;
+                if(fl.y > sH) fl.y = 0;
+            }
+        }
+        requestAnimationFrame(drawSnow);
+    }
+    drawSnow();
+}
+
+var MODES = ['FAST', 'THINKING', 'LIVE'];
+var cMode = 0;
+var isCiriActive = false;
+var holdTimer = null;
+var hasBootCiri = false;
+var expectKey = false;
+var sStream = null;
+var cImgB64 = null;
+var cImgMime = null;
+
+function checkApiKey() {
+    let st = document.getElementById('status-text');
+    let si = document.getElementById('status-icon');
+    if(!st) return;
+    if(localStorage.getItem('ciri_key')) {
+        st.textContent = "Secure"; st.className = "secure";
+        si.innerHTML = '<svg class="secure-svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>';
+    } else {
+        st.textContent = "Unstable"; st.className = "unstable";
+        si.innerHTML = '<svg class="unstable-svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+    }
+}
+checkApiKey();
+
+window.autoGrow = function(el) { el.style.height = "5px"; el.style.height = (el.scrollHeight) + "px"; };
+
+window.addEventListener('keydown', function(e) {
+    if(e.altKey && (e.code === 'KeyS' || e.key.toLowerCase() === 's')) {
+        if(!holdTimer && !isCiriActive) {
+            holdTimer = setTimeout(function() {
+                document.body.classList.add('ciri-active');
+                isCiriActive = true;
+                let cInp = document.getElementById('chat-input');
+                if(!hasBootCiri) {
+                    let bs = document.getElementById('ciri-boot-screen');
+                    if(bs) bs.style.display = 'flex';
+                    setTimeout(function(){ document.getElementById('boot-ciri-text').classList.add('typing'); }, 300);
+                    setTimeout(function(){ document.getElementById('boot-sub-text').classList.add('show'); }, 1100);
+                    setTimeout(function() {
+                        document.getElementById('boot-loader').style.opacity = '1';
+                        setTimeout(function() {
+                            document.getElementById('boot-status-text').textContent = "Connection Established.";
+                            document.getElementById('boot-spinner').style.display = 'none';
+                            setTimeout(function() {
+                                bs.style.filter = 'blur(10px)'; bs.style.opacity = '0';
+                                setTimeout(function() {
+                                    bs.style.display = 'none';
+                                    hasBootCiri = true;
+                                    if(cInp) cInp.focus();
+                                }, 800);
+                            }, 1800);
+                        }, 1000);
+                    }, 2200);
+                } else {
+                    setTimeout(function(){ if(cInp) cInp.focus(); }, 100);
+                }
+            }, 2000);
+        }
+    } else if(e.code === 'Escape' && isCiriActive) {
+        closeCiri();
+    }
+});
+
+window.addEventListener('keyup', function(e) {
+    if(e.code === 'KeyS' || e.key.toLowerCase() === 's' || e.key === 'Alt') {
+        clearTimeout(holdTimer); holdTimer = null;
+    }
+});
+
+window.closeCiri = function() {
+    document.body.classList.remove('ciri-active');
+    isCiriActive = false;
+};
+
+var aMedia = null;
+var nHide;
+var cNoti = document.getElementById('cine-noti');
+
+function showNoti() {
+    if(!cNoti) return;
+    cNoti.classList.add('active'); cNoti.classList.remove('minimized');
+    let rb = document.getElementById('restore-btn');
+    if(rb) rb.classList.remove('visible');
+    resetNH();
+}
+
+function hideNoti() {
+    if(!cNoti) return;
+    cNoti.classList.remove('active'); cNoti.classList.remove('minimized');
+    let rb = document.getElementById('restore-btn');
+    if(rb) rb.classList.remove('visible');
+    clearTimeout(nHide);
+}
+
+function resetNH() {
+    clearTimeout(nHide);
+    if(cNoti && cNoti.classList.contains('active') && !cNoti.classList.contains('minimized')) {
+        nHide = setTimeout(function() {
+            cNoti.classList.add('minimized');
+            setTimeout(function(){ let rb = document.getElementById('restore-btn'); if(rb) rb.classList.add('visible'); }, 300);
+        }, 5000);
+    }
+}
+
+if(cNoti) {
+    cNoti.addEventListener('mouseenter', function(){ clearTimeout(nHide); });
+    cNoti.addEventListener('mouseleave', resetNH);
+    let mn = document.getElementById('minimize-noti-btn');
+    if(mn) mn.onclick = function() {
+        cNoti.classList.add('minimized');
+        setTimeout(function(){ let rb = document.getElementById('restore-btn'); if(rb) rb.classList.add('visible'); }, 300);
+    };
+    let rbtn = document.getElementById('restore-btn');
+    if(rbtn) rbtn.onclick = function() {
+        this.classList.remove('visible');
+        cNoti.classList.remove('minimized');
+        resetNH();
+    };
+    let clbtn = document.getElementById('close-noti-btn');
+    if(clbtn) clbtn.onclick = function() {
+        if(aMedia) aMedia.pause();
+        hideNoti();
+    };
+}
+
+setInterval(function() {
+    let fnd = null;
+    let md = document.querySelectorAll('audio, video');
+    for(let i=0; i<md.length; i++) {
+        let m = md[i];
+        if(!m.paused && !m.muted && m.volume > 0 && !['bg-video', 'lock-video', 'boot-video'].includes(m.id)) fnd = m;
+    }
+    
+    let ifr = document.querySelectorAll('iframe');
+    for(let j=0; j<ifr.length; j++) {
+        try {
+            let idc = ifr[j].contentDocument || ifr[j].contentWindow.document;
+            if(idc) {
+                let imd = idc.querySelectorAll('audio, video');
+                for(let k=0; k<imd.length; k++) {
+                    if(!imd[k].paused && !imd[k].muted && imd[k].volume > 0) fnd = imd[k];
+                }
+            }
+        } catch(e) {}
+    }
+    
+    isMediaPlaying = !!fnd;
+    if(fnd !== aMedia) {
+        if(fnd) { aMedia = fnd; setupM(); showNoti(); }
+        else { aMedia = null; hideNoti(); }
+    }
+    
+    if(aMedia) {
+        let ct = document.getElementById('current-time');
+        if(ct) ct.textContent = fmtT(aMedia.currentTime);
+        if(isFinite(aMedia.duration) && aMedia.duration > 0) {
+            let pf = document.getElementById('progress-fill');
+            if(pf) pf.style.width = ((aMedia.currentTime / aMedia.duration) * 100) + "%";
+            let tt = document.getElementById('total-time');
+            if(tt) tt.textContent = fmtT(aMedia.duration);
+        }
+    }
+}, 1000);
+
+function setupM() {
+    if(!aMedia) return;
+    let nt = document.getElementById('noti-title');
+    if(nt) nt.innerText = aMedia.title || "Web Media Playing";
+    
+    let pp = document.getElementById('play-pause');
+    if(pp) pp.onclick = function() { aMedia.paused ? aMedia.play() : aMedia.pause(); resetNH(); };
+    
+    aMedia.addEventListener('play', function() {
+        let iPl = document.getElementById('icon-play');
+        let iPa = document.getElementById('icon-pause');
+        if(iPl) iPl.classList.add('hidden-svg');
+        if(iPa) iPa.classList.add('visible-svg');
+        showNoti();
+    });
+    
+    aMedia.addEventListener('pause', function() {
+        let iPl = document.getElementById('icon-play');
+        let iPa = document.getElementById('icon-pause');
+        if(iPl) { iPl.classList.remove('hidden-svg'); iPl.classList.add('visible-svg'); }
+        if(iPa) { iPa.classList.remove('visible-svg'); iPa.classList.add('hidden-svg'); }
+    });
+    
+    let sb = document.getElementById('skip-back');
+    if(sb) sb.onclick = function() { if(isFinite(aMedia.currentTime)) aMedia.currentTime = Math.max(0, aMedia.currentTime - 15); resetNH(); };
+    
+    let sf = document.getElementById('skip-forward');
+    if(sf) sf.onclick = function() { if(isFinite(aMedia.duration) && aMedia.duration > 0) aMedia.currentTime = Math.min(aMedia.duration, aMedia.currentTime + 15); resetNH(); };
+    
+    let pha = document.getElementById('progress-hit-area');
+    if(pha) pha.onclick = function(e) {
+        if(isFinite(aMedia.duration) && aMedia.duration > 0) {
+            let r = this.getBoundingClientRect();
+            let p = (e.clientX - r.left) / r.width;
+            aMedia.currentTime = p * aMedia.duration;
+        }
+        resetNH();
+    };
+}
+
+function fmtT(s) {
+    if(isNaN(s) || !isFinite(s)) return "0:00";
+    let m = Math.floor(s / 60);
+    let se = Math.floor(s % 60);
+    return m + ":" + se.toString().padStart(2, '0');
+}
+
+function drawFV() {
+    requestAnimationFrame(drawFV);
+    let cv = document.getElementById('visualizer');
+    if(!cv) return;
+    let cx = cv.getContext('2d');
+    
+    cv.width = cv.parentElement.clientWidth;
+    cv.height = 14;
+    
+    let bL = 32;
+    cx.clearRect(0, 0, cv.width, cv.height);
+    let bW = (cv.width / bL) * 2;
+    let xP = 0;
+    
+    for(let i=0; i<bL; i++) {
+        let bH = aMedia && !aMedia.paused ? (Math.random() * cv.height) : 2;
+        cx.fillStyle = "#fff";
+        cx.beginPath();
+        cx.roundRect(xP, cv.height - bH, bW - 1.5, bH, 2);
+        cx.fill();
+        xP += bW;
+    }
+}
+drawFV();
+
+var fLT = performance.now();
+var fFr = 0;
+var fLC = 0;
+
+function chkFps() {
+    let nw = performance.now();
+    fFr++;
+    if(nw - fLT >= 1000) {
+        let cFps = fFr;
+        let fv = document.getElementById('fps-val');
+        if(fv) fv.innerText = cFps;
+
+        if(cFps <= 20) {
+            fLC++;
+            if(fLC >= 5 && !sysConfig.optBg) {
+                sysConfig.optBg = true;
+                localStorage.setItem('cine_sys_config', JSON.stringify(sysConfig));
+                let bv = document.getElementById('bg-video');
+                let lv = document.getElementById('lock-video');
+                if(bv) bv.pause();
+                if(lv) lv.pause();
+                showNotification("System Optimized", "Low FPS detected. Backgrounds paused.");
+            }
+        } else {
+            fLC = 0;
+        }
+        
+        fFr = 0;
+        fLT = nw;
+    }
+    requestAnimationFrame(chkFps);
+}
+requestAnimationFrame(chkFps);
+</script>
+</body>
+</html>

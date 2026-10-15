@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Internal Document Writer</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+    <div class="row">
+        <button onclick="location.href='internal-dashboard.html'">Dashboard</button>
+        <button class="secondary" onclick="location.href='internal-files.html'">Browse</button>
+        <button class="secondary" onclick="location.href='../home.html'">Home</button>
+    </div>
+</div>
+
+<div class="card">
+
+<h2>Create Document</h2>
+
+<input id="title" placeholder="Document Title">
+
+<select id="category">
+    <option>System</option>
+    <option>Training</option>
+    <option>Security</option>
+    <option>Operations</option>
+    <option>Executive</option>
+</select>
+
+<textarea id="content" placeholder="Write document content..."></textarea>
+
+<button id="saveBtn">Save Document</button>
+
+<div id="status" class="status"></div>
+
+</div>
+
+</div>
+
+<script type="module">
+
+// Session timeout system (if still used)
+import "../js/session.js";
+
+import { db } from "/js/firebase.js";
+import {
+    collection,
+    addDoc,
+    doc,
+    runTransaction,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ===========================
+   STAFF SESSION CHECK
+=========================== */
+
+const staffSession = localStorage.getItem("staffSession") === "true";
+const staffId = localStorage.getItem("staffId");
+const staffRole = localStorage.getItem("staffRole");
+const staffName = localStorage.getItem("staffName");
+
+if (!staffSession || !staffId) {
+    window.location.href = "../staff/login.html";
+}
+
+/* ===========================
+   DOCUMENT ID GENERATOR
+=========================== */
+
+async function getNextId() {
+    const ref = doc(db, "system", "documentCounter");
+
+    return await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+
+        let next = 1;
+
+        if (snap.exists()) {
+            next = (snap.data().current || 0) + 1;
+            tx.update(ref, { current: next });
+        } else {
+            tx.set(ref, { current: 1 });
+        }
+
+        return "I/" + String(next).padStart(5, "0");
+    });
+}
+
+/* ===========================
+   SAVE DOCUMENT
+=========================== */
+
+document.getElementById("saveBtn").onclick = async () => {
+
+    const title = document.getElementById("title").value.trim();
+    const category = document.getElementById("category").value;
+    const content = document.getElementById("content").value.trim();
+
+    if (!title || !content) {
+        alert("Missing fields");
+        return;
+    }
+
+    document.getElementById("status").textContent = "Saving...";
+
+    try {
+
+        const id = await getNextId();
+
+        await addDoc(collection(db, "internalDocs"), {
+            id,
+            title,
+            category,
+            content,
+
+            // STAFF AUTHOR DATA
+            authorStaffId: staffId,
+            authorName: staffName || `Staff ${staffId}`,
+            authorRole: staffRole,
+
+            createdAt: Date.now(),
+            createdAtServer: serverTimestamp(),
+
+            replies: 0
+        });
+
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+
+        document.getElementById("status").textContent =
+            "Saved: " + id;
+
+    } catch (err) {
+        console.error(err);
+
+        document.getElementById("status").textContent =
+            "Failed to save document";
+    }
+};
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1N",
+  "build": "1N",
+  "folder": "Gold_1N",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1N",
+  "activeUpdateNotifications": true,
+  "elsusMode": "original",
+  "summary": "EmeraldOS Gold 1N improves everyday usability, fixes Settings and application layout collisions, adds Welcome Center and Feedback Hub, and introduces built-in E.L.S.U.S. Shell V2 compatibility testing while preserving the original shell and protected full-VM migration.",
+  "migrationFrom": [
+    "1M",
+    "1L",
+    "1K",
+    "1J",
+    "1I",
+    "1H",
+    "1G",
+    "1F",
+    "1E",
+    "1D",
+    "1C",
+    "1B",
+    "1A"
+  ],
+  "migrationId": "gold-1m-to-1n-full-vm-and-file-format-continuity",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1M",
+  "rollbackVersion": "1M",
+  "releasedAt": "2026-07-13T19:15:00.000Z",
+  "publishingPolicy": {
+    "automaticPublishing": false,
+    "queryStringPublishing": false,
+    "firstBootPublishing": false,
+    "requiresStaffEdition": true,
+    "requiresEmeraldMailVerification": true,
+    "requiresPublisherPin": true,
+    "requiresPublishButtonClick": true
+  },
+  "migrationPolicy": {
+    "blocksCloudAutosaveUntilValidated": true,
+    "mergesAllKnownLocalNamespaces": true,
+    "readsSplitSchemas": [
+      "gold1h-split-v1",
+      "gold1i-split-v1",
+      "gold1i-split-v2",
+      "gold1j-split-v1",
+      "gold1j-split-v2",
+      "gold1k-split-v1",
+      "gold1k-split-v2",
+      "gold1l-split-v1",
+      "gold1l-split-v2",
+      "gold1n-split-v2",
+      "gold1m-split-v1",
+      "gold1m-split-v2",
+      "gold1n-split-v1"
+    ],
+    "archivesSourceCategories": true,
+    "writesVersionSpecificBackups": true,
+    "changesReleasePointer": false
+  },
+  "testedShellVersions": [
+    "1.0",
+    "2.0"
+  ],
+  "shellV2Compatible": true,
+  "fileCompatibilityPolicy": {
+    "opensPreviousGoldFileVersions": true,
+    "preservesUnknownMetadata": true,
+    "migratesWithoutDeletingOriginals": true,
+    "conflictStrategy": "preserve-both",
+    "supportedLegacyTypes": [
+      "doc",
+      "edoc",
+      "note",
+      "text",
+      "txt",
+      "image",
+      "audio",
+      "video",
+      "json",
+      "user-app"
+    ]
+  }
+}

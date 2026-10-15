@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monroe Intelligence Evaluation</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h1 { color: #1a365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 30px; }
+    h2 { color: #2b6cb0; margin-top: 40px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+    .hidden { display: none !important; }
+    .auth-section { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 0; }
+    .btn { background-color: #3182ce; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; }
+    .btn:hover { background-color: #2b6cb0; }
+    .btn-danger { background-color: #e53e3e; }
+    .btn-danger:hover { background-color: #c53030; }
+    .user-profile-header { display: flex; justify-content: space-between; align-items: center; background-color: #f7fafc; padding: 15px; border-radius: 6px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+    .form-group { margin-bottom: 25px; }
+    label { font-weight: 600; display: block; margin-bottom: 8px; line-height: 1.4; }
+    textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; resize: vertical; }
+    input[type="text"] { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; }
+    .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .radio-option { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    canvas { border: 2px dashed #cbd5e0; background: #fff; border-radius: 6px; display: block; cursor: crosshair; }
+    .canvas-container { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+    .btn-clear { background-color: #e2e8f0; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btn-clear:hover { background-color: #cbd5e0; }
+    .btn-submit { background-color: #3182ce; color: white; border: none; padding: 15px 30px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; margin-top: 40px; }
+    .btn-submit:hover { background-color: #2b6cb0; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Monroe Corporation Standardized General Intelligence Evaluation</h1>
+  
+  <!-- Auth Section for Students -->
+  <div id="authSection" class="auth-section">
+    <h2>Student Sign In Required</h2>
+    <p>Please log in using your Google Account to begin the examination.</p>
+    <button id="btnLogin" class="btn">Sign In with Google</button>
+  </div>
+
+  <!-- Exam Form (Hidden until logged in) -->
+  <form id="examForm" class="hidden">
+    <div class="user-profile-header">
+      <span id="studentNameDisplay" style="font-weight: 600; color: #4a5568;"></span>
+      <button type="button" id="btnLogout" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Log Out</button>
+    </div>
+
+    <!-- Written Section (1-10) -->
+    <h2>Written Answers (Q1 - Q10)</h2>
+    
+    <div class="form-group">
+      <label>1. What is the sum of the following equation? “2+((3+4)^2)”</label>
+      <textarea id="ans_q1" required></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label>2. Name all grammatical issues in the following sentence: “Want to eat john?”</label>
+      <textarea id="ans_q2" required></textarea>
+    </div>
+
+    <!-- ... You can add other Written Questions Q3-Q10 ... -->
+
+    <!-- Multiple Choice Section (11-20) -->
+    <h2>Multiple Choice (Q11 - Q20)</h2>
+    
+    <div class="form-group">
+      <label>11. What is the correct demonstration Order of Operations</label>
+      <div class="radio-group">
+        <label class="radio-option"><input type="radio" name="ans_q11" value="a" required> a) ()^*/+-</label>
+        <label class="radio-option"><input type="radio" name="ans_q11" value="b"> b) *-/+^()</label>
+        <label class="radio-option"><input type="radio" name="ans_q11" value="c"> c) -+/*^()</label>
+        <label class="radio-option"><input type="radio" name="ans_q11" value="d"> d) *()^/-+</label>
+      </div>
+    </div>
+
+    <!-- ... You can add Q12-Q20 ... -->
+
+    <!-- Other Questions Section (21-30) -->
+    <h2>Other Questions (Q21 - Q30)</h2>
+
+    <div class="form-group">
+      <label>26. Divide 32,604 by 8</label>
+      <input type="text" id="ans_q26" required>
+    </div>
+
+    <div class="form-group canvas-container">
+      <label>27. Draw a house</label>
+      <canvas id="canvas_q27" width="400" height="200"></canvas>
+      <button type="button" class="btn-clear" id="clear_q27">Clear Canvas</button>
+    </div>
+
+    <div class="form-group canvas-container">
+      <label>30. Draw a male human aged 40</label>
+      <canvas id="canvas_q30" width="400" height="200"></canvas>
+      <button type="button" class="btn-clear" id="clear_q30">Clear Canvas</button>
+    </div>
+
+    <button type="submit" class="btn-submit">Submit Examination</button>
+  </form>
+</div>
+
+<script type="module">
+  import { auth } from "./js/firebase.js";
+  import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { submitStudentExam } from "./js/examManager.js";
+
+  const provider = new GoogleAuthProvider();
+  let currentUser = null;
+
+  const authSection = document.getElementById("authSection");
+  const examForm = document.getElementById("examForm");
+  const studentNameDisplay = document.getElementById("studentNameDisplay");
+
+  // --- Auth Observer ---
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      authSection.classList.add("hidden");
+      examForm.classList.remove("hidden");
+      studentNameDisplay.innerText = `Candidate: ${user.displayName} (${user.email})`;
+    } else {
+      currentUser = null;
+      authSection.classList.remove("hidden");
+      examForm.classList.add("hidden");
+    }
+  });
+
+  // --- Login / Logout listeners ---
+  document.getElementById("btnLogin").addEventListener("click", () => signInWithPopup(auth, provider).catch(console.error));
+  document.getElementById("btnLogout").addEventListener("click", () => signOut(auth));
+
+  // --- HTML5 Drawing Setup ---
+  function setupCanvas(canvasId, clearBtnId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    let isDrawing = false;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      return { 
+        x: (e.clientX || e.touches[0].clientX) - rect.left, 
+        y: (e.clientY || e.touches[0].clientY) - rect.top 
+      };
+    };
+
+    const startDraw = (e) => { isDrawing = true; ctx.beginPath(); draw(e); };
+    const endDraw = () => { isDrawing = false; ctx.beginPath(); };
+    const draw = (e) => {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#333333";
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    };
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mouseup", endDraw);
+    canvas.addEventListener("mousemove", draw);
+    
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchend", endDraw);
+    canvas.addEventListener("touchmove", draw, { passive: false });
+
+    document.getElementById(clearBtnId).addEventListener("click", () => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+  }
+
+  setupCanvas("canvas_q27", "clear_q27");
+  setupCanvas("canvas_q30", "clear_q30");
+
+  // --- Form Submission ---
+  document.getElementById("examForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const answers = {
+      q1: document.getElementById("ans_q1").value,
+      q2: document.getElementById("ans_q2").value,
+      q11: document.querySelector('input[name="ans_q11"]:checked')?.value || "",
+      q26: document.getElementById("ans_q26").value,
+      q27: document.getElementById("canvas_q27").toDataURL("image/jpeg", 0.6),
+      q30: document.getElementById("canvas_q30").toDataURL("image/jpeg", 0.6)
+    };
+
+    try {
+      await submitStudentExam(currentUser.uid, currentUser.displayName, answers);
+      alert("Evaluation submitted successfully!");
+      document.getElementById("examForm").reset();
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting exam: " + err.message);
+    }
+  });
+</script>
+
+</body>
+</html>

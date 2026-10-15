@@ -1,0 +1,20 @@
+[
+  {
+    "origin": [
+      "https://securly-plans.github.io",
+      "http://localhost:5500",
+      "http://127.0.0.1:5500"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "x-goog-resumable",
+      "x-goog-meta-fileid",
+      "x-goog-meta-owner",
+      "x-goog-meta-storagemode",
+      "x-goog-meta-originalformat"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

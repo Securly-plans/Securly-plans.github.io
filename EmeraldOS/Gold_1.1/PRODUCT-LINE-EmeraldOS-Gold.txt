@@ -1,0 +1,21 @@
+EmeraldOS Gold Product Line
+
+EmeraldOS Gold is the independent Windows-10-inspired EmeraldOS model.
+
+Current build:
+- EmeraldOS Gold 1.1
+
+Gold 1.1 focus:
+- Lighter modern desktop UI
+- First-boot setup improvements
+- Deep personalization
+- More working built-in apps
+- More complete Settings
+- Emerald Systems BIOS A1
+- Emerald DOS
+- Gold Staff Edition login and Staff Center
+
+Gold Staff Edition:
+- Accessed from BIOS command STAFF, F9 during startup, or staff.html
+- Requires EmeraldOS credentials and Emerald Mail account verification when Firebase is available
+- Adds staff control surfaces and local audit logs

@@ -1,0 +1,2076 @@
+"use strict";
+/* EmeraldOS Gold 1E - independent logos, staff-only tools, live remote desktop, EmeraldOS Gold UX polish */
+(function(){
+const PREFIX="gold1e_";
+const BUILD={name:"EmeraldOS Gold 1E",version:"1E",cloudPath:"goldVM/current",bios:"Emerald BIOS A9",shellManaged:true,folder:"Gold_1E"};
+
+/* EmeraldOS Gold 1E local data migration from Gold 1A.
+   Cloud VM data remains version-independent under emeraldOSUsers/{username}/goldVM/current. */
+function migrateGold1ALocalData(){
+  try{
+    if(localStorage.getItem('gold1e_migrated_from_gold1a')==='true') return;
+    const oldPrefix='gold1a_', newPrefix='gold1e_';
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith(oldPrefix)){
+        const nk=newPrefix+k.slice(oldPrefix.length);
+        if(localStorage.getItem(nk)===null) localStorage.setItem(nk, localStorage.getItem(k));
+      }
+    });
+    localStorage.setItem('gold1e_migrated_from_gold1a','true');
+  }catch(e){console.warn('Gold 1E migration skipped', e)}
+}
+
+let z=1300, activeWin=null, drag=null, resize=null, fb=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[m]));
+const uid=()=>"g"+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-5);
+const now=()=>new Date().toISOString();
+const username=()=>localStorage.getItem("username")||localStorage.getItem(PREFIX+"username")||"GoldUser";
+const mailAddress=()=>`${username().toLowerCase().replace(/[^a-z0-9._-]/g,".")}@gold.mail`;
+function read(k,f){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f));}catch{return f}}
+function write(k,v){localStorage.setItem(k,JSON.stringify(v));return v}
+function saveText(name,text,type="text/plain"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)}
+function bytes(v){return new Blob([typeof v==="string"?v:JSON.stringify(v)]).size}
+function fmtBytes(n){if(!n)return"0 B";if(n<1024)return n+" B";if(n<1048576)return(n/1024).toFixed(1)+" KB";return(n/1048576).toFixed(2)+" MB"}
+async function initFirebase(){try{fb=await import("./firebase.js");return fb}catch(e){console.warn("Gold 1E Firebase unavailable",e);return null}}
+function defaultPrefs(){return{theme:"light",accent:"#0078d4",background:"gold-bloom",customBackground:"",bgMode:"cover",iconSize:"normal",density:"comfortable",showLabels:true,taskbarSearch:true,taskbarWidgets:true,taskbarStaff:true,transparency:true,rounding:"small",bigText:false,reducedMotion:false,focusAssist:false,notifications:true,clockSeconds:false,desktopApps:["explorer","office","mail","support","settings","updateshell"]}}
+function prefs(){return {...defaultPrefs(),...read(PREFIX+"prefs",{})}}
+function setPrefs(p){write(PREFIX+"prefs",{...prefs(),...p});applyPrefs();renderDesktop();saveWorkspaceDebounced()}
+function applyPrefs(){const p=prefs();document.body.classList.toggle("dark",p.theme==="dark");document.body.classList.toggle("highcontrast",p.theme==="highcontrast");document.body.classList.toggle("bigtext",!!p.bigText);document.body.classList.toggle("no-motion",!!p.reducedMotion);document.body.classList.remove("bg-gold-bloom","bg-blue-window","bg-emerald-field","bg-slate-pro","custom-bg");if(p.customBackground){document.body.classList.add("custom-bg");document.body.style.setProperty("--customBg",`url(${p.customBackground})`);document.body.style.setProperty("--bgMode",p.bgMode||"cover")}else{document.body.classList.add("bg-"+(p.background||"gold-bloom"));document.body.style.removeProperty("--customBg")}document.documentElement.style.setProperty("--accent",p.accent||"#0078d4");document.documentElement.style.setProperty("--winRadius",p.rounding==="none"?"0":p.rounding==="large"?"14px":"8px");const search=$("searchBtn"),widgets=$("widgetsBtn"),staff=$("staffBtn");if(search)search.style.display=p.taskbarSearch?"":"none";if(widgets)widgets.style.display=p.taskbarWidgets?"":"none";if(staff)staff.style.display=p.taskbarStaff?"":"none"}
+function defaultFiles(){return[
+ {id:uid(),name:"Welcome to EmeraldOS Gold 1E.edoc",type:"doc",folder:"Documents",star:true,content:"<h1>Welcome to EmeraldOS Gold 1E</h1><p>This version improves setup, support, Staff Edition, Emerald BIOS, apps, logos, settings, and EmeraldOS Gold usability.</p>",created:now(),updated:now(),trash:false},
+ {id:uid(),name:"Gold Office Sample.esheet",type:"sheet",folder:"Office",star:false,content:JSON.stringify([["Item","Amount"],["Apps","24"],["Settings","12"],["Total","=SUM(B2:B3)"]]),created:now(),updated:now(),trash:false},
+ {id:uid(),name:"Support Launch Checklist.etask",type:"task",folder:"Support",star:false,content:JSON.stringify([{text:"Submit a support ticket",done:false},{text:"Open Staff Center",done:false},{text:"Test Bell BIOS",done:false}]),created:now(),updated:now(),trash:false}
+]}
+function files(){let f=read(PREFIX+"files",null);if(!f){f=defaultFiles();write(PREFIX+"files",f)}return f}
+function saveFiles(f){write(PREFIX+"files",f);saveWorkspaceDebounced()}
+function tickets(){return read(PREFIX+"tickets",[])}function saveTickets(t){write(PREFIX+"tickets",t);saveWorkspaceDebounced()}
+function mail(){return read(PREFIX+"mail",{inbox:[{id:uid(),from:"system@gold.mail",to:mailAddress(),subject:"Welcome to Gold Mail",body:"Gold Mail is ready in EmeraldOS Gold 1E.",read:false,time:now()}],sent:[],drafts:[],trash:[]})}function saveMail(m){write(PREFIX+"mail",m);renderNotifBadge();saveWorkspaceDebounced()}
+function notes(){return read(PREFIX+"notes",[])}function saveNotes(n){write(PREFIX+"notes",n);saveWorkspaceDebounced()}
+function tasks(){return read(PREFIX+"tasks",[{id:uid(),text:"Explore EmeraldOS Gold 1E",done:false,priority:"Normal",due:""}])}function saveTasks(t){write(PREFIX+"tasks",t);saveWorkspaceDebounced()}
+function contacts(){return read(PREFIX+"contacts",[{id:"staff",name:"Gold Staff",mail:"staff@gold.mail",role:"Support"},{id:"admin",name:"Network Administrator",mail:"wmonroe01@mail.monroecorp.org",role:"Administrator"}])}function saveContacts(c){write(PREFIX+"contacts",c)}
+function notifs(){return read(PREFIX+"notifications",[])}function saveNotifs(n){write(PREFIX+"notifications",n);renderNotifBadge();saveWorkspaceDebounced()}
+function notify(title,body,app="System",opts={}){const p=prefs();const n={id:uid(),title,body,app,time:now(),read:false,action:opts.action||null};saveNotifs([n,...notifs()].slice(0,200));if(p.notifications!==false&&!p.focusAssist)showToast(n);return n}
+function showToast(n){let area=document.querySelector(".toast-area");if(!area){area=document.createElement("div");area.className="toast-area";document.body.appendChild(area)}const d=document.createElement("div");d.className="toast";d.innerHTML=`<b>${esc(n.title)}</b><div>${esc(n.body)}</div><small>${esc(n.app)} · ${new Date(n.time).toLocaleTimeString()}</small>`;d.onclick=()=>{openActionCenter();d.remove()};area.appendChild(d);setTimeout(()=>d.remove(),6500)}
+function renderNotifBadge(){const unread=notifs().filter(n=>!n.read).length+mail().inbox.filter(m=>!m.read).length;const b=$("actionBtn");if(b){b.textContent=`🔔 ${unread}`;b.classList.toggle("active",!!unread)}}
+function appIcon(app,small=false){const id=String(app?.id||"app").replace(/[^a-z0-9_-]/gi,"");return `<div class="app-icon ${small?'small ':''}logo-${app.color||'blue'}"><img src="app-logos/${id}.svg" alt="" onerror="this.style.display='none'"><b>${esc(app.label||app.name.slice(0,2).toUpperCase())}</b></div>`}
+const STAFF_ROLES=["admin","administrator","moderator","mod","operator","staff","executive","owner","network administrator"];
+function staffRoleAllowed(role){const r=String(role||"").toLowerCase().trim();return STAFF_ROLES.includes(r)||STAFF_ROLES.some(x=>r.includes(x))}
+function currentStaff(){return read(PREFIX+"staff_session",null)}function isStaff(){const s=currentStaff();return !!(s&&s.verified&&!s.preview&&staffRoleAllowed(s.role))}
+function visibleApps(){return APPS.filter(a=>!a.staffOnly||isStaff())}
+const APPS=[
+ {id:"explorer",name:"Gold Explorer",label:"EX",color:"blue",group:"Core",desc:"File Explorer, Drive folders, previews, trash and restore.",open:openExplorer},
+ {id:"office",name:"Gold Office",label:"OF",color:"gold",group:"Productivity",desc:"Docs, Sheets, Slides, Forms, Templates and Vault.",open:openOffice},
+ {id:"mail",name:"Gold Mail",label:"ML",color:"teal",group:"Communication",desc:"Inbox, Sent, Drafts, Trash, compose and reply.",open:openMail},
+ {id:"chat",name:"Gold Chat",label:"CH",color:"green",group:"Communication",desc:"Local rooms, contacts and notifications.",open:openChat},
+ {id:"people",name:"People",label:"PE",color:"purple",group:"Communication",desc:"Contacts, user cards, block list and mail actions.",open:openPeople},
+ {id:"support",name:"Support Center",label:"SC",color:"red",group:"Support",desc:"Submit tickets for staff review and track responses.",open:openSupport},
+ {id:"remotecontrol",name:"Remote Control",label:"RC",color:"red",group:"Support",desc:"View and end active staff remote-control sessions.",open:remoteControlApp},
+ {id:"settings",name:"Settings",label:"ST",color:"blue",group:"System",desc:"EmeraldOS Gold-style settings and controls.",open:openSettings},
+ {id:"personalization",name:"Personalization",label:"PR",color:"gold",group:"System",desc:"Backgrounds, accent, taskbar, Start, desktop, accessibility.",open:openPersonalization},
+ {id:"staff",name:"Gold Staff Center",label:"SF",color:"purple",group:"Staff",desc:"Staff login, remote assistance, tickets and administration.",staffOnly:true,open:openStaffCenter},
+ {id:"dos",name:"Emerald DOS",label:"ED",color:"dark",group:"System",desc:"Built-in DOS with Bell BIOS commands.",open:openDOS},
+ {id:"bios",name:"BIOS Options",label:"BI",color:"dark",group:"System",desc:"Boot, Safe Mode, Staff Edition, restore and diagnostics.",open:openBIOSOptions},
+ {id:"store",name:"Gold Store",label:"GS",color:"green",group:"Apps",desc:"Install and test user applications.",open:openStore},
+ {id:"creator",name:"Creator Studio",label:"CS",color:"purple",group:"Apps",desc:"Create local apps with templates and app logos.",open:openCreator},
+ {id:"calculator",name:"Calculator",label:"CA",color:"gray",group:"Built-in",desc:"Modern calculator.",open:openCalculator},
+ {id:"notepad",name:"Notepad",label:"NP",color:"blue",group:"Built-in",desc:"Plain text editor with export.",open:openNotepad},
+ {id:"sticky",name:"Sticky Notes",label:"SN",color:"gold",group:"Built-in",desc:"Quick notes saved locally.",open:openSticky},
+ {id:"todo",name:"Gold To Do",label:"TD",color:"green",group:"Built-in",desc:"Tasks, priority, due dates and completion.",open:openTodo},
+ {id:"photos",name:"Photos",label:"PH",color:"pink",group:"Built-in",desc:"Photo library from image URLs.",open:openPhotos},
+ {id:"calendar",name:"Calendar",label:"CL",color:"blue",group:"Built-in",desc:"Agenda and events.",open:openCalendar},
+ {id:"weather",name:"Weather",label:"WE",color:"teal",group:"Built-in",desc:"Weather-style dashboard placeholder.",open:openWeather},
+ {id:"clock",name:"Alarms & Clock",label:"AC",color:"orange",group:"Built-in",desc:"Clock, timer and stopwatch.",open:openClock},
+ {id:"paint",name:"Gold Paint",label:"PA",color:"pink",group:"Creative",desc:"Canvas drawing app.",open:openPaint},
+ {id:"security",name:"Security Center",label:"SE",color:"green",group:"System",desc:"Privacy, blocked users, support status and safe mode.",open:openSecurity},
+ {id:"update",name:"Update Center",label:"UP",color:"blue",group:"System",desc:"Build information and update checks.",open:openUpdate},
+ {id:"restore",name:"Restore Center",label:"RS",color:"orange",group:"System",desc:"Backup, restore and workspace continuity.",open:openRestore},
+ {id:"feedback",name:"Feedback Hub",label:"FB",color:"purple",group:"Support",desc:"Send feature requests and bugs.",open:openFeedback},
+ {id:"device",name:"Device Center",label:"DV",color:"gray",group:"System",desc:"Screen size, device and shortcuts.",open:openDevice}
+];
+
+APPS.push(
+ {id:"help",name:"Get Help",label:"GH",color:"blue",group:"Support",desc:"Gold 1E help, tips, guides, and shortcuts.",open:openHelp},
+ {id:"diagnostics",name:"Diagnostics",label:"DG",color:"gray",group:"Support",desc:"Copy system diagnostics for Support Center tickets.",open:openDiagnostics},
+ {id:"shortcuts",name:"Keyboard Shortcuts",label:"KS",color:"dark",group:"System",desc:"View and test EmeraldOS Gold shortcuts.",open:openShortcuts},
+ {id:"safemode",name:"Safe Mode",label:"SM",color:"orange",group:"System",desc:"Repair, disable risky features, and recover your workspace.",open:openSafeMode}
+);
+
+APPS.push(
+ {id:"vmcenter",name:"Gold VM Center",label:"VM",color:"gold",group:"System",desc:"Virtual machine continuity, snapshots, cloud restore, and pickup-where-you-left-off controls.",open:openVMCenter},
+ {id:"devcenter",name:"User Development",label:"UD",color:"purple",group:"Apps",desc:"JS-only app builder, tester, exporter, and Appstore submission tools.",open:openDeveloperCenter}
+);
+const appById=id=>APPS.find(a=>a.id===id)||APPS[0];
+function init(){migrateGold1ALocalData();setTimeout(()=>$("boot")?.classList.add("hide"),850);initFirebase().then(()=>startRemoteControlListeners());applyPrefs();bindTaskbar();renderDesktop();renderStartMenu();renderNotifBadge();tickClock();setInterval(tickClock,1000);bindKeys();if(!localStorage.getItem(PREFIX+"setup_done"))openSetup();if(localStorage.getItem(PREFIX+"safemode")==="true")notify("Safe Mode","Custom apps and risky startup items are disabled.","System");restoreWorkspace(false);setInterval(publishRemoteDesktopState,1500);notify("EmeraldOS Gold 1E","Desktop is ready.","System");setTimeout(()=>{if(localStorage.getItem(PREFIX+"snapshot_request")){localStorage.removeItem(PREFIX+"snapshot_request");saveVMSnapshot()}[["open_store",openStore],["open_dev",openDeveloperCenter],["open_support",openSupport],["open_office",openOffice],["open_explorer",openExplorer],["force_restore",()=>restoreWorkspace(true)]].forEach(([k,fn])=>{if(localStorage.getItem(PREFIX+k)){localStorage.removeItem(PREFIX+k);try{fn()}catch(e){console.warn(e)}}})},1200)}
+function logoutGold(){
+  try{ saveWorkspaceNow(false); }catch(e){ console.warn('logout workspace save failed',e); }
+  ['loggedIn','username','role','role2','userId',PREFIX+'loggedIn',PREFIX+'staff_session','gold14_loggedIn','gold14_staff_session','gold13_loggedIn'].forEach(k=>localStorage.removeItem(k));
+  notify('Signed out','You have been signed out of EmeraldOS Gold.','Accounts');
+  setTimeout(()=>location.href='index.html?force=1',250);
+}
+function bindTaskbar(){[["startBtn",toggleStart],["searchBtn",openSearch],["taskViewBtn",openTaskView],["widgetsBtn",openWidgets],["actionBtn",openActionCenter],["staffBtn",()=>location.href="staff.html"],["logoutBtn",logoutGold]].forEach(([id,fn])=>$(id)?.addEventListener("click",fn))}
+function bindKeys(){window.addEventListener("keydown",e=>{if(e.ctrlKey&&e.key===" "){e.preventDefault();openSearch()}if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="p"){e.preventDefault();openCommandPalette()}if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="s"){e.preventDefault();openSettings()}if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="f"){e.preventDefault();openExplorer()}if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="o"){e.preventDefault();openOffice()}if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="h"){e.preventDefault();openSupport()}if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="l"){e.preventDefault();logoutGold()}if(e.altKey&&e.key==="Tab"){e.preventDefault();openTaskView()}if(e.key==="F1"){e.preventDefault();openSupport()}if(e.key==="F9"){e.preventDefault();location.href="staff.html"}});window.addEventListener("mousemove",moveDrag);window.addEventListener("mouseup",endDrag);window.addEventListener("resize",()=>{document.querySelectorAll(".window").forEach(keepWindowOnScreen);saveWorkspaceDebounced()})}
+function tickClock(){const c=$("clock"),p=prefs();if(c)c.innerHTML=new Date().toLocaleString([],p.clockSeconds?{hour:"numeric",minute:"2-digit",second:"2-digit",month:"short",day:"numeric"}:{hour:"numeric",minute:"2-digit",month:"short",day:"numeric"})}
+function renderDesktop(){const d=$("desktop");if(!d)return;const p=prefs();const size=p.iconSize==="small"?"76px":p.iconSize==="large"?"108px":"92px";d.style.gap=p.density==="compact"?"8px":"16px";d.innerHTML=(p.desktopApps||[]).map(id=>appById(id)).filter(a=>!a.staffOnly||isStaff()).map(a=>`<button class="desktop-icon ${p.showLabels?'':'no-label'}" style="width:${size}" ondblclick="Gold50.openApp('${a.id}')" title="${esc(a.desc)}">${appIcon(a)}<span>${esc(a.name)}</span></button>`).join("")}
+function renderStartMenu(){const sm=$("startMenu");if(!sm)return;const apps=visibleApps();const groups=[...new Set(apps.map(a=>a.group))];sm.innerHTML=`<div class="start-rail"><button class="task-btn" onclick="Gold50.openApp('settings')">⚙</button><button class="task-btn" onclick="Gold50.openApp('support')">?</button><button class="task-btn" onclick="Gold50.openApp('dos')">›_</button><button class="task-btn" onclick="Gold50.exportWorkspace()">⇩</button><button class="task-btn" title="Log out" onclick="Gold50.logoutGold()">⏻</button></div><div class="start-list"><input class="field" placeholder="Search apps" oninput="Gold50.filterStart(this.value)"><div id="startAppList">${startListHTML("")}</div></div><div class="start-tiles"><h3>Pinned</h3><div class="tile-grid"><div class="tile" onclick="Gold50.openApp('office')"><b>Gold Office</b><small>Docs, Sheets, Slides</small></div><div class="tile gold" onclick="Gold50.openApp('support')"><b>Support Center</b><small>Tickets and help</small></div><div class="tile dark" onclick="location.href='staff.html'"><b>Staff Edition</b><small>Login and controls</small></div><div class="tile" onclick="Gold50.openApp('personalization')"><b>Personalize</b><small>Backgrounds and colors</small></div><div class="tile danger-tile" onclick="Gold50.logoutGold()"><b>Log out</b><small>Save workspace and return to login</small></div></div><h3>App groups</h3>${groups.map(g=>`<div class="card"><b>${esc(g)}</b><p class="muted">${apps.filter(a=>a.group===g).length} apps</p></div>`).join("")}</div>`}
+function startListHTML(q){q=(q||"").toLowerCase();return visibleApps().filter(a=>(a.name+a.group+a.desc).toLowerCase().includes(q)).map(a=>`<div class="start-app" onclick="Gold50.openApp('${a.id}')">${appIcon(a,true)}<div><b>${esc(a.name)}</b><div class="muted">${esc(a.group)}</div></div></div>`).join("")||"<p class='muted'>No apps found.</p>"}
+function filterStart(v){const el=$("startAppList");if(el)el.innerHTML=startListHTML(v)}
+function toggleStart(){renderStartMenu();$("startMenu")?.classList.toggle("hidden")}function closeOverlays(){["startMenu","searchPanel","taskView","actionCenter"].forEach(id=>$(id)?.classList.add("hidden"))}
+function openSearch(){const s=$("searchPanel");s.className="side-panel search-panel";s.innerHTML=`<h2>Search EmeraldOS Gold</h2><input id="globalSearch" class="field" autofocus placeholder="Search apps, settings, files, tickets" oninput="Gold50.renderSearch(this.value)"><div id="searchResults"></div><h3>Keyboard shortcuts</h3><p class="muted">Ctrl+Space Search · Ctrl+Shift+P Command Palette · F1 Support · F9 Staff · F12 BIOS</p>`;s.classList.remove("hidden");setTimeout(()=>$("globalSearch")?.focus(),30);renderSearch("")}
+function renderSearch(q){const res=$("searchResults");if(!res)return;q=(q||"").toLowerCase();const appRes=visibleApps().filter(a=>(a.name+a.desc+a.group).toLowerCase().includes(q)).slice(0,12);const fileRes=files().filter(f=>(f.name+f.folder+f.type).toLowerCase().includes(q)).slice(0,10);const ticketRes=tickets().filter(t=>(t.title+t.body+t.status).toLowerCase().includes(q)).slice(0,8);res.innerHTML=`<h3>Apps</h3>${appRes.map(a=>`<div class="start-app" onclick="Gold50.openApp('${a.id}')">${appIcon(a,true)}<b>${esc(a.name)}</b></div>`).join("")||"<p class='muted'>No apps.</p>"}<h3>Files</h3>${fileRes.map(f=>`<div class="start-app" onclick="Gold50.openFile('${f.id}')"><span>${esc(fileIcon(f.type))}</span><b>${esc(f.name)}</b></div>`).join("")||"<p class='muted'>No files.</p>"}<h3>Tickets</h3>${ticketRes.map(t=>`<div class="start-app" onclick="Gold50.openApp('support')"><span>#</span><b>${esc(t.title)} · ${esc(t.status)}</b></div>`).join("")||"<p class='muted'>No tickets.</p>"}`}
+function openCommandPalette(){openSearch();const f=$("globalSearch");if(f){f.value="> ";renderSearch("")}}
+function openTaskView(){const tv=$("taskView");tv.innerHTML=`<h2 style="color:white">Task View</h2><div class="task-grid">${[...document.querySelectorAll('.window')].map(w=>`<div class="task-card" onclick="Gold50.focusWindow('${w.id}')"><b>${esc(w.dataset.title||'Window')}</b><p class="muted">${w.classList.contains('minimized')?'Minimized':'Open'}</p><button class="btn small" onclick="event.stopPropagation();Gold50.closeWin('${w.id}')">Close</button></div>`).join("")||"<p style='color:white'>No open windows.</p>"}</div><div class="toolbar"><button class="btn" onclick="Gold50.tileEmeraldOS()">Tile windows</button><button class="btn" onclick="Gold50.cascadeEmeraldOS()">Cascade</button><button class="btn" onclick="Gold50.closeAllEmeraldOS()">Close all</button></div>`;tv.classList.toggle("hidden")}
+function openWidgets(){openWindow("widgets","Gold Widgets",`<h2>Widgets</h2><div class="grid2"><div class="card"><h3>Clock</h3><p>${new Date().toLocaleString()}</p></div><div class="card"><h3>Cloud</h3><p>${fb?'Firebase module loaded':'Local mode'}</p></div><div class="card"><h3>Storage</h3><p>${fmtBytes(bytes(files()))} used locally</p></div><div class="card"><h3>Support</h3><p>${tickets().filter(t=>t.status!=='Resolved').length} open tickets</p></div></div>`,{width:620,height:430})}
+function openActionCenter(){const ac=$("actionCenter");const ns=notifs(),ms=mail().inbox.filter(m=>!m.read);ac.innerHTML=`<h2>Action Center</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.markAllRead()">Mark all read</button><button class="btn" onclick="Gold50.clearNotifications()">Clear notifications</button><button class="btn" onclick="Gold50.openApp('settings')">Notification settings</button></div><h3>Unread Mail</h3>${ms.map(m=>`<div class="card" onclick="Gold50.openApp('mail')"><b>${esc(m.subject)}</b><p class="muted">${esc(m.from)}</p></div>`).join("")||"<p class='muted'>No unread mail.</p>"}<h3>Notifications</h3>${ns.map(n=>`<div class="card"><b>${esc(n.title)}</b><p>${esc(n.body)}</p><small class="muted">${esc(n.app)} · ${new Date(n.time).toLocaleString()}</small></div>`).join("")||"<p class='muted'>No notifications.</p>"}`;ac.classList.toggle("hidden")}
+function markAllRead(){saveNotifs(notifs().map(n=>({...n,read:true})));const m=mail();m.inbox.forEach(x=>x.read=true);saveMail(m);openActionCenter()}function clearNotifications(){saveNotifs([]);openActionCenter()}
+function openWindow(id,title,html,opt={}){let w=document.getElementById("win_"+id);if(w&&opt.singleton!==false){w.classList.remove("minimized");focusWindow(w.id);const c=w.querySelector(".win-content");if(c)c.innerHTML=html;return w}w=document.createElement("section");w.className="window";w.id="win_"+id+(opt.singleton===false?"_"+uid():"");w.dataset.title=title;w.style.left=(opt.left??(80+Math.random()*70))+"px";w.style.top=(opt.top??(70+Math.random()*60))+"px";w.style.width=(opt.width||860)+"px";w.style.height=(opt.height||600)+"px";w.innerHTML=`<div class="win-title" data-drag="1"><span>${appIcon(appById(id.replace(/_.*/,'')),true)}</span><span class="title">${esc(title)}</span><div class="win-actions"><button onclick="Gold50.minimizeWin('${w.id}')">—</button><button onclick="Gold50.maximizeWin('${w.id}')">□</button><button class="close" onclick="Gold50.closeWin('${w.id}')">×</button></div></div><div class="win-content">${html}</div><div class="resize-handle"></div>`;$("windowLayer").appendChild(w);w.addEventListener("mousedown",e=>{focusWindow(w.id);if(e.target.closest("[data-drag]")){drag={w,startX:e.clientX,startY:e.clientY,left:parseFloat(w.style.left),top:parseFloat(w.style.top)}}if(e.target.classList.contains("resize-handle")){resize={w,startX:e.clientX,startY:e.clientY,width:w.offsetWidth,height:w.offsetHeight};e.preventDefault()}});focusWindow(w.id);keepWindowOnScreen(w);renderTaskApps();saveWorkspaceDebounced();return w}
+function focusWindow(id){const w=document.getElementById(id);if(!w)return;w.classList.remove("minimized");w.style.zIndex=++z;activeWin=w;renderTaskApps();keepWindowOnScreen(w)}
+function minimizeWin(id){document.getElementById(id)?.classList.add("minimized");renderTaskApps();saveWorkspaceDebounced()}
+function maximizeWin(id){const w=document.getElementById(id);if(!w)return;w.classList.toggle("max");focusWindow(id);saveWorkspaceDebounced()}
+function closeWin(id){document.getElementById(id)?.remove();renderTaskApps();saveWorkspaceDebounced()}
+function closeAllEmeraldOS(){document.querySelectorAll(".window").forEach(w=>w.remove());renderTaskApps();saveWorkspaceDebounced()}function moveDrag(e){if(drag){const w=drag.w;if(!w.classList.contains("max")){w.style.left=drag.left+e.clientX-drag.startX+"px";w.style.top=drag.top+e.clientY-drag.startY+"px";keepWindowOnScreen(w)}}if(resize){const w=resize.w;if(!w.classList.contains("max")){w.style.width=Math.max(320,resize.width+e.clientX-resize.startX)+"px";w.style.height=Math.max(220,resize.height+e.clientY-resize.startY)+"px";keepWindowOnScreen(w)}}}
+function endDrag(){if(drag||resize)saveWorkspaceDebounced();drag=null;resize=null}
+function keepWindowOnScreen(w){if(!w||w.classList.contains("max"))return;const maxX=window.innerWidth-80,maxY=window.innerHeight-100;let l=parseFloat(w.style.left)||0,t=parseFloat(w.style.top)||0;l=Math.min(Math.max(0,l),maxX);t=Math.min(Math.max(0,t),maxY);w.style.left=l+"px";w.style.top=t+"px";if(w.offsetWidth>window.innerWidth)w.style.width="96%";if(w.offsetHeight>window.innerHeight-48)w.style.height="calc(100% - 58px)"}
+function renderTaskApps(){const bar=$("taskApps");if(!bar)return;bar.innerHTML=[...document.querySelectorAll('.window')].map(w=>`<button class="taskbar-app ${w===activeWin&&!w.classList.contains('minimized')?'active':''}" onclick="Gold50.focusWindow('${w.id}')">${appIcon(appById((w.id||'').replace('win_','').replace(/_.*/,'')),true)}<span>${esc(w.dataset.title||'Window')}</span></button>`).join("")}
+function tileEmeraldOS(){const wins=[...document.querySelectorAll('.window')];const cols=Math.ceil(Math.sqrt(wins.length||1)),rows=Math.ceil((wins.length||1)/cols),ww=window.innerWidth/cols,hh=(window.innerHeight-48)/rows;wins.forEach((w,i)=>{w.classList.remove('max','minimized');w.style.left=(i%cols)*ww+'px';w.style.top=Math.floor(i/cols)*hh+'px';w.style.width=ww+'px';w.style.height=hh+'px'});renderTaskApps()}
+function cascadeEmeraldOS(){[...document.querySelectorAll('.window')].forEach((w,i)=>{w.classList.remove('max','minimized');w.style.left=70+i*28+'px';w.style.top=55+i*28+'px';w.style.width='850px';w.style.height='560px'});renderTaskApps()}
+function fileIcon(t){return({doc:"DOC",sheet:"XLS",slide:"PPT",form:"FRM",note:"TXT",task:"TSK",folder:"DIR",app:"APP",image:"IMG"}[t]||"FIL")}
+function openFile(fid){const f=files().find(x=>x.id===fid);if(!f)return;if(["doc","sheet","slide","form"].includes(f.type))return openOffice(f.type,fid);openExplorer(fid)}
+function openExplorer(){let view=read(PREFIX+"explorer_view","drive");let q=read(PREFIX+"explorer_q","");function render(){const base=files().filter(f=>view==='trash'?f.trash:!f.trash);let arr=view==='recent'?[...base].sort((a,b)=>String(b.updated).localeCompare(String(a.updated))):view==='starred'?base.filter(f=>f.star):base;arr=arr.filter(f=>(f.name+f.folder+f.type).toLowerCase().includes(q.toLowerCase()));return `<div class="app-shell"><nav class="app-nav"><button class="active">Gold Explorer</button>${['drive','recent','starred','trash'].map(v=>`<button onclick="Gold50.explorerView('${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}<button onclick="Gold50.openApp('office')">Open Office</button></nav><main class="app-main"><h2>Gold Explorer</h2><p class="muted">Drive-style storage, previews, restore, and app-aware file opening.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.newFileDialog()">New</button><button class="btn" onclick="Gold50.newFolder()">New Folder</button><button class="btn" onclick="Gold50.exportAllFiles()">Export Backup</button><button class="btn" onclick="Gold50.importFilesPrompt()">Import Backup</button><input class="field inline" placeholder="Search files" value="${esc(q)}" onchange="Gold50.setExplorerQ(this.value)"></div><div class="drive-grid">${arr.map(fileCard).join('')||'<p class="muted">No files.</p>'}</div></main></div>`}
+function fileCard(f){return `<div class="drive-card" onclick="Gold50.openFile('${f.id}')"><div class="type">${fileIcon(f.type)} · ${esc(f.folder||'My Drive')}</div><h3>${f.star?'★ ':''}${esc(f.name)}</h3><p class="muted">${fmtBytes(bytes(f.content||''))} · ${new Date(f.updated||f.created).toLocaleDateString()}</p><div class="toolbar"><button class="btn small" onclick="event.stopPropagation();Gold50.renameFile('${f.id}')">Rename</button><button class="btn small" onclick="event.stopPropagation();Gold50.starFile('${f.id}')">${f.star?'Unstar':'Star'}</button><button class="btn small" onclick="event.stopPropagation();Gold50.trashFile('${f.id}')">${f.trash?'Restore':'Trash'}</button><button class="btn small danger" onclick="event.stopPropagation();Gold50.deleteFile('${f.id}')">Delete</button></div></div>`}
+const w=openWindow("explorer","Gold Explorer",render(),{width:1040,height:700});window.Gold50._renderExplorer=()=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=render()};window.Gold50._renderExplorer()}
+function explorerView(v){write(PREFIX+"explorer_view",v);openExplorer()}function setExplorerQ(v){write(PREFIX+"explorer_q",v);openExplorer()}
+function newFileDialog(){openWindow("newfile","Create New",`<h2>Create new file</h2><label>Name<input id="nf_name" class="field" value="Untitled.edoc"></label><label>Type<select id="nf_type" class="field"><option value="doc">Document</option><option value="sheet">Sheet</option><option value="slide">Slide</option><option value="form">Form</option><option value="note">Note</option></select></label><label>Folder<input id="nf_folder" class="field" value="Documents"></label><button class="btn primary" onclick="Gold50.createNewFile()">Create</button>`,{width:430,height:380,singleton:false})}
+function createNewFile(){const name=$("nf_name").value||"Untitled.edoc",type=$("nf_type").value,folder=$("nf_folder").value||"Documents";let content="";if(type==='doc')content="<h1>Untitled</h1><p>Start writing.</p>";if(type==='sheet')content=JSON.stringify([["A","B","C"],["","",""]]);if(type==='slide')content=JSON.stringify([{title:"Title",body:"Subtitle"}]);if(type==='form')content=JSON.stringify([{q:"Name",type:"short"}]);const f={id:uid(),name,type,folder,star:false,content,created:now(),updated:now(),trash:false};const arr=files();arr.unshift(f);saveFiles(arr);notify("File created",name,"Gold Explorer");openFile(f.id)}
+function newFolder(){const name=prompt("Folder name","New Folder");if(!name)return;const arr=files();arr.unshift({id:uid(),name,type:"folder",folder:"My Drive",content:"",created:now(),updated:now(),trash:false,star:false});saveFiles(arr);openExplorer()}function renameFile(fid){const arr=files(),f=arr.find(x=>x.id===fid);if(!f)return;const n=prompt("New name",f.name);if(n){f.name=n;f.updated=now();saveFiles(arr);openExplorer()}}function starFile(fid){const arr=files(),f=arr.find(x=>x.id===fid);if(f){f.star=!f.star;f.updated=now();saveFiles(arr);openExplorer()}}function trashFile(fid){const arr=files(),f=arr.find(x=>x.id===fid);if(f){f.trash=!f.trash;f.updated=now();saveFiles(arr);notify(f.trash?"Moved to Trash":"Restored",f.name,"Gold Explorer");openExplorer()}}function deleteFile(fid){if(confirm("Delete forever?")){saveFiles(files().filter(f=>f.id!==fid));openExplorer()}}function exportAllFiles(){saveText("gold1e-files.json",JSON.stringify(files(),null,2),"application/json")}function importFilesPrompt(){const txt=prompt("Paste file backup JSON");if(!txt)return;try{const arr=JSON.parse(txt);if(Array.isArray(arr)){saveFiles(arr);notify("Files imported",`${arr.length} files restored`,"Gold Explorer");openExplorer()}}catch{alert("Invalid JSON")}}
+function openOffice(tab="home",fid=null){const w=openWindow("office","Gold Office",officeHTML(tab,fid),{width:1120,height:760});window.Gold50.renderOffice=(t,f)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=officeHTML(t,f)};window.Gold50.renderOffice(tab,fid)}
+function renderOffice(tab="home",fid=null){const b=document.querySelector('#win_office .win-content');if(b)b.innerHTML=officeHTML(tab,fid);else openOffice(tab,fid)}
+function officeHTML(tab,fid){const nav=[['home','Home'],['doc','Docs'],['sheet','Sheets'],['slide','Slides'],['form','Forms'],['templates','Templates'],['vault','Vault']];return `<div class="app-shell"><nav class="app-nav">${nav.map(([k,n])=>`<button class="${tab===k?'active':''}" onclick="Gold50.renderOffice('${k}')">${n}</button>`).join('')}<button onclick="Gold50.openApp('explorer')">Open Explorer</button></nav><main class="app-main">${officePage(tab,fid)}</main></div>`}
+function officePage(tab,fid){const docs=files().filter(f=>['doc','sheet','slide','form'].includes(f.type)&&!f.trash);if(tab==='home')return `<h2>Gold Office</h2><p class="muted">A fixed Office workspace with Docs, Sheets, Slides, Forms, Templates, and Explorer integration.</p><div class="grid4">${['doc','sheet','slide','form'].map(t=>`<div class="card"><h3>New ${typeName(t)}</h3><button class="btn primary" onclick="Gold50.officeNew('${t}')">Create</button></div>`).join('')}</div><h3>Recent</h3><div class="drive-grid">${docs.slice(0,10).map(officeCard).join('')}</div>`;if(tab==='templates')return templatesPage();if(tab==='vault')return `<h2>Office Vault</h2><p class="muted">All Office files stored through Gold Explorer.</p><div class="drive-grid">${docs.map(officeCard).join('')}</div>`;if(fid)return tab==='doc'?docEditor(fid):tab==='sheet'?sheetEditor(fid):tab==='slide'?slideEditor(fid):formEditor(fid);return `<h2>${typeName(tab)}</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.officeNew('${tab}')">New ${typeName(tab)}</button></div><div class="drive-grid">${docs.filter(f=>f.type===tab).map(officeCard).join('')||'<p class="muted">No files yet.</p>'}</div>`}
+function typeName(t){return({doc:"Document",sheet:"Spreadsheet",slide:"Presentation",form:"Form"}[t]||t)}function officeCard(f){return `<div class="drive-card" onclick="Gold50.renderOffice('${f.type}','${f.id}')"><div class="type">${fileIcon(f.type)}</div><h3>${esc(f.name)}</h3><p class="muted">${new Date(f.updated).toLocaleString()}</p></div>`}
+function officeNew(type){const ext={doc:'edoc',sheet:'esheet',slide:'eslide',form:'eform'}[type];const name=prompt("Name",`Untitled.${ext}`);if(!name)return;let content="";if(type==='doc')content="<h1>Untitled Document</h1><p>Start writing...</p>";if(type==='sheet')content=JSON.stringify([["Item","Amount"],["",""],["Total","=SUM(B2:B2)"]]);if(type==='slide')content=JSON.stringify([{title:"Presentation Title",body:"Subtitle"}]);if(type==='form')content=JSON.stringify([{q:"Name",type:"short"},{q:"Comments",type:"paragraph"}]);const f={id:uid(),name,type,folder:'Office',star:false,content,created:now(),updated:now(),trash:false};const arr=files();arr.unshift(f);saveFiles(arr);notify("Office file created",name,"Gold Office");openOffice(type,f.id)}
+function getFile(fid){return files().find(f=>f.id===fid)}function saveFileContent(fid,content){const arr=files(),f=arr.find(x=>x.id===fid);if(f){f.content=content;f.updated=now();saveFiles(arr);notify("Saved",f.name,"Gold Office")}}
+function docEditor(fid){const f=getFile(fid);return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="document.execCommand('bold')">Bold</button><button class="btn" onclick="document.execCommand('italic')">Italic</button><button class="btn" onclick="document.execCommand('insertUnorderedList')">Bullets</button><button class="btn" onclick="Gold50.saveDoc('${fid}')">Save</button><button class="btn" onclick="Gold50.exportDoc('${fid}')">Export HTML</button></div><div id="doc_${fid}" class="editor" contenteditable="true">${f.content||''}</div>`}
+function saveDoc(fid){saveFileContent(fid,$("doc_"+fid).innerHTML)}function exportDoc(fid){const f=getFile(fid);saveText(f.name.replace(/\.edoc$/,'')+'.html',f.content||'',"text/html")}
+function sheetEditor(fid){const f=getFile(fid);let rows=[];try{rows=JSON.parse(f.content||'[]')}catch{rows=[['A','B'],['','']]};return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.sheetAddRow('${fid}')">Add Row</button><button class="btn" onclick="Gold50.saveSheet('${fid}')">Save</button><button class="btn" onclick="Gold50.exportSheet('${fid}')">Export CSV</button></div><table class="sheet" id="sheet_${fid}">${rows.map((r,i)=>`<tr>${r.map((c,j)=>`<td><input value="${esc(c)}"></td>`).join('')}</tr>`).join('')}</table>`}
+function sheetData(fid){return [...$("sheet_"+fid).rows].map(r=>[...r.cells].map(c=>c.querySelector('input').value))}function saveSheet(fid){saveFileContent(fid,JSON.stringify(sheetData(fid)))}function sheetAddRow(fid){const table=$("sheet_"+fid),cols=table.rows[0]?.cells.length||3;const tr=table.insertRow();for(let i=0;i<cols;i++){const td=tr.insertCell();td.innerHTML='<input value="">'}}function exportSheet(fid){const f=getFile(fid),data=JSON.parse(f.content||'[]');saveText(f.name.replace(/\.esheet$/,'')+'.csv',data.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'),"text/csv")}
+function slideEditor(fid){const f=getFile(fid);let slides=[];try{slides=JSON.parse(f.content||'[]')}catch{slides=[{title:'Title',body:'Body'}]};return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.addSlide('${fid}')">Add Slide</button><button class="btn" onclick="Gold50.saveSlides('${fid}')">Save</button><button class="btn" onclick="Gold50.presentSlides('${fid}')">Present</button></div><div id="slides_${fid}">${slides.map((s,i)=>`<div class="card"><label>Slide ${i+1} title<input class="field slide-title" value="${esc(s.title)}"></label><textarea class="field slide-body" rows="4">${esc(s.body)}</textarea></div>`).join('')}</div>`}
+function slideData(fid){return [...$("slides_"+fid).querySelectorAll('.card')].map(c=>({title:c.querySelector('.slide-title').value,body:c.querySelector('.slide-body').value}))}function saveSlides(fid){saveFileContent(fid,JSON.stringify(slideData(fid)))}function addSlide(fid){const d=$("slides_"+fid);const i=d.children.length+1;d.insertAdjacentHTML('beforeend',`<div class="card"><label>Slide ${i} title<input class="field slide-title" value="New Slide"></label><textarea class="field slide-body" rows="4">Content</textarea></div>`)}function presentSlides(fid){const f=getFile(fid);let slides=JSON.parse(f.content||'[]');openWindow("present","Presentation",`<div style="display:grid;place-items:center;height:100%;text-align:center"><div><h1>${esc(slides[0]?.title||'Presentation')}</h1><p>${esc(slides[0]?.body||'')}</p><p class="muted">Export/presenter mode placeholder</p></div></div>`,{width:800,height:520,singleton:false})}
+function formEditor(fid){const f=getFile(fid);let qs=[];try{qs=JSON.parse(f.content||'[]')}catch{qs=[]};return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.addFormQ('${fid}')">Add Question</button><button class="btn" onclick="Gold50.saveForm('${fid}')">Save</button></div><div id="form_${fid}">${qs.map(q=>`<div class="card"><input class="field form-q" value="${esc(q.q)}"><select class="field form-type"><option ${q.type==='short'?'selected':''}>short</option><option ${q.type==='paragraph'?'selected':''}>paragraph</option><option ${q.type==='choice'?'selected':''}>choice</option></select></div>`).join('')}</div>`}
+function addFormQ(fid){$("form_"+fid).insertAdjacentHTML('beforeend',`<div class="card"><input class="field form-q" value="New question"><select class="field form-type"><option>short</option><option>paragraph</option><option>choice</option></select></div>`)}function saveForm(fid){const qs=[...$("form_"+fid).querySelectorAll('.card')].map(c=>({q:c.querySelector('.form-q').value,type:c.querySelector('.form-type').value}));saveFileContent(fid,JSON.stringify(qs))}function templatesPage(){return `<h2>Templates</h2><div class="grid3">${['Letter','Memo','Report','Policy','Meeting Notes','Project Plan'].map(t=>`<div class="card"><h3>${t}</h3><button class="btn primary" onclick="Gold50.createTemplate('${t}')">Use Template</button></div>`).join('')}</div>`}function createTemplate(t){const name=prompt("Document name",t+".edoc");if(!name)return;const f={id:uid(),name,type:'doc',folder:'Templates',star:false,content:`<h1>${esc(t)}</h1><p>Prepared by ${esc(username())}</p><p>Start writing...</p>`,created:now(),updated:now(),trash:false};const arr=files();arr.unshift(f);saveFiles(arr);openOffice('doc',f.id)}
+function openMail(){const m=mail();openWindow("mail","Gold Mail",mailHTML('inbox'),{width:980,height:650});window.Gold50.mailTab=(tab)=>{const b=document.querySelector('#win_mail .win-content');if(b)b.innerHTML=mailHTML(tab)}}function mailHTML(tab){const m=mail();const list=m[tab]||[];return `<div class="app-shell"><nav class="app-nav">${['inbox','sent','drafts','trash'].map(t=>`<button class="${tab===t?'active':''}" onclick="Gold50.mailTab('${t}')">${t[0].toUpperCase()+t.slice(1)} (${(m[t]||[]).length})</button>`).join('')}<button onclick="Gold50.composeMail()">Compose</button></nav><main class="app-main"><h2>Gold Mail</h2><p class="muted">Address: ${esc(mailAddress())}</p><div class="toolbar"><button class="btn primary" onclick="Gold50.composeMail()">New message</button></div>${list.map(x=>`<div class="card" onclick="Gold50.readMail('${tab}','${x.id}')"><b>${x.read?'':'● '}${esc(x.subject)}</b><p class="muted">${esc(x.from||x.to)} · ${new Date(x.time).toLocaleString()}</p><p>${esc(String(x.body||'').slice(0,120))}</p></div>`).join('')||'<p class="muted">No messages.</p>'}</main></div>`}
+function composeMail(replyTo=null){openWindow("compose","Compose Mail",`<h2>Compose</h2><label>To<input id="mail_to" class="field" value="${esc(replyTo?.from||'')}"></label><label>Subject<input id="mail_subject" class="field" value="${esc(replyTo?'Re: '+replyTo.subject:'')}"></label><label>Body<textarea id="mail_body" class="field" rows="9">${esc(replyTo?'\n\n---- Original ----\n'+replyTo.body:'')}</textarea></label><div class="toolbar"><button class="btn primary" onclick="Gold50.sendMail()">Send</button><button class="btn" onclick="Gold50.saveDraft()">Save Draft</button></div>`,{width:560,height:560,singleton:false})}
+function sendMail(){const m=mail();const msg={id:uid(),from:mailAddress(),to:$("mail_to").value,subject:$("mail_subject").value||"No subject",body:$("mail_body").value,time:now(),read:true};m.sent.unshift(msg);if(msg.to===mailAddress())m.inbox.unshift({...msg,read:false});saveMail(m);notify("Mail sent",msg.subject,"Gold Mail");openMail()}function saveDraft(){const m=mail();m.drafts.unshift({id:uid(),from:mailAddress(),to:$("mail_to").value,subject:$("mail_subject").value||"Draft",body:$("mail_body").value,time:now(),read:true});saveMail(m);notify("Draft saved",$("mail_subject").value||"Draft","Gold Mail")}function readMail(box,id){const m=mail(),msg=(m[box]||[]).find(x=>x.id===id);if(!msg)return;msg.read=true;saveMail(m);openWindow("readmail","Mail",`<h2>${esc(msg.subject)}</h2><p class="muted">From ${esc(msg.from)} to ${esc(msg.to)} · ${new Date(msg.time).toLocaleString()}</p><pre style="white-space:pre-wrap">${esc(msg.body)}</pre><div class="toolbar"><button class="btn" onclick='Gold50.composeMail(${JSON.stringify(msg).replace(/'/g,"&#39;")})'>Reply</button><button class="btn danger" onclick="Gold50.deleteMail('${box}','${id}')">Delete</button></div>`,{width:620,height:480,singleton:false})}function deleteMail(box,id){const m=mail(),arr=m[box]||[];const i=arr.findIndex(x=>x.id===id);if(i>=0){const [msg]=arr.splice(i,1);m.trash.unshift(msg);saveMail(m);openMail()}}
+function openSupport(){renderSupport('home')}function renderSupport(tab){const mine=tickets().filter(t=>t.user===username()||isStaff());const html=`<div class="app-shell"><nav class="app-nav"><button onclick="Gold50.renderSupport('home')">Support Home</button><button onclick="Gold50.renderSupport('new')">Submit Ticket</button><button onclick="Gold50.renderSupport('tickets')">My Tickets</button><button onclick="Gold50.renderSupport('remote')">Remote Assistance</button><button onclick="Gold50.openApp('staff')">Staff Center</button></nav><main class="app-main">${supportPage(tab,mine)}</main></div>`;const w=openWindow("support","Support Center",html,{width:1030,height:720});window.Gold50.renderSupport=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=`<div class="app-shell"><nav class="app-nav"><button onclick="Gold50.renderSupport('home')">Support Home</button><button onclick="Gold50.renderSupport('new')">Submit Ticket</button><button onclick="Gold50.renderSupport('tickets')">My Tickets</button><button onclick="Gold50.renderSupport('remote')">Remote Assistance</button><button onclick="Gold50.openApp('staff')">Staff Center</button></nav><main class="app-main">${supportPage(t,tickets().filter(x=>x.user===username()||isStaff()))}</main></div>`}}
+function supportPage(tab,mine){if(tab==='new')return `<h2>Submit Support Ticket</h2><label>Title<input id="ticket_title" class="field" placeholder="What do you need help with?"></label><label>Category<select id="ticket_cat" class="field"><option>General</option><option>Gold Office</option><option>Login</option><option>Files</option><option>Staff Edition</option><option>Bug Report</option></select></label><label>Priority<select id="ticket_pri" class="field"><option>Normal</option><option>High</option><option>Urgent</option></select></label><label>Details<textarea id="ticket_body" class="field" rows="8"></textarea></label><button class="btn primary" onclick="Gold50.submitTicket()">Submit Ticket</button>`;if(tab==='tickets')return `<h2>Tickets</h2>${mine.map(ticketCard).join('')||'<p class="muted">No tickets yet.</p>'}`;if(tab==='remote')return `<h2>Remote Assistance</h2><p class="muted">Request staff help. Staff can view a live updating EmeraldOS Gold desktop snapshot after you grant control. Staff can open apps, arrange windows, send visible messages, and help navigate EmeraldOS Gold while the red banner is visible. A banner stays visible and you can end control at any time.</p><label>What should staff help with?<textarea id="remote_note" class="field" rows="6"></textarea></label><button class="btn primary" onclick="Gold50.requestRemoteHelp()">Request Remote Help + Grant Control</button>${remoteSessionHTML()}<h3>Device info</h3><pre>${esc(JSON.stringify(deviceInfo(),null,2))}</pre>`;return `<h2>Support Center</h2><p>Submit tickets that staff members can review in Gold Staff Center.</p><div class="grid3"><div class="card"><h3>Open Tickets</h3><p>${mine.filter(t=>t.status!=='Resolved').length}</p></div><div class="card"><h3>Remote Help</h3><p>Request guided assistance.</p></div><div class="card"><h3>F1 Shortcut</h3><p>Press F1 anywhere to open support.</p></div></div>`}
+function ticketCard(t){return `<div class="card"><h3>${esc(t.title)} <span class="type">${esc(t.status)}</span></h3><p>${esc(t.body)}</p><p class="muted">${esc(t.category)} · ${esc(t.priority)} · ${esc(t.user)} · ${new Date(t.time).toLocaleString()}</p>${(t.replies||[]).map(r=>`<blockquote><b>${esc(r.from)}:</b> ${esc(r.body)}</blockquote>`).join('')}${isStaff()?`<div class="toolbar"><button class="btn" onclick="Gold50.staffReplyTicket('${t.id}')">Reply</button><button class="btn primary" onclick="Gold50.staffResolveTicket('${t.id}')">Resolve</button></div>`:''}</div>`}
+async function submitTicket(){const t={id:uid(),user:username(),title:$("ticket_title").value||"Support request",category:$("ticket_cat").value,priority:$("ticket_pri").value,status:"Open",body:$("ticket_body").value,time:now(),replies:[],device:deviceInfo()};const arr=tickets();arr.unshift(t);saveTickets(arr);notify("Ticket submitted",t.title,"Support Center");if(fb?.addDoc&&fb?.collection&&fb?.db){try{await fb.addDoc(fb.collection(fb.db,"emeraldOSGoldTickets"),t)}catch(e){console.warn(e)}}renderSupport('tickets')}
+function requestRemoteHelp(){const note=$("remote_note")?.value||"Remote help requested";const t={id:uid(),user:username(),title:"Remote assistance request",category:"Remote Assistance",priority:"High",status:"Open",body:note,time:now(),replies:[],remote:true,remoteControl:true,device:deviceInfo()};const arr=tickets();arr.unshift(t);saveTickets(arr);const session=grantRemoteControl(t);notify("Remote assistance requested","Staff can review your request and control this EmeraldOS desktop until you end the session.","Support Center");if(fb?.setDoc&&fb?.doc&&fb?.db){try{fb.setDoc(fb.doc(fb.db,"emeraldOSGoldRemoteSessions",session.id),session)}catch(e){console.warn(e)}}renderSupport('tickets')}
+function staffReplyTicket(id){const arr=tickets(),t=arr.find(x=>x.id===id);if(!t)return;const body=prompt("Staff reply");if(body){t.replies=t.replies||[];t.replies.unshift({from:currentStaff()?.username||"Staff",body,time:now()});t.status="Waiting on User";saveTickets(arr);notify("Staff replied",t.title,"Support Center");renderSupport('tickets')}}function staffResolveTicket(id){const arr=tickets(),t=arr.find(x=>x.id===id);if(t){t.status="Resolved";t.resolvedAt=now();saveTickets(arr);notify("Ticket resolved",t.title,"Support Center");renderSupport('tickets')}}
+function openStaffCenter(){const s=currentStaff();const content=isStaff()?staffDashboard():staffGate();openWindow("staff","Gold Staff Center",content,{width:1080,height:720})}function staffGate(){return `<h2>Gold Staff Center</h2><p class="muted">Use Staff Edition for full login, or open a verified session from staff.html.</p><div class="toolbar"><button class="btn primary" onclick="location.href='staff.html'">Open Staff Edition Login</button></div>`}
+function staffPreview(){notify("Staff login required","Open Staff Edition and sign in with a verified staff account.","Staff Edition");location.href="staff.html"}
+function staffDashboard(){return `<div class="app-shell"><nav class="app-nav"><button onclick="Gold50.openApp('support')">Support Tickets</button><button onclick="Gold50.openStaffCenter()">Dashboard</button><button onclick="Gold50.staffBroadcast()">Broadcast</button><button onclick="Gold50.staffRemotePanel()">Remote Tools</button><button onclick="Gold50.staffLogs()">Staff Logs</button><button onclick="Gold50.staffLogout()">Sign out</button></nav><main class="app-main"><h2>Gold Staff Center</h2><p class="muted">Signed in as ${esc(currentStaff().username)} · ${esc(currentStaff().role||'Staff')}</p><div class="grid4"><div class="card"><h3>Tickets</h3><p>${tickets().length}</p></div><div class="card"><h3>Open</h3><p>${tickets().filter(t=>t.status!=='Resolved').length}</p></div><div class="card"><h3>Remote Requests</h3><p>${tickets().filter(t=>t.remote&&t.status!=='Resolved').length}</p></div><div class="card"><h3>Devices</h3><p>Local + Firebase-ready</p></div></div><h3>Recent tickets</h3>${tickets().slice(0,8).map(ticketCard).join('')||'<p class="muted">No tickets.</p>'}</main></div>`}
+function staffBroadcast(){const msg=prompt("Broadcast message");if(msg){notify("Staff Broadcast",msg,"Gold Staff Center");logStaff("broadcast",msg)}}function remoteCommandButtons(s){return `<div class="card"><h3>${esc(s.user)} · ${esc(s.status)}</h3><p class="muted">Session ${esc(s.id)} · expires ${s.expiresAt?new Date(s.expiresAt).toLocaleString():"No expiry"}</p><div class="toolbar"><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'support'})">Open Support</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'settings'})">Open Settings</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'explorer'})">Open Explorer</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','tile')">Tile EmeraldOS</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','cascade')">Cascade</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','saveWorkspace')">Save Workspace</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','notify',{title:'Staff message',body:prompt('Message to user')||'Staff is assisting you.'})">Send Message</button><button class="btn danger" onclick="Gold50.staffSendRemoteCommand('${s.id}','end')">End Session</button></div></div>`}function staffSendRemoteCommand(sessionId,type,args={}){const cmd={id:uid(),type,args,from:currentStaff()?.username||"Staff",time:now()};write(PREFIX+"remote_commands_"+sessionId,[cmd,...read(PREFIX+"remote_commands_"+sessionId,[])]);const arr=remoteSessions();const s=arr.find(x=>x.id===sessionId)||{id:sessionId,status:"active",user:"Unknown"};s.lastCommand=cmd;s.updatedAt=now();saveRemoteSessions([s,...arr.filter(x=>x.id!==sessionId)]);syncRemoteSession(s);notify("Remote command sent",type,"Gold Staff Center");logStaff("remote-command",`${type} → ${sessionId}`)}function staffRemotePanel(){const sessions=remoteSessions().filter(s=>s.status==="active"&&s.controlGranted);openWindow("remote","Staff Remote Tools",`<h2>Remote Assistance</h2><p class="muted">These controls only work after a user requests remote help and grants control. The user always sees an active remote-control banner and can end the session at any time.</p><div class="toolbar"><button class="btn" onclick="Gold50.staffBroadcast()">Broadcast message</button><button class="btn" onclick="Gold50.exportWorkspace()">Export local workspace</button><button class="btn" onclick="Gold50.saveWorkspaceNow()">Save cloud workspace</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore cloud workspace</button></div><h3>Active remote sessions</h3>${sessions.map(remoteCommandButtons).join('')||'<p class="muted">No active remote-control sessions on this device. If using separate devices, staff.html also writes remote commands through Firestore when allowed.</p>'}<h3>Remote help tickets</h3>${tickets().filter(t=>t.remote).map(ticketCard).join('')||'<p class="muted">No remote requests.</p>'}`,{width:920,height:680,singleton:false})}function staffLogs(){openWindow("stafflogs","Staff Logs",`<h2>Staff Logs</h2>${read(PREFIX+'staff_logs',[]).map(l=>`<div class="card"><b>${esc(l.type)}</b><p>${esc(l.note)}</p><small>${new Date(l.time).toLocaleString()}</small></div>`).join('')||'<p class="muted">No logs.</p>'}`,{width:720,height:520,singleton:false})}function staffLogout(){localStorage.removeItem(PREFIX+"staff_session");notify("Staff signed out","Staff session ended.","Staff Edition");openStaffCenter()}function logStaff(type,note){write(PREFIX+'staff_logs',[{id:uid(),type,note,time:now(),staff:currentStaff()?.username||'Unknown'},...read(PREFIX+'staff_logs',[])])}
+function remoteSessions(){return read(PREFIX+"remote_sessions",[])}
+function saveRemoteSessions(list){write(PREFIX+"remote_sessions",list);saveWorkspaceDebounced()}
+function activeRemoteSession(){const ts=Date.now();return remoteSessions().find(s=>s.user===username()&&s.status==="active"&&s.controlGranted&&(!s.expiresAt||new Date(s.expiresAt).getTime()>ts))}
+async function syncRemoteSession(session){if(fb?.setDoc&&fb?.doc&&fb?.db){try{await fb.setDoc(fb.doc(fb.db,"emeraldOSGoldRemoteSessions",session.id),session)}catch(e){console.warn("remote session sync failed",e)}}}
+function grantRemoteControl(ticket){const existing=remoteSessions().find(s=>s.ticketId===ticket.id);const session={...(existing||{}),id:existing?.id||ticket.id,ticketId:ticket.id,user:username(),status:"active",controlGranted:true,createdAt:existing?.createdAt||now(),updatedAt:now(),expiresAt:new Date(Date.now()+30*60*1000).toISOString(),device:deviceInfo(),lastCommand:existing?.lastCommand||null,processed:existing?.processed||[]};saveRemoteSessions([session,...remoteSessions().filter(s=>s.id!==session.id)]);syncRemoteSession(session);renderRemoteBanner();startRemoteControlListeners();notify("Remote control enabled","Staff can now control EmeraldOS Gold until you end the session or it expires.","Support Center");return session}
+function revokeRemoteControl(id=null){const arr=remoteSessions();let changed=false;arr.forEach(s=>{if((!id&&s.status==="active")||s.id===id){s.status="ended";s.controlGranted=false;s.endedAt=now();s.updatedAt=now();changed=true;syncRemoteSession(s)}});if(changed){saveRemoteSessions(arr);notify("Remote control ended","Staff remote control has been revoked.","Support Center")}renderRemoteBanner()}
+function renderRemoteBanner(){let b=$("remoteBanner");const s=activeRemoteSession();if(!s){if(b)b.remove();return}if(!b){b=document.createElement("div");b.id="remoteBanner";b.className="remote-banner";document.body.appendChild(b)}b.innerHTML=`<b>Remote control active</b><span>Staff can control this EmeraldOS Gold desktop. Session ${esc(s.id)} expires ${new Date(s.expiresAt).toLocaleTimeString()}.</span><button onclick="Gold50.revokeRemoteControl('${s.id}')">End Remote Control</button>`}
+function remoteSessionHTML(){const active=activeRemoteSession();const all=remoteSessions().filter(s=>s.user===username());return `<div class="card remote-card"><h3>Remote Control Status</h3>${active?`<p><b>Active:</b> Staff can control this EmeraldOS desktop until ${new Date(active.expiresAt).toLocaleString()}.</p><button class="btn danger" onclick="Gold50.revokeRemoteControl('${active.id}')">End Remote Control</button>`:`<p class="muted">No active remote-control session. Requesting remote help will create a visible staff-controlled session that you can end at any time.</p>`}<h4>Recent sessions</h4>${all.slice(0,4).map(s=>`<p class="muted">${esc(s.id)} · ${esc(s.status)} · ${new Date(s.updatedAt||s.createdAt).toLocaleString()}</p>`).join('')||'<p class="muted">No sessions yet.</p>'}</div>`}
+let remoteListening=false;
+function startRemoteControlListeners(){renderRemoteBanner();if(remoteListening)return;remoteListening=true;setInterval(checkLocalRemoteCommands,1400);if(fb?.onSnapshot&&fb?.doc&&fb?.db){setInterval(()=>{const s=activeRemoteSession();if(!s||s._listening)return;const arr=remoteSessions();const stored=arr.find(x=>x.id===s.id);if(stored)stored._listening=true;saveRemoteSessions(arr);try{fb.onSnapshot(fb.doc(fb.db,"emeraldOSGoldRemoteSessions",s.id),snap=>{if(!snap.exists())return;const data=snap.data();if(data?.lastCommand)processRemoteCommand(data.lastCommand,data)})}catch(e){console.warn("remote listener failed",e)}},2500)}}
+function checkLocalRemoteCommands(){const s=activeRemoteSession();if(!s)return;renderRemoteBanner();const cmds=read(PREFIX+"remote_commands_"+s.id,[]);cmds.forEach(c=>processRemoteCommand(c,s))}
+function processRemoteCommand(cmd,session){if(!cmd||!cmd.id)return;const arr=remoteSessions();const s=arr.find(x=>x.id===(session?.id||session?.ticketId||activeRemoteSession()?.id));if(!s||s.status!=="active"||!s.controlGranted)return;s.processed=s.processed||[];if(s.processed.includes(cmd.id))return;s.processed.push(cmd.id);s.updatedAt=now();saveRemoteSessions(arr);const a=cmd.args||{};notify("Staff remote action",`${cmd.type} from ${cmd.from||"Staff"}`,"Remote Control");try{if(cmd.type==="openApp")openApp(a.app||"support");else if(cmd.type==="notify")notify(a.title||"Staff message",a.body||"Staff is assisting you.","Remote Control");else if(cmd.type==="closeAll")closeAllEmeraldOS();else if(cmd.type==="tile")tileEmeraldOS();else if(cmd.type==="cascade")cascadeEmeraldOS();else if(cmd.type==="saveWorkspace")saveWorkspaceNow(true);else if(cmd.type==="restoreWorkspace")restoreWorkspace(true);else if(cmd.type==="openSettings")openSettings();else if(cmd.type==="openSupport")openSupport();else if(cmd.type==="setTheme")setPrefs({theme:a.theme||"light"});else if(cmd.type==="end")revokeRemoteControl(s.id)}catch(e){console.warn("remote command failed",e);notify("Remote action failed",e.message,"Remote Control")}}
+function remoteControlApp(){const all=remoteSessions().filter(s=>s.user===username());openWindow("remotecontrol","Remote Control",`<h2>Remote Control</h2>${remoteSessionHTML()}<h3>What staff can do</h3><p class="muted">Staff can open Gold apps, send visible messages, arrange windows, save/restore the workspace, and help you navigate. Staff cannot silently control your physical device, delete all data, or hide the active remote banner.</p>${all.map(s=>`<div class="card"><b>${esc(s.id)}</b><p>${esc(s.status)} · ${new Date(s.updatedAt||s.createdAt).toLocaleString()}</p></div>`).join('')}`,{width:760,height:540,singleton:false})}
+
+function remoteDesktopSnapshot(){const openWins=[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title||'Window',left:w.style.left,top:w.style.top,width:w.style.width,height:w.style.height,minimized:w.classList.contains('minimized'),maximized:w.classList.contains('max'),active:w===activeWin}));return {id:activeRemoteSession()?.id||'',user:username(),build:BUILD.name,updatedAt:now(),device:deviceInfo(),prefs:{theme:prefs().theme,accent:prefs().accent,background:prefs().background,iconSize:prefs().iconSize},desktop:(prefs().desktopApps||[]).map(id=>appById(id)).filter(a=>!a.staffOnly||isStaff()).map(a=>({id:a.id,name:a.name,logo:`app-logos/${a.id}.svg`})),windows:openWins,notifications:notifs().slice(0,8),files:files().filter(f=>!f.trash).slice(0,10).map(f=>({id:f.id,name:f.name,type:f.type,folder:f.folder,updated:f.updated})),mailUnread:mail().inbox.filter(m=>!m.read).length,ticketCount:tickets().filter(t=>t.status!=='Resolved').length};}
+async function publishRemoteDesktopState(){const s=activeRemoteSession();if(!s)return;const snap=remoteDesktopSnapshot();localStorage.setItem(PREFIX+'remote_snapshot_'+s.id,JSON.stringify(snap));const arr=remoteSessions();const idx=arr.findIndex(x=>x.id===s.id);if(idx>=0){arr[idx].snapshot=snap;arr[idx].updatedAt=now();saveRemoteSessions(arr);if(fb?.setDoc&&fb?.doc&&fb?.db){try{await fb.setDoc(fb.doc(fb.db,'emeraldOSGoldRemoteSessions',s.id),arr[idx])}catch(e){console.warn('remote desktop snapshot sync failed',e)}}}}
+function readRemoteSnapshot(sessionId){return read(PREFIX+'remote_snapshot_'+sessionId,null)||remoteSessions().find(x=>x.id===sessionId)?.snapshot||null}
+function remoteDesktopPreviewHTML(sessionId){const snap=readRemoteSnapshot(sessionId);if(!snap)return `<h2>Live Remote Desktop</h2><p class="muted">No desktop snapshot has arrived yet. Ask the user to keep EmeraldOS Gold open after granting control.</p>`;return `<h2>Live Remote Desktop</h2><p class="muted">${esc(snap.user)} · ${esc(snap.build)} · updated ${new Date(snap.updatedAt).toLocaleTimeString()}</p><div class="remote-live-screen"><div class="remote-live-desktop">${(snap.desktop||[]).slice(0,12).map(a=>`<div class="remote-live-icon"><img src="${esc(a.logo)}"><span>${esc(a.name)}</span></div>`).join('')}${(snap.windows||[]).map(w=>`<div class="remote-live-window ${w.active?'active':''}"><b>${esc(w.title)}</b><small>${w.maximized?'Maximized':w.minimized?'Minimized':'Open'}</small></div>`).join('')}</div><div class="remote-live-taskbar"><b>Gold</b><span>${(snap.windows||[]).length} windows</span><span>${snap.mailUnread||0} unread mail</span><span>${snap.ticketCount||0} tickets</span></div></div><h3>Remote controls</h3><div class="toolbar"><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','openApp',{app:'support'})">Open Support</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','openApp',{app:'settings'})">Open Settings</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','openApp',{app:'explorer'})">Open Explorer</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','openApp',{app:'office'})">Open Office</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','tile')">Tile EmeraldOS</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','cascade')">Cascade</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','saveWorkspace')">Save Workspace</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','closeAll')">Close All</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${sessionId}','notify',{title:'Staff message',body:prompt('Message to user')||'Staff is helping on your desktop.'})">Send Message</button><button class="btn danger" onclick="Gold50.staffSendRemoteCommand('${sessionId}','end')">End Control</button></div><h3>Open windows</h3>${(snap.windows||[]).map(w=>`<div class="card"><b>${esc(w.title)}</b><p class="muted">${esc(w.id)} · ${w.active?'Active · ':''}${w.minimized?'Minimized':w.maximized?'Maximized':'Open'}</p></div>`).join('')||'<p class="muted">No open windows.</p>'}<h3>Recent files</h3>${(snap.files||[]).map(f=>`<div class="card"><b>${esc(f.name)}</b><p class="muted">${esc(f.folder)} · ${esc(f.type)}</p></div>`).join('')||'<p class="muted">No files.</p>'}`}
+function staffViewRemoteDesktop(sessionId){if(!isStaff()){location.href='staff.html';return}const w=openWindow('remoteview_'+sessionId,'Live Remote Desktop',remoteDesktopPreviewHTML(sessionId),{width:980,height:720,singleton:false});const int=setInterval(()=>{if(!document.body.contains(w)){clearInterval(int);return}const c=w.querySelector('.win-content');if(c)c.innerHTML=remoteDesktopPreviewHTML(sessionId)},1500)}
+function remoteCommandButtons(s){return `<div class="card"><h3>${esc(s.user)} · ${esc(s.status)}</h3><p class="muted">Session ${esc(s.id)} · updated ${s.updatedAt?new Date(s.updatedAt).toLocaleString():'not synced'} · expires ${s.expiresAt?new Date(s.expiresAt).toLocaleString():"No expiry"}</p><div class="toolbar"><button class="btn primary" onclick="Gold50.staffViewRemoteDesktop('${s.id}')">View Live Desktop</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'support'})">Open Support</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'settings'})">Open Settings</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'explorer'})">Open Explorer</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'office'})">Open Office</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','tile')">Tile EmeraldOS</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','cascade')">Cascade</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','saveWorkspace')">Save Workspace</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','notify',{title:'Staff message',body:prompt('Message to user')||'Staff is assisting you.'})">Send Message</button><button class="btn danger" onclick="Gold50.staffSendRemoteCommand('${s.id}','end')">End Session</button></div></div>`}
+function staffRemotePanel(){if(!isStaff()){location.href='staff.html';return}const sessions=remoteSessions().filter(s=>s.status==='active'&&s.controlGranted);openWindow('staffremote','Staff Remote Desktop',`<h2>Staff Remote Desktop</h2><p class="muted">Live desktop view is based on user-approved EmeraldOS Gold snapshots. The user sees a banner and can end control at any time.</p><div class="toolbar"><button class="btn" onclick="Gold50.staffBroadcast()">Broadcast message</button><button class="btn" onclick="Gold50.exportWorkspace()">Export local workspace</button><button class="btn" onclick="Gold50.saveWorkspaceNow()">Save cloud workspace</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore cloud workspace</button></div><h3>Active remote sessions</h3>${sessions.map(remoteCommandButtons).join('')||'<p class="muted">No active remote-control sessions on this device. Staff Edition can also load remote sessions from Firestore when rules allow it.</p>'}<h3>Remote help tickets</h3>${tickets().filter(t=>t.remote).map(ticketCard).join('')||'<p class="muted">No remote requests.</p>'}`,{width:980,height:700,singleton:false})}
+
+function settingsTab(t){const b=document.querySelector('#win_settings .win-content');if(b)b.innerHTML=settingsHTML(t);else openSettings()}
+
+function openSettings(){let tab='system';const w=openWindow("settings","Settings",settingsHTML(tab),{width:1080,height:720});window.Gold50.settingsTab=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=settingsHTML(t)}}function settingsHTML(tab){const nav=['system','personalization','apps','accounts','time','accessibility','privacy','update','support','staff','bios'];return `<div class="app-shell"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.settingsTab('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}</nav><main class="app-main">${settingsPage(tab)}</main></div>`}
+function settingsPage(tab){const p=prefs();if(tab==='personalization')return personalizationHTML();if(tab==='apps')return `<h2>Apps</h2>${visibleApps().map(a=>`<div class="settings-row"><div>${appIcon(a,true)} ${esc(a.name)}</div><div><button class="btn" onclick="Gold50.toggleDesktopApp('${a.id}')">${p.desktopApps.includes(a.id)?'Remove from desktop':'Pin to desktop'}</button><button class="btn" onclick="Gold50.openApp('${a.id}')">Open</button></div></div>`).join('')}`;if(tab==='accounts')return `<h2>Accounts</h2><div class="card"><h3>${esc(username())}</h3><p>${esc(mailAddress())}</p><label>Display username<input class="field" value="${esc(username())}" onchange="localStorage.setItem('gold1e_username',this.value);Gold50.notify('Account updated',this.value,'Settings')"></label><div class="toolbar"><button class="btn danger" onclick="Gold50.logoutGold()">Log out of EmeraldOS Gold</button></div></div>`;if(tab==='accessibility')return `<h2>Accessibility</h2><label><input type="checkbox" ${p.bigText?'checked':''} onchange="Gold50.setPrefs({bigText:this.checked})"> Larger text</label><br><label><input type="checkbox" ${p.reducedMotion?'checked':''} onchange="Gold50.setPrefs({reducedMotion:this.checked})"> Reduced motion</label><br><label>Theme<select class="field" onchange="Gold50.setPrefs({theme:this.value})"><option ${p.theme==='light'?'selected':''} value="light">Light</option><option ${p.theme==='dark'?'selected':''} value="dark">Dark</option><option ${p.theme==='highcontrast'?'selected':''} value="highcontrast">High contrast</option></select></label>`;if(tab==='privacy')return `<h2>Privacy</h2><button class="btn" onclick="localStorage.removeItem('gold1e_search_history');Gold50.notify('Privacy','Search history cleared','Settings')">Clear search history</button><button class="btn" onclick="Gold50.openApp('security')">Open Security Center</button>`;if(tab==='update')return `<h2>Update & Security</h2><p>${BUILD.name}</p><button class="btn primary" onclick="Gold50.notify('Updates','No updates found in this package.','Update Center')">Check for updates</button><button class="btn" onclick="Gold50.openApp('restore')">Restore Center</button>`;if(tab==='support')return `<h2>Support</h2><button class="btn primary" onclick="Gold50.openApp('support')">Open Support Center</button><button class="btn" onclick="Gold50.openApp('feedback')">Feedback Hub</button>`;if(tab==='staff')return `<h2>Staff Edition</h2><button class="btn primary" onclick="location.href='staff.html'">Open Staff Edition Login</button><button class="btn" onclick="Gold50.openApp('staff')">Open Staff Center</button>`;if(tab==='bios')return `<h2>BIOS & DOS</h2><button class="btn primary" onclick="location.href='bios.html'">Open Emerald BIOS A9</button><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button><p class="muted">F12 during startup opens BIOS/DOS options.</p>`;return `<h2>System</h2><div class="grid3"><div class="card"><h3>Build</h3><p>${BUILD.name}</p></div><div class="card"><h3>Device</h3><p>${window.innerWidth} × ${window.innerHeight}</p></div><div class="card"><h3>Mode</h3><p>${localStorage.getItem(PREFIX+'safemode')==='true'?'Safe Mode':'Normal'}</p></div></div><div class="settings-row"><div>Focus Assist</div><label><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setPrefs({focusAssist:this.checked})"> Enabled</label></div><div class="settings-row"><div>Clock seconds</div><label><input type="checkbox" ${p.clockSeconds?'checked':''} onchange="Gold50.setPrefs({clockSeconds:this.checked})"> Show seconds</label></div>`}
+function openPersonalization(){openWindow("personalization","Personalization",personalizationHTML(),{width:980,height:680})}function personalizationHTML(){const p=prefs();return `<h2>Personalization</h2><div class="grid2"><div class="card"><h3>Theme</h3><select class="field" onchange="Gold50.setPrefs({theme:this.value})"><option value="light" ${p.theme==='light'?'selected':''}>Gold Light</option><option value="dark" ${p.theme==='dark'?'selected':''}>Gold Dark</option><option value="highcontrast" ${p.theme==='highcontrast'?'selected':''}>High Contrast</option></select><h3>Accent</h3><input type="color" class="field" value="${esc(p.accent)}" onchange="Gold50.setPrefs({accent:this.value})"><h3>Window rounding</h3><select class="field" onchange="Gold50.setPrefs({rounding:this.value})"><option value="small" ${p.rounding==='small'?'selected':''}>Small</option><option value="large" ${p.rounding==='large'?'selected':''}>Large</option><option value="none" ${p.rounding==='none'?'selected':''}>None</option></select></div><div class="card"><h3>Background</h3><select class="field" onchange="Gold50.setPrefs({background:this.value,customBackground:''})"><option value="gold-bloom" ${p.background==='gold-bloom'?'selected':''}>Gold Bloom</option><option value="blue-window" ${p.background==='blue-window'?'selected':''}>Blue Window</option><option value="emerald-field" ${p.background==='emerald-field'?'selected':''}>Emerald Field</option><option value="slate-pro" ${p.background==='slate-pro'?'selected':''}>Slate Pro</option></select><label>Custom background URL<input class="field" value="${esc(p.customBackground)}" placeholder="https://..." onchange="Gold50.setPrefs({customBackground:this.value})"></label><input type="file" accept="image/*" class="field" onchange="Gold50.loadBackgroundFile(this)"><label>Background mode<select class="field" onchange="Gold50.setPrefs({bgMode:this.value})"><option value="cover" ${p.bgMode==='cover'?'selected':''}>Cover</option><option value="contain" ${p.bgMode==='contain'?'selected':''}>Contain</option><option value="repeat" ${p.bgMode==='repeat'?'selected':''}>Repeat</option></select></label></div></div><h3>Desktop</h3><div class="settings-row"><div>Icon size</div><select class="field" onchange="Gold50.setPrefs({iconSize:this.value})"><option value="small" ${p.iconSize==='small'?'selected':''}>Small</option><option value="normal" ${p.iconSize==='normal'?'selected':''}>Normal</option><option value="large" ${p.iconSize==='large'?'selected':''}>Large</option></select></div><div class="settings-row"><div>Show labels</div><label><input type="checkbox" ${p.showLabels?'checked':''} onchange="Gold50.setPrefs({showLabels:this.checked})"> Enabled</label></div><div class="settings-row"><div>Taskbar search</div><label><input type="checkbox" ${p.taskbarSearch?'checked':''} onchange="Gold50.setPrefs({taskbarSearch:this.checked})"> Enabled</label></div>`}
+function loadBackgroundFile(inp){const f=inp.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>setPrefs({customBackground:r.result});r.readAsDataURL(f)}function toggleDesktopApp(id){const p=prefs(),arr=[...p.desktopApps];const i=arr.indexOf(id);if(i>=0)arr.splice(i,1);else arr.push(id);setPrefs({desktopApps:arr})}
+function openBIOSOptions(){openWindow("bios","BIOS Options",`<h2>Emerald BIOS A9</h2><div class="bios-embed"><p>Emerald BIOS options are available at startup using F12.</p><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open full BIOS</button><button class="btn" onclick="localStorage.setItem('gold1e_safemode','true');location.reload()">Boot Safe Mode</button><button class="btn" onclick="localStorage.removeItem('gold1e_setup_done');location.reload()">Run Setup</button><button class="btn" onclick="location.href='staff.html'">Staff Edition</button></div></div>`,{width:720,height:420})}
+function openDOS(){openWindow("dos","Emerald DOS",`<h2>Emerald DOS</h2><div class="dos-output" id="dos_out">Emerald BIOS A9 DOS\nType HELP for commands.\n</div><div class="dos-line"><span>GOLD&gt;</span><input id="dos_in" onkeydown="if(event.key==='Enter')Gold50.runDOS(this.value);" autofocus></div>`,{width:760,height:520});setTimeout(()=>$("dos_in")?.focus(),50)}
+function runDOS(cmd){const out=$("dos_out"),inp=$("dos_in");cmd=String(cmd||'').trim();if(inp)inp.value='';function line(t){out.textContent+=`\nGOLD> ${cmd}\n${t}\n`;out.scrollTop=out.scrollHeight}const c=cmd.toUpperCase();if(c==='HELP')line('HELP, VER, DIR, APPS, USERS, WHOAMI, LOGIN, REGISTER, LOGOUT, BOOT, DESKTOP, SAFE, SETUP, STAFF, SUPPORT, STORE, DEV, OFFICE, EXPLORER, SNAPSHOT, RESTORE, BACKUP, RESET, DIAG, PREFS, CLEARCACHE, TIME, DATE, MEM, ECHO <text>, CLEAR, EXIT');else if(c==='VER')line(BUILD.name+' build '+BUILD.version+' / Emerald BIOS A9');else if(c==='DIR')line(files().map(f=>f.name).join('\\n')||'No Gold files.');else if(c==='APPS')line(APPS.map(a=>a.name).join('\\n'));else if(c==='USERS')line('Current user: '+username()+'\\nRole: '+(localStorage.getItem('role')||localStorage.getItem(PREFIX+'role')||'user'));else if(c==='WHOAMI')line(username());else if(c==='LOGIN'){line('Opening normal login...');location.href='index.html'}else if(c==='REGISTER'){line('Opening user registration...');location.href='register.html'}else if(c==='LOGOUT'){line('Signing out...');logoutGold()}else if(c==='BOOT'){line('Booting EmeraldOS Gold...');location.href='OS.html'}else if(c==='DESKTOP'){line('Opening desktop...');location.href='OS.html'}else if(c==='SAFE'){localStorage.setItem(PREFIX+'safemode','true');line('Safe Mode enabled. Reloading...');setTimeout(()=>location.reload(),500)}else if(c==='SETUP'){localStorage.removeItem(PREFIX+'setup_done');line('Setup will run next boot.');}else if(c==='STAFF'){line('Opening Staff Edition...');location.href='staff.html'}else if(c==='SUPPORT'){line('Opening Support Center.');openSupport()}else if(c==='STORE'){line('Opening User Appstore.');openStore()}else if(c==='DEV'){line('Opening Gold App Lab.');openApp('applab')}else if(c==='OFFICE'){line('Opening Gold Office.');openOffice()}else if(c==='EXPLORER'){line('Opening Gold Explorer.');openExplorer()}else if(c==='SNAPSHOT'){saveVMSnapshot();line('Snapshot saved.')}else if(c==='RESTORE'){line('Opening Restore Center.');openRestore()}else if(c==='BACKUP'){exportWorkspace();line('Workspace backup exported.')}else if(c==='RESET'){line('Opening reset confirmation.');resetGold()}else if(c==='DIAG'){line(JSON.stringify(deviceInfo(),null,2))}else if(c==='PREFS'){line(JSON.stringify(prefs(),null,2))}else if(c==='CLEARCACHE'){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX+'temp_')).forEach(k=>localStorage.removeItem(k));line('Temporary Gold cache cleared.')}else if(c==='MEM')line('Local storage used: '+fmtBytes(bytes(localStorage)));else if(c==='TIME')line(new Date().toLocaleTimeString());else if(c==='DATE')line(new Date().toLocaleDateString());else if(c.startsWith('ECHO '))line(cmd.slice(5));else if(c==='CLEAR'){out.textContent=''}else if(c==='EXIT')closeWin('win_dos');else line('Unknown command. Type HELP.')}
+function openSetup(){
+  const box=$("setupWizard");
+  if(!box)return;
+  let step=0;
+  const primaryApps=['explorer','office','mail','support','settings','personalization','store','applab','emergency','quickassist','restore','diagnostics'];
+  function setupHero(){return `<div class="setup-hero"><div class="setup-brand"><div class="setup-logo">G</div><div><h2>Welcome to EmeraldOS Gold 1E</h2><p class="muted">Set up your Gold virtual machine, personalize your desktop, choose your apps, and connect support tools.</p></div></div><div class="setup-checklist"><span>Account protected</span><span>Workspace continuity</span><span>Emerald support ready</span></div></div>`}
+  function lookStep(){const p=prefs();return `<h2>Choose your Gold style</h2><p class="muted">These choices can be changed later in Settings or Theme Studio.</p><div class="grid2"><div class="card"><h3>Theme</h3><select class="field" onchange="Gold50.setPrefs({theme:this.value})"><option value="light" ${p.theme==='light'?'selected':''}>Gold Light</option><option value="dark" ${p.theme==='dark'?'selected':''}>Gold Dark</option><option value="highcontrast" ${p.theme==='highcontrast'?'selected':''}>High Contrast</option></select><label>Accent color<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setPrefs({accent:this.value})"></label><label>Background color<input type="color" class="field" value="${esc(p.backgroundColor||'#edf2f8')}" oninput="Gold50.setGold70Pref('backgroundColor',this.value);Gold50.setGold70Pref('useBackgroundColor',true)"></label></div><div class="card"><h3>Background</h3><select class="field" onchange="Gold50.setGold70Pref('gradient',this.value);Gold50.setGold70Pref('customBackground','');Gold50.setGold70Pref('useBackgroundColor',false)"><option value="aurora" ${p.gradient==='aurora'?'selected':''}>Gold Aurora</option><option value="skyline" ${p.gradient==='skyline'?'selected':''}>Blue Skyline</option><option value="emerald-pro" ${p.gradient==='emerald-pro'?'selected':''}>Emerald Pro</option><option value="sunrise" ${p.gradient==='sunrise'?'selected':''}>Gold Sunrise</option><option value="midnight" ${p.gradient==='midnight'?'selected':''}>Midnight</option></select><label>Custom background URL<input class="field" placeholder="https://..." value="${esc(p.customBackground||'')}" onchange="Gold50.setGold70Pref('customBackground',this.value);Gold50.setGold70Pref('useBackgroundColor',false)"></label><label>Upload background<input type="file" class="field" accept="image/*" onchange="Gold50.loadGold50BackgroundFile(this)"></label></div></div>`}
+  function desktopStep(){const p=prefs();return `<h2>Choose your desktop</h2><p class="muted">Pick the apps that should appear on your desktop. All apps remain available in Start/Search.</p><div class="grid3">${primaryApps.map(id=>appById(id)).map(a=>`<label class="setup-app-choice"><input type="checkbox" ${p.desktopApps.includes(a.id)?'checked':''} onchange="Gold50.toggleDesktopApp('${a.id}')"> ${appIcon(a,true)} <span><b>${esc(a.name)}</b><small>${esc(a.group)}</small></span></label>`).join('')}</div><div class="grid3"><label class="card">Icon size<select class="field" onchange="Gold50.setPrefs({iconSize:this.value})"><option value="small" ${p.iconSize==='small'?'selected':''}>Small</option><option value="normal" ${p.iconSize==='normal'?'selected':''}>Normal</option><option value="large" ${p.iconSize==='large'?'selected':''}>Large</option></select></label><label class="card">Desktop labels<select class="field" onchange="Gold50.setPrefs({showLabels:this.value==='yes'})"><option value="yes" ${p.showLabels!==false?'selected':''}>Show labels</option><option value="no" ${p.showLabels===false?'selected':''}>Hide labels</option></select></label><label class="card">Taskbar search<select class="field" onchange="Gold50.setPrefs({taskbarSearch:this.value==='yes'})"><option value="yes" ${p.taskbarSearch!==false?'selected':''}>Show search</option><option value="no" ${p.taskbarSearch===false?'selected':''}>Hide search</option></select></label></div>`}
+  function supportStep(){const p=prefs();return `<h2>Support and safety</h2><p class="muted">EmeraldOS Gold keeps support tools visible and easy to understand.</p><div class="grid2"><div class="card"><h3>Support shortcuts</h3><p>F1 opens Support Center. F9 opens Staff Edition. F12 opens Emerald BIOS / Emerald DOS.</p><button class="btn primary" onclick="Gold50.openApp('support')">Open Support Center</button><button class="btn" onclick="Gold50.openApp('emergency')">Open Emergency Center</button></div><div class="card"><h3>Remote assistance safety</h3><p>Staff control requires your request and a visible consent banner. You can end control at any time.</p><label class="setting-line"><span>Notifications</span><input type="checkbox" ${p.notifications!==false?'checked':''} onchange="Gold50.setPrefs({notifications:this.checked})"></label><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setPrefs({focusAssist:this.checked})"></label></div></div>`}
+  function vmStep(){return `<h2>Virtual machine continuity</h2><p class="muted">Gold saves your local workspace and tries to restore your cloud workspace when Firebase is available.</p><div class="grid3"><div class="card"><h3>Save workspace</h3><p>Save the current desktop, settings, and files.</p><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save now</button></div><div class="card"><h3>Restore workspace</h3><p>Load your previous Gold VM state.</p><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore</button></div><div class="card"><h3>Export backup</h3><p>Download a backup file for safety.</p><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button></div></div>`}
+  function readyStep(){return `<h2>Ready to use EmeraldOS Gold</h2><p class="muted">Your setup choices have been saved. You can always change them later in Settings, Theme Studio, Accessibility Center, and Support Center.</p><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('office')">Open Gold Office</button><button class="tile-button" onclick="Gold50.openApp('support')">Open Support</button><button class="tile-button" onclick="Gold50.openApp('themestudio')">Open Theme Studio</button></div>`}
+  const steps=[setupHero,lookStep,desktopStep,supportStep,vmStep,readyStep];
+  function render(){box.classList.remove('hidden');box.innerHTML=`<div class="setup-card setup-card-rebuilt"><div class="setup-titlebar"><b>EmeraldOS Gold Setup</b><button class="btn small" onclick="Gold50.finishSetup()">Skip setup</button></div><div class="setup-steps">${steps.map((_,i)=>`<div class="setup-dot ${i<=step?'active':''}" title="Step ${i+1}"></div>`).join('')}</div><div class="setup-body">${steps[step]()}</div><div class="toolbar setup-actions"><button class="btn" ${step===0?'disabled':''} onclick="Gold50.setupStep(-1)">Back</button><span class="muted">Step ${step+1} of ${steps.length}</span><button class="btn primary" onclick="Gold50.setupStep(1)">${step===steps.length-1?'Finish setup':'Next'}</button></div></div>`;}
+  window.Gold50.setupStep=(d)=>{if(step===steps.length-1&&d>0)return finishSetup();step=Math.max(0,Math.min(steps.length-1,step+d));render();};
+  render();
+}
+function finishSetup(){localStorage.setItem(PREFIX+'setup_done','true');$("setupWizard")?.classList.add('hidden');notify('Setup complete','EmeraldOS Gold 1E is ready.','Setup')}
+function openChat(){const chats=read(PREFIX+'chats',[{room:'General',messages:[{from:'System',text:'Welcome to Gold Chat.',time:now()}]}]);const room=read(PREFIX+'chat_room','General');const r=chats.find(x=>x.room===room)||chats[0];openWindow('chat','Gold Chat',`<div class="app-shell"><nav class="app-nav"><button class="active">General</button><button onclick="Gold50.newChatRoom()">New room</button></nav><main class="app-main"><h2>${esc(r.room)}</h2><div class="card" style="height:330px;overflow:auto">${r.messages.map(m=>`<p><b>${esc(m.from)}:</b> ${esc(m.text)} <small class="muted">${new Date(m.time).toLocaleTimeString()}</small></p>`).join('')}</div><div class="toolbar"><input id="chat_msg" class="field inline" style="flex:1" placeholder="Message"><button class="btn primary" onclick="Gold50.sendChat()">Send</button></div></main></div>`,{width:820,height:580})}
+function sendChat(){const msg=$("chat_msg").value;if(!msg)return;const chats=read(PREFIX+'chats',[{room:'General',messages:[]}]);let r=chats[0];r.messages.push({from:username(),text:msg,time:now()});write(PREFIX+'chats',chats);notify('Chat message',msg,'Gold Chat');openChat()}function newChatRoom(){const n=prompt('Room name','New Room');if(n){const chats=read(PREFIX+'chats',[]);chats.push({room:n,messages:[]});write(PREFIX+'chats',chats);write(PREFIX+'chat_room',n);openChat()}}
+function openPeople(){openWindow('people','People',`<h2>People</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.addContact()">Add contact</button></div>${contacts().map(c=>`<div class="card"><h3>${esc(c.name)}</h3><p>${esc(c.mail)} · ${esc(c.role||'Contact')}</p><button class="btn" onclick="Gold50.composeMail({from:'${esc(c.mail)}',subject:'',body:''})">Mail</button><button class="btn" onclick="Gold50.blockUser('${esc(c.mail)}')">Block</button></div>`).join('')}`,{width:720,height:520})}function addContact(){const name=prompt('Name'),mail=prompt('Mail');if(name&&mail){const c=contacts();c.push({id:uid(),name,mail,role:'Contact'});saveContacts(c);openPeople()}}function blockUser(u){const b=read(PREFIX+'blocked',[]);if(!b.includes(u))b.push(u);write(PREFIX+'blocked',b);notify('User blocked',u,'People')}
+function openCalculator(){openWindow('calculator','Calculator',`<h2>Calculator</h2><input id="calc" class="field" placeholder="2+2"><button class="btn primary" onclick="try{calc_result.textContent=eval(calc.value)}catch(e){calc_result.textContent='Error'}">Calculate</button><h1 id="calc_result">0</h1>`,{width:420,height:330})}
+function openNotepad(){openWindow('notepad','Notepad',`<h2>Notepad</h2><textarea id="np" class="field" rows="14">${esc(read(PREFIX+'notepad',''))}</textarea><button class="btn primary" onclick="localStorage.setItem('gold1e_notepad',JSON.stringify(np.value));Gold50.notify('Saved','Notepad saved','Notepad')">Save</button><button class="btn" onclick="Gold50.saveText('notepad.txt',np.value)">Export</button>`,{width:620,height:520})}
+function openSticky(){const ns=notes();openWindow('sticky','Sticky Notes',`<h2>Sticky Notes</h2><button class="btn primary" onclick="Gold50.addNote()">Add Note</button>${ns.map(n=>`<div class="card"><textarea class="field" onchange="Gold50.updateNote('${n.id}',this.value)">${esc(n.text)}</textarea><button class="btn danger" onclick="Gold50.deleteNote('${n.id}')">Delete</button></div>`).join('')}`,{width:680,height:560})}function addNote(){const n=notes();n.unshift({id:uid(),text:'New note'});saveNotes(n);openSticky()}function updateNote(id,text){const n=notes(),x=n.find(a=>a.id===id);if(x){x.text=text;saveNotes(n)}}function deleteNote(id){saveNotes(notes().filter(n=>n.id!==id));openSticky()}
+function openTodo(){openWindow('todo','Gold To Do',`<h2>Gold To Do</h2><div class="toolbar"><input id="todo_new" class="field inline" placeholder="New task"><button class="btn primary" onclick="Gold50.addTask()">Add</button></div>${tasks().map(t=>`<div class="card"><label><input type="checkbox" ${t.done?'checked':''} onchange="Gold50.toggleTask('${t.id}')"> ${esc(t.text)}</label><p class="muted">${esc(t.priority)} ${esc(t.due||'')}</p><button class="btn danger small" onclick="Gold50.deleteTask('${t.id}')">Delete</button></div>`).join('')}`,{width:620,height:560})}function addTask(){const t=tasks();t.unshift({id:uid(),text:$("todo_new").value||'New task',done:false,priority:'Normal',due:''});saveTasks(t);openTodo()}function toggleTask(id){const t=tasks(),x=t.find(a=>a.id===id);if(x){x.done=!x.done;saveTasks(t)}}function deleteTask(id){saveTasks(tasks().filter(t=>t.id!==id));openTodo()}
+function openPhotos(){const ph=read(PREFIX+'photos',[]);openWindow('photos','Photos',`<h2>Photos</h2><div class="toolbar"><input id="photo_url" class="field inline" placeholder="Image URL"><button class="btn primary" onclick="Gold50.addPhoto()">Add</button></div><div class="drive-grid">${ph.map(p=>`<div class="card"><img src="${esc(p.url)}" style="width:100%;height:140px;object-fit:cover"><p>${esc(p.name)}</p></div>`).join('')||'<p class="muted">Add an image URL.</p>'}</div>`,{width:760,height:540})}function addPhoto(){const url=$("photo_url").value;if(url){write(PREFIX+'photos',[{id:uid(),url,name:'Photo'},...read(PREFIX+'photos',[])]);openPhotos()}}
+function openCalendar(){openWindow('calendar','Calendar',`<h2>Calendar</h2><p>${new Date().toDateString()}</p><textarea class="field" rows="8" onchange="localStorage.setItem('gold1e_calendar',JSON.stringify(this.value))">${esc(read(PREFIX+'calendar',''))}</textarea>`,{width:550,height:420})}
+function openWeather(){openWindow('weather','Weather',`<h2>Weather</h2><div class="card"><h1>72°F</h1><p class="muted">Gold Weather placeholder. Add your city in notes.</p><input class="field" placeholder="City"></div>`,{width:500,height:360})}
+function openClock(){openWindow('clock','Alarms & Clock',`<h2>Alarms & Clock</h2><h1 id="clock_big"></h1><button class="btn" onclick="Gold50.startTimer(60)">Start 1-minute timer</button>`,{width:480,height:350});setInterval(()=>{const el=$("clock_big");if(el)el.textContent=new Date().toLocaleTimeString()},1000)}function startTimer(sec){notify('Timer started',sec+' seconds','Alarms & Clock');setTimeout(()=>notify('Timer finished','Time is up.','Alarms & Clock'),sec*1000)}
+function openPaint(){openWindow('paint','Gold Paint',`<h2>Gold Paint</h2><canvas id="paint_canvas" class="paint-canvas" width="720" height="380"></canvas><div class="toolbar"><input id="paint_color" type="color" value="#0078d4"><button class="btn" onclick="Gold50.clearPaint()">Clear</button></div>`,{width:820,height:560});const c=$("paint_canvas"),ctx=c.getContext('2d');let drawing=false;c.onmousedown=e=>{drawing=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY)};c.onmousemove=e=>{if(drawing){ctx.strokeStyle=$("paint_color").value;ctx.lineWidth=3;ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke()}};c.onmouseup=()=>drawing=false;c.onmouseleave=()=>drawing=false}function clearPaint(){const c=$("paint_canvas");c.getContext('2d').clearRect(0,0,c.width,c.height)}
+function openSecurity(){openWindow('security','Security Center',`<h2>Security Center</h2><div class="grid3"><div class="card"><h3>Safe Mode</h3><p>${localStorage.getItem(PREFIX+'safemode')==='true'?'Enabled':'Disabled'}</p><button class="btn" onclick="localStorage.setItem('gold1e_safemode','true');location.reload()">Enable</button><button class="btn" onclick="localStorage.removeItem('gold1e_safemode');location.reload()">Disable</button></div><div class="card"><h3>Blocked Users</h3><p>${read(PREFIX+'blocked',[]).length}</p></div><div class="card"><h3>Staff Session</h3><p>${isStaff()?'Active':'Not active'}</p></div></div>`,{width:760,height:480})}
+function openUpdate(){openWindow('update','Update Center',`<h2>Update Center</h2><p>${BUILD.name}</p><button class="btn primary" onclick="Gold50.notify('Update Center','No package update is bundled.','Update Center')">Check for updates</button>`,{width:520,height:360})}
+function openRestore(){openWindow('restore','Restore Center',`<h2>Restore Center</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.saveWorkspaceNow()">Save Workspace</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore Workspace</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button><button class="btn" onclick="Gold50.importWorkspacePrompt()">Import Backup</button><button class="btn danger" onclick="Gold50.resetGold()">Reset Gold</button></div><p class="muted">Cloud path: emeraldOSUsers/{username}/goldVM/current</p>`,{width:720,height:420})}
+function openFeedback(){openWindow('feedback','Feedback Hub',`<h2>Feedback Hub</h2><label>Feedback<textarea id="fb_text" class="field" rows="8"></textarea></label><button class="btn primary" onclick="Gold50.sendFeedback()">Submit</button>`,{width:620,height:460})}function sendFeedback(){const t={id:uid(),user:username(),body:$("fb_text").value,time:now()};write(PREFIX+'feedback',[t,...read(PREFIX+'feedback',[])]);notify('Feedback sent','Thank you.','Feedback Hub')}
+function openDevice(){openWindow('device','Device Center',`<h2>Device Center</h2><pre>${esc(JSON.stringify(deviceInfo(),null,2))}</pre><h3>Shortcuts</h3><p>F1 Support · F9 Staff · F12 BIOS · Ctrl+Space Search · Ctrl+Shift+P Commands</p>`,{width:620,height:520})}function deviceInfo(){return{user:username(),build:BUILD.name,width:innerWidth,height:innerHeight,userAgent:navigator.userAgent,localTime:new Date().toString(),storage:fmtBytes(bytes(localStorage))}}
+function openStore(){openWindow('store','Gold Store',`<h2>Gold Store</h2><div class="card"><h3>Security Warning</h3><p>Warning! User-created apps can be risky. Install only from trusted sources.</p><button class="btn primary" onclick="Gold50.notify('Store','Warning accepted.','Gold Store')">Agree and Continue</button></div><h3>Sample Apps</h3><div class="drive-grid"><div class="drive-card"><h3>Project Board <span class="verified-badge">Staff Verified</span></h3><button class="btn primary" onclick="Gold50.installSampleApp('Project Board')">Install</button></div><div class="drive-card"><h3>Help Desk <span class="verified-badge">Staff Verified</span></h3><button class="btn primary" onclick="Gold50.installSampleApp('Help Desk')">Install</button></div></div>`,{width:760,height:520})}function installSampleApp(name){notify('App installed',name,'Gold Store')}
+function openCreator(){openWindow('creator','Creator Studio',`<h2>Creator Studio</h2><label>App name<input id="app_name" class="field" value="My Gold App"></label><label>Code<textarea id="app_code" class="field" rows="10">api.write('&lt;h2&gt;Hello Gold&lt;/h2&gt;'); api.button('Notify',()=>api.notify('Hello','Custom app works.'));</textarea></label><button class="btn primary" onclick="Gold50.runCustomApp()">Run Preview</button>`,{width:760,height:640})}function runCustomApp(){const name=$("app_name").value,code=$("app_code").value;const api={write:h=>{body.innerHTML+=h},button:(l,fn)=>{const b=document.createElement('button');b.className='btn';b.textContent=l;b.onclick=fn;body.appendChild(b)},notify:(t,m)=>notify(t,m,name)};const w=openWindow('custom_'+uid(),name,`<div id="custom_body"></div>`,{width:520,height:380,singleton:false});const body=w.querySelector('#custom_body');try{new Function('api',code)(api)}catch(e){body.textContent='Error: '+e.message}}
+
+/* =========================================================
+   EMERALDOS GOLD 3.0 ENHANCEMENTS
+   Office 3.0, Support 3.0, Diagnostics, Help, Settings polish
+========================================================= */
+function openOffice(tab="home",fid=null){
+  const w=openWindow("office","Gold Office 3.0",officeHTML(tab,fid),{width:1180,height:790});
+  window.Gold50.renderOffice=(t,f)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=officeHTML(t,f)};
+  window.Gold50.renderOffice(tab,fid);
+}
+function renderOffice(tab="home",fid=null){const b=document.querySelector('#win_office .win-content');if(b)b.innerHTML=officeHTML(tab,fid);else openOffice(tab,fid)}
+function officeHTML(tab,fid){
+  const nav=[['home','Home'],['doc','Docs'],['sheet','Sheets'],['slide','Slides'],['form','Forms'],['templates','Templates'],['vault','Vault'],['recent','Recent']];
+  return `<div class="app-shell office30"><nav class="app-nav">${nav.map(([k,n])=>`<button class="${tab===k?'active':''}" onclick="Gold50.renderOffice('${k}')">${n}</button>`).join('')}<button onclick="Gold50.openApp('explorer')">Explorer</button></nav><main class="app-main">${officePage(tab,fid)}</main></div>`
+}
+function officePage(tab,fid){
+  const docs=files().filter(f=>['doc','sheet','slide','form'].includes(f.type)&&!f.trash).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));
+  if(tab==='home')return `<h2>Gold Office 3.0</h2><p class="muted">A fuller Office workspace with improved Docs, Sheets, Slides, Forms, templates, recent files, export tools, and Explorer integration.</p><div class="grid4">${['doc','sheet','slide','form'].map(t=>`<div class="card office-start"><h3>New ${typeName(t)}</h3><p class="muted">Create and autosave in Gold Explorer.</p><button class="btn primary" onclick="Gold50.officeNew('${t}')">Create</button></div>`).join('')}</div><h3>Recent Office files</h3><div class="drive-grid">${docs.slice(0,12).map(officeCard).join('')||'<p class="muted">No files yet.</p>'}</div>`;
+  if(tab==='templates')return templatesPage();
+  if(tab==='vault'||tab==='recent')return `<h2>${tab==='vault'?'Office Vault':'Recent Office Files'}</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.officeNew('doc')">New Doc</button><button class="btn" onclick="Gold50.exportAllFiles()">Export all files</button></div><div class="drive-grid">${docs.map(officeCard).join('')||'<p class="muted">No Office files yet.</p>'}</div>`;
+  if(fid)return tab==='doc'?docEditor(fid):tab==='sheet'?sheetEditor(fid):tab==='slide'?slideEditor(fid):formEditor(fid);
+  return `<h2>${typeName(tab)}</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.officeNew('${tab}')">New ${typeName(tab)}</button></div><div class="drive-grid">${docs.filter(f=>f.type===tab).map(officeCard).join('')||'<p class="muted">No files yet.</p>'}</div>`;
+}
+function officeNew(type){
+  const ext={doc:'edoc',sheet:'esheet',slide:'eslide',form:'eform'}[type];const name=prompt('Name',`Untitled.${ext}`);if(!name)return;let content='';
+  if(type==='doc')content='<h1>Untitled Document</h1><p>Start writing in Gold Docs 3.0...</p>';
+  if(type==='sheet')content=JSON.stringify([['Item','Amount','Notes'],['Apps','30','Gold 1E'],['Tickets','5','Support'],['Total','=SUM(B2:B3)','']]);
+  if(type==='slide')content=JSON.stringify([{title:'Presentation Title',body:'Subtitle',theme:'gold'},{title:'Agenda',body:'Add your agenda here.',theme:'light'}]);
+  if(type==='form')content=JSON.stringify([{q:'Name',type:'short',choices:''},{q:'Comments',type:'paragraph',choices:''}]);
+  const f={id:uid(),name,type,folder:'Office',star:false,content,created:now(),updated:now(),trash:false};const arr=files();arr.unshift(f);saveFiles(arr);notify('Office file created',name,'Gold Office');openOffice(type,f.id);
+}
+function officeCard(f){return `<div class="drive-card office-card" onclick="Gold50.renderOffice('${f.type}','${f.id}')"><div class="type">${fileIcon(f.type)}</div><h3>${esc(f.name)}</h3><p class="muted">${new Date(f.updated).toLocaleString()}</p><div class="toolbar mini"><button class="btn" onclick="event.stopPropagation();Gold50.duplicateFile('${f.id}')">Duplicate</button><button class="btn" onclick="event.stopPropagation();Gold50.openFile('${f.id}')">Open</button></div></div>`}
+function duplicateFile(fid){const f=getFile(fid);if(!f)return;const arr=files();const copy={...f,id:uid(),name:f.name.replace(/(\.[^.]+)$/,' Copy$1'),created:now(),updated:now(),star:false};arr.unshift(copy);saveFiles(arr);notify('File duplicated',copy.name,'Gold Office');openFile(copy.id)}
+function docCommand(cmd,val=null){document.execCommand(cmd,false,val);updateDocStatsActive()}
+function docSetBlock(block){document.execCommand('formatBlock',false,block);updateDocStatsActive()}
+function docInsert(html){document.execCommand('insertHTML',false,html);updateDocStatsActive()}
+function activeDocEditor(){return document.querySelector('.gold-doc-editor[contenteditable="true"]')}
+function updateDocStatsActive(){const ed=activeDocEditor();if(!ed)return;const text=ed.innerText||'';const words=text.trim()?text.trim().split(/\s+/).length:0;const chars=text.length;const stat=document.getElementById('doc_stats');if(stat)stat.textContent=`${words} words · ${chars} characters`;}
+function docEditor(fid){const f=getFile(fid)||{};return `<h2>${esc(f.name||'Document')}</h2><div class="toolbar doc-toolbar"><select class="field inline" onchange="Gold50.docSetBlock(this.value)"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option></select><select class="field inline" onchange="Gold50.docCommand('fontSize',this.value)"><option value="3">Normal</option><option value="4">Large</option><option value="5">Title</option><option value="2">Small</option></select><button class="btn" onclick="Gold50.docCommand('bold')"><b>B</b></button><button class="btn" onclick="Gold50.docCommand('italic')"><i>I</i></button><button class="btn" onclick="Gold50.docCommand('underline')"><u>U</u></button><button class="btn" onclick="Gold50.docCommand('strikeThrough')">Strike</button><button class="btn" onclick="Gold50.docCommand('insertUnorderedList')">Bullets</button><button class="btn" onclick="Gold50.docCommand('insertOrderedList')">Numbered</button><button class="btn" onclick="Gold50.docCommand('justifyLeft')">Left</button><button class="btn" onclick="Gold50.docCommand('justifyCenter')">Center</button><button class="btn" onclick="Gold50.docCommand('justifyRight')">Right</button><label class="btn color-btn">Text <input type="color" onchange="Gold50.docCommand('foreColor',this.value)"></label><label class="btn color-btn">Highlight <input type="color" value="#fff59d" onchange="Gold50.docCommand('hiliteColor',this.value)"></label><button class="btn" onclick="Gold50.docInsert('<p>'+new Date().toLocaleString()+'</p>')">Insert Date</button><button class="btn" onclick="Gold50.docInsert('<table border=1 style=&quot;border-collapse:collapse;width:100%&quot;><tr><th>Header</th><th>Header</th></tr><tr><td>Cell</td><td>Cell</td></tr></table><p></p>')">Table</button><button class="btn primary" onclick="Gold50.saveDoc('${fid}')">Save</button><button class="btn" onclick="Gold50.exportDoc('${fid}')">HTML</button><button class="btn" onclick="Gold50.exportDocText('${fid}')">TXT</button><button class="btn" onclick="print()">Print</button></div><div id="doc_${fid}" class="editor gold-doc-editor" contenteditable="true" oninput="Gold50.updateDocStatsActive()">${f.content||''}</div><div class="office-status"><span id="doc_stats">0 words · 0 characters</span><span>Autosave manually with Save.</span></div>`}
+function saveDoc(fid){const el=$("doc_"+fid);saveFileContent(fid,el?el.innerHTML:'');updateDocStatsActive()}
+function exportDoc(fid){const f=getFile(fid);saveText((f.name||'document').replace(/\.edoc$/,'')+'.html',`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.name)}</title></head><body>${f.content||''}</body></html>`,'text/html')}
+function exportDocText(fid){const f=getFile(fid);const div=document.createElement('div');div.innerHTML=f.content||'';saveText((f.name||'document').replace(/\.edoc$/,'')+'.txt',div.innerText||div.textContent||'','text/plain')}
+function sheetEditor(fid){const f=getFile(fid);let rows=[];try{rows=JSON.parse(f.content||'[]')}catch{rows=[['A','B','C'],['','','']]};rows=rows.length?rows:[['A','B'],['','']];return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.sheetAddRow('${fid}')">Add Row</button><button class="btn" onclick="Gold50.sheetAddCol('${fid}')">Add Column</button><button class="btn" onclick="Gold50.sheetAutoTotal('${fid}')">Auto Total</button><button class="btn primary" onclick="Gold50.saveSheet('${fid}')">Save</button><button class="btn" onclick="Gold50.sheetCalculate('${fid}')">Formula Preview</button><button class="btn" onclick="Gold50.exportSheet('${fid}')">CSV</button></div><div class="sheet-wrap"><table class="sheet" id="sheet_${fid}">${rows.map((r,i)=>`<tr><th>${i+1}</th>${r.map((c,j)=>`<td><input title="${esc(calcSheetCell(rows,i,j))}" value="${esc(c)}"></td>`).join('')}</tr>`).join('')}</table></div><div id="sheet_preview_${fid}" class="office-status">Supports =SUM(A1:A5), =AVG(A1:A5), =COUNT(A1:A5), =MIN(A1:A5), =MAX(A1:A5)</div>`}
+function sheetData(fid){return [...$("sheet_"+fid).rows].map(r=>[...r.cells].slice(1).map(c=>c.querySelector('input').value))}
+function sheetAddRow(fid){const table=$("sheet_"+fid),cols=(table.rows[0]?.cells.length||4)-1;const tr=table.insertRow();tr.innerHTML='<th>'+table.rows.length+'</th>'+Array.from({length:cols},()=>'<td><input value=""></td>').join('')}
+function sheetAddCol(fid){const table=$("sheet_"+fid);[...table.rows].forEach(r=>{const td=r.insertCell();td.innerHTML='<input value="">';});}
+function sheetAutoTotal(fid){const table=$("sheet_"+fid);const cols=(table.rows[0]?.cells.length||3)-1;const tr=table.insertRow();tr.innerHTML='<th>'+table.rows.length+'</th>'+Array.from({length:cols},(_,i)=>`<td><input value="${i===0?'Total':`=SUM(${colName(i)}2:${colName(i)}${table.rows.length-1})`}"></td>`).join('')}
+function saveSheet(fid){saveFileContent(fid,JSON.stringify(sheetData(fid)))}
+function colName(i){let s='';i++;while(i>0){let m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+function cellPos(ref){const m=String(ref).toUpperCase().match(/^([A-Z]+)(\d+)$/);if(!m)return null;let c=0;for(const ch of m[1])c=c*26+(ch.charCodeAt(0)-64);return {r:Number(m[2])-1,c:c-1}}
+function valAt(rows,r,c){const v=rows?.[r]?.[c];const n=Number(String(v??'').replace(/^=/,''));return Number.isFinite(n)?n:0}
+function rangeVals(rows,range){const [a,b]=range.split(':').map(cellPos);if(!a||!b)return[];const vals=[];for(let r=Math.min(a.r,b.r);r<=Math.max(a.r,b.r);r++)for(let c=Math.min(a.c,b.c);c<=Math.max(a.c,b.c);c++)vals.push(valAt(rows,r,c));return vals}
+function calcSheetCell(rows,r,c){const raw=String(rows?.[r]?.[c]??'');const m=raw.match(/^=(SUM|AVG|COUNT|MIN|MAX)\(([^)]+)\)$/i);if(!m)return raw;const vals=rangeVals(rows,m[2]);if(!vals.length)return 0;const fn=m[1].toUpperCase();if(fn==='SUM')return vals.reduce((a,b)=>a+b,0);if(fn==='AVG')return vals.reduce((a,b)=>a+b,0)/vals.length;if(fn==='COUNT')return vals.filter(v=>Number.isFinite(v)).length;if(fn==='MIN')return Math.min(...vals);if(fn==='MAX')return Math.max(...vals);return raw}
+function sheetCalculate(fid){const rows=sheetData(fid);const html=`<h3>Formula Preview</h3><table class="sheet preview">${rows.map((r,i)=>`<tr>${r.map((c,j)=>`<td>${esc(calcSheetCell(rows,i,j))}</td>`).join('')}</tr>`).join('')}</table>`;const el=$("sheet_preview_"+fid);if(el)el.innerHTML=html}
+function exportSheet(fid){const rows=sheetData(fid);const f=getFile(fid);saveText((f.name||'sheet').replace(/\.esheet$/,'')+'.csv',rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv')}
+function slideEditor(fid){const f=getFile(fid);let slides=[];try{slides=JSON.parse(f.content||'[]')}catch{slides=[{title:'Title',body:'Body',theme:'gold'}]};return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.addSlide('${fid}')">Add Slide</button><button class="btn primary" onclick="Gold50.saveSlides('${fid}')">Save</button><button class="btn" onclick="Gold50.presentSlides('${fid}')">Present</button><button class="btn" onclick="Gold50.exportSlides('${fid}')">Export HTML</button></div><div id="slides_${fid}" class="slides-editor">${slides.map((s,i)=>`<div class="card slide-card"><label>Slide ${i+1} title<input class="field slide-title" value="${esc(s.title)}"></label><textarea class="field slide-body" rows="4">${esc(s.body)}</textarea><select class="field slide-theme"><option ${s.theme==='gold'?'selected':''}>gold</option><option ${s.theme==='light'?'selected':''}>light</option><option ${s.theme==='dark'?'selected':''}>dark</option><option ${s.theme==='emerald'?'selected':''}>emerald</option></select></div>`).join('')}</div>`}
+function slideData(fid){return [...$("slides_"+fid).querySelectorAll('.slide-card')].map(c=>({title:c.querySelector('.slide-title').value,body:c.querySelector('.slide-body').value,theme:c.querySelector('.slide-theme').value}))}
+function saveSlides(fid){saveFileContent(fid,JSON.stringify(slideData(fid)))}
+function addSlide(fid){const d=$("slides_"+fid);const i=d.children.length+1;d.insertAdjacentHTML('beforeend',`<div class="card slide-card"><label>Slide ${i} title<input class="field slide-title" value="New Slide"></label><textarea class="field slide-body" rows="4">Content</textarea><select class="field slide-theme"><option>gold</option><option>light</option><option>dark</option><option>emerald</option></select></div>`)}
+function presentSlides(fid){const f=getFile(fid);let slides=[];try{slides=JSON.parse(f.content||'[]')}catch{};openWindow('present','Gold Slides Present',`<div class="present-deck">${slides.map((s,i)=>`<section class="present-slide theme-${esc(s.theme||'gold')}"><small>Slide ${i+1} of ${slides.length}</small><h1>${esc(s.title)}</h1><p>${esc(s.body)}</p></section>`).join('')}</div>`,{width:920,height:620,singleton:false})}
+function exportSlides(fid){const f=getFile(fid);let slides=[];try{slides=JSON.parse(f.content||'[]')}catch{};saveText((f.name||'slides').replace(/\.eslide$/,'')+'.html',`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(f.name)}</title><style>body{font-family:Segoe UI,Arial;margin:0}.slide{min-height:100vh;display:grid;place-items:center;text-align:center;padding:40px}.gold{background:#fff7d6}.dark{background:#111827;color:white}.emerald{background:#dff7ec}</style></head><body>${slides.map(s=>`<section class="slide ${esc(s.theme||'gold')}"><div><h1>${esc(s.title)}</h1><p>${esc(s.body)}</p></div></section>`).join('')}</body></html>`,'text/html')}
+function formEditor(fid){const f=getFile(fid);let qs=[];try{qs=JSON.parse(f.content||'[]')}catch{qs=[]};return `<h2>${esc(f.name)}</h2><div class="toolbar"><button class="btn" onclick="Gold50.addFormQ('${fid}')">Add Question</button><button class="btn primary" onclick="Gold50.saveForm('${fid}')">Save</button><button class="btn" onclick="Gold50.previewForm('${fid}')">Preview</button></div><div id="form_${fid}">${qs.map(q=>`<div class="card form-card"><input class="field form-q" value="${esc(q.q)}"><select class="field form-type"><option ${q.type==='short'?'selected':''}>short</option><option ${q.type==='paragraph'?'selected':''}>paragraph</option><option ${q.type==='choice'?'selected':''}>choice</option><option ${q.type==='checkbox'?'selected':''}>checkbox</option><option ${q.type==='date'?'selected':''}>date</option></select><input class="field form-choices" placeholder="Choices separated by commas" value="${esc(q.choices||'')}"></div>`).join('')}</div>`}
+function addFormQ(fid){$("form_"+fid).insertAdjacentHTML('beforeend',`<div class="card form-card"><input class="field form-q" value="New question"><select class="field form-type"><option>short</option><option>paragraph</option><option>choice</option><option>checkbox</option><option>date</option></select><input class="field form-choices" placeholder="Choices separated by commas"></div>`)}
+function saveForm(fid){const qs=[...$("form_"+fid).querySelectorAll('.form-card')].map(c=>({q:c.querySelector('.form-q').value,type:c.querySelector('.form-type').value,choices:c.querySelector('.form-choices').value}));saveFileContent(fid,JSON.stringify(qs))}
+function previewForm(fid){const f=getFile(fid);let qs=[];try{qs=JSON.parse(f.content||'[]')}catch{};openWindow('formpreview','Form Preview',`<h2>${esc(f.name)}</h2>${qs.map(q=>`<label>${esc(q.q)}${q.type==='paragraph'?'<textarea class="field" rows="4"></textarea>':q.type==='choice'?`<select class="field">${String(q.choices||'Option A,Option B').split(',').map(c=>`<option>${esc(c.trim())}</option>`).join('')}</select>`:q.type==='checkbox'?String(q.choices||'Option A,Option B').split(',').map(c=>`<label><input type="checkbox"> ${esc(c.trim())}</label>`).join('<br>'):q.type==='date'?'<input type="date" class="field">':'<input class="field">'}</label>`).join('')}<button class="btn primary" onclick="Gold50.notify('Form submitted','Preview response captured locally.','Gold Forms')">Submit Preview</button>`,{width:620,height:560,singleton:false})}
+function templatesPage(){const templates=['Letter','Memo','Report','Policy','Meeting Notes','Project Plan','Support Summary','Staff Briefing','Invoice','Newsletter','Class Notes','Resume'];return `<h2>Templates</h2><p class="muted">Templates create new Gold Docs with starting structure.</p><div class="grid3">${templates.map(t=>`<div class="card"><h3>${t}</h3><button class="btn primary" onclick="Gold50.createTemplate('${t}')">Use Template</button></div>`).join('')}</div>`}
+function supportPage(tab,mine){
+ if(tab==='new')return `<h2>Submit Support Ticket</h2><p class="muted">Gold 1E tickets include category, priority, diagnostics, and optional remote-help request.</p><label>Title<input id="ticket_title" class="field" placeholder="What do you need help with?"></label><label>Category<select id="ticket_cat" class="field"><option>Login issue</option><option>Files issue</option><option>Office issue</option><option>Mail issue</option><option>Store issue</option><option>Remote help</option><option>Bug report</option><option>Feature request</option><option>Staff assistance</option><option>Other</option></select></label><label>Priority<select id="ticket_pri" class="field"><option>Normal</option><option>High</option><option>Urgent</option></select></label><label>Details<textarea id="ticket_body" class="field" rows="8"></textarea></label><label><input id="ticket_diag" type="checkbox" checked> Attach diagnostics</label><br><label><input id="ticket_remote" type="checkbox"> Request remote assistance with this ticket</label><div class="toolbar"><button class="btn primary" onclick="Gold50.submitTicket()">Submit Ticket</button><button class="btn" onclick="Gold50.openApp('diagnostics')">View Diagnostics</button></div>`;
+ if(tab==='tickets')return `<h2>My Tickets</h2><div class="toolbar"><button class="btn primary" onclick="Gold50.renderSupport('new')">New Ticket</button><button class="btn" onclick="Gold50.requestRemoteHelp()">Request Remote Help</button></div>${mine.map(ticketCard).join('')||'<p class="muted">No tickets yet.</p>'}`;
+ if(tab==='remote')return `<h2>Remote Assistance</h2><p class="muted">Staff can view a live Gold desktop preview and send visible commands only after you request help and grant control. You can end control any time.</p><label>What should staff help with?<textarea id="remote_note" class="field" rows="6"></textarea></label><button class="btn primary" onclick="Gold50.requestRemoteHelp()">Request Remote Help + Grant Control</button>${remoteSessionHTML()}<h3>Device diagnostics</h3><pre>${esc(JSON.stringify(deviceInfo(),null,2))}</pre>`;
+ return `<h2>Support Center 6.0</h2><p>Submit tickets, add diagnostics, request remote assistance, and track staff replies.</p><div class="grid4"><div class="card"><h3>Open Tickets</h3><p>${mine.filter(t=>t.status!=='Resolved'&&t.status!=='Closed').length}</p></div><div class="card"><h3>Waiting for Staff</h3><p>${mine.filter(t=>t.status==='Open'||t.status==='Waiting for staff').length}</p></div><div class="card"><h3>Remote Help</h3><p>${remoteSessions().filter(s=>s.user===username()&&s.status==='active').length}</p></div><div class="card"><h3>Diagnostics</h3><button class="btn" onclick="Gold50.openApp('diagnostics')">Open</button></div></div>`;
+}
+async function submitTicket(){const remote=!!$("ticket_remote")?.checked;const t={id:uid(),user:username(),title:$("ticket_title")?.value||'Support request',category:$("ticket_cat")?.value||'Other',priority:$("ticket_pri")?.value||'Normal',status:remote?'Waiting for staff':'Open',body:$("ticket_body")?.value||'',time:now(),replies:[],device:$("ticket_diag")?.checked?deviceInfo():null,remote,remoteControl:false};const arr=tickets();arr.unshift(t);saveTickets(arr);notify('Ticket submitted',t.title,'Support Center');if(remote)grantRemoteControl(t);if(fb?.addDoc&&fb?.collection&&fb?.db){try{await fb.addDoc(fb.collection(fb.db,'emeraldOSGoldTickets'),t)}catch(e){console.warn(e)}}renderSupport('tickets')}
+function openHelp(){openWindow('help','Get Help',`<h2>Get Help with EmeraldOS Gold 1E</h2><div class="grid2"><div class="card"><h3>Getting started</h3><p>Use Start to open apps. Use Settings to personalize Gold. Use Support Center for tickets.</p></div><div class="card"><h3>Remote Help</h3><p>Open Support Center, choose Remote Assistance, and Grant Control. Staff can only help while the red banner is visible.</p></div><div class="card"><h3>Gold Office</h3><p>Docs includes rich text, tables, word count, HTML/TXT export. Sheets includes CSV and formulas.</p></div><div class="card"><h3>BIOS A3</h3><p>Press F12 during startup for BIOS/DOS, Safe Mode, reset tools, and diagnostics.</p></div></div><h3>Quick links</h3><div class="toolbar"><button class="btn primary" onclick="Gold50.openApp('support')">Support Center</button><button class="btn" onclick="Gold50.openApp('office')">Gold Office</button><button class="btn" onclick="Gold50.openApp('settings')">Settings</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button></div>`,{width:820,height:620})}
+function openDiagnostics(){const data=deviceInfo();data.build=BUILD.name;data.prefs=prefs();data.fileCount=files().length;data.ticketCount=tickets().length;data.remoteSessions=remoteSessions().length;data.localStorageBytes=fmtBytes(bytes(localStorage));openWindow('diagnostics','Diagnostics',`<h2>Diagnostics</h2><p class="muted">Copy this into a Support Center ticket when staff asks for system information.</p><div class="toolbar"><button class="btn primary" onclick="navigator.clipboard?.writeText(document.getElementById('diag_json').textContent);Gold50.notify('Diagnostics copied','System data copied to clipboard.','Diagnostics')">Copy Diagnostics</button><button class="btn" onclick="Gold50.renderSupport('new')">New Ticket</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button></div><pre id="diag_json">${esc(JSON.stringify(data,null,2))}</pre>`,{width:820,height:650})}
+function openShortcuts(){openWindow('shortcuts','Keyboard Shortcuts',`<h2>Keyboard Shortcuts</h2><div class="grid2"><div class="card"><b>F1</b><p>Support Center</p></div><div class="card"><b>F9</b><p>Staff Edition</p></div><div class="card"><b>F12</b><p>BIOS / DOS</p></div><div class="card"><b>Ctrl + Space</b><p>Search</p></div><div class="card"><b>Ctrl + Alt + S</b><p>Settings</p></div><div class="card"><b>Ctrl + Alt + E</b><p>Explorer</p></div><div class="card"><b>Ctrl + Alt + O</b><p>Office</p></div><div class="card"><b>Ctrl + Alt + L</b><p>Log out</p></div></div>`,{width:720,height:560})}
+function openSafeMode(){openWindow('safemode','Safe Mode',`<h2>Safe Mode</h2><p class="muted">Safe Mode disables risky startup behavior and helps repair Gold.</p><div class="toolbar"><button class="btn primary" onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Enable Safe Mode</button><button class="btn" onclick="localStorage.removeItem('${PREFIX}safemode');location.reload()">Disable Safe Mode</button><button class="btn" onclick="Gold50.resetGold()">Reset Gold Data</button><button class="btn" onclick="Gold50.openApp('restore')">Restore Center</button></div>`,{width:660,height:420})}
+function openSettings(){let tab='system';const w=openWindow('settings','Settings 4.0',settingsHTML(tab),{width:1100,height:740});window.Gold50.settingsTab=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=settingsHTML(t)}}
+function settingsHTML(tab){const nav=['system','devices','network','personalization','apps','accounts','time','accessibility','search','privacy','update','support','staff','bios'];return `<div class="app-shell"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.settingsTab('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}</nav><main class="app-main">${settingsPage(tab)}</main></div>`}
+function settingsPage(tab){const p=prefs();if(tab==='devices')return `<h2>Devices</h2><div class="grid3"><div class="card"><h3>Display</h3><p>${innerWidth} × ${innerHeight}</p></div><div class="card"><h3>Keyboard</h3><button class="btn" onclick="Gold50.openApp('shortcuts')">Shortcuts</button></div><div class="card"><h3>Mouse</h3><p class="muted">Drag windows, resize from the corner, double-click apps.</p></div></div>`;if(tab==='network')return `<h2>Network & Internet</h2><p class="muted">Firebase status: ${fb?'Available':'Unavailable'}</p><button class="btn" onclick="Gold50.saveWorkspaceNow()">Test cloud save</button>`;if(tab==='search')return `<h2>Search</h2><button class="btn" onclick="Gold50.openSearch?.()">Open Search</button><button class="btn" onclick="localStorage.removeItem('${PREFIX}search_history');Gold50.notify('Search','History cleared','Settings')">Clear search history</button>`;if(tab==='personalization')return personalizationHTML();if(tab==='apps')return `<h2>Apps</h2>${visibleApps().map(a=>`<div class="settings-row"><div>${appIcon(a,true)} ${esc(a.name)}<p class="muted">${esc(a.desc)}</p></div><div><button class="btn" onclick="Gold50.toggleDesktopApp('${a.id}')">${p.desktopApps.includes(a.id)?'Remove from desktop':'Pin to desktop'}</button><button class="btn" onclick="Gold50.openApp('${a.id}')">Open</button></div></div>`).join('')}`;if(tab==='accounts')return `<h2>Accounts</h2><div class="card"><h3>${esc(username())}</h3><p>${esc(mailAddress())}</p><label>Display username<input class="field" value="${esc(username())}" onchange="localStorage.setItem('${PREFIX}username',this.value);Gold50.notify('Account updated',this.value,'Settings')"></label><div class="toolbar"><button class="btn danger" onclick="Gold50.logoutGold()">Log out of EmeraldOS Gold</button><button class="btn" onclick="location.href='index.html?force=1'">Switch account</button></div></div>`;if(tab==='accessibility')return `<h2>Accessibility</h2><label><input type="checkbox" ${p.bigText?'checked':''} onchange="Gold50.setPrefs({bigText:this.checked})"> Larger text</label><br><label><input type="checkbox" ${p.reducedMotion?'checked':''} onchange="Gold50.setPrefs({reducedMotion:this.checked})"> Reduced motion</label><br><label>Theme<select class="field" onchange="Gold50.setPrefs({theme:this.value})"><option ${p.theme==='light'?'selected':''} value="light">Light</option><option ${p.theme==='dark'?'selected':''} value="dark">Dark</option><option ${p.theme==='highcontrast'?'selected':''} value="highcontrast">High contrast</option></select></label>`;if(tab==='privacy')return `<h2>Privacy</h2><button class="btn" onclick="localStorage.removeItem('${PREFIX}search_history');Gold50.notify('Privacy','Search history cleared','Settings')">Clear search history</button><button class="btn" onclick="Gold50.openApp('security')">Open Security Center</button><button class="btn" onclick="Gold50.openApp('remotecontrol')">Remote Control Status</button>`;if(tab==='update')return `<h2>Update & Security</h2><p>${BUILD.name}</p><button class="btn primary" onclick="Gold50.notify('Updates','Gold 1E package is installed.','Update Center')">Check for updates</button><button class="btn" onclick="Gold50.openApp('restore')">Restore Center</button><button class="btn" onclick="Gold50.openApp('safemode')">Safe Mode</button>`;if(tab==='support')return `<h2>Support</h2><button class="btn primary" onclick="Gold50.openApp('support')">Open Support Center</button><button class="btn" onclick="Gold50.openApp('feedback')">Feedback Hub</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button>`;if(tab==='staff')return `<h2>Staff Edition</h2><button class="btn primary" onclick="location.href='staff.html'">Open Staff Edition Login</button><button class="btn" onclick="Gold50.openApp('staff')">Open Staff Center</button>`;if(tab==='bios')return `<h2>BIOS & DOS</h2><button class="btn primary" onclick="location.href='bios.html'">Open Emerald BIOS A9</button><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button><p class="muted">F12 during startup opens BIOS/DOS options.</p>`;if(tab==='time')return `<h2>Time & Language</h2><div class="settings-row"><div>Clock seconds</div><label><input type="checkbox" ${p.clockSeconds?'checked':''} onchange="Gold50.setPrefs({clockSeconds:this.checked})"> Show seconds</label></div><p>${new Date().toString()}</p>`;return `<h2>System</h2><div class="grid3"><div class="card"><h3>Build</h3><p>${BUILD.name}</p></div><div class="card"><h3>Device</h3><p>${window.innerWidth} × ${window.innerHeight}</p></div><div class="card"><h3>Mode</h3><p>${localStorage.getItem(PREFIX+'safemode')==='true'?'Safe Mode':'Normal'}</p></div></div><div class="settings-row"><div>Focus Assist</div><label><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setPrefs({focusAssist:this.checked})"> Enabled</label></div><div class="settings-row"><div>Notifications</div><label><input type="checkbox" ${p.notifications!==false?'checked':''} onchange="Gold50.setPrefs({notifications:this.checked})"> Enabled</label></div>`}
+
+
+function openBIOSOptions(){openWindow("bios","BIOS Options",`<h2>Emerald BIOS A9</h2><p class="muted">EmeraldOS Gold startup tools.</p><div class="grid2"><div class="card"><h3>Boot</h3><button class="btn primary" onclick="location.href='OS.html'">Boot EmeraldOS Gold</button><button class="btn" onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Boot Safe Mode</button><button class="btn" onclick="localStorage.removeItem('${PREFIX}safemode');location.reload()">Boot Normal Mode</button></div><div class="card"><h3>Repair</h3><button class="btn" onclick="localStorage.removeItem('${PREFIX}setup_done');location.reload()">Run Setup</button><button class="btn" onclick="Gold50.openApp('restore')">Restore Center</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button></div><div class="card"><h3>Staff / Support</h3><button class="btn" onclick="location.href='staff.html'">Staff Edition</button><button class="btn" onclick="Gold50.openApp('support')">Support Center</button></div><div class="card"><h3>DOS</h3><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button></div></div>`,{width:820,height:560})}
+function openDOS(){openWindow("dos","Emerald DOS",`<h2>Emerald DOS</h2><div class="dos-output" id="dos_out">Emerald BIOS A9 DOS\nType HELP for commands.\n</div><div class="dos-line"><span>GOLD&gt;</span><input id="dos_in" onkeydown="if(event.key==='Enter')Gold50.runDOS(this.value);" autofocus></div>`,{width:780,height:540});setTimeout(()=>$("dos_in")?.focus(),50)}
+function runDOS(cmd){const out=$("dos_out"),inp=$("dos_in");cmd=String(cmd||'').trim();if(inp)inp.value='';function line(t){out.textContent+=`\nGOLD> ${cmd}\n${t}\n`;out.scrollTop=out.scrollHeight}const c=cmd.toUpperCase();if(c==='HELP')line('HELP, VER, DIR, APPS, USERS, WHOAMI, LOGIN, REGISTER, LOGOUT, BOOT, DESKTOP, SAFE, SETUP, STAFF, SUPPORT, STORE, DEV, OFFICE, EXPLORER, SNAPSHOT, RESTORE, BACKUP, RESET, DIAG, PREFS, CLEARCACHE, TIME, DATE, MEM, ECHO <text>, CLEAR, EXIT');else if(c==='VER')line(BUILD.name+' build '+BUILD.version+' / Emerald BIOS A9');else if(c==='DIR')line(files().map(f=>f.name).join('\\n')||'No Gold files.');else if(c==='APPS')line(APPS.map(a=>a.name).join('\\n'));else if(c==='USERS')line('Current user: '+username()+'\\nRole: '+(localStorage.getItem('role')||localStorage.getItem(PREFIX+'role')||'user'));else if(c==='WHOAMI')line(username());else if(c==='LOGIN'){line('Opening normal login...');location.href='index.html'}else if(c==='REGISTER'){line('Opening user registration...');location.href='register.html'}else if(c==='LOGOUT'){line('Signing out...');logoutGold()}else if(c==='BOOT'){line('Booting EmeraldOS Gold...');location.href='OS.html'}else if(c==='DESKTOP'){line('Opening desktop...');location.href='OS.html'}else if(c==='SAFE'){localStorage.setItem(PREFIX+'safemode','true');line('Safe Mode enabled. Reloading...');setTimeout(()=>location.reload(),500)}else if(c==='SETUP'){localStorage.removeItem(PREFIX+'setup_done');line('Setup will run next boot.');}else if(c==='STAFF'){line('Opening Staff Edition...');location.href='staff.html'}else if(c==='SUPPORT'){line('Opening Support Center.');openSupport()}else if(c==='STORE'){line('Opening User Appstore.');openStore()}else if(c==='DEV'){line('Opening Gold App Lab.');openApp('applab')}else if(c==='OFFICE'){line('Opening Gold Office.');openOffice()}else if(c==='EXPLORER'){line('Opening Gold Explorer.');openExplorer()}else if(c==='SNAPSHOT'){saveVMSnapshot();line('Snapshot saved.')}else if(c==='RESTORE'){line('Opening Restore Center.');openRestore()}else if(c==='BACKUP'){exportWorkspace();line('Workspace backup exported.')}else if(c==='RESET'){line('Opening reset confirmation.');resetGold()}else if(c==='DIAG'){line(JSON.stringify(deviceInfo(),null,2))}else if(c==='PREFS'){line(JSON.stringify(prefs(),null,2))}else if(c==='CLEARCACHE'){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX+'temp_')).forEach(k=>localStorage.removeItem(k));line('Temporary Gold cache cleared.')}else if(c==='MEM')line('Local storage used: '+fmtBytes(bytes(localStorage)));else if(c==='TIME')line(new Date().toLocaleTimeString());else if(c==='DATE')line(new Date().toLocaleDateString());else if(c.startsWith('ECHO '))line(cmd.slice(5));else if(c==='CLEAR'){out.textContent=''}else if(c==='EXIT')closeWin('win_dos');else line('Unknown command. Type HELP.')}
+function storeApps(){return read(PREFIX+'store_apps',[{id:'project-board',name:'Gold Project Board',author:'Emerald Systems',version:'1.1',verified:true,staffInstalled:true,category:'Productivity',desc:'A working Kanban-style project board with saved cards, priorities, due dates, export, and staff verification.'},{id:'help-desk',name:'Help Desk',author:'Gold Staff',version:'1.0',verified:true,staffInstalled:true,category:'Support',desc:'Support ticket companion app.'},{id:'theme-lab',name:'Theme Lab',author:'Community',version:'0.5',verified:false,staffInstalled:false,category:'Personalization',desc:'Experimental theme tester.'}])}
+function saveStoreApps(v){write(PREFIX+'store_apps',v)}
+function openStore(){const apps=storeApps();openWindow('store','User Appstore',`<h2>User Appstore</h2><p class="muted">Install local apps, review permissions, report apps, and look for Staff Verified badges.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.storeInstall('project-board')">Install Featured: Gold Project Board</button><button class="btn" onclick="Gold50.storeReport('theme-lab')">Report App</button>${isStaff()?'<button class="btn" onclick="Gold50.storeVerifyApp()">Staff Verify App</button>':''}</div><div class="drive-grid">${apps.map(a=>`<div class="drive-card"><h3>${esc(a.name)} ${a.verified?'<span class="verified-badge">Staff Verified</span>':''} ${a.staffInstalled?'<span class="staff-badge">Staff Installed</span>':''}</h3><p class="muted">${esc(a.category)} · v${esc(a.version)} · ${esc(a.author)}</p><p>${esc(a.desc)}</p><details><summary>Permissions</summary><p class="muted">Local storage for app data, notifications, file export, and opening an EmeraldOS Gold app window.</p></details><div class="toolbar"><button class="btn primary" onclick="Gold50.storeInstall('${a.id}')">Install/Open</button><button class="btn" onclick="Gold50.storeReport('${a.id}')">Report</button></div></div>`).join('')}</div>`,{width:920,height:680})}
+function projectBoardData(){let d=read(PREFIX+'project_board',{cards:null});if(!Array.isArray(d.cards)){d={cards:[{id:uid(),title:'Plan EmeraldOS Gold release',notes:'Use this working Gold Store app to track tasks.',status:'todo',priority:'High',due:'',created:now()},{id:uid(),title:'Test Gold Store install flow',notes:'Open from Gold Store and confirm cards save after reload.',status:'doing',priority:'Normal',due:'',created:now()},{id:uid(),title:'Staff verified badge',notes:'This sample app is Staff Verified.',status:'done',priority:'Normal',due:'',created:now()}]};write(PREFIX+'project_board',d)}return d}
+function saveProjectBoard(d){write(PREFIX+'project_board',d);saveWorkspaceDebounced()}
+function projectBoardHTML(){const d=projectBoardData();const cols=[['todo','To Do'],['doing','In Progress'],['done','Done']];const count=d.cards.length;return `<div class="store-app-head"><div><h2>Gold Project Board</h2><p class="muted">Staff Verified productivity app installed from Gold Store. Cards save locally and can be exported.</p></div><span class="verified-badge">Staff Verified</span></div><div class="project-board-form"><input id="pb_title" class="field" placeholder="Card title"><select id="pb_priority" class="field"><option>Normal</option><option>High</option><option>Urgent</option><option>Low</option></select><input id="pb_due" type="date" class="field"><button class="btn primary" onclick="Gold50.projectBoardAdd()">Add Card</button></div><textarea id="pb_notes" class="field" rows="2" placeholder="Optional notes"></textarea><div class="toolbar"><button class="btn" onclick="Gold50.projectBoardExport()">Export Board</button><button class="btn" onclick="Gold50.projectBoardClear()">Clear Board</button><span class="muted">${count} card${count===1?'':'s'} saved</span></div><div class="kanban-board">${cols.map(([key,label])=>`<section class="kanban-col"><h3>${label}</h3>${d.cards.filter(c=>c.status===key).map(card=>`<article class="kanban-card priority-${esc(card.priority).toLowerCase()}"><div class="card-title">${esc(card.title)}</div><p>${esc(card.notes||'')}</p><small>${esc(card.priority)}${card.due?' · Due '+esc(card.due):''}</small><div class="toolbar mini"><button class="btn" onclick="Gold50.projectBoardMove('${card.id}',-1)">←</button><button class="btn" onclick="Gold50.projectBoardMove('${card.id}',1)">→</button><button class="btn danger" onclick="Gold50.projectBoardDelete('${card.id}')">Delete</button></div></article>`).join('')||'<p class="muted empty-col">No cards</p>'}</section>`).join('')}</div>`}
+function openProjectBoard(){openWindow('storeapp_project_board','Gold Project Board',projectBoardHTML(),{width:960,height:680,singleton:true})}
+function projectBoardRefresh(){const host=document.querySelector('#win_storeapp_project_board .win-body');if(host)host.innerHTML=projectBoardHTML();else openProjectBoard()}
+function projectBoardAdd(){const title=$('pb_title')?.value.trim();if(!title){notify('Project Board','Enter a card title first.','Gold Store');return}const d=projectBoardData();d.cards.unshift({id:uid(),title,notes:$('pb_notes')?.value.trim()||'',status:'todo',priority:$('pb_priority')?.value||'Normal',due:$('pb_due')?.value||'',created:now()});saveProjectBoard(d);notify('Card added',title,'Gold Project Board');projectBoardRefresh()}
+function projectBoardMove(id,dir){const order=['todo','doing','done'];const d=projectBoardData();const c=d.cards.find(x=>x.id===id);if(!c)return;const i=Math.max(0,Math.min(order.length-1,order.indexOf(c.status)+dir));c.status=order[i];saveProjectBoard(d);projectBoardRefresh()}
+function projectBoardDelete(id){const d=projectBoardData();d.cards=d.cards.filter(x=>x.id!==id);saveProjectBoard(d);projectBoardRefresh()}
+function projectBoardExport(){saveText('gold-project-board.json',JSON.stringify(projectBoardData(),null,2),'application/json');notify('Board exported','gold-project-board.json downloaded.','Gold Project Board')}
+function projectBoardClear(){if(!confirm('Clear all Project Board cards?'))return;saveProjectBoard({cards:[]});projectBoardRefresh()}
+function storeInstall(id){const a=storeApps().find(x=>x.id===id);if(id==='project-board'){notify('Store app opened','Gold Project Board is ready.','Gold Store');openProjectBoard();return}notify('Store app installed',a?.name||id,'Gold Store');openWindow('storeapp_'+id,a?.name||'Store App',`<h2>${esc(a?.name||id)}</h2><p>${esc(a?.desc||'Installed app')}</p><p class="muted">This is a safe local app container.</p>`,{width:560,height:400,singleton:false})}
+function storeReport(id){const note=prompt('Why are you reporting this app?','');write(PREFIX+'store_reports',[{id:uid(),app:id,note,user:username(),time:now()},...read(PREFIX+'store_reports',[])]);notify('App reported',id,'Gold Store')}
+function storeVerifyApp(){if(!isStaff()){location.href='staff.html';return}const id=prompt('App ID to mark Staff Verified','theme-lab');if(!id)return;const apps=storeApps();const a=apps.find(x=>x.id===id);if(a){a.verified=true;a.staffInstalled=true;a.verifiedBy=currentStaff()?.username||'Staff';a.verifiedAt=now();saveStoreApps(apps);notify('App verified',a.name,'Gold Store');openStore()}}
+
+
+function gold1eUserApps(){return read(PREFIX+'user_apps',[])}
+function saveGold50UserApps(apps){write(PREFIX+'user_apps',apps);saveWorkspaceDebounced()}
+function safeAppId(name){return String(name||'app').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||('app-'+uid())}
+function userAppAPI(app,body){return{write:h=>{body.insertAdjacentHTML('beforeend',String(h||''))},button:(label,fn)=>{const b=document.createElement('button');b.className='btn';b.textContent=label;b.onclick=fn;body.appendChild(b);return b},notify:(title,msg)=>notify(title,msg,app.name||'User App'),save:(key,val)=>{const data=read(PREFIX+'user_app_data',{});data[app.id]=data[app.id]||{};data[app.id][key]=val;write(PREFIX+'user_app_data',data)},load:(key,fallback=null)=>{const data=read(PREFIX+'user_app_data',{});return data?.[app.id]?.[key]??fallback},exportText:(filename,text)=>saveText(filename,text,'text/plain'),open:(id)=>openApp(id),username:username()}}
+function runUserApp(app){const w=openWindow('userapp_'+app.id,app.name||'User App',`<div class="store-app-head"><div><h2>${esc(app.name||'User App')}</h2><p class="muted">JS-only User Appstore app · ${app.verified?'<span class="verified-badge">Staff Verified</span>':'Unverified local app'}</p></div></div><div id="uapp_${esc(app.id)}" class="user-app-body"></div>`,{width:760,height:560,singleton:false});const body=w.querySelector('#uapp_'+CSS.escape(app.id));try{new Function('api',String(app.code||''))(userAppAPI(app,body));if(!body.innerHTML.trim())body.innerHTML='<p class="muted">App ran without visible output. Use api.write() to display content.</p>';notify('User app opened',app.name,'Gold Store')}catch(e){body.innerHTML=`<div class="card danger-card"><h3>App error</h3><pre>${esc(e.message)}</pre></div>`;notify('User app error',e.message,'Gold Store')}}
+function uploadUserAppFile(){const input=document.createElement('input');input.type='file';input.accept='.js,application/javascript,text/javascript,text/plain';input.onchange=()=>{const file=input.files?.[0];if(!file)return;const r=new FileReader();r.onload=()=>{const code=String(r.result||'');const suggested=file.name.replace(/\.js$/i,'').replace(/[-_]+/g,' ').replace(/\b\w/g,m=>m.toUpperCase());const name=prompt('App name',suggested)||suggested;const app={id:safeAppId(name)+'-'+Date.now().toString(36),name,author:username(),version:'1.0',category:'User Upload',desc:'JS-only app uploaded through EmeraldOS Gold 1E.',code,verified:false,staffInstalled:false,uploadedAt:now(),permissions:['Local storage through app API','Notifications through app API','File export through app API']};const apps=gold1eUserApps();apps.unshift(app);saveGold50UserApps(apps);notify('User app uploaded',name,'Gold Store');openStore();};r.readAsText(file)};input.click()}
+function createUserAppFromCode(){const name=$('dev_app_name')?.value.trim()||'My Gold App';const code=$('dev_app_code')?.value||'';if(!code.trim()){notify('User Development','Enter JavaScript code first.','User Development');return}const app={id:safeAppId(name)+'-'+Date.now().toString(36),name,author:username(),version:$('dev_app_version')?.value||'1.0',category:'User Development',desc:$('dev_app_desc')?.value||'Created in User Development.',code,verified:false,staffInstalled:false,uploadedAt:now(),permissions:['Local storage through app API','Notifications through app API','File export through app API']};const apps=gold1eUserApps();apps.unshift(app);saveGold50UserApps(apps);notify('App submitted to User Appstore',name,'User Development');openStore()}
+function exportDeveloperJS(){const name=($('dev_app_name')?.value.trim()||'GoldApp').replace(/[^a-z0-9_-]+/gi,'-');saveText(name+'.js',$('dev_app_code')?.value||'','text/javascript')}
+function previewDeveloperApp(){const app={id:'preview-'+uid(),name:$('dev_app_name')?.value||'Preview App',code:$('dev_app_code')?.value||''};runUserApp(app)}
+function deleteUserApp(id){if(!confirm('Remove this user app from the local Appstore?'))return;saveGold50UserApps(gold1eUserApps().filter(a=>a.id!==id));notify('User app removed',id,'Gold Store');openStore()}
+function staffVerifyUserApp(id){if(!isStaff()){location.href='staff.html';return}const apps=gold1eUserApps();const a=apps.find(x=>x.id===id);if(a){a.verified=true;a.staffInstalled=true;a.verifiedBy=currentStaff()?.username||username();a.verifiedAt=now();saveGold50UserApps(apps);notify('User app Staff Verified',a.name,'Gold Store');openStore()}}
+function openStore(){const systemApps=storeApps();const userApps=gold1eUserApps();openWindow('store','User Appstore',`<h2>User Appstore</h2><p class="muted">Install Staff Verified apps, upload JS-only apps, and test user app submissions safely through the Gold app API.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.storeInstall('project-board')">Open Staff Verified Project Board</button><button class="btn" onclick="Gold50.uploadUserAppFile()">Upload JS App</button><button class="btn" onclick="Gold50.openApp('devcenter')">User Development</button>${isStaff()?'<button class="btn" onclick="Gold50.storeVerifyApp()">Verify System App</button>':''}</div><div class="card"><h3>JS-only upload rules</h3><p>Uploaded apps must be one JavaScript file. Use <code>api.write()</code>, <code>api.button()</code>, <code>api.notify()</code>, <code>api.save()</code>, and <code>api.load()</code>. External imports are not required for testing.</p></div><h3>Staff Verified Apps</h3><div class="drive-grid">${systemApps.map(a=>`<div class="drive-card"><h3>${esc(a.name)} ${a.verified?'<span class="verified-badge">Staff Verified</span>':''} ${a.staffInstalled?'<span class="staff-badge">Staff Installed</span>':''}</h3><p class="muted">${esc(a.category)} · v${esc(a.version)} · ${esc(a.author)}</p><p>${esc(a.desc)}</p><details><summary>Permissions</summary><p class="muted">Notifications, local storage, app window, file export where supported.</p></details><div class="toolbar"><button class="btn primary" onclick="Gold50.storeInstall('${a.id}')">Install/Open</button><button class="btn" onclick="Gold50.storeReport('${a.id}')">Report</button></div></div>`).join('')}</div><h3>User Uploaded JS Apps</h3>${userApps.length?'<div class="drive-grid">'+userApps.map(a=>`<div class="drive-card"><h3>${esc(a.name)} ${a.verified?'<span class="verified-badge">Staff Verified</span>':'<span class="staff-badge">Unverified</span>'}</h3><p class="muted">${esc(a.category)} · v${esc(a.version)} · ${esc(a.author||'Unknown')}</p><p>${esc(a.desc||'JS-only uploaded app.')}</p><details><summary>Permissions</summary><p class="muted">${(a.permissions||[]).map(esc).join('<br>')||'Gold app API only.'}</p></details><div class="toolbar"><button class="btn primary" onclick="Gold50.openUploadedApp('${a.id}')">Run</button><button class="btn" onclick="Gold50.exportUploadedApp('${a.id}')">Export JS</button>${isStaff()?`<button class="btn" onclick="Gold50.staffVerifyUserApp('${a.id}')">Staff Verify</button>`:''}<button class="btn danger" onclick="Gold50.deleteUserApp('${a.id}')">Remove</button></div></div>`).join('')+'</div>':'<p class="muted">No uploaded apps yet. Use Upload JS App or User Development.</p>'}`,{width:1100,height:760})}
+function openUploadedApp(id){const app=gold1eUserApps().find(a=>a.id===id);if(!app){notify('Gold Store','Uploaded app not found.','Gold Store');return}runUserApp(app)}
+function exportUploadedApp(id){const app=gold1eUserApps().find(a=>a.id===id);if(app)saveText((safeAppId(app.name)||'gold-app')+'.js',app.code||'','text/javascript')}
+function openDeveloperCenter(){openWindow('devcenter','User Development 5.0',`<h2>User Development 5.0</h2><p class="muted">Build JS-only apps for the Gold Store upload feature. No HTML, CSS, or external files are required.</p><div class="grid2"><div><label>App name<input id="dev_app_name" class="field" value="My Gold App"></label><label>Version<input id="dev_app_version" class="field" value="1.0"></label><label>Description<input id="dev_app_desc" class="field" value="A JS-only EmeraldOS Gold app."></label><div class="toolbar"><button class="btn primary" onclick="Gold50.previewDeveloperApp()">Run Preview</button><button class="btn" onclick="Gold50.createUserAppFromCode()">Submit to User Appstore</button><button class="btn" onclick="Gold50.exportDeveloperJS()">Export .js</button><button class="btn" onclick="Gold50.insertDevTemplate('notes')">Notes Template</button><button class="btn" onclick="Gold50.insertDevTemplate('counter')">Counter Template</button></div></div><div class="card"><h3>Gold App API</h3><pre>api.write(html)\napi.button(label, callback)\napi.notify(title, message)\napi.save(key, value)\napi.load(key, fallback)\napi.exportText(filename, text)\napi.open(appId)\napi.username</pre></div></div><textarea id="dev_app_code" class="field codebox" rows="14">api.write('&lt;h2&gt;Hello EmeraldOS Gold 1E&lt;/h2&gt;&lt;p&gt;Signed in as '+api.username+'&lt;/p&gt;');\nlet count = api.load('count', 0);\napi.write('&lt;p id="countBox"&gt;Count: '+count+'&lt;/p&gt;');\napi.button('Add', () =&gt; { count++; api.save('count', count); document.getElementById('countBox').textContent = 'Count: '+count; api.notify('Counter', 'Saved count '+count); });</textarea>`,{width:1050,height:760})}
+function insertDevTemplate(type){const ta=$('dev_app_code');if(!ta)return;if(type==='notes')ta.value="api.write('<h2>Quick Notes</h2><textarea id=note rows=8 style=width:100%>'+api.load('note','')+'</textarea>');\napi.button('Save Note',()=>{ api.save('note', document.getElementById('note').value); api.notify('Quick Notes','Saved.'); });";else ta.value="api.write('<h2>Counter</h2><p id=count>0</p>');\nlet n=api.load('n',0); document.getElementById('count').textContent=n;\napi.button('Add',()=>{n++; api.save('n',n); document.getElementById('count').textContent=n;});"}
+function saveVMSnapshot(){const snap={id:uid(),time:now(),build:BUILD.name,user:username(),workspace:read(PREFIX+'workspace',null),prefs:prefs(),openEmeraldOS:[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title,x:w.offsetLeft,y:w.offsetTop,w:w.offsetWidth,h:w.offsetHeight,minimized:w.classList.contains('minimized'),maximized:w.classList.contains('maximized')}))};const snaps=read(PREFIX+'vm_snapshots',[]);snaps.unshift(snap);write(PREFIX+'vm_snapshots',snaps.slice(0,20));saveWorkspaceNow(false);notify('VM snapshot saved','You can pick up from this point later.','Gold VM Center')}
+function openVMCenter(){const snaps=read(PREFIX+'vm_snapshots',[]);openWindow('vmcenter','Gold VM Center',`<h2>Gold VM Center</h2><p class="muted">EmeraldOS Gold works like a browser-based virtual machine. Sign in, save your workspace, and pick up where you left off.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.saveVMSnapshot();Gold50.openApp('vmcenter')">Save Snapshot</button><button class="btn" onclick="Gold50.saveWorkspaceNow(true)">Save Workspace</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore Workspace</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button><button class="btn" onclick="Gold50.importWorkspacePrompt()">Import Backup</button></div><div class="grid4"><div class="card"><h3>User</h3><p>${esc(username())}</p></div><div class="card"><h3>Cloud Path</h3><p>emeraldOSUsers/${esc(username())}/goldVM/current</p></div><div class="card"><h3>Open EmeraldOS</h3><p>${document.querySelectorAll('.window:not(.minimized)').length}</p></div><div class="card"><h3>Snapshots</h3><p>${snaps.length}</p></div></div><h3>Local snapshots</h3>${snaps.map(s=>`<div class="card"><b>${new Date(s.time).toLocaleString()}</b><p class="muted">${esc(s.build)} · ${esc(s.user)} · ${s.openEmeraldOS?.length||0} windows</p></div>`).join('')||'<p class="muted">No snapshots yet.</p>'}`,{width:960,height:700})}
+
+let saveTimer=null;function saveWorkspaceDebounced(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveWorkspaceNow(false),700)}async function saveWorkspaceNow(show=true){const data={prefs:prefs(),files:files(),tickets:tickets(),mail:mail(),notes:notes(),tasks:tasks(),contacts:contacts(),notifications:notifs(),savedAt:now(),build:BUILD.name};write(PREFIX+'workspace',data);if(fb?.setDoc&&fb?.doc&&fb?.db){try{await fb.setDoc(fb.doc(fb.db,'emeraldOSUsers',username(),'gold8','current'),data)}catch(e){console.warn('cloud save failed',e)}}if(show)notify('Workspace saved','Gold 1E workspace saved locally and attempted cloud sync.','Restore Center')}
+async function restoreWorkspace(show=true){let data=read(PREFIX+'workspace',null);if(fb?.getDoc&&fb?.doc&&fb?.db){try{const snap=await fb.getDoc(fb.doc(fb.db,'emeraldOSUsers',username(),'gold8','current'));if(snap.exists())data=snap.data()}catch(e){console.warn('cloud restore failed',e)}}if(data){['prefs','files','tickets','mail','notes','tasks','contacts','notifications'].forEach(k=>{if(data[k])write(PREFIX+k,data[k])});applyPrefs();renderDesktop();renderNotifBadge();if(show)notify('Workspace restored','Gold 1E workspace restored.','Restore Center')}}function exportWorkspace(){saveText('emeraldos-gold-8.0-workspace.json',JSON.stringify({prefs:prefs(),files:files(),tickets:tickets(),mail:mail(),notes:notes(),tasks:tasks(),contacts:contacts(),notifications:notifs()},null,2),'application/json')}function importWorkspacePrompt(){const txt=prompt('Paste workspace JSON');if(!txt)return;try{const data=JSON.parse(txt);Object.keys(data).forEach(k=>write(PREFIX+k,data[k]));location.reload()}catch{alert('Invalid JSON')}}function resetGold(){if(confirm('Reset local EmeraldOS Gold 1E data?')){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k));location.reload()}}
+function openApp(id){closeOverlays();const app=appById(id);if(app.staffOnly&&!isStaff()){location.href="staff.html";return}(app.open||openExplorer)()}function notifyPublic(t,b,a){return notify(t,b,a)}
+window.Gold50={openApp,focusWindow,minimizeWin,maximizeWin,closeWin,closeAllEmeraldOS,tileEmeraldOS,cascadeEmeraldOS,filterStart,renderSearch,openFile,explorerView,setExplorerQ,newFileDialog,createNewFile,newFolder,renameFile,starFile,trashFile,deleteFile,exportAllFiles,importFilesPrompt,renderOffice,officeNew,saveDoc,exportDoc,sheetAddRow,saveSheet,exportSheet,addSlide,saveSlides,presentSlides,addFormQ,saveForm,createTemplate,composeMail,sendMail,saveDraft,readMail,deleteMail,renderSupport,submitTicket,requestRemoteHelp,revokeRemoteControl,remoteControlApp,staffReplyTicket,staffResolveTicket,openStaffCenter,staffPreview,staffBroadcast,staffRemotePanel,staffViewRemoteDesktop,staffSendRemoteCommand,staffLogs,staffLogout,settingsTab,setPrefs,loadBackgroundFile,toggleDesktopApp,runDOS,setupStep:()=>{},finishSetup,sendChat,newChatRoom,addContact,blockUser,addNote,updateNote,deleteNote,addTask,toggleTask,deleteTask,addPhoto,startTimer,clearPaint,sendFeedback,installSampleApp,runCustomApp,saveWorkspaceNow,restoreWorkspace,exportWorkspace,importWorkspacePrompt,resetGold,notify:notifyPublic,saveText,markAllRead,clearNotifications,logoutGold};
+
+Object.assign(window.Gold50,{uploadUserAppFile,openUploadedApp,exportUploadedApp,deleteUserApp,staffVerifyUserApp,createUserAppFromCode,previewDeveloperApp,exportDeveloperJS,openDeveloperCenter,insertDevTemplate,openVMCenter,saveVMSnapshot,duplicateFile,docCommand,docSetBlock,docInsert,updateDocStatsActive,exportDocText,sheetAddCol,sheetAutoTotal,sheetCalculate,exportSlides,previewForm,openHelp,openDiagnostics,openShortcuts,openSafeMode,openSearch,storeInstall,storeReport,storeVerifyApp,projectBoardAdd,projectBoardMove,projectBoardDelete,projectBoardExport,projectBoardClear});
+
+/* =========================================================
+   EMERALDOS GOLD 5.0 ENHANCEMENTS
+   HTML/CSS/JS app packages, accessibility, theme studio,
+   EmeraldOS Gold-style system apps, and customization controls.
+========================================================= */
+function installGold50Apps(){
+  const add=(app)=>{ if(!APPS.some(a=>a.id===app.id)) APPS.push(app); };
+  add({id:'accessibility',name:'Accessibility Center',label:'AC',color:'blue',group:'System',desc:'Text size, high contrast, focus rings, reduced motion, readable font, cursor and color filters.',open:openAccessibility50});
+  add({id:'themestudio',name:'Theme Studio',label:'TS',color:'gold',group:'System',desc:'Background color, gradients, wallpaper, blur, accent and Start/taskbar appearance.',open:openThemeStudio50});
+  add({id:'applab',name:'Gold App Lab',label:'AL',color:'purple',group:'Apps',desc:'Build JS, HTML, CSS and packaged apps for the User Appstore.',open:openAppLab50});
+  add({id:'packager',name:'App Packager',label:'PK',color:'green',group:'Apps',desc:'Import, preview, export and submit .egoldapp packages.',open:openPackager50});
+  add({id:'browser',name:'Gold Browser',label:'BR',color:'blue',group:'Built-in',desc:'EmeraldOS Gold-style browser shell for testing embedded pages.',open:openBrowser50});
+  add({id:'terminal',name:'Gold Terminal',label:'>_',color:'dark',group:'System',desc:'Modern terminal for EmeraldOS Gold commands.',open:openTerminal50});
+  add({id:'media',name:'Media Player',label:'MP',color:'red',group:'Built-in',desc:'Play local media URLs and simple audio/video sources.',open:openMedia50});
+  add({id:'controlpanel',name:'Control Panel',label:'CP',color:'gray',group:'System',desc:'Classic EmeraldOS-inspired control panel shortcuts.',open:openControlPanel50});
+  add({id:'snip',name:'Snip & Sketch',label:'SN',color:'teal',group:'Built-in',desc:'Create quick text/image snip notes and export them.',open:openSnip50});
+  add({id:'systeminfo',name:'System Information',label:'SI',color:'gray',group:'System',desc:'Gold VM diagnostics, browser details and workspace status.',open:openSystemInfo50});
+  const storeApp=APPS.find(a=>a.id==='store'); if(storeApp){storeApp.open=openStore50;storeApp.name='User Appstore';storeApp.desc='Install, upload, verify and run JS or packaged HTML/CSS/JS apps.';}
+  const creator=APPS.find(a=>a.id==='creator'); if(creator){creator.open=openAppLab50;creator.name='Gold App Lab';creator.desc='Build JS, HTML, CSS and packaged apps.';}
+  const settings=APPS.find(a=>a.id==='settings'); if(settings){settings.open=openSettings50;settings.name='Settings';settings.desc='EmeraldOS Gold-style system settings, accessibility, personalization and app controls.';}
+}
+function seedGold50(){
+  
+
+/* =========================================================
+   EMERALDOS GOLD 8.0 CLOUD VM + SETUP + FULL PERSONALIZATION
+   Keeps the Gold 7.0 feature set and upgrades it into a setup-once,
+   cloud-synced virtual machine style desktop.
+========================================================= */
+Object.assign(BUILD,{name:"EmeraldOS Gold 1E",version:"1E",cloudPath:"goldVM/current",bios:"Emerald BIOS A9"});
+
+function defaultPrefs(){return{
+  theme:"light", accent:"#0078d4", secondaryAccent:"#0f7b4d", background:"gold-bloom", gradient:"aurora",
+  useBackgroundColor:false, backgroundColor:"#e9f3ff", customBackground:"", bgMode:"cover", bgPosition:"center", bgRepeat:"no-repeat",
+  desktopApps:["emeraldbrand","explorer","office","mail","support","quickassist","settings","themestudio","accessibility","vmcenter","store","applab","diagnostics","emergency","recovery"],
+  iconSize:"normal", density:"comfortable", showLabels:true, lockDesktop:false, sortDesktop:"custom", desktopGrid:"medium",
+  taskbarSearch:true, taskbarWidgets:true, taskbarStaff:true, taskbarPosition:"bottom", taskbarOpacity:92, taskbarSize:"normal", taskbarLabels:true,
+  startWidth:860, startColumns:3, startRecommendations:true, actionCenter:true, notifications:true, focusAssist:false,
+  transparency:true, micaBlur:18, rounding:"small", panelOpacity:94, tileOpacity:.94, windowAnimation:true,
+  fontFamily:"Segoe UI", textScale:1, bigText:false, readableFont:false, reducedMotion:false, highContrastBorders:false,
+  focusRings:true, underlineControls:false, largeCursor:false, colorFilter:"none", clockSeconds:false,
+  cloudSync:true, autosaveInterval:15, restoreOnLogin:true, setupMode:"complete", setupDone:false
+}}
+function applyPrefs(){const p=prefs();document.body.classList.toggle("dark",p.theme==="dark");document.body.classList.toggle("highcontrast",p.theme==="highcontrast");document.body.classList.toggle("bigtext",!!p.bigText);document.body.classList.toggle("no-motion",!!p.reducedMotion);document.body.classList.toggle("gold1e-solid-bg",!!p.useBackgroundColor);document.body.classList.toggle("gold1e-readable",!!p.readableFont);document.body.classList.toggle("gold1e-focus-ring",!!p.focusRings);document.body.classList.toggle("gold1e-large-cursor",!!p.largeCursor);document.body.classList.toggle("gold1e-underlined",!!p.underlineControls);document.body.classList.toggle("gold1e-extra-contrast",!!p.highContrastBorders);document.body.classList.toggle("gold1e-taskbar-top",p.taskbarPosition==="top");document.body.classList.toggle("gold1e-taskbar-compact",p.taskbarSize==="compact");document.body.classList.remove("bg-gold-bloom","bg-blue-window","bg-emerald-field","bg-slate-pro","custom-bg","gradient-aurora","gradient-skyline","gradient-emerald-pro","gradient-midnight","gradient-sunrise","gradient-ribbon","gradient-calm");if(p.customBackground){document.body.classList.add("custom-bg");document.body.style.setProperty("--customBg",`url(${p.customBackground})`);document.body.style.setProperty("--bgMode",p.bgMode||"cover");document.body.style.setProperty("--bgPosition",p.bgPosition||"center");document.body.style.setProperty("--bgRepeat",p.bgRepeat||"no-repeat")}else if(p.useBackgroundColor){document.body.style.setProperty("--gold1eBackground",p.backgroundColor||"#e9f3ff")}else{document.body.classList.add("gradient-"+(p.gradient||"aurora"));document.body.style.removeProperty("--customBg")}document.documentElement.style.setProperty("--accent",p.accent||"#0078d4");document.documentElement.style.setProperty("--accent2",p.secondaryAccent||"#0f7b4d");document.documentElement.style.setProperty("--gold70Secondary",p.secondaryAccent||"#0f7b4d");document.documentElement.style.setProperty("--winRadius",p.rounding==="none"?"0":p.rounding==="large"?"14px":p.rounding==="pill"?"20px":"6px");document.documentElement.style.setProperty("--gold1eTaskOpacity",String((Number(p.taskbarOpacity)||92)/100));document.documentElement.style.setProperty("--gold1ePanelOpacity",String((Number(p.panelOpacity)||94)/100));document.documentElement.style.setProperty("--gold1eMica",(Number(p.micaBlur)||0)+"px");document.documentElement.style.setProperty("--gold1eStartWidth",(Number(p.startWidth)||860)+"px");document.documentElement.style.setProperty("--gold1eTextScale",String(Number(p.textScale)||1));document.documentElement.style.setProperty("--gold1eBackground",p.backgroundColor||"#e9f3ff");document.documentElement.style.setProperty("--font",p.fontFamily||"Segoe UI");document.documentElement.style.setProperty("--gold1eIconScale",p.iconSize==="small"?".86":p.iconSize==="large"?"1.16":p.iconSize==="xl"?"1.32":"1");document.documentElement.style.setProperty("--gold1eDesktopGap",p.density==="compact"?"8px":p.density==="spacious"?"24px":"16px");const search=$("searchBtn"),widgets=$("widgetsBtn"),staff=$("staffBtn");if(search)search.style.display=p.taskbarSearch?"":"none";if(widgets)widgets.style.display=p.taskbarWidgets?"":"none";if(staff)staff.style.display=p.taskbarStaff?"":"none";}
+
+function gold1eLocalState(){const localKeys={};Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)||["loggedIn","username","role","role2","userId"].includes(k)).forEach(k=>localKeys[k]=localStorage.getItem(k));return{build:BUILD.name,version:BUILD.version,savedAt:now(),user:username(),prefs:prefs(),files:files(),tickets:tickets(),mail:mail(),notes:notes(),tasks:tasks(),contacts:contacts(),notifications:notifs(),userApps:read(PREFIX+'user_apps',[]),remoteSessions:read(PREFIX+'remote_sessions',[]),emergencyLogs:read(PREFIX+'emergency_logs',[]),snapshots:read(PREFIX+'vm_snapshots',[]),openWindows:[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title,left:w.style.left,top:w.style.top,width:w.style.width,height:w.style.height,max:w.classList.contains('max'),min:w.classList.contains('minimized')})),localKeys};}
+async function gold1eCloudWrite(data){if(!prefs().cloudSync)return false;if(!fb)await initFirebase();if(fb?.setDoc&&fb?.doc&&fb?.db){try{await fb.setDoc(fb.doc(fb.db,'emeraldOSUsers',username(),'gold8','current'),data);await fb.setDoc(fb.doc(fb.db,'emeraldOSGoldVMStates',username()),data);localStorage.setItem(PREFIX+'cloud_last_save',now());localStorage.setItem(PREFIX+'cloud_status','saved');return true}catch(e){console.warn('Gold 8 cloud save failed',e);localStorage.setItem(PREFIX+'cloud_status','save failed: '+(e.message||e));return false}}localStorage.setItem(PREFIX+'cloud_status','firebase unavailable');return false;}
+async function gold1eCloudRead(){if(!fb)await initFirebase();if(fb?.getDoc&&fb?.doc&&fb?.db){try{let snap=await fb.getDoc(fb.doc(fb.db,'emeraldOSUsers',username(),'gold8','current'));if(snap.exists()){localStorage.setItem(PREFIX+'cloud_status','restored');return snap.data()}snap=await fb.getDoc(fb.doc(fb.db,'emeraldOSGoldVMStates',username()));if(snap.exists()){localStorage.setItem(PREFIX+'cloud_status','restored');return snap.data()}}catch(e){console.warn('Gold 8 cloud restore failed',e);localStorage.setItem(PREFIX+'cloud_status','restore failed: '+(e.message||e))}}return null;}
+let saveTimer=null;function saveWorkspaceDebounced(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveWorkspaceNow(false),700)}
+async function saveWorkspaceNow(show=true){const data=gold1eLocalState();write(PREFIX+'workspace',data);const cloud=await gold1eCloudWrite(data);if(show)notify('Gold VM saved',cloud?'Everything was saved to the cloud VM state.':'Saved locally. Cloud sync will retry when Firebase is available.','Gold VM');return data;}
+async function restoreWorkspace(show=true){let data=null;if(prefs().restoreOnLogin!==false)data=await gold1eCloudRead();if(!data)data=read(PREFIX+'workspace',null);if(data){if(data.localKeys)Object.entries(data.localKeys).forEach(([k,v])=>{if(v!==null&&v!==undefined)localStorage.setItem(k,String(v))});['prefs','files','tickets','mail','notes','tasks','contacts','notifications'].forEach(k=>{if(data[k])write(PREFIX+k,data[k])});if(data.userApps)write(PREFIX+'user_apps',data.userApps);if(data.remoteSessions)write(PREFIX+'remote_sessions',data.remoteSessions);if(data.emergencyLogs)write(PREFIX+'emergency_logs',data.emergencyLogs);if(data.snapshots)write(PREFIX+'vm_snapshots',data.snapshots);applyPrefs();renderDesktop();renderNotifBadge();if(show)notify('Gold VM restored','Your apps, files, settings, support history, and customizations were restored.','Gold VM')}else if(show)notify('No VM state found','Use setup or restore a backup to begin.','Gold VM')}
+function exportWorkspace(){saveText('emeraldos-gold-8.0-cloud-vm-backup.json',JSON.stringify(gold1eLocalState(),null,2),'application/json')}
+function resetGold(){if(confirm('Reset this EmeraldOS Gold 1E VM on this browser? Cloud data is not deleted.')){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).forEach(k=>localStorage.removeItem(k));location.reload()}}
+function gold1eCloudStatusHTML(){return `<div class="grid4"><div class="card quick-card"><h3>Cloud sync</h3><p>${esc(localStorage.getItem(PREFIX+'cloud_status')||'ready')}</p></div><div class="card quick-card"><h3>Last save</h3><p>${esc(localStorage.getItem(PREFIX+'cloud_last_save')||'not yet')}</p></div><div class="card quick-card"><h3>VM path</h3><p>emeraldOSUsers/${esc(username())}/goldVM/current</p></div><div class="card quick-card"><h3>Tracked data</h3><p>apps, files, settings, tickets, mail, and workspace</p></div></div>`}
+
+function openSetup(){const box=$("setupWizard");if(!box)return;let step=0;const setup={style:prefs().theme||'light',accent:prefs().accent||'#0078d4',secondary:prefs().secondaryAccent||'#0f7b4d',gradient:prefs().gradient||'aurora',bgColor:prefs().backgroundColor||'#e9f3ff',desktopApps:[...new Set(prefs().desktopApps||defaultPrefs().desktopApps)],taskbarSearch:prefs().taskbarSearch!==false,cloudSync:true,restoreOnLogin:true,accessibility:prefs().bigText?'large':'standard'};const steps=[
+ {title:'Welcome to EmeraldOS Gold 1E',body:()=>`<p>This setup turns Gold into your cloud-synced virtual machine. Set it up once, then sign in later to pick up where you left off.</p><div class="setup-choice-grid"><button class="setup-choice active"><b>Cloud VM</b><span>Save apps, files, settings, support, and workspace.</span></button><button class="setup-choice"><b>Gold shell</b><span>Modern desktop, Start, taskbar, Action Center, and app windows.</span></button></div>`},
+ {title:'Choose your Gold style',body:()=>`<label>Mode<select class="field" onchange="Gold50._setup8.style=this.value"><option value="light">Light</option><option value="dark">Dark</option><option value="highcontrast">High contrast</option></select></label><label>Accent<input type="color" class="field" value="${esc(setup.accent)}" onchange="Gold50._setup8.accent=this.value"></label><label>Secondary accent<input type="color" class="field" value="${esc(setup.secondary)}" onchange="Gold50._setup8.secondary=this.value"></label><label>Desktop gradient<select class="field" onchange="Gold50._setup8.gradient=this.value"><option value="aurora">Gold Aurora</option><option value="skyline">Blue Skyline</option><option value="emerald-pro">Emerald Pro</option><option value="sunrise">Gold Sunrise</option><option value="midnight">Midnight</option><option value="ribbon">Gold Ribbon</option><option value="calm">Calm Cloud</option></select></label><label>Solid background color<input type="color" class="field" value="${esc(setup.bgColor)}" onchange="Gold50._setup8.bgColor=this.value"></label>`},
+ {title:'Pick desktop apps',body:()=>`<p>Select the apps that should appear on your desktop. You can change this later in Settings.</p><div class="setup-app-grid">${visibleApps().slice(0,40).map(a=>`<label class="setup-app"><input type="checkbox" ${setup.desktopApps.includes(a.id)?'checked':''} onchange="Gold50._setupToggleApp('${a.id}',this.checked)">${appIcon(a,true)}<span>${esc(a.name)}</span></label>`).join('')}</div>`},
+ {title:'Cloud and continuity',body:()=>`${gold1eCloudStatusHTML()}<label class="setting-line"><span>Save everything to the cloud VM state</span><input type="checkbox" checked onchange="Gold50._setup8.cloudSync=this.checked"></label><label class="setting-line"><span>Restore my last workspace after login</span><input type="checkbox" checked onchange="Gold50._setup8.restoreOnLogin=this.checked"></label><label class="setting-line"><span>Show taskbar search</span><input type="checkbox" ${setup.taskbarSearch?'checked':''} onchange="Gold50._setup8.taskbarSearch=this.checked"></label>`},
+ {title:'Accessibility and comfort',body:()=>`<label>Text size<select class="field" onchange="Gold50._setup8.accessibility=this.value"><option value="standard">Standard</option><option value="large">Large text</option><option value="readable">Readable font + focus rings</option></select></label><label class="setting-line"><span>Reduced motion</span><input type="checkbox" onchange="Gold50._setup8.reducedMotion=this.checked"></label><label class="setting-line"><span>Extra contrast borders</span><input type="checkbox" onchange="Gold50._setup8.highContrastBorders=this.checked"></label>`},
+ {title:'Ready to start',body:()=>`<p>EmeraldOS Gold will save your setup, create a recovery point, and open your desktop.</p><div class="grid3"><div class="card"><h3>Cloud VM</h3><p>Everything important is tracked.</p></div><div class="card"><h3>Customizable</h3><p>Change every major visual setting later.</p></div><div class="card"><h3>Support-ready</h3><p>Support, Quick Assist, Emergency Center, and Recovery stay available.</p></div></div>`}
+];window.Gold50._setup8=setup;window.Gold50._setupToggleApp=(id,on)=>{const s=window.Gold50._setup8;if(on&&!s.desktopApps.includes(id))s.desktopApps.push(id);if(!on)s.desktopApps=s.desktopApps.filter(x=>x!==id)};function draw(){box.classList.remove('hidden');box.innerHTML=`<div class="setup-card setup80"><div class="setup-progress"><span style="width:${((step+1)/steps.length)*100}%"></span></div><h1>${steps[step].title}</h1>${steps[step].body()}<div class="setup-actions"><button class="btn" ${step===0?'disabled':''} onclick="Gold50._setupBack()">Back</button><button class="btn primary" onclick="Gold50._setupNext()">${step===steps.length-1?'Finish setup':'Next'}</button></div><p class="muted">Step ${step+1} of ${steps.length}</p></div>`}window.Gold50._setupBack=()=>{step=Math.max(0,step-1);draw()};window.Gold50._setupNext=()=>{if(step<steps.length-1){step++;draw()}else finishSetup()};draw();}
+function finishSetup(){const s=window.Gold50._setup8||{};setPrefs({theme:s.style||'light',accent:s.accent||'#0078d4',secondaryAccent:s.secondary||'#0f7b4d',gradient:s.gradient||'aurora',backgroundColor:s.bgColor||'#e9f3ff',desktopApps:s.desktopApps||defaultPrefs().desktopApps,taskbarSearch:s.taskbarSearch!==false,cloudSync:s.cloudSync!==false,restoreOnLogin:s.restoreOnLogin!==false,bigText:s.accessibility==='large',readableFont:s.accessibility==='readable',focusRings:true,reducedMotion:!!s.reducedMotion,highContrastBorders:!!s.highContrastBorders,setupDone:true});localStorage.setItem(PREFIX+'setup_done','true');$("setupWizard")?.classList.add('hidden');saveVMSnapshot();saveWorkspaceNow(true);notify('Setup complete','EmeraldOS Gold 1E is ready and your cloud VM state is being saved.','Setup')}
+
+function openCloudSyncCenter80(){openWindow('cloudsync','Cloud Sync Center',`<h2>Cloud Sync Center</h2><p class="muted">Everything in your EmeraldOS Gold VM is tracked here: files, apps, preferences, support history, mail, notes, tasks, user apps, snapshots, and workspace state.</p>${gold1eCloudStatusHTML()}<div class="toolbar"><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save everything now</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore from cloud</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="Gold50.importWorkspacePrompt()">Import backup</button></div><h3>Tracked local keys</h3><div class="drive-grid">${Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).slice(0,80).map(k=>`<div class="drive-card"><b>${esc(k)}</b><p>${fmtBytes((localStorage.getItem(k)||'').length)}</p></div>`).join('')}</div>`,{width:1080,height:740})}
+function openPersonalization80(){openWindow('themestudio','Theme Studio',themeStudio80HTML(),{width:1120,height:760})}
+function themeStudio80HTML(){const p=prefs();return `<div class="app-shell settings50"><nav class="app-nav"><button class="active">Background</button><button onclick="Gold50.openApp('accessibility')">Accessibility</button><button onclick="Gold50.openApp('settings')">All Settings</button><button onclick="Gold50.openCloudSyncCenter80()">Cloud Sync</button></nav><main class="app-main"><h2>Theme Studio 8.0</h2><p class="muted">Customize the entire Gold VM shell.</p><div class="grid2"><div class="card"><h3>Desktop background</h3><label>Background color<input type="color" class="field" value="${esc(p.backgroundColor||'#e9f3ff')}" oninput="Gold50.setGold70Pref('backgroundColor',this.value);Gold50.setGold70Pref('useBackgroundColor',true)"></label><label>Gradient<select class="field" onchange="Gold50.setGold70Pref('gradient',this.value);Gold50.setGold70Pref('useBackgroundColor',false);Gold50.setGold70Pref('customBackground','')"><option value="aurora">Gold Aurora</option><option value="skyline">Blue Skyline</option><option value="emerald-pro">Emerald Pro</option><option value="sunrise">Gold Sunrise</option><option value="midnight">Midnight</option><option value="ribbon">Gold Ribbon</option><option value="calm">Calm Cloud</option></select></label><label>Background URL<input class="field" value="${esc(p.customBackground||'')}" onchange="Gold50.setGold70Pref('customBackground',this.value);Gold50.setGold70Pref('useBackgroundColor',false)"></label><label>Upload background<input class="field" type="file" accept="image/*" onchange="Gold50.loadGold50BackgroundFile(this)"></label><label>Background fit<select class="field" onchange="Gold50.setGold70Pref('bgMode',this.value)"><option>cover</option><option>contain</option><option>repeat</option></select></label></div><div class="card"><h3>Shell style</h3><label>Mode<select class="field" onchange="Gold50.setGold70Pref('theme',this.value)"><option value="light">Light</option><option value="dark">Dark</option><option value="highcontrast">High contrast</option></select></label><label>Accent<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setGold70Pref('accent',this.value)"></label><label>Secondary accent<input type="color" class="field" value="${esc(p.secondaryAccent||'#0f7b4d')}" oninput="Gold50.setGold70Pref('secondaryAccent',this.value)"></label><label>Window rounding<select class="field" onchange="Gold50.setGold70Pref('rounding',this.value)"><option value="none">Square</option><option value="small">Small</option><option value="large">Large</option><option value="pill">Rounded</option></select></label><label>Panel opacity<input type="range" min="70" max="100" value="${esc(p.panelOpacity||94)}" oninput="Gold50.setGold70Pref('panelOpacity',this.value)"></label><label>Blur<input type="range" min="0" max="32" value="${esc(p.micaBlur||18)}" oninput="Gold50.setGold70Pref('micaBlur',this.value)"></label></div></div><div class="grid2"><div class="card"><h3>Desktop icons</h3><label>Icon size<select class="field" onchange="Gold50.setGold70Pref('iconSize',this.value)"><option value="small">Small</option><option value="normal">Normal</option><option value="large">Large</option><option value="xl">Extra large</option></select></label><label>Desktop density<select class="field" onchange="Gold50.setGold70Pref('density',this.value)"><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></select></label><label class="setting-line"><span>Show desktop labels</span><input type="checkbox" ${p.showLabels?'checked':''} onchange="Gold50.setGold70Pref('showLabels',this.checked)"></label><label class="setting-line"><span>Lock desktop layout</span><input type="checkbox" ${p.lockDesktop?'checked':''} onchange="Gold50.setGold70Pref('lockDesktop',this.checked)"></label></div><div class="card"><h3>Taskbar and Start</h3><label>Start menu width<input type="range" min="520" max="1050" value="${esc(p.startWidth||860)}" oninput="Gold50.setGold70Pref('startWidth',this.value)"></label><label>Taskbar opacity<input type="range" min="70" max="100" value="${esc(p.taskbarOpacity||92)}" oninput="Gold50.setGold70Pref('taskbarOpacity',this.value)"></label><label class="setting-line"><span>Search box</span><input type="checkbox" ${p.taskbarSearch?'checked':''} onchange="Gold50.setGold70Pref('taskbarSearch',this.checked)"></label><label class="setting-line"><span>Taskbar at top</span><input type="checkbox" ${p.taskbarPosition==='top'?'checked':''} onchange="Gold50.setGold70Pref('taskbarPosition',this.checked?'top':'bottom')"></label><label class="setting-line"><span>Taskbar labels</span><input type="checkbox" ${p.taskbarLabels!==false?'checked':''} onchange="Gold50.setGold70Pref('taskbarLabels',this.checked)"></label></div></div></main></div>`}
+function openSettings60(tab='system'){const w=openWindow('settings','Settings',settings80HTML(tab),{width:1180,height:780});window.Gold50.settings60Tab=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=settings80HTML(t);applyPrefs();};window.Gold50.settings50Tab=window.Gold50.settings60Tab;}
+function settings80HTML(tab='system'){const nav=['system','personalization','cloud','accessibility','apps','accounts','support','vm','development','store','privacy','update','bios','staff'];return `<div class="app-shell settings50"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.settings60Tab('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}</nav><main class="app-main">${settings80Page(tab)}</main></div>`}
+function settings80Page(tab){const p=prefs();if(tab==='personalization')return themeStudio80HTML();if(tab==='cloud')return `<h2>Cloud VM</h2><p class="muted">Gold 1E is designed to save and restore the full VM state after login.</p>${gold1eCloudStatusHTML()}<div class="toolbar"><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save everything</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore</button><button class="btn" onclick="Gold50.openCloudSyncCenter80()">Open Cloud Sync Center</button></div><label class="setting-line"><span>Cloud sync enabled</span><input type="checkbox" ${p.cloudSync!==false?'checked':''} onchange="Gold50.setGold70Pref('cloudSync',this.checked)"></label><label class="setting-line"><span>Restore workspace after login</span><input type="checkbox" ${p.restoreOnLogin!==false?'checked':''} onchange="Gold50.setGold70Pref('restoreOnLogin',this.checked)"></label><label>Autosave interval<input class="field" type="number" min="5" max="120" value="${esc(p.autosaveInterval||15)}" onchange="Gold50.setGold70Pref('autosaveInterval',this.value)"></label>`;if(tab==='accessibility')return accessibility60HTML();if(tab==='apps')return `<h2>Apps</h2><p class="muted">Pin, open, and organize your VM apps.</p><div class="purpose-map">${visibleApps().map(a=>`<div class="card"><h3>${appIcon(a,true)} ${esc(a.name)}</h3><p>${esc(a.desc)}</p><span class="purpose-pill">${esc(a.group)}</span><div class="toolbar"><button class="btn" onclick="Gold50.openApp('${a.id}')">Open</button><button class="btn" onclick="Gold50.toggleDesktopApp('${a.id}')">${(p.desktopApps||[]).includes(a.id)?'Remove from desktop':'Pin to desktop'}</button></div></div>`).join('')}</div>`;if(tab==='accounts')return `<h2>Accounts</h2><div class="grid2"><div class="card"><h3>${esc(username())}</h3><p class="muted">EmeraldOS Gold cloud VM account</p><p>Mail: ${esc(mailAddress())}</p><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save before logout</button><button class="btn danger" onclick="Gold50.logoutGold()">Log out</button></div><div class="card"><h3>Setup once</h3><p>Run setup again to change the starting layout.</p><button class="btn" onclick="localStorage.removeItem('${PREFIX}setup_done');location.reload()">Run setup</button></div></div>`;if(tab==='vm')return `<h2>Gold VM</h2>${gold1eCloudStatusHTML()}<div class="toolbar"><button class="btn primary" onclick="Gold50.saveVMSnapshot();Gold50.saveWorkspaceNow(true)">Save VM Snapshot</button><button class="btn" onclick="Gold50.openApp('vmcenter')">Open VM Center</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button></div>`;if(tab==='bios')return `<h2>BIOS & DOS</h2><p>Emerald BIOS A9 includes cloud boot, setup, recovery, diagnostics, support, and development commands.</p><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open Emerald BIOS A9</button><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button><button class="btn" onclick="Gold50.openApp('terminal')">Open Terminal</button></div>`;if(tab==='development')return `<h2>User Development</h2><p>Build JS apps, HTML/CSS/JS packages, and Gold VM app packages.</p><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('applab')">Gold App Lab</button><button class="tile-button" onclick="Gold50.openApp('packager')">App Packager</button><button class="tile-button" onclick="Gold50.openApp('store')">User Appstore</button></div>`;if(tab==='support')return settings70EmergencyPage?settings70EmergencyPage():`<h2>Support</h2><button class="btn" onclick="Gold50.openApp('support')">Open Support</button>`;if(tab==='staff')return `<h2>Staff Edition</h2><p>Staff access is controlled from the Staff Edition login page.</p><div class="grid3"><button class="tile-button" onclick="location.href='staff.html'">Staff Login</button><button class="tile-button" onclick="Gold50.openApp('remotedesk')">Remote Desk</button><button class="tile-button" onclick="Gold50.openApp('staffresources')">Staff Resources</button></div>`;if(tab==='privacy')return `<h2>Privacy</h2><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setGold70Pref('focusAssist',this.checked)"></label><label class="setting-line"><span>Notifications</span><input type="checkbox" ${p.notifications!==false?'checked':''} onchange="Gold50.setGold70Pref('notifications',this.checked)"></label><label class="setting-line"><span>Remote assistance requires visible user consent</span><input type="checkbox" checked disabled></label><button class="btn" onclick="localStorage.removeItem('${PREFIX}search_history');Gold50.notify('Privacy','Search history cleared','Settings')">Clear local search history</button>`;if(tab==='update')return `<h2>Update & Security</h2><div class="grid2"><div class="card"><h3>EmeraldOS Gold 1E</h3><p>Cloud VM, better setup, expanded customization, support, BIOS A9, and VM continuity.</p></div><div class="card"><h3>Recovery</h3><button class="btn" onclick="Gold50.openApp('recovery')">Open Recovery Options</button></div></div>`;if(tab==='store')return `<h2>User Appstore</h2><p>Install Staff Verified apps or upload user apps. Packages run in a sandboxed frame where possible.</p><button class="btn primary" onclick="Gold50.openApp('store')">Open User Appstore</button>`;return `<div class="goldshell-header"><div><h2>System</h2><p class="muted">${esc(BUILD.name)} · ${esc(BUILD.bios)}</p></div><button class="btn primary" onclick="Gold50.openApp('support')">Get Support</button></div>${gold1eCloudStatusHTML()}<h3>Quick Settings</h3><label class="setting-line"><span>Taskbar search</span><input type="checkbox" ${p.taskbarSearch?'checked':''} onchange="Gold50.setGold70Pref('taskbarSearch',this.checked)"></label><label class="setting-line"><span>Show seconds in clock</span><input type="checkbox" ${p.clockSeconds?'checked':''} onchange="Gold50.setGold70Pref('clockSeconds',this.checked)"></label><label class="setting-line"><span>Cloud sync</span><input type="checkbox" ${p.cloudSync!==false?'checked':''} onchange="Gold50.setGold70Pref('cloudSync',this.checked)"></label>`}
+function openBIOSOptions60(){openWindow('bios','Emerald BIOS A9 Options',`<h2>Emerald BIOS A9</h2><p class="muted">Modern cloud VM boot controls.</p><div class="grid2"><div class="card"><h3>Boot</h3><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open full BIOS / DOS</button><button class="btn" onclick="location.href='loading.html'">Restart boot flow</button><button class="btn" onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Boot Safe Mode</button></div></div><div class="card"><h3>Cloud VM</h3><div class="toolbar"><button class="btn" onclick="Gold50.saveWorkspaceNow(true)">Save cloud state</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore cloud state</button><button class="btn" onclick="Gold50.openCloudSyncCenter80()">Cloud Sync Center</button></div></div><div class="card"><h3>Repair</h3><button class="btn" onclick="localStorage.removeItem('${PREFIX}setup_done');location.reload()">Run Setup</button><button class="btn" onclick="Gold50.openApp('recovery')">Recovery Options</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button></div><div class="card"><h3>DOS commands</h3><p class="muted">HELP, VER, DIR, APPS, WHOAMI, LOGIN, REGISTER, LOGOUT, BOOT, SAFE, STAFF, SUPPORT, STORE, DEV, OFFICE, EXPLORER, CLOUDSAVE, CLOUDRESTORE, SNAPSHOT, RESTORE, BACKUP, RESET, DIAG, PREFS, TIME, DATE, MEM, CLEAR, EXIT.</p></div></div>`,{width:900,height:620})}
+function runDOS(cmd){const out=$("dos_out"),inp=$("dos_in");cmd=String(cmd||'').trim();if(inp)inp.value='';function line(t){out.textContent+=`\nGOLD> ${cmd}\n${t}\n`;out.scrollTop=out.scrollHeight}const c=cmd.toUpperCase();if(c==='HELP')line('HELP, VER, DIR, APPS, USERS, WHOAMI, LOGIN, REGISTER, LOGOUT, BOOT, DESKTOP, SAFE, SETUP, STAFF, SUPPORT, STORE, DEV, OFFICE, EXPLORER, CLOUDSAVE, CLOUDRESTORE, CLOUDSTATUS, SNAPSHOT, RESTORE, BACKUP, RESET, DIAG, PREFS, CLEARCACHE, TIME, DATE, MEM, ECHO <text>, CLEAR, EXIT');else if(c==='VER')line(BUILD.name+' build '+BUILD.version+' / '+BUILD.bios);else if(c==='CLOUDSAVE'){saveWorkspaceNow(true);line('Saving full Gold VM state to cloud.')}else if(c==='CLOUDRESTORE'){restoreWorkspace(true);line('Restoring full Gold VM state from cloud.')}else if(c==='CLOUDSTATUS')line(localStorage.getItem(PREFIX+'cloud_status')||'ready');else if(c==='DIR')line(files().map(f=>f.name).join('\n')||'No Gold files.');else if(c==='APPS')line(APPS.map(a=>a.name).join('\n'));else if(c==='USERS')line('Current user: '+username()+'\nRole: '+(localStorage.getItem('role')||localStorage.getItem(PREFIX+'role')||'user'));else if(c==='WHOAMI')line(username());else if(c==='LOGIN'){line('Opening normal login...');location.href='index.html'}else if(c==='REGISTER'){line('Opening user registration...');location.href='register.html'}else if(c==='LOGOUT'){line('Signing out...');logoutGold()}else if(c==='BOOT'||c==='DESKTOP'){line('Booting EmeraldOS Gold...');location.href='OS.html'}else if(c==='SAFE'){localStorage.setItem(PREFIX+'safemode','true');line('Safe Mode enabled. Reloading...');setTimeout(()=>location.reload(),500)}else if(c==='SETUP'){localStorage.removeItem(PREFIX+'setup_done');line('Setup will run next boot.')}else if(c==='STAFF'){line('Opening Staff Edition...');location.href='staff.html'}else if(c==='SUPPORT'){line('Opening Support Center.');openSupport()}else if(c==='STORE'){line('Opening User Appstore.');openStore()}else if(c==='DEV'){line('Opening Gold App Lab.');openApp('applab')}else if(c==='OFFICE'){line('Opening Gold Office.');openOffice()}else if(c==='EXPLORER'){line('Opening Gold Explorer.');openExplorer()}else if(c==='SNAPSHOT'){saveVMSnapshot();line('Snapshot saved.')}else if(c==='RESTORE'){line('Opening Restore Center.');openRestore()}else if(c==='BACKUP'){exportWorkspace();line('Workspace backup exported.')}else if(c==='RESET'){line('Opening reset confirmation.');resetGold()}else if(c==='DIAG'){line(JSON.stringify(deviceInfo(),null,2))}else if(c==='PREFS'){line(JSON.stringify(prefs(),null,2))}else if(c==='CLEARCACHE'){Object.keys(localStorage).filter(k=>k.startsWith(PREFIX+'temp_')).forEach(k=>localStorage.removeItem(k));line('Temporary Gold cache cleared.')}else if(c==='MEM')line('Local storage used: '+fmtBytes(bytes(localStorage)));else if(c==='TIME')line(new Date().toLocaleTimeString());else if(c==='DATE')line(new Date().toLocaleDateString());else if(c.startsWith('ECHO '))line(cmd.slice(5));else if(c==='CLEAR'){out.textContent=''}else if(c==='EXIT')closeWin('win_dos');else line('Unknown command. Type HELP.')}
+function installGold80Apps(){const add=a=>{if(!APPS.some(x=>x.id===a.id))APPS.push(a);};add({id:'cloudsync',name:'Cloud Sync Center',label:'CS',color:'blue',group:'System',desc:'Full cloud VM state, autosave, restore, backup and sync status.',open:openCloudSyncCenter80});const set=(id,props)=>{const a=APPS.find(x=>x.id===id);if(a)Object.assign(a,props)};set('themestudio',{name:'Theme Studio',desc:'Full visual personalization for the Gold VM.',open:openPersonalization80});set('settings',{desc:'Central settings for system, cloud VM, personalization, support and accounts.',open:()=>openSettings60('system')});set('bios',{name:'BIOS Options',desc:'Emerald BIOS A9, DOS, cloud boot and recovery controls.',open:openBIOSOptions60});set('vmcenter',{desc:'Virtual machine snapshots, cloud pickup, export/import and workspace restore.'});}
+function setGold70Pref(k,v){const p=prefs();p[k]=v;write(PREFIX+'prefs',p);try{applyPrefs()}catch{}try{renderDesktop()}catch{}saveWorkspaceDebounced();}
+function logoutGold(){try{saveWorkspaceNow(false)}catch(e){console.warn(e)};localStorage.removeItem('loggedIn');localStorage.removeItem('username');localStorage.removeItem(PREFIX+'loggedIn');localStorage.removeItem(PREFIX+'username');setTimeout(()=>location.href='index.html',180)}
+/* Gold 1E boot fix: these Gold 8 handlers are scoped inside seedGold50, so expose and install them when seedGold50 runs. */
+  try{
+    Object.assign(window.Gold50,{
+      openCloudSyncCenter80,
+      openPersonalization80,
+      themeStudio80HTML,
+      settings80HTML,
+      settings80Page,
+      openSettings60,
+      settings60Tab:openSettings60,
+      settings50Tab:openSettings60,
+      setGold70Pref,
+      runDOS,
+      openBIOSOptions60,
+      logoutGold,
+      saveWorkspaceNow,
+      restoreWorkspace,
+      exportWorkspace,
+      importWorkspacePrompt,
+      gold1eLocalState,
+      gold1eCloudWrite,
+      gold1eCloudRead
+    });
+    document.body.classList.add('gold1e','gold1e-shell');
+    installGold80Apps();
+    applyPrefs();
+    if(!window.__gold1eAutoSaveInstalled){
+      window.__gold1eAutoSaveInstalled=true;
+      setInterval(()=>{const n=Number(prefs().autosaveInterval)||15;if(prefs().cloudSync!==false)saveWorkspaceNow(false)},15000);
+    }
+  }catch(e){console.error('Gold 1E handler install failed',e)}
+
+
+
+/* EmeraldOS Gold 1E shell-managed update integration */
+function gold1eShellManifest(){return read('emeraldGoldShell_latest',{latestVersion:'1E',folder:'Gold_1E',entry:'OS.html',releaseTitle:'EmeraldOS Gold 1E'});}
+function gold1eVMState(){
+  let cloudState={};
+  try{cloudState=gold1eLocalState?gold1eLocalState():{};}catch(e){cloudState={};}
+  return {
+    product:'EmeraldOS Gold',
+    version:BUILD.version,
+    folder:'Gold_1E',
+    user:username(),
+    savedAt:now(),
+    prefs:prefs(),
+    files:files(),
+    tickets:tickets(),
+    mail:mail(),
+    notifications:notifs(),
+    workspace:{openWindows:[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title,left:w.style.left,top:w.style.top,width:w.style.width,height:w.style.height,minimized:w.classList.contains('minimized'),maximized:w.classList.contains('max')}))},
+    localState:cloudState
+  };
+}
+function gold1ePostState(reason='heartbeat'){
+  try{
+    if(window.parent&&window.parent!==window){
+      window.parent.postMessage({type:'emeraldos-gold-live-state',reason,state:gold1eVMState()},'*');
+    }
+  }catch(e){console.warn('Gold 1E shell state post failed',e);}
+}
+function gold1eAskShellUpdateCheck(){try{window.parent?.postMessage({type:'emeraldos-gold-check-update',from:'Gold_1E',version:BUILD.version},'*');notify('Update check requested','The EmeraldOS Gold Shell is checking Firebase for the latest build.','Gold Update Center')}catch(e){notify('Update check failed',e.message,'Gold Update Center')}}
+function openGold1AUpdateCenter(){
+  const m=gold1eShellManifest();
+  const active=localStorage.getItem('emeraldGoldShell_activeVersion')||BUILD.version;
+  openWindow('updateshell','Gold Update Center',`<div class="goldshell-header"><div><h2>Gold Update Center</h2><p class="muted">Shell-managed updates keep your Gold VM data separate from version folders.</p></div><button class="btn primary" onclick="Gold50.gold1eAskShellUpdateCheck()">Check for updates</button></div><div class="grid2"><div class="card"><h3>Running build</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: Gold_1E</p></div><div class="card"><h3>Latest Firebase pointer</h3><p>${esc(m.latestVersion||'Unknown')}</p><p class="muted">${esc(m.folder||'No folder')} / ${esc(m.entry||'OS.html')}</p></div><div class="card"><h3>Update behavior</h3><p>Gold Shell reads <code>system/emeraldGoldLatest</code>, saves a VM snapshot, then loads the folder Firebase points to.</p></div><div class="card"><h3>VM data</h3><p>Preferences, files, tickets, mail, apps, support history, and workspace state stay in the cloud VM profile.</p></div></div><h3>Release note</h3><p>${esc(m.summary||m.releaseTitle||'No release note available.')}</p><div class="toolbar"><button class="btn" onclick="Gold50.saveWorkspaceNow(true);Gold50.gold1ePostState('manual-save')">Save VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="location.href='../gold-shell.html'">Return to Gold Shell</button></div>`,{width:980,height:680});
+}
+function installGold100ShellFeatures(){
+  const add=a=>{if(!APPS.some(x=>x.id===a.id))APPS.push(a);};
+  add({id:'updateshell',name:'Gold Update Center',label:'UP',color:'blue',group:'System',desc:'Shell-managed updates, version status, migration notes and cloud VM save controls.',open:openGold1AUpdateCenter});
+  try{const p=prefs();if(!p.desktopApps.includes('updateshell')){p.desktopApps=[...p.desktopApps,'updateshell'];write(PREFIX+'prefs',p)}}catch{}
+  window.addEventListener('message',ev=>{const d=ev.data||{};if(d.type==='emeraldos-gold-latest'){write('emeraldGoldShell_latest',d.latest||{});notify('Update pointer refreshed',`Latest: ${(d.latest&&d.latest.latestVersion)||'unknown'}`,'Gold Update Center')}if(d.type==='emeraldos-gold-shell-save-request'){gold1ePostState('shell-save-request')}});
+  window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{gold1ePostState('boot');setInterval(()=>gold1ePostState('heartbeat'),8000)},1700));
+}
+installGold100ShellFeatures();
+
+installGold50Apps();
+  if(!read(PREFIX+'seeded_50',false)){
+    const p=prefs();
+    p.desktopApps=[...new Set([...(p.desktopApps||[]),'browser','terminal','accessibility','themestudio','applab','packager','media','controlpanel'])];
+    p.backgroundColor=p.backgroundColor||'#edf2f8';
+    p.startStyle=p.startStyle||'tiles';
+    p.taskbarPosition=p.taskbarPosition||'bottom';
+    p.textScale=p.textScale||100;
+    write(PREFIX+'prefs',p);
+    write(PREFIX+'seeded_50',true);
+  }
+  applyGold50Visuals();
+}
+function applyGold50Visuals(){
+  const p=prefs();
+  document.body.classList.toggle('gold1e-solid-bg',!!p.useBackgroundColor);
+  document.body.classList.toggle('gold1e-readable',!!p.readableFont);
+  document.body.classList.toggle('gold1e-focus-ring',!!p.focusRing);
+  document.body.classList.toggle('gold1e-large-cursor',!!p.largeCursor);
+  document.body.classList.toggle('gold1e-links-underlined',!!p.underlineLinks);
+  document.body.classList.toggle('gold1e-extra-contrast',!!p.extraContrast);
+  document.body.classList.toggle('gold1e-less-blur',p.windowTransparency===false);
+  document.body.classList.toggle('gold1e-compact-start',p.startStyle==='compact');
+  document.body.classList.remove('gold1e-filter-none','gold1e-filter-warm','gold1e-filter-cool','gold1e-filter-gray');
+  document.body.classList.add('gold1e-filter-'+(p.colorFilter||'none'));
+  document.documentElement.style.setProperty('--gold1eBackgroundColor',p.backgroundColor||'#edf2f8');
+  document.documentElement.style.setProperty('--gold1eTextScale',((Number(p.textScale)||100)/100).toString());
+  document.documentElement.style.setProperty('--gold1eTaskbarHeight',p.taskbarSize==='large'?'56px':p.taskbarSize==='compact'?'40px':'48px');
+}
+function setGold50Pref(k,v){const p=prefs();p[k]=v;write(PREFIX+'prefs',p);try{setPrefs(p)}catch{}applyGold50Visuals();saveWorkspaceDebounced();}
+function loadGold50BackgroundFile(input){const f=input.files&&input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{setGold50Pref('customBackground',r.result);setGold50Pref('useBackgroundColor',false);notify('Background updated','Uploaded background applied.','Personalization')};r.readAsDataURL(f)}
+function settings50HTML(tab='system'){
+ const nav=['system','personalization','accessibility','apps','accounts','dev','store','vm','privacy','update','support','bios'];
+ return `<div class="app-shell settings50"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.settings50Tab('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}</nav><main class="app-main">${settings50Page(tab)}</main></div>`;
+}
+function settings50Page(tab){const p=prefs();
+ if(tab==='personalization')return themeStudio50HTML();
+ if(tab==='accessibility')return accessibility50HTML();
+ if(tab==='apps')return `<h2>Apps</h2><p class="muted">Choose desktop apps and manage Store apps.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.openApp('store')">Open User Appstore</button><button class="btn" onclick="Gold50.openApp('applab')">Open Gold App Lab</button></div><div class="grid3">${APPS.filter(a=>!a.staffOnly).map(a=>`<label class="card"><input type="checkbox" ${((p.desktopApps||[]).includes(a.id))?'checked':''} onchange="Gold50.toggleDesktopApp('${a.id}')"> ${appIcon(a,true)} ${esc(a.name)}</label>`).join('')}</div>`;
+ if(tab==='accounts')return `<h2>Accounts</h2><div class="grid2"><div class="card"><h3>${esc(username())}</h3><p class="muted">EmeraldOS Gold VM account</p><p>Mail: ${esc(mailAddress())}</p><button class="btn danger" onclick="Gold50.logoutGold()">Log out</button></div><div class="card"><h3>Workspace pickup</h3><p>Gold saves your local workspace and attempts Firebase sync when available.</p><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save Now</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore</button></div></div>`;
+ if(tab==='dev')return `<h2>User Development</h2><p>Gold 1E supports JS-only apps and packaged HTML/CSS/JS apps.</p><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('applab')">Gold App Lab</button><button class="tile-button" onclick="Gold50.openApp('packager')">App Packager</button><button class="tile-button" onclick="Gold50.openApp('store')">User Appstore</button></div>`;
+ if(tab==='store')return `<h2>User Appstore</h2><p>Upload JS files or .egoldapp.json packages, review permissions, and run apps in a safer sandbox.</p><button class="btn primary" onclick="Gold50.openApp('store')">Open User Appstore</button>`;
+ if(tab==='vm')return `<h2>Gold VM</h2><p>Your Gold desktop behaves like a browser-based virtual machine.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.saveVMSnapshot();Gold50.openApp('vmcenter')">Save Snapshot</button><button class="btn" onclick="Gold50.openApp('vmcenter')">Open VM Center</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button></div>`;
+ if(tab==='privacy')return `<h2>Privacy</h2><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setGold50Pref('focusAssist',this.checked)"></label><label class="setting-line"><span>Notifications</span><input type="checkbox" ${p.notifications!==false?'checked':''} onchange="Gold50.setGold50Pref('notifications',this.checked)"></label><label class="setting-line"><span>Remote assistance requires visible consent banner</span><input type="checkbox" checked disabled></label>`;
+ if(tab==='update')return `<h2>Update & Security</h2><div class="grid2"><div class="card"><h3>EmeraldOS Gold 1E</h3><p>Development, accessibility, personalization, and EmeraldOS Gold user-experience update.</p></div><div class="card"><h3>Safe Mode</h3><button class="btn" onclick="Gold50.openApp('safemode')">Open Safe Mode</button></div></div>`;
+ if(tab==='support')return `<h2>Support</h2><button class="btn primary" onclick="Gold50.openApp('support')">Open Support Center</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button>`;
+ if(tab==='bios')return `<h2>BIOS & DOS</h2><p>Emerald Systems BIOS A9 includes modern boot options and expanded DOS commands.</p><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open BIOS A9</button><button class="btn" onclick="Gold50.openApp('terminal')">Open Terminal</button><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button></div>`;
+ return `<h2>System</h2><div class="grid3"><div class="card"><h3>${BUILD.name}</h3><p>EmeraldOS Gold cloud VM desktop.</p></div><div class="card"><h3>Open EmeraldOS</h3><p>${document.querySelectorAll('.window').length}</p></div><div class="card"><h3>Storage</h3><p>${fmtBytes(bytes(localStorage))}</p></div></div><h3>Quick Settings</h3><label class="setting-line"><span>Taskbar search</span><input type="checkbox" ${p.taskbarSearch?'checked':''} onchange="Gold50.setGold50Pref('taskbarSearch',this.checked)"></label><label class="setting-line"><span>Show seconds in clock</span><input type="checkbox" ${p.clockSeconds?'checked':''} onchange="Gold50.setGold50Pref('clockSeconds',this.checked)"></label><label class="setting-line"><span>Compact taskbar</span><input type="checkbox" ${p.taskbarSize==='compact'?'checked':''} onchange="Gold50.setGold50Pref('taskbarSize',this.checked?'compact':'normal')"></label>`;
+}
+function openSettings50(tab='system'){const w=openWindow('settings','Settings',settings50HTML(tab),{width:1150,height:760});window.Gold50.settings50Tab=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=settings50HTML(t);applyGold50Visuals();}}
+function themeStudio50HTML(){const p=prefs();return `<h2>Theme Studio</h2><p class="muted">Customize EmeraldOS Gold like a VM desktop: wallpaper, solid color, blur, accent, Start and taskbar.</p><div class="grid2"><div class="card"><h3>Background</h3><label>Solid background color<input type="color" class="field" value="${esc(p.backgroundColor||'#edf2f8')}" oninput="Gold50.setGold50Pref('backgroundColor',this.value);Gold50.setGold50Pref('useBackgroundColor',true)"></label><label class="setting-line"><span>Use solid background color</span><input type="checkbox" ${p.useBackgroundColor?'checked':''} onchange="Gold50.setGold50Pref('useBackgroundColor',this.checked)"></label><label>Background URL<input class="field" value="${esc(p.customBackground||'')}" onchange="Gold50.setGold50Pref('customBackground',this.value);Gold50.setGold50Pref('useBackgroundColor',false)"></label><label>Upload background<input type="file" class="field" accept="image/*" onchange="Gold50.loadGold50BackgroundFile(this)"></label><label>Background mode<select class="field" onchange="Gold50.setGold50Pref('bgMode',this.value)"><option ${p.bgMode==='cover'?'selected':''}>cover</option><option ${p.bgMode==='contain'?'selected':''}>contain</option><option ${p.bgMode==='repeat'?'selected':''}>repeat</option></select></label></div><div class="card"><h3>EmeraldOS & taskbar</h3><label>Accent color<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setGold50Pref('accent',this.value)"></label><label>Start layout<select class="field" onchange="Gold50.setGold50Pref('startStyle',this.value)"><option value="tiles" ${p.startStyle!=='compact'?'selected':''}>Tiles</option><option value="compact" ${p.startStyle==='compact'?'selected':''}>Compact</option></select></label><label>Taskbar size<select class="field" onchange="Gold50.setGold50Pref('taskbarSize',this.value)"><option ${p.taskbarSize==='normal'?'selected':''}>normal</option><option ${p.taskbarSize==='compact'?'selected':''}>compact</option><option ${p.taskbarSize==='large'?'selected':''}>large</option></select></label><label class="setting-line"><span>Window transparency</span><input type="checkbox" ${p.windowTransparency!==false?'checked':''} onchange="Gold50.setGold50Pref('windowTransparency',this.checked)"></label></div></div><h3>Built-in Gold backgrounds</h3><div class="toolbar"><button class="btn" onclick="Gold50.setGold50Pref('background','gold-bloom');Gold50.setGold50Pref('customBackground','');Gold50.setGold50Pref('useBackgroundColor',false)">Gold Bloom</button><button class="btn" onclick="Gold50.setGold50Pref('background','blue-window');Gold50.setGold50Pref('customBackground','');Gold50.setGold50Pref('useBackgroundColor',false)">Blue Window</button><button class="btn" onclick="Gold50.setGold50Pref('background','emerald-field');Gold50.setGold50Pref('customBackground','');Gold50.setGold50Pref('useBackgroundColor',false)">Emerald Field</button><button class="btn" onclick="Gold50.setGold50Pref('background','slate-pro');Gold50.setGold50Pref('customBackground','');Gold50.setGold50Pref('useBackgroundColor',false)">Slate Pro</button></div>`}
+function openThemeStudio50(){openWindow('themestudio','Theme Studio',themeStudio50HTML(),{width:1000,height:720})}
+function accessibility50HTML(){const p=prefs();return `<h2>Accessibility Center</h2><p class="muted">More readable, keyboard-friendly and customizable controls.</p><div class="grid2"><div class="card"><h3>Vision</h3><label>Text scale <input type="range" min="90" max="150" value="${esc(p.textScale||100)}" oninput="Gold50.setGold50Pref('textScale',this.value);this.nextElementSibling.textContent=this.value+'%'"><span>${esc(p.textScale||100)}%</span></label><label class="setting-line"><span>High contrast</span><input type="checkbox" ${p.theme==='highcontrast'?'checked':''} onchange="Gold50.setGold50Pref('theme',this.checked?'highcontrast':'light')"></label><label class="setting-line"><span>Extra contrast borders</span><input type="checkbox" ${p.extraContrast?'checked':''} onchange="Gold50.setGold50Pref('extraContrast',this.checked)"></label><label class="setting-line"><span>Readable font</span><input type="checkbox" ${p.readableFont?'checked':''} onchange="Gold50.setGold50Pref('readableFont',this.checked)"></label><label>Color filter<select class="field" onchange="Gold50.setGold50Pref('colorFilter',this.value)"><option value="none" ${!p.colorFilter||p.colorFilter==='none'?'selected':''}>None</option><option value="warm" ${p.colorFilter==='warm'?'selected':''}>Warm</option><option value="cool" ${p.colorFilter==='cool'?'selected':''}>Cool</option><option value="gray" ${p.colorFilter==='gray'?'selected':''}>Grayscale</option></select></label></div><div class="card"><h3>Interaction</h3><label class="setting-line"><span>Reduced motion</span><input type="checkbox" ${p.reducedMotion?'checked':''} onchange="Gold50.setGold50Pref('reducedMotion',this.checked)"></label><label class="setting-line"><span>Large cursor</span><input type="checkbox" ${p.largeCursor?'checked':''} onchange="Gold50.setGold50Pref('largeCursor',this.checked)"></label><label class="setting-line"><span>Always show focus rings</span><input type="checkbox" ${p.focusRing?'checked':''} onchange="Gold50.setGold50Pref('focusRing',this.checked)"></label><label class="setting-line"><span>Underline links/buttons</span><input type="checkbox" ${p.underlineLinks?'checked':''} onchange="Gold50.setGold50Pref('underlineLinks',this.checked)"></label><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setGold50Pref('focusAssist',this.checked)"></label></div></div>`}
+function openAccessibility50(){openWindow('accessibility','Accessibility Center',accessibility50HTML(),{width:980,height:700})}
+function getGold50Packages(){return gold1eUserApps()}
+function saveGold50Packages(apps){write(PREFIX+'user_apps',apps);saveWorkspaceDebounced()}
+function packageTemplate50(kind='dashboard'){
+ if(kind==='media')return {html:'<main class="app"><h1>Media Notes</h1><p>Add a media URL below.</p><input id="url" placeholder="Media URL"><button id="save">Save</button><p id="out"></p></main>',css:'body{font-family:Segoe UI,Arial;margin:0;background:#f3f6fb;color:#111}.app{padding:20px}input{padding:9px;width:80%}button{padding:9px 14px;margin:6px;background:#0078d4;color:white;border:0}',js:'document.getElementById("save").onclick=()=>{document.getElementById("out").textContent="Saved: "+document.getElementById("url").value; api.notify("Media Notes","Saved media URL");};'};
+ if(kind==='kanban')return {html:'<h1>Mini Board</h1><input id="task" placeholder="New task"><button id="add">Add</button><ul id="list"></ul>',css:'body{font-family:Segoe UI,Arial;padding:18px;background:#fff}button{background:#107c10;color:white;border:0;padding:8px}li{padding:8px;border:1px solid #ddd;margin:6px 0}',js:'let items=api.load("items",[]);function draw(){list.innerHTML=items.map((x,i)=>`<li>${x} <button onclick="items.splice(${i},1);api.save(\'items\',items);draw()">Done</button></li>`).join("")}add.onclick=()=>{items.push(task.value||"Task");api.save("items",items);task.value="";draw();};draw();'};
+ return {html:'<section class="hero"><h1>Hello EmeraldOS Gold</h1><p>This is a packaged HTML/CSS/JS app.</p><button id="hello">Notify</button></section>',css:'body{margin:0;font-family:Segoe UI,Arial;background:linear-gradient(135deg,#f8fafc,#dbeafe);color:#111}.hero{padding:34px}button{background:#0078d4;color:white;border:0;border-radius:4px;padding:10px 16px}',js:'document.getElementById("hello").onclick=()=>api.notify("Packaged app","HTML/CSS/JS package works.");'};
+}
+function appLabHTML50(){const t=packageTemplate50();return `<h2>Gold App Lab</h2><p class="muted">Build JS-only apps or full packaged HTML/CSS/JS apps for the User Appstore.</p><div class="grid2"><div><label>Name<input id="lab_name" class="field" value="My Gold Package"></label><label>Version<input id="lab_version" class="field" value="1.0"></label><label>Description<input id="lab_desc" class="field" value="A packaged EmeraldOS Gold app."></label><label>App type<select id="lab_type" class="field"><option value="package">HTML/CSS/JS package</option><option value="js">JS-only Gold API app</option></select></label><div class="toolbar"><button class="btn primary" onclick="Gold50.previewLabPackage()">Preview</button><button class="btn" onclick="Gold50.submitLabPackage()">Submit to User Appstore</button><button class="btn" onclick="Gold50.exportLabPackage()">Export Package</button><button class="btn" onclick="Gold50.loadLabTemplate('dashboard')">Dashboard Template</button><button class="btn" onclick="Gold50.loadLabTemplate('kanban')">Kanban Template</button><button class="btn" onclick="Gold50.loadLabTemplate('media')">Media Template</button></div></div><div class="card"><h3>Package API</h3><pre>api.notify(title, message)
+api.save(key, value)
+api.load(key, fallback)
+api.exportText(filename, text)
+api.open(appId)
+api.username</pre><p class="muted">Packages run in a sandboxed iframe. JS-only apps still run through the older Gold API.</p></div></div><h3>HTML</h3><textarea id="lab_html" class="field codebox" rows="7">${esc(t.html)}</textarea><h3>CSS</h3><textarea id="lab_css" class="field codebox" rows="7">${esc(t.css)}</textarea><h3>JavaScript</h3><textarea id="lab_js" class="field codebox" rows="9">${esc(t.js)}</textarea>`}
+function openAppLab50(){openWindow('applab','Gold App Lab',appLabHTML50(),{width:1120,height:820})}
+function labPackageFromFields(){const type=$('lab_type')?.value||'package';return {id:safeAppId($('lab_name')?.value||'gold-package'),name:$('lab_name')?.value||'My Gold Package',version:$('lab_version')?.value||'1.0',desc:$('lab_desc')?.value||'',author:username(),category:'User App',type:type,kind:type,permissions:['notifications','local storage','app window'],html:$('lab_html')?.value||'',css:$('lab_css')?.value||'',js:$('lab_js')?.value||'',code:$('lab_js')?.value||'',created:now(),updated:now(),verified:false,staffInstalled:false};}
+function previewLabPackage(){const pkg=labPackageFromFields(); if(pkg.type==='js') runUserApp(pkg); else runPackageApp50(pkg,true)}
+function submitLabPackage(){const pkg=labPackageFromFields();const apps=getGold50Packages().filter(a=>a.id!==pkg.id);apps.unshift(pkg);saveGold50Packages(apps);notify('App submitted',pkg.name+' was added to the User Appstore.','Gold App Lab');openStore50()}
+function exportLabPackage(){const pkg=labPackageFromFields();saveText((safeAppId(pkg.name)||'gold-app')+'.egoldapp.json',JSON.stringify(pkg,null,2),'application/json')}
+function loadLabTemplate(kind){const t=packageTemplate50(kind);if($('lab_html'))$('lab_html').value=t.html;if($('lab_css'))$('lab_css').value=t.css;if($('lab_js'))$('lab_js').value=t.js;}
+function openPackager50(){openWindow('packager','App Packager',`<h2>App Packager</h2><p class="muted">Import .js or .egoldapp.json files, preview packages, and submit them to the User Appstore.</p><div class="card"><input type="file" class="field" accept=".js,.json,.egoldapp,.egoldapp.json,text/javascript,application/json" onchange="Gold50.uploadGold50AppFile(this.files[0])"><p>JS files become JS-only Gold API apps. JSON packages can include HTML, CSS and JavaScript.</p></div><div class="toolbar"><button class="btn primary" onclick="Gold50.openApp('applab')">Create New Package</button><button class="btn" onclick="Gold50.openApp('store')">Open User Appstore</button></div>`,{width:760,height:460})}
+async function uploadGold50AppFile(file){if(!file)return;const text=await file.text();let app;try{const parsed=JSON.parse(text);app={...parsed,type:parsed.type||parsed.kind||'package',kind:parsed.kind||parsed.type||'package',id:parsed.id||safeAppId(parsed.name||file.name),name:parsed.name||file.name.replace(/\.(egoldapp\.json|json)$/i,''),version:parsed.version||'1.0',desc:parsed.desc||parsed.description||'Uploaded packaged app.',author:parsed.author||username(),permissions:parsed.permissions||['notifications','local storage','app window'],created:now(),updated:now(),verified:false};}catch{app={id:safeAppId(file.name),name:file.name.replace(/\.js$/i,''),version:'1.0',desc:'Uploaded JS-only app.',author:username(),category:'User App',type:'js',kind:'js',permissions:['Gold app API','notifications','local storage'],code:text,created:now(),updated:now(),verified:false};}
+ const apps=getGold50Packages().filter(a=>a.id!==app.id);apps.unshift(app);saveGold50Packages(apps);notify('App uploaded',app.name+' is ready in the User Appstore.','App Packager');openStore50();}
+function iframeSrcdoc50(pkg){const safeJs=String(pkg.js||pkg.code||'');return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Segoe UI,Arial;margin:0;padding:16px;color:#111;background:#fff}button,input,textarea,select{font:inherit}.gold-api-note{font-size:12px;color:#64748b;border-top:1px solid #e5e7eb;margin-top:20px;padding-top:8px}${pkg.css||''}</style></head><body>${pkg.html||'<main id="app"></main>'}<div class="gold-api-note">EmeraldOS Gold sandboxed package</div><script>const api={username:${JSON.stringify(username())},notify:(t,m)=>parent.postMessage({source:'gold1e-package',type:'notify',title:t,message:m,app:${JSON.stringify(pkg.name||'Package App')}},'*'),save:(k,v)=>{try{localStorage.setItem('pkg_'+${JSON.stringify(pkg.id||'app')}+'_'+k,JSON.stringify(v))}catch(e){}},load:(k,f)=>{try{return JSON.parse(localStorage.getItem('pkg_'+${JSON.stringify(pkg.id||'app')}+'_'+k)||JSON.stringify(f))}catch(e){return f}},exportText:(n,t)=>parent.postMessage({source:'gold1e-package',type:'export',name:n,text:t},'*'),open:(id)=>parent.postMessage({source:'gold1e-package',type:'open',id:id},'*')};try{${safeJs}\n}catch(e){document.body.insertAdjacentHTML('beforeend','<pre style="color:#b91e1e">'+String(e.message).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</pre>')}</script></body></html>`}
+function runPackageApp50(pkg,preview=false){const w=openWindow('pkg_'+(pkg.id||uid()),(preview?'Preview: ':'')+(pkg.name||'Package App'),`<div class="store-app-head"><div><h2>${esc(pkg.name||'Package App')}</h2><p class="muted">Sandboxed HTML/CSS/JS package · ${pkg.verified?'<span class="verified-badge">Staff Verified</span>':'Unverified local app'}</p></div></div><iframe class="gold1e-package-frame" sandbox="allow-scripts allow-forms" title="${esc(pkg.name||'Package App')}"></iframe>`,{width:900,height:650,singleton:false});const frame=w.querySelector('iframe');frame.srcdoc=iframeSrcdoc50(pkg);notify('Package opened',pkg.name||'Package App','User Appstore')}
+function runAnyGold50App(id){const app=getGold50Packages().find(a=>a.id===id);if(!app){notify('User Appstore','App not found.','User Appstore');return} if((app.type||app.kind)==='package')runPackageApp50(app);else runUserApp(app)}
+function exportAnyGold50App(id){const app=getGold50Packages().find(a=>a.id===id);if(!app)return; if((app.type||app.kind)==='package')saveText((safeAppId(app.name)||'gold-package')+'.egoldapp.json',JSON.stringify(app,null,2),'application/json');else saveText((safeAppId(app.name)||'gold-app')+'.js',app.code||'','text/javascript')}
+function openStore50(){const apps=getGold50Packages();const built=[{id:'project-board',name:'Gold Project Board',verified:true,staffInstalled:true,desc:'Project board sample app.'},{id:'help-desk',name:'Help Desk Mini',verified:true,staffInstalled:true,desc:'Support helper sample.'}];openWindow('store','User Appstore',`<h2>User Appstore</h2><p class="muted">Install built-in samples, upload JS-only apps, or upload packaged HTML/CSS/JS apps.</p><div class="toolbar"><input type="file" id="store_upload" accept=".js,.json,.egoldapp,.egoldapp.json,text/javascript,application/json" onchange="Gold50.uploadGold50AppFile(this.files[0])"><button class="btn primary" onclick="Gold50.openApp('applab')">Create App</button><button class="btn" onclick="Gold50.openApp('packager')">Open Packager</button></div><div class="card"><h3>Safety</h3><p>Packages run in a sandboxed frame. User apps can still be risky. Only install apps you trust.</p></div><h3>Featured</h3><div class="drive-grid">${built.map(a=>`<div class="drive-card"><h3>${esc(a.name)} <span class="verified-badge">Staff Verified</span> <span class="staff-badge">Staff Installed</span></h3><p>${esc(a.desc)}</p><button class="btn primary" onclick="Gold50.storeInstall('${a.id}')">Install/Open</button></div>`).join('')}</div><h3>User uploads</h3>${apps.length?'<div class="drive-grid">'+apps.map(a=>`<div class="drive-card"><h3>${esc(a.name)} ${a.verified?'<span class="verified-badge">Staff Verified</span>':'<span class="staff-badge">Unverified</span>'} ${(a.type||a.kind)==='package'?'<span class="staff-badge">HTML/CSS/JS</span>':'<span class="staff-badge">JS</span>'}</h3><p class="muted">v${esc(a.version||'1.0')} · ${esc(a.author||'Unknown')}</p><p>${esc(a.desc||a.description||'User uploaded app.')}</p><details><summary>Permissions</summary><p>${(a.permissions||[]).map(esc).join('<br>')||'Local app window'}</p></details><div class="toolbar"><button class="btn primary" onclick="Gold50.runAnyGold50App('${a.id}')">Run</button><button class="btn" onclick="Gold50.exportAnyGold50App('${a.id}')">Export</button>${isStaff()?`<button class="btn" onclick="Gold50.staffVerifyUserApp('${a.id}')">Staff Verify</button>`:''}<button class="btn danger" onclick="Gold50.deleteUserApp('${a.id}');Gold50.openApp('store')">Remove</button></div></div>`).join('')+'</div>':'<p class="muted">No uploaded apps yet. Upload a JS file or .egoldapp.json package.</p>'}`,{width:1120,height:760})}
+function openBrowser50(){openWindow('browser','Gold Browser',`<h2>Gold Browser</h2><p class="muted">Some sites block iframe loading, but this app is useful for testing pages and local tools.</p><div class="toolbar"><input id="browser_url" class="field inline" value="https://example.com"><button class="btn primary" onclick="Gold50.browserGo50()">Go</button><button class="btn" onclick="Gold50.browserHome50()">Home</button></div><iframe id="browser_frame" class="gold1e-browser-frame" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>`,{width:1050,height:720});browserHome50()}
+function browserGo50(){const f=$('browser_frame'),u=$('browser_url')?.value||'about:blank';if(f)f.src=u.match(/^https?:|^data:|^about:/)?u:'https://'+u}
+function browserHome50(){if($('browser_url'))$('browser_url').value='https://example.com';browserGo50()}
+function terminalRun50(){const input=$('term_input'),out=$('term_out');if(!input||!out)return;const cmd=input.value.trim();input.value='';out.textContent+='\n> '+cmd+'\n'+terminalCommand50(cmd);out.scrollTop=out.scrollHeight}
+function terminalCommand50(cmd){const [c,...rest]=cmd.split(/\s+/);switch((c||'').toLowerCase()){case 'help':return 'Commands: help, ver, apps, open <id>, whoami, prefs, snapshot, logout, clear';case 'ver':return BUILD.name+' BIOS A9 compatible terminal';case 'apps':return visibleApps().map(a=>a.id).join(', ');case 'open':openApp(rest[0]||'settings');return 'Opening '+(rest[0]||'settings');case 'whoami':return username();case 'prefs':return JSON.stringify(prefs(),null,2);case 'snapshot':saveVMSnapshot();return 'Snapshot saved.';case 'logout':logoutGold();return 'Logging out.';case 'clear':setTimeout(()=>{if($('term_out'))$('term_out').textContent='EmeraldOS Gold Terminal 6.0';},0);return '';default:return cmd?'Unknown command. Type help.':'Type help.'}}
+function openTerminal50(){openWindow('terminal','Gold Terminal',`<h2>Gold Terminal</h2><pre id="term_out" class="terminal-box">EmeraldOS Gold Terminal 6.0\nType help.</pre><div class="toolbar"><input id="term_input" class="field inline" onkeydown="if(event.key==='Enter')Gold50.terminalRun50()" autofocus><button class="btn primary" onclick="Gold50.terminalRun50()">Run</button></div>`,{width:760,height:560})}
+function openMedia50(){openWindow('media','Media Player',`<h2>Media Player</h2><p class="muted">Paste an audio/video URL or local object URL.</p><input id="media_url" class="field" placeholder="https://example.com/video.mp4"><div class="toolbar"><button class="btn primary" onclick="Gold50.mediaPlay50('video')">Play Video</button><button class="btn" onclick="Gold50.mediaPlay50('audio')">Play Audio</button></div><div id="media_stage" class="card"></div>`,{width:820,height:560})}
+function mediaPlay50(type){const url=$('media_url')?.value||'';const s=$('media_stage');if(s)s.innerHTML=type==='audio'?`<audio controls src="${esc(url)}" style="width:100%"></audio>`:`<video controls src="${esc(url)}" style="width:100%;max-height:360px;background:#000"></video>`}
+function openControlPanel50(){openWindow('controlpanel','Control Panel',`<h2>Control Panel</h2><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('settings')">Settings</button><button class="tile-button" onclick="Gold50.openApp('personalization')">Personalization</button><button class="tile-button" onclick="Gold50.openApp('accessibility')">Accessibility</button><button class="tile-button" onclick="Gold50.openApp('device')">Devices</button><button class="tile-button" onclick="Gold50.openApp('security')">Security</button><button class="tile-button" onclick="Gold50.openApp('update')">Update Center</button><button class="tile-button" onclick="Gold50.openApp('vmcenter')">Gold VM</button><button class="tile-button" onclick="Gold50.openApp('terminal')">Terminal</button><button class="tile-button" onclick="location.href='bios.html'">BIOS A9</button></div>`,{width:820,height:560})}
+function openSnip50(){openWindow('snip','Snip & Sketch',`<h2>Snip & Sketch</h2><p class="muted">Create a quick text snip or paste an image URL for a support note.</p><label>Snip title<input id="snip_title" class="field" value="Gold snip"></label><label>Notes<textarea id="snip_text" class="field" rows="8"></textarea></label><label>Image URL<input id="snip_url" class="field"></label><div class="toolbar"><button class="btn primary" onclick="Gold50.saveSnip50()">Save Snip</button><button class="btn" onclick="Gold50.exportSnips50()">Export Snips</button></div>`,{width:700,height:580})}
+function saveSnip50(){const snips=read(PREFIX+'snips',[]);snips.unshift({id:uid(),title:$('snip_title')?.value||'Snip',text:$('snip_text')?.value||'',url:$('snip_url')?.value||'',time:now()});write(PREFIX+'snips',snips);notify('Snip saved','Saved to local snips.','Snip & Sketch')}
+function exportSnips50(){saveText('emeraldos-gold-snips.json',JSON.stringify(read(PREFIX+'snips',[]),null,2),'application/json')}
+function openSystemInfo50(){openWindow('systeminfo','System Information',`<h2>System Information</h2><pre>${esc(JSON.stringify({...deviceInfo(),build:BUILD,packageApps:getGold50Packages().length,prefs:prefs()},null,2))}</pre><button class="btn" onclick="Gold50.saveText('gold-system-info.txt',document.querySelector('#win_systeminfo pre').textContent)">Export</button>`,{width:760,height:620})}
+window.addEventListener('message',e=>{const d=e.data||{};if(d.source!=='gold1e-package')return;if(d.type==='notify')notify(d.title||'Package App',d.message||'',d.app||'Package App');if(d.type==='export')saveText(d.name||'package-export.txt',d.text||'');if(d.type==='open')openApp(d.id||'settings')});
+
+/* =========================================================
+   EMERALDOS GOLD 6.0 ENHANCEMENTS
+   - unique app purpose layout
+   - increased personalization
+   - staff resources and support improvements
+========================================================= */
+function installGold70Enhancements(){
+  const removeIds=['creator','devcenter','controlpanel','personalization'];
+  removeIds.forEach(id=>{const i=APPS.findIndex(a=>a.id===id); if(i>=0)APPS.splice(i,1);});
+  const set=(id,props)=>{const a=APPS.find(x=>x.id===id); if(a)Object.assign(a,props);};
+  const add=(app)=>{if(!APPS.some(a=>a.id===app.id))APPS.push(app);};
+  set('settings',{name:'Settings',desc:'Central EmeraldOS Gold-style system settings, personalization, accessibility, support, apps, accounts and BIOS controls.',open:openSettings60});
+  set('themestudio',{name:'Theme Studio',desc:'Advanced visual personalization: wallpaper, background color, gradients, taskbar, Start, windows and icon layout.',open:openThemeStudio60});
+  set('accessibility',{name:'Accessibility Center',desc:'Vision, interaction, readability, keyboard focus, motion and contrast settings.',open:openAccessibility60});
+  set('store',{name:'User Appstore',desc:'Distribution center for Staff Verified apps and user-uploaded JS or HTML/CSS/JS packages.',open:openStore50});
+  set('applab',{name:'Gold App Lab',desc:'Development workspace for building JS-only and packaged HTML/CSS/JS Gold apps.',open:openAppLab50});
+  set('packager',{name:'App Packager',desc:'Import, validate, preview and export .egoldapp packages for the User Appstore.',open:openPackager50});
+  set('support',{name:'Support Center',desc:'Tickets, help guides, remote assistance, diagnostics and user support resources.',open:openSupport60});
+  set('bios',{name:'BIOS Options',desc:'Emerald BIOS A9 boot options, DOS commands, Safe Mode, setup, restore and diagnostics.',open:openBIOSOptions60});
+  set('dos',{name:'Emerald DOS',desc:'Expanded command environment for Emerald BIOS A9 and Gold VM controls.'});
+  set('staff',{name:'Gold Staff Center',desc:'Staff-only support dashboard, remote assistance, tickets, resources and administrative tools.',open:openStaffCenter60});
+  add({id:'staffresources',name:'Staff Resources',label:'SR',color:'purple',group:'Staff',staffOnly:true,desc:'Staff-only support guides, escalation notes, quick links and operating procedures.',open:openStaffResources60});
+  add({id:'staffkb',name:'Staff Knowledge Base',label:'KB',color:'blue',group:'Staff',staffOnly:true,desc:'Search and maintain local support articles for EmeraldOS Gold.',open:openStaffKnowledge60});
+  add({id:'staffreports',name:'Staff Reports',label:'RP',color:'green',group:'Staff',staffOnly:true,desc:'Support metrics, ticket exports, remote assistance history and staff logs.',open:openStaffReports60});
+  add({id:'staffbroadcast',name:'Staff Broadcast',label:'BC',color:'red',group:'Staff',staffOnly:true,desc:'Send visible staff messages and announcements to the local Gold notification stream.',open:openStaffBroadcast60});
+  add({id:'remotedesk',name:'Remote Desk',label:'RD',color:'red',group:'Staff',staffOnly:true,desc:'Staff live remote desktop viewer and visible control command center.',open:openRemoteDesk60});
+  add({id:'resources',name:'Resources',label:'RE',color:'teal',group:'Support',desc:'User-facing guides, troubleshooting steps, keyboard shortcuts and support links.',open:openResources60});
+  const p=prefs();
+  p.desktopApps=(p.desktopApps||[]).filter(id=>!removeIds.includes(id));
+  ['themestudio','accessibility','resources'].forEach(id=>{if(!p.desktopApps.includes(id))p.desktopApps.push(id);});
+  if(!p.gradient) p.gradient='aurora';
+  if(!p.secondaryAccent) p.secondaryAccent='#0f7b4d';
+  if(!p.taskbarOpacity) p.taskbarOpacity=92;
+  if(!p.startWidth) p.startWidth=860;
+  write(PREFIX+'prefs',p);
+  applyGold70Visuals();
+}
+function applyGold70Visuals(){
+  const p=prefs();
+  document.body.classList.add('gold1e');
+  document.body.classList.remove('gradient-aurora','gradient-skyline','gradient-emerald-pro','gradient-midnight','gradient-sunrise','taskbar-top');
+  if(!p.customBackground && !p.useBackgroundColor) document.body.classList.add('gradient-'+(p.gradient||'aurora'));
+  if(p.taskbarPosition==='top') document.body.classList.add('taskbar-top');
+  document.documentElement.style.setProperty('--gold1eSecondary',p.secondaryAccent||'#0f7b4d');
+  document.documentElement.style.setProperty('--gold1eTaskOpacity',String((Number(p.taskbarOpacity)||92)/100));
+  document.documentElement.style.setProperty('--gold1eStartWidth',(Number(p.startWidth)||860)+'px');
+  document.documentElement.style.setProperty('--gold1eIconScale',p.iconSize==='large'?'1.14':p.iconSize==='small'?'.88':'1');
+  document.documentElement.style.setProperty('--gold1eDesktopGap',p.density==='compact'?'9px':p.density==='spacious'?'24px':'16px');
+  document.documentElement.style.setProperty('--gold1eMica',(Number(p.micaBlur)||18)+'px');
+}
+function setGold70Pref(k,v){const p=prefs();p[k]=v;write(PREFIX+'prefs',p);try{setPrefs(p)}catch{}applyGold50Visuals();applyGold70Visuals();saveWorkspaceDebounced();}
+function openSettings60(tab='system'){
+  const w=openWindow('settings','Settings',settings60HTML(tab),{width:1180,height:780});
+  window.Gold50.settings60Tab=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=settings60HTML(t);applyGold70Visuals();};
+  window.Gold50.settings50Tab=window.Gold50.settings60Tab;
+}
+function settings60HTML(tab='system'){
+  const nav=['system','personalization','accessibility','apps','accounts','support','staff','development','store','vm','privacy','update','bios'];
+  return `<div class="app-shell settings50"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.settings60Tab('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}</nav><main class="app-main">${settings60Page(tab)}</main></div>`;
+}
+function settings60Page(tab){const p=prefs();
+  if(tab==='personalization')return themeStudio60HTML();
+  if(tab==='accessibility')return accessibility60HTML();
+  if(tab==='apps')return `<h2>Apps</h2><p class="muted">Gold 1E removes duplicate-purpose launchers. Each app now has a clearer job.</p><div class="purpose-map">${visibleApps().map(a=>`<div class="card"><h3>${appIcon(a,true)} ${esc(a.name)}</h3><p>${esc(a.desc)}</p><span class="purpose-pill">${esc(a.group)}</span><div class="toolbar"><button class="btn" onclick="Gold50.openApp('${a.id}')">Open</button><button class="btn" onclick="Gold50.toggleDesktopApp('${a.id}')">${(p.desktopApps||[]).includes(a.id)?'Remove from desktop':'Pin to desktop'}</button></div></div>`).join('')}</div>`;
+  if(tab==='support')return `<h2>Support</h2><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('support')">Support Center</button><button class="tile-button" onclick="Gold50.openApp('resources')">Resources</button><button class="tile-button" onclick="Gold50.openApp('diagnostics')">Diagnostics</button></div><p class="muted">Support now includes guided steps, ticket templates, diagnostics and remote help.</p>`;
+  if(tab==='staff')return `<h2>Staff Edition</h2><p>Staff tools are visible only after staff verification.</p><div class="grid3"><button class="tile-button" onclick="location.href='staff.html'">Staff Login</button><button class="tile-button" onclick="Gold50.openApp('staff')">Staff Center</button><button class="tile-button" onclick="Gold50.openApp('remotedesk')">Remote Desk</button><button class="tile-button" onclick="Gold50.openApp('staffresources')">Staff Resources</button><button class="tile-button" onclick="Gold50.openApp('staffkb')">Knowledge Base</button><button class="tile-button" onclick="Gold50.openApp('staffreports')">Reports</button></div>`;
+  if(tab==='development')return `<h2>User Development</h2><p>Gold 1E keeps development roles separate: App Lab builds apps, Packager imports/exports packages, and User Appstore installs/distributes them.</p><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('applab')">Gold App Lab</button><button class="tile-button" onclick="Gold50.openApp('packager')">App Packager</button><button class="tile-button" onclick="Gold50.openApp('store')">User Appstore</button></div>`;
+  if(tab==='store')return `<h2>User Appstore</h2><p>Install Staff Verified apps or upload user apps. Packages run in a sandboxed frame where possible.</p><button class="btn primary" onclick="Gold50.openApp('store')">Open User Appstore</button>`;
+  if(tab==='vm')return `<h2>Gold VM</h2><p>Gold is designed to feel like a login-based virtual machine that restores your workspace.</p><div class="toolbar"><button class="btn primary" onclick="Gold50.saveVMSnapshot();Gold50.openApp('vmcenter')">Save Snapshot</button><button class="btn" onclick="Gold50.openApp('vmcenter')">Open VM Center</button><button class="btn" onclick="Gold50.exportWorkspace()">Export Backup</button></div>`;
+  if(tab==='privacy')return `<h2>Privacy</h2><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setGold70Pref('focusAssist',this.checked)"></label><label class="setting-line"><span>Notifications</span><input type="checkbox" ${p.notifications!==false?'checked':''} onchange="Gold50.setGold70Pref('notifications',this.checked)"></label><label class="setting-line"><span>Remote assistance requires visible user consent</span><input type="checkbox" checked disabled></label><button class="btn" onclick="localStorage.removeItem('${PREFIX}search_history');Gold50.notify('Privacy','Search history cleared','Settings')">Clear local search history</button>`;
+  if(tab==='update')return `<h2>Update & Security</h2><div class="grid2"><div class="card"><h3>EmeraldOS Gold 1E</h3><p>Personalization, Staff resources, Support, BIOS A9, and EmeraldOS Gold-style user friendliness.</p></div><div class="card"><h3>Safe Mode</h3><button class="btn" onclick="Gold50.openApp('safemode')">Open Safe Mode</button></div></div>`;
+  if(tab==='bios')return `<h2>BIOS & DOS</h2><p>Emerald BIOS A9 includes modern boot options and expanded DOS commands.</p><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open Emerald BIOS A9</button><button class="btn" onclick="Gold50.openApp('terminal')">Open Terminal</button><button class="btn" onclick="Gold50.openApp('dos')">Open Emerald DOS</button></div>`;
+  if(tab==='accounts')return `<h2>Accounts</h2><div class="grid2"><div class="card"><h3>${esc(username())}</h3><p class="muted">EmeraldOS Gold VM account</p><p>Mail: ${esc(mailAddress())}</p><button class="btn danger" onclick="Gold50.logoutGold()">Log out</button></div><div class="card"><h3>Pick up where you left off</h3><p>Gold saves local workspace state and attempts Firebase restore when available.</p><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save Now</button><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore</button></div></div>`;
+  return `<div class="goldshell-header"><div><h2>System</h2><p class="muted">${esc(BUILD.name)} · ${esc(BUILD.bios||'Emerald BIOS A9')}</p></div><button class="btn primary" onclick="Gold50.openApp('support')">Get Support</button></div><div class="grid4"><div class="card quick-card"><h3>Open windows</h3><p>${document.querySelectorAll('.window').length}</p></div><div class="card quick-card"><h3>Storage</h3><p>${fmtBytes(bytes(localStorage))}</p></div><div class="card quick-card"><h3>Desktop apps</h3><p>${(p.desktopApps||[]).length}</p></div><div class="card quick-card"><h3>Mode</h3><p>${localStorage.getItem(PREFIX+'safemode')==='true'?'Safe Mode':'Normal'}</p></div></div><h3>Quick Settings</h3><label class="setting-line"><span>Taskbar search</span><input type="checkbox" ${p.taskbarSearch?'checked':''} onchange="Gold50.setGold70Pref('taskbarSearch',this.checked)"></label><label class="setting-line"><span>Show seconds in clock</span><input type="checkbox" ${p.clockSeconds?'checked':''} onchange="Gold50.setGold70Pref('clockSeconds',this.checked)"></label><label class="setting-line"><span>Top taskbar</span><input type="checkbox" ${p.taskbarPosition==='top'?'checked':''} onchange="Gold50.setGold70Pref('taskbarPosition',this.checked?'top':'bottom')"></label>`;
+}
+function themeStudio60HTML(){const p=prefs();return `<h2>Theme Studio</h2><p class="muted">Gold 1E adds deeper visual control while keeping the EmeraldOS Gold style.</p><div class="grid2"><div class="card"><h3>Background</h3><label>Solid background color<input type="color" class="field" value="${esc(p.backgroundColor||'#edf2f8')}" oninput="Gold50.setGold70Pref('backgroundColor',this.value);Gold50.setGold70Pref('useBackgroundColor',true)"></label><label class="setting-line"><span>Use solid background color</span><input type="checkbox" ${p.useBackgroundColor?'checked':''} onchange="Gold50.setGold70Pref('useBackgroundColor',this.checked)"></label><label>Gold gradient<select class="field" onchange="Gold50.setGold70Pref('gradient',this.value);Gold50.setGold70Pref('customBackground','');Gold50.setGold70Pref('useBackgroundColor',false)"><option value="aurora" ${p.gradient==='aurora'?'selected':''}>Gold Aurora</option><option value="skyline" ${p.gradient==='skyline'?'selected':''}>Blue Skyline</option><option value="emerald-pro" ${p.gradient==='emerald-pro'?'selected':''}>Emerald Pro</option><option value="sunrise" ${p.gradient==='sunrise'?'selected':''}>Gold Sunrise</option><option value="midnight" ${p.gradient==='midnight'?'selected':''}>Midnight</option></select></label><label>Background URL<input class="field" value="${esc(p.customBackground||'')}" onchange="Gold50.setGold70Pref('customBackground',this.value);Gold50.setGold70Pref('useBackgroundColor',false)"></label><label>Upload background<input type="file" class="field" accept="image/*" onchange="Gold50.loadGold50BackgroundFile(this)"></label><label>Background mode<select class="field" onchange="Gold50.setGold70Pref('bgMode',this.value)"><option ${p.bgMode==='cover'?'selected':''}>cover</option><option ${p.bgMode==='contain'?'selected':''}>contain</option><option ${p.bgMode==='repeat'?'selected':''}>repeat</option></select></label></div><div class="card"><h3>EmeraldOS Gold-style controls</h3><label>Accent color<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setGold70Pref('accent',this.value)"></label><label>Secondary accent<input type="color" class="field" value="${esc(p.secondaryAccent||'#0f7b4d')}" oninput="Gold50.setGold70Pref('secondaryAccent',this.value)"></label><label>Taskbar opacity <input type="range" min="70" max="100" value="${esc(p.taskbarOpacity||92)}" oninput="Gold50.setGold70Pref('taskbarOpacity',this.value);this.nextElementSibling.textContent=this.value+'%'"><span>${esc(p.taskbarOpacity||92)}%</span></label><label>Mica blur <input type="range" min="0" max="28" value="${esc(p.micaBlur||18)}" oninput="Gold50.setGold70Pref('micaBlur',this.value);this.nextElementSibling.textContent=this.value+'px'"><span>${esc(p.micaBlur||18)}px</span></label><label>Start width <input type="range" min="540" max="1000" value="${esc(p.startWidth||860)}" oninput="Gold50.setGold70Pref('startWidth',this.value);this.nextElementSibling.textContent=this.value+'px'"><span>${esc(p.startWidth||860)}px</span></label><label>Taskbar position<select class="field" onchange="Gold50.setGold70Pref('taskbarPosition',this.value)"><option value="bottom" ${p.taskbarPosition!=='top'?'selected':''}>Bottom</option><option value="top" ${p.taskbarPosition==='top'?'selected':''}>Top</option></select></label></div></div><h3>Desktop layout</h3><div class="grid3"><label class="card">Icon size<select class="field" onchange="Gold50.setGold70Pref('iconSize',this.value)"><option value="small" ${p.iconSize==='small'?'selected':''}>Small</option><option value="normal" ${p.iconSize==='normal'?'selected':''}>Normal</option><option value="large" ${p.iconSize==='large'?'selected':''}>Large</option></select></label><label class="card">Desktop density<select class="field" onchange="Gold50.setGold70Pref('density',this.value)"><option value="compact" ${p.density==='compact'?'selected':''}>Compact</option><option value="comfortable" ${p.density!=='compact'&&p.density!=='spacious'?'selected':''}>Comfortable</option><option value="spacious" ${p.density==='spacious'?'selected':''}>Spacious</option></select></label><label class="card">Labels<select class="field" onchange="Gold50.setGold70Pref('showLabels',this.value==='yes')"><option value="yes" ${p.showLabels!==false?'selected':''}>Show labels</option><option value="no" ${p.showLabels===false?'selected':''}>Hide labels</option></select></label></div>`;}
+function openThemeStudio60(){openWindow('themestudio','Theme Studio',themeStudio60HTML(),{width:1040,height:740})}
+function accessibility60HTML(){const p=prefs();return `<h2>Accessibility Center</h2><p class="muted">Accessibility controls were expanded for readability and keyboard-friendly use.</p><div class="grid2"><div class="card"><h3>Vision</h3><label>Text scale <input type="range" min="90" max="170" value="${esc(p.textScale||100)}" oninput="Gold50.setGold70Pref('textScale',this.value);this.nextElementSibling.textContent=this.value+'%'"><span>${esc(p.textScale||100)}%</span></label><label class="setting-line"><span>High contrast</span><input type="checkbox" ${p.theme==='highcontrast'?'checked':''} onchange="Gold50.setGold70Pref('theme',this.checked?'highcontrast':'light')"></label><label class="setting-line"><span>Extra contrast borders</span><input type="checkbox" ${p.extraContrast?'checked':''} onchange="Gold50.setGold70Pref('extraContrast',this.checked)"></label><label class="setting-line"><span>Readable font</span><input type="checkbox" ${p.readableFont?'checked':''} onchange="Gold50.setGold70Pref('readableFont',this.checked)"></label><label>Color filter<select class="field" onchange="Gold50.setGold70Pref('colorFilter',this.value)"><option value="none" ${!p.colorFilter||p.colorFilter==='none'?'selected':''}>None</option><option value="warm" ${p.colorFilter==='warm'?'selected':''}>Warm</option><option value="cool" ${p.colorFilter==='cool'?'selected':''}>Cool</option><option value="gray" ${p.colorFilter==='gray'?'selected':''}>Grayscale</option></select></label></div><div class="card"><h3>Interaction</h3><label class="setting-line"><span>Reduced motion</span><input type="checkbox" ${p.reducedMotion?'checked':''} onchange="Gold50.setGold70Pref('reducedMotion',this.checked)"></label><label class="setting-line"><span>Large cursor</span><input type="checkbox" ${p.largeCursor?'checked':''} onchange="Gold50.setGold70Pref('largeCursor',this.checked)"></label><label class="setting-line"><span>Always show focus rings</span><input type="checkbox" ${p.focusRing?'checked':''} onchange="Gold50.setGold70Pref('focusRing',this.checked)"></label><label class="setting-line"><span>Underline controls</span><input type="checkbox" ${p.underlineLinks?'checked':''} onchange="Gold50.setGold70Pref('underlineLinks',this.checked)"></label><label class="setting-line"><span>Focus Assist</span><input type="checkbox" ${p.focusAssist?'checked':''} onchange="Gold50.setGold70Pref('focusAssist',this.checked)"></label><label class="setting-line"><span>Reduce transparency</span><input type="checkbox" ${p.windowTransparency===false?'checked':''} onchange="Gold50.setGold70Pref('windowTransparency',!this.checked)"></label></div></div>`;}
+function openAccessibility60(){openWindow('accessibility','Accessibility Center',accessibility60HTML(),{width:1000,height:720})}
+function openSupport60(){renderSupport60('home')}
+function renderSupport60(tab='home'){const w=openWindow('support','Support Center',support60HTML(tab),{width:1100,height:760});window.Gold50.renderSupport60=(t)=>{const b=w.querySelector('.win-content');if(b)b.innerHTML=support60HTML(t);};}
+function support60HTML(tab){const mine=tickets().filter(t=>t.user===username()||isStaff());const nav=['home','new','tickets','remote','resources','diagnostics'];return `<div class="app-shell"><nav class="app-nav">${nav.map(n=>`<button class="${tab===n?'active':''}" onclick="Gold50.renderSupport60('${n}')">${n[0].toUpperCase()+n.slice(1)}</button>`).join('')}<button onclick="Gold50.openApp('staff')">Staff Center</button></nav><main class="app-main">${support60Page(tab,mine)}</main></div>`;}
+function support60Page(tab,mine){if(tab==='new')return `<h2>Submit Support Ticket</h2><p class="muted">Choose a template, add diagnostics, and track staff replies.</p><label>Template<select id="ticket_template" class="field" onchange="Gold50.applyTicketTemplate60(this.value)"><option value="">Blank</option><option value="login">Login problem</option><option value="office">Gold Office problem</option><option value="store">User Appstore problem</option><option value="remote">Remote assistance</option><option value="bug">Bug report</option></select></label><label>Title<input id="ticket_title" class="field" placeholder="What do you need help with?"></label><label>Category<select id="ticket_cat" class="field"><option>General</option><option>Login</option><option>Gold Office</option><option>User Appstore</option><option>Staff Edition</option><option>Remote Assistance</option><option>Bug Report</option><option>Feature Request</option></select></label><label>Priority<select id="ticket_pri" class="field"><option>Normal</option><option>High</option><option>Urgent</option></select></label><label>Details<textarea id="ticket_body" class="field" rows="8"></textarea></label><label class="setting-line"><span>Attach diagnostics</span><input id="ticket_diag" type="checkbox" checked></label><button class="btn primary" onclick="Gold50.submitTicket60()">Submit Ticket</button>`;if(tab==='tickets')return `<h2>My Tickets</h2>${mine.map(ticketCard).join('')||'<p class="muted">No tickets yet.</p>'}`;if(tab==='remote')return `<h2>Remote Assistance</h2><div class="support-step"><b>1. Request help</b><p>Describe the problem and grant remote control only when you are ready.</p></div><div class="support-step"><b>2. Staff views your Gold desktop</b><p>Staff can see a live Gold desktop snapshot and send visible control commands.</p></div><div class="support-step"><b>3. End any time</b><p>The red banner remains visible while control is active.</p></div><label>What should staff help with?<textarea id="remote_note" class="field" rows="6"></textarea></label><button class="btn primary" onclick="Gold50.requestRemoteHelp()">Request Remote Help + Grant Control</button>${remoteSessionHTML()}`;if(tab==='resources')return resources60HTML();if(tab==='diagnostics')return `<h2>Diagnostics</h2><p class="muted">Copy this into a support ticket if staff asks.</p><pre>${esc(JSON.stringify(deviceInfo(),null,2))}</pre><button class="btn" onclick="Gold50.saveText('gold-diagnostics.json',JSON.stringify(Gold50.deviceInfo?Gold50.deviceInfo():{},null,2))">Export diagnostics</button>`;return `<div class="goldshell-header"><div><h2>Support Center</h2><p class="muted">Guided support, tickets, resources, diagnostics and remote assistance.</p></div><button class="btn primary" onclick="Gold50.renderSupport60('new')">New ticket</button></div><div class="grid4"><div class="card quick-card"><h3>Open Tickets</h3><p>${mine.filter(t=>t.status!=='Resolved').length}</p></div><div class="card quick-card"><h3>Remote Help</h3><p>${remoteSessions().filter(s=>s.status==='active').length}</p></div><div class="card quick-card"><h3>Resources</h3><p>Guides</p></div><div class="card quick-card"><h3>F1</h3><p>Shortcut</p></div></div><h3>Quick actions</h3><div class="grid3"><button class="tile-button" onclick="Gold50.renderSupport60('new')">Submit ticket</button><button class="tile-button" onclick="Gold50.renderSupport60('remote')">Remote assistance</button><button class="tile-button" onclick="Gold50.renderSupport60('resources')">Troubleshooting resources</button></div>`;}
+function applyTicketTemplate60(kind){const title=$('ticket_title'),cat=$('ticket_cat'),body=$('ticket_body'),pri=$('ticket_pri');const map={login:['Cannot log in','Login','High','I cannot sign in to EmeraldOS Gold. I tried: '],office:['Gold Office issue','Gold Office','Normal','Gold Office is not working correctly. App/tab affected: '],store:['User Appstore issue','User Appstore','Normal','The User Appstore or uploaded app is not working. App name: '],remote:['Remote assistance request','Remote Assistance','High','I would like staff to help with: '],bug:['Bug report','Bug Report','Normal','Steps to reproduce:\n1. \n2. \n3. \nExpected result:\nActual result:']};const t=map[kind];if(!t)return;title.value=t[0];cat.value=t[1];pri.value=t[2];body.value=t[3];}
+async function submitTicket60(){const diag=$('ticket_diag')?.checked?deviceInfo():null;const t={id:uid(),user:username(),title:$('ticket_title').value||'Support request',category:$('ticket_cat').value,priority:$('ticket_pri').value,status:'Open',body:$('ticket_body').value,time:now(),replies:[],device:diag};const arr=tickets();arr.unshift(t);saveTickets(arr);notify('Ticket submitted',t.title,'Support Center');if(fb?.addDoc&&fb?.collection&&fb?.db){try{await fb.addDoc(fb.collection(fb.db,'emeraldOSGoldTickets'),t)}catch(e){console.warn(e)}}renderSupport60('tickets')}
+function resources60HTML(){return `<h2>Resources</h2><div class="grid2"><div class="card"><h3>Common fixes</h3><ol><li>Refresh the page after uploading a new build.</li><li>Make sure <code>firebase.js</code> and <code>firebase-config.js</code> are in the same folder.</li><li>Use Support Center diagnostics when reporting bugs.</li><li>Use Safe Mode if a user app breaks startup.</li></ol></div><div class="card"><h3>Shortcuts</h3><p>F1 Support · F9 Staff · F12 BIOS · Ctrl+Alt+S Settings · Ctrl+Alt+L Logout</p></div><div class="card"><h3>Gold Office</h3><p>Use Gold Office for docs, sheets, slides, forms and local vault files.</p></div><div class="card"><h3>User Appstore</h3><p>Use App Lab to build, Packager to import/export, and User Appstore to install or run.</p></div></div>`;}
+function openResources60(){openWindow('resources','Resources',resources60HTML(),{width:920,height:640})}
+function openStaffCenter60(){if(!isStaff()){location.href='staff.html';return}openWindow('staff','Gold Staff Center',staffDashboard60(),{width:1120,height:760})}
+function staffDashboard60(){return `<div class="app-shell"><nav class="app-nav"><button onclick="Gold50.openApp('staff')">Dashboard</button><button onclick="Gold50.openApp('remotedesk')">Remote Desk</button><button onclick="Gold50.openApp('staffresources')">Resources</button><button onclick="Gold50.openApp('staffkb')">Knowledge Base</button><button onclick="Gold50.openApp('staffreports')">Reports</button><button onclick="Gold50.openApp('staffbroadcast')">Broadcast</button><button onclick="Gold50.staffLogout()">Sign out</button></nav><main class="app-main"><h2>Gold Staff Center</h2><p class="muted">Signed in as ${esc(currentStaff().username)} · ${esc(currentStaff().role||'Staff')}</p><div class="grid4"><div class="card quick-card"><h3>Tickets</h3><p>${tickets().length}</p></div><div class="card quick-card"><h3>Open</h3><p>${tickets().filter(t=>t.status!=='Resolved').length}</p></div><div class="card quick-card"><h3>Remote</h3><p>${remoteSessions().filter(s=>s.status==='active').length}</p></div><div class="card quick-card"><h3>Logs</h3><p>${read(PREFIX+'staff_logs',[]).length}</p></div></div><h3>Recent tickets</h3>${tickets().slice(0,8).map(ticketCard).join('')||'<p class="muted">No tickets.</p>'}</main></div>`;}
+function openStaffResources60(){if(!isStaff()){location.href='staff.html';return}openWindow('staffresources','Staff Resources',`<h2>Staff Resources</h2><p class="muted">Operational tools for staff. These are staff-only and not shown to normal users.</p><div class="grid3"><div class="card staff-resource-card"><h3>Support playbook</h3><p>Use diagnostics, ticket templates, and remote assistance only with user consent.</p></div><div class="card staff-resource-card"><h3>Escalation</h3><p>Escalate login, Firebase, or staff access issues to Network Administration.</p></div><div class="card staff-resource-card"><h3>Remote policy</h3><p>Never hide the user banner. End control when the support task is complete.</p></div></div><h3>Quick tools</h3><div class="toolbar"><button class="btn" onclick="Gold50.openApp('remotedesk')">Remote Desk</button><button class="btn" onclick="Gold50.openApp('staffkb')">Knowledge Base</button><button class="btn" onclick="Gold50.openApp('staffreports')">Reports</button></div>`,{width:940,height:640})}
+function staffKB(){return read(PREFIX+'staff_kb',[{id:uid(),title:'Login loop troubleshooting',body:'Check login keys, Firebase files, and whether OS.html redirects to index.html when logged out.',tags:'login,firebase'},{id:uid(),title:'Remote assistance steps',body:'Confirm the user requested help, check the active red banner, send visible commands only, and end the session when finished.',tags:'remote,support'}])}
+function saveStaffKB(v){write(PREFIX+'staff_kb',v)}
+function openStaffKnowledge60(){if(!isStaff()){location.href='staff.html';return}const q='';openWindow('staffkb','Staff Knowledge Base',staffKnowledgeHTML(q),{width:980,height:700});window.Gold50.searchStaffKB60=(v)=>{const b=document.querySelector('#win_staffkb .win-content');if(b)b.innerHTML=staffKnowledgeHTML(v)};}
+function staffKnowledgeHTML(q=''){const rows=staffKB().filter(a=>(a.title+a.body+a.tags).toLowerCase().includes(String(q).toLowerCase()));return `<h2>Staff Knowledge Base</h2><div class="toolbar"><input class="field inline" placeholder="Search articles" value="${esc(q)}" oninput="Gold50.searchStaffKB60(this.value)"><button class="btn primary" onclick="Gold50.addStaffKB60()">Add Article</button></div>${rows.map(a=>`<div class="card"><h3>${esc(a.title)}</h3><p>${esc(a.body)}</p><p class="muted">${esc(a.tags)}</p></div>`).join('')||'<p class="muted">No articles found.</p>'}`}
+function addStaffKB60(){const title=prompt('Article title');if(!title)return;const body=prompt('Article body')||'';const tags=prompt('Tags')||'';saveStaffKB([{id:uid(),title,body,tags,time:now(),staff:currentStaff()?.username||'Staff'},...staffKB()]);openStaffKnowledge60();}
+function openStaffReports60(){if(!isStaff()){location.href='staff.html';return}const open=tickets().filter(t=>t.status!=='Resolved').length,res=tickets().filter(t=>t.status==='Resolved').length,remote=remoteSessions().length;openWindow('staffreports','Staff Reports',`<h2>Staff Reports</h2><div class="grid4"><div class="card"><h3>Open tickets</h3><p>${open}</p></div><div class="card"><h3>Resolved</h3><p>${res}</p></div><div class="card"><h3>Remote sessions</h3><p>${remote}</p></div><div class="card"><h3>Staff logs</h3><p>${read(PREFIX+'staff_logs',[]).length}</p></div></div><div class="toolbar"><button class="btn primary" onclick="Gold50.saveText('gold1e-tickets.json',JSON.stringify(Gold50.tickets?Gold50.tickets():[],null,2),'application/json')">Export Tickets</button><button class="btn" onclick="Gold50.staffLogs()">Open Staff Logs</button></div><h3>Recent logs</h3>${read(PREFIX+'staff_logs',[]).slice(0,8).map(l=>`<div class="card"><b>${esc(l.type)}</b><p>${esc(l.note)}</p><small>${new Date(l.time).toLocaleString()}</small></div>`).join('')||'<p class="muted">No logs.</p>'}`,{width:920,height:680})}
+function openStaffBroadcast60(){if(!isStaff()){location.href='staff.html';return}openWindow('staffbroadcast','Staff Broadcast',`<h2>Staff Broadcast</h2><p class="muted">Send a visible local notification. Future versions can sync broadcasts through Firestore.</p><label>Title<input id="bc_title" class="field" value="Staff Broadcast"></label><label>Message<textarea id="bc_body" class="field" rows="6"></textarea></label><button class="btn primary" onclick="Gold50.sendStaffBroadcast60()">Send Broadcast</button>`,{width:700,height:520})}
+function sendStaffBroadcast60(){const title=$('bc_title')?.value||'Staff Broadcast',body=$('bc_body')?.value||'';notify(title,body,'Staff Broadcast');logStaff('broadcast',body);}
+function openRemoteDesk60(){if(!isStaff()){location.href='staff.html';return}const sessions=remoteSessions().filter(s=>s.status==='active'&&s.controlGranted);openWindow('remotedesk','Remote Desk',`<h2>Remote Desk</h2><p class="muted">Live desktop snapshots update while the user has requested remote help and granted control.</p><div class="toolbar"><button class="btn" onclick="Gold50.staffRemotePanel()">Classic Remote Tools</button><button class="btn" onclick="Gold50.openApp('support')">Tickets</button></div>${sessions.map(s=>`<div class="card"><h3>${esc(s.user)} · ${esc(s.id)}</h3>${remotePreview60(s)}<div class="toolbar"><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'settings'})">Open Settings</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','openApp',{app:'support'})">Open Support</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','tile')">Tile</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','cascade')">Cascade</button><button class="btn" onclick="Gold50.staffSendRemoteCommand('${s.id}','notify',{title:'Staff message',body:prompt('Message to user')||'Staff is assisting.'})">Message</button><button class="btn danger" onclick="Gold50.staffSendRemoteCommand('${s.id}','end')">End</button></div></div>`).join('')||'<p class="muted">No active user-approved remote sessions.</p>'}`,{width:1040,height:740})}
+function remotePreview60(s){const snap=s.snapshot||read(PREFIX+'remote_snapshot_'+s.id,null);if(!snap)return '<p class="muted">No live desktop snapshot yet.</p>';return `<div class="remote-live-screen"><div class="remote-live-desktop">${(snap.desktop||[]).slice(0,10).map(a=>`<div class="remote-live-icon"><img src="${esc(a.logo||'')}" onerror="this.style.display='none'"><span>${esc(a.name)}</span></div>`).join('')}${(snap.windows||[]).slice(0,6).map(w=>`<div class="remote-live-window ${w.active?'active':''}"><b>${esc(w.title)}</b><small>${w.maximized?'Maximized':w.minimized?'Minimized':'Open'}</small></div>`).join('')}</div><div class="remote-live-taskbar"><b>Gold</b><span>${(snap.windows||[]).length} windows</span><span>${snap.mailUnread||0} mail</span><span>${snap.ticketCount||0} tickets</span></div></div>`}
+
+function openBIOSOptions60(){openWindow('bios','Emerald BIOS A9 Options',`<h2>Emerald BIOS A9</h2><p class="muted">Modern EmeraldOS Gold boot controls.</p><div class="grid2"><div class="card"><h3>Boot</h3><div class="toolbar"><button class="btn primary" onclick="location.href='bios.html'">Open full BIOS / DOS</button><button class="btn" onclick="location.href='loading.html'">Restart boot flow</button><button class="btn" onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Boot Safe Mode</button></div></div><div class="card"><h3>Repair</h3><div class="toolbar"><button class="btn" onclick="localStorage.removeItem('${PREFIX}setup_done');location.reload()">Run Setup</button><button class="btn" onclick="Gold50.openApp('restore')">Restore Center</button><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button></div></div></div><h3>DOS commands</h3><p class="muted">HELP, VER, DIR, APPS, WHOAMI, LOGIN, REGISTER, LOGOUT, BOOT, SAFE, STAFF, SUPPORT, STORE, DEV, OFFICE, EXPLORER, SNAPSHOT, RESTORE, BACKUP, RESET, DIAG, PREFS, TIME, DATE, MEM, CLEAR, EXIT.</p>`,{width:800,height:560})}
+
+
+
+/* =========================================================
+   EMERALDOS GOLD 8.0 SUPPORT + EMERGENCY ENHANCEMENTS
+   EmeraldOS Gold-style support functions, Emergency Center, Quick Assist,
+   Troubleshooters, Recovery, Reliability Monitor, and UI polish.
+========================================================= */
+function emergencyLogs70(){return read(PREFIX+'emergency_logs',[])}
+function saveEmergencyLogs70(v){write(PREFIX+'emergency_logs',v)}
+function logEmergency70(type,note){const row={id:uid(),type,note,user:username(),time:now(),device:deviceInfo()};saveEmergencyLogs70([row,...emergencyLogs70()].slice(0,100));return row}
+function installGold70SupportEnhancements(){
+  const add=app=>{const old=APPS.find(a=>a.id===app.id);if(old)Object.assign(old,app);else APPS.push(app)};
+  add({id:'emergency',name:'Emergency Center',label:'EC',color:'red',group:'Support',desc:'Emergency restart, recovery, urgent tickets, diagnostics, and remote help controls.',open:openEmergencyCenter70});
+  add({id:'quickassist',name:'Quick Assist',label:'QA',color:'blue',group:'Support',desc:'EmeraldOS guided remote assistance and staff handoff.',open:openQuickAssist70});
+  add({id:'troubleshoot',name:'Troubleshooters',label:'TR',color:'orange',group:'Support',desc:'Guided repair flows for login, Office, Store, files, remote assistance, and performance.',open:openTroubleshooters70});
+  add({id:'reliability',name:'Reliability Monitor',label:'RM',color:'green',group:'Support',desc:'View support events, emergency logs, tickets, and recent app activity.',open:openReliabilityMonitor70});
+  add({id:'recovery',name:'Recovery Options',label:'RO',color:'teal',group:'System',desc:'Safe Mode, restore, reset, workspace snapshots, and emergency repair options.',open:openRecoveryOptions70});
+  add({id:'emeraldbrand',name:'EmeraldOS Welcome',label:'EG',color:'gold',group:'Core',desc:'EmeraldOS Gold branding, shortcuts, support resources, and release notes.',open:openEmeraldWelcome70});
+  const support=APPS.find(a=>a.id==='support'); if(support){support.name='Get Help';support.desc='Support Center 8.0 with emergency help, tickets, resources, Quick Assist, and remote assistance.';}
+  const security=APPS.find(a=>a.id==='security'); if(security){security.name='Emerald Security Center';security.desc='Safe Mode, blocked users, support safety, remote consent, and emergency status.';}
+  const p=prefs();
+  if(!read(PREFIX+'seeded_70',false)){
+    p.desktopApps=[...new Set([...(p.desktopApps||[]),'emeraldbrand','emergency','quickassist','troubleshoot','recovery','reliability','support','settings'])];
+    p.goldshellDensity=p.goldshellDensity||'normal';
+    p.startTileStyle=p.startTileStyle||'goldshell';
+    p.supportMode=p.supportMode||'guided';
+    write(PREFIX+'prefs',p);write(PREFIX+'seeded_70',true);
+  }
+  try{applyGold70Visuals();applyGold70SupportVisuals()}catch{}
+  setTimeout(()=>{const h=(location.hash||'').replace('#','');if(h&&APPS.some(a=>a.id===h)){try{openApp(h)}catch(e){console.warn(e)}}},1600);
+}
+function supportResourceCards70(){return `<div class="grid3"><div class="card support-card70"><h3>Emergency help</h3><p>Create an urgent ticket, attach diagnostics, request Quick Assist, or reboot into Safe Mode.</p><button class="btn danger" onclick="Gold50.openApp('emergency')">Open Emergency Center</button></div><div class="card support-card70"><h3>Quick Assist</h3><p>User-approved remote support with a visible banner and staff commands.</p><button class="btn primary" onclick="Gold50.openApp('quickassist')">Start Quick Assist</button></div><div class="card support-card70"><h3>Troubleshooters</h3><p>Guided repair for login, Office, Store, files, apps, and performance issues.</p><button class="btn" onclick="Gold50.openApp('troubleshoot')">Open Troubleshooters</button></div></div>`}
+function openEmergencyCenter70(){
+  const active=remoteSessions().filter(s=>s.user===username()&&s.status==='active').length;
+  openWindow('emergency','Emergency Center',`<div class="emergency70"><h2>Emergency Center</h2><p class="muted">Fast recovery and support actions for EmeraldOS Gold 1E. These actions are visible and reversible when possible.</p><div class="emergency-banner70"><b>Emergency support status</b><span>${active?active+' active remote session(s)':'No active remote session'}</span></div><div class="grid3"><div class="card"><h3>Urgent staff ticket</h3><p>Creates a high-priority support ticket with diagnostics.</p><button class="btn danger" onclick="Gold50.createEmergencyTicket70()">Create urgent ticket</button></div><div class="card"><h3>Quick Assist</h3><p>Request staff remote help and grant visible control.</p><button class="btn primary" onclick="Gold50.requestEmergencyRemote70()">Request Quick Assist</button></div><div class="card"><h3>Emergency snapshot</h3><p>Save the current VM state before troubleshooting.</p><button class="btn" onclick="Gold50.emergencySnapshot70()">Save snapshot</button></div><div class="card"><h3>Repair windows</h3><p>Bring lost windows back, tile open windows, and clear stuck layouts.</p><button class="btn" onclick="Gold50.repairEmeraldOS70()">Repair windows</button></div><div class="card"><h3>Safe Mode</h3><p>Restart with custom apps and risky features disabled.</p><button class="btn" onclick="Gold50.bootSafeMode70()">Boot Safe Mode</button></div><div class="card"><h3>Emergency diagnostics</h3><p>Copy a diagnostics bundle for Support Center.</p><button class="btn" onclick="Gold50.copyDiagnostics70()">Copy diagnostics</button></div></div><h3>Recent emergency log</h3>${emergencyLogs70().slice(0,6).map(l=>`<div class="card"><b>${esc(l.type)}</b><p>${esc(l.note)}</p><small>${new Date(l.time).toLocaleString()}</small></div>`).join('')||'<p class="muted">No emergency actions yet.</p>'}</div>`,{width:1060,height:740});
+}
+function createEmergencyTicket70(){const t={id:uid(),user:username(),title:'Emergency support request',category:'Emergency',priority:'Urgent',status:'Open',body:'User requested emergency support from Emergency Center.',time:now(),replies:[],device:deviceInfo(),emergency:true};const arr=tickets();arr.unshift(t);saveTickets(arr);logEmergency70('Urgent ticket','Created urgent support ticket '+t.id);notify('Emergency ticket created','Staff can review it in Gold Staff Edition.','Emergency Center');try{renderSupport70('tickets')}catch{} }
+function requestEmergencyRemote70(){const t={id:uid(),user:username(),title:'Emergency Quick Assist request',category:'Remote Assistance',priority:'Urgent',status:'Waiting for staff',body:'User requested emergency Quick Assist and granted visible remote control.',time:now(),replies:[],remote:true,remoteControl:true,device:deviceInfo(),emergency:true};const arr=tickets();arr.unshift(t);saveTickets(arr);const session=grantRemoteControl(t);logEmergency70('Quick Assist','Granted emergency remote control session '+session.id);notify('Quick Assist requested','Staff can view and control the Gold desktop while the red banner is visible.','Emergency Center');openQuickAssist70();}
+function emergencySnapshot70(){try{saveWorkspaceNow(true);saveVMSnapshot&&saveVMSnapshot();}catch(e){try{saveWorkspaceNow(false)}catch{}}logEmergency70('Emergency snapshot','Saved emergency VM snapshot.');notify('Emergency snapshot saved','A VM recovery point was saved.','Emergency Center')}
+function repairEmeraldOS70(){try{document.querySelectorAll('.window').forEach(w=>{w.classList.remove('minimized','max');w.style.display='';keepWindowOnScreen(w)});tileEmeraldOS();}catch(e){console.warn(e)}logEmergency70('Window repair','Restored and tiled windows.');notify('App windows repaired','Open windows were brought back into view.','Emergency Center')}
+function bootSafeMode70(){logEmergency70('Safe Mode','User requested Safe Mode from Emergency Center.');localStorage.setItem(PREFIX+'safemode','true');location.href='loading.html'}
+function copyDiagnostics70(){const d={build:BUILD,user:username(),device:deviceInfo(),prefs:prefs(),tickets:tickets().slice(0,10),remote:remoteSessions().filter(s=>s.user===username()).slice(0,5),logs:emergencyLogs70().slice(0,20)};navigator.clipboard?.writeText(JSON.stringify(d,null,2));logEmergency70('Diagnostics','Copied emergency diagnostics.');notify('Diagnostics copied','Paste this into a support ticket if staff asks for it.','Emergency Center')}
+function openQuickAssist70(){const mine=remoteSessions().filter(s=>s.user===username());openWindow('quickassist','Quick Assist',`<h2>Quick Assist</h2><p class="muted">EmeraldOS Gold-style remote support for EmeraldOS Gold. Staff can only control this VM after you request help and the red banner remains visible.</p><div class="grid2"><div class="card"><h3>Start assistance</h3><textarea id="qa_note" class="field" rows="5" placeholder="What do you need help with?"></textarea><button class="btn primary" onclick="Gold50.quickAssistRequest70()">Request help + grant control</button></div><div class="card"><h3>Safety</h3><p>Staff actions are visible, logged, and you can end remote control at any time.</p><button class="btn danger" onclick="Gold50.revokeRemoteControl()">End current remote control</button></div></div><h3>Sessions</h3>${mine.map(s=>`<div class="card"><b>${esc(s.id)}</b><p>${esc(s.status)} · ${s.controlGranted?'Control granted':'View only'} · ${new Date(s.updatedAt||s.createdAt).toLocaleString()}</p></div>`).join('')||'<p class="muted">No sessions yet.</p>'}`,{width:860,height:620});}
+function quickAssistRequest70(){const note=$('qa_note')?.value||'Quick Assist requested';const t={id:uid(),user:username(),title:'Quick Assist request',category:'Remote Assistance',priority:'High',status:'Waiting for staff',body:note,time:now(),replies:[],remote:true,remoteControl:true,device:deviceInfo()};const arr=tickets();arr.unshift(t);saveTickets(arr);const session=grantRemoteControl(t);logEmergency70('Quick Assist','Created Quick Assist session '+session.id);notify('Quick Assist requested','Staff can now review your live Gold desktop snapshot.','Quick Assist');openQuickAssist70()}
+function openTroubleshooters70(){openWindow('troubleshoot','Troubleshooters',`<h2>Troubleshooters</h2><p class="muted">Pick a guided repair flow.</p><div class="grid3">${[['login','Login repair','Clears stale login redirects and opens login.'],['office','Gold Office repair','Opens Office vault and saves workspace.'],['store','Store repair','Opens User Appstore and clears upload draft warnings.'],['files','Files repair','Opens Explorer and checks local file count.'],['remote','Remote assistance repair','Checks sessions and opens Quick Assist.'],['performance','Performance repair','Reduces motion, turns off blur, and saves preferences.']].map(x=>`<div class="card"><h3>${x[1]}</h3><p>${x[2]}</p><button class="btn primary" onclick="Gold50.runTroubleshooter70('${x[0]}')">Run</button></div>`).join('')}</div>`,{width:980,height:680})}
+function runTroubleshooter70(kind){logEmergency70('Troubleshooter',kind);if(kind==='login'){localStorage.removeItem(PREFIX+'stale_redirect');notify('Login repair','Opening login screen.','Troubleshooters');setTimeout(()=>location.href='index.html?next=OS.html',500)}else if(kind==='office'){saveWorkspaceNow(false);openApp('office');notify('Office repair','Gold Office opened and workspace was saved.','Troubleshooters')}else if(kind==='store'){openApp('store');notify('Store repair','Gold Store opened.','Troubleshooters')}else if(kind==='files'){openApp('explorer');notify('Files repair',files().filter(f=>!f.trash).length+' active files found.','Troubleshooters')}else if(kind==='remote'){openQuickAssist70()}else if(kind==='performance'){setPrefs({reducedMotion:true,transparency:false});try{setGold70Pref('micaBlur','0px')}catch{}notify('Performance repair','Reduced motion and transparency settings were applied.','Troubleshooters')}}
+function openReliabilityMonitor70(){const data=[...notifs().slice(0,40).map(n=>({type:'Notification',title:n.title,body:n.body,time:n.time})),...tickets().slice(0,30).map(t=>({type:'Ticket',title:t.title,body:t.status,time:t.time})),...emergencyLogs70().map(l=>({type:'Emergency',title:l.type,body:l.note,time:l.time}))].sort((a,b)=>new Date(b.time)-new Date(a.time));openWindow('reliability','Reliability Monitor',`<h2>Reliability Monitor</h2><p class="muted">Recent system, support, emergency, and notification events.</p><div class="grid4"><div class="card"><h3>Tickets</h3><p>${tickets().length}</p></div><div class="card"><h3>Emergency</h3><p>${emergencyLogs70().length}</p></div><div class="card"><h3>Remote</h3><p>${remoteSessions().length}</p></div><div class="card"><h3>Notifications</h3><p>${notifs().length}</p></div></div>${data.slice(0,18).map(e=>`<div class="card reliability-row70"><b>${esc(e.type)} · ${esc(e.title)}</b><p>${esc(e.body)}</p><small>${new Date(e.time).toLocaleString()}</small></div>`).join('')||'<p class="muted">No events.</p>'}`,{width:980,height:700})}
+function openRecoveryOptions70(){openWindow('recovery','Recovery Options',`<h2>Recovery Options</h2><p class="muted">Recover your EmeraldOS Gold VM without losing your workspace.</p><div class="grid3"><div class="card"><h3>Save workspace</h3><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save now</button></div><div class="card"><h3>Restore workspace</h3><button class="btn" onclick="Gold50.restoreWorkspace(true)">Restore</button></div><div class="card"><h3>Export backup</h3><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button></div><div class="card"><h3>Safe Mode</h3><button class="btn" onclick="Gold50.bootSafeMode70()">Boot Safe Mode</button></div><div class="card"><h3>Reset desktop layout</h3><button class="btn" onclick="Gold50.resetDesktop70()">Reset desktop</button></div><div class="card"><h3>Full reset</h3><button class="btn danger" onclick="Gold50.resetGold()">Reset Gold</button></div></div>`,{width:920,height:620})}
+function resetDesktop70(){const p=prefs();p.desktopApps=defaultPrefs().desktopApps.concat(['emeraldbrand','emergency','quickassist','troubleshoot','recovery','reliability']);p.showLabels=true;p.iconSize='normal';write(PREFIX+'prefs',p);renderDesktop();notify('Desktop reset','Default Gold 1E icons restored.','Recovery Options')}
+function openEmeraldWelcome70(){openWindow('emeraldbrand','EmeraldOS Gold',`<div class="welcome70"><div class="gold1e-hero"><div class="gold1e-logo-big">G</div><div><h1>EmeraldOS Gold 1E</h1><p>EmeraldOS Gold-style support, emergency tools, staff Quick Assist, refined styling, and EmeraldOS branding.</p></div></div><div class="grid3"><div class="card"><h3>Get Help</h3><p>Support Center, Quick Assist, Troubleshooters, and Emergency Center are all ready.</p><button class="btn primary" onclick="Gold50.openApp('support')">Open Get Help</button></div><div class="card"><h3>Customize</h3><p>Use Theme Studio, Settings, and Accessibility Center to personalize your Gold VM.</p><button class="btn" onclick="Gold50.openApp('themestudio')">Open Theme Studio</button></div><div class="card"><h3>Develop</h3><p>Build JS or packaged HTML/CSS/JS apps for the User Appstore.</p><button class="btn" onclick="Gold50.openApp('applab')">Open App Lab</button></div></div></div>`,{width:900,height:600})}
+function settings70EmergencyPage(){return `<h2>Support & emergency</h2><p class="muted">EmeraldOS Gold-style support tools for EmeraldOS Gold.</p>${supportResourceCards70()}<h3>Recovery options</h3><div class="toolbar"><button class="btn danger" onclick="Gold50.openApp('emergency')">Emergency Center</button><button class="btn" onclick="Gold50.openApp('recovery')">Recovery Options</button><button class="btn" onclick="Gold50.openApp('reliability')">Reliability Monitor</button></div>`}
+function applyGold70SupportVisuals(){document.body.classList.add('gold1e-goldshell');const p=prefs();document.documentElement.style.setProperty('--gold1eTileOpacity',p.tileOpacity||'.94');document.documentElement.style.setProperty('--gold1ePanelRadius',p.goldshellRadius||'8px')}
+function enhanceSettings70(){const old=window.Gold50?.settings60Tab||window.Gold50?.settings50Tab; if(!old)return; window.Gold50.settings60Tab=(t)=>{if(t==='emergency'){const b=document.querySelector('#win_settings .win-content');if(b)b.innerHTML=`<div class="app-shell settings70"><nav class="app-nav"><button onclick="Gold50.settings60Tab('system')">System</button><button onclick="Gold50.settings60Tab('personalization')">Personalization</button><button onclick="Gold50.settings60Tab('accessibility')">Accessibility</button><button onclick="Gold50.settings60Tab('support')">Support</button><button class="active" onclick="Gold50.settings60Tab('emergency')">Emergency</button><button onclick="Gold50.settings60Tab('bios')">BIOS</button></nav><main class="app-main">${settings70EmergencyPage()}</main></div>`;}else old(t)};window.Gold50.settings50Tab=window.Gold50.settings60Tab;}
+function openGoldSupportHub70(){openWindow('supporthub','Gold Support Hub',`<h2>Gold Support Hub</h2>${supportResourceCards70()}<div class="toolbar"><button class="btn" onclick="Gold50.openApp('diagnostics')">Diagnostics</button><button class="btn" onclick="Gold50.openApp('reliability')">Reliability Monitor</button><button class="btn" onclick="Gold50.openApp('recovery')">Recovery Options</button></div>`,{width:900,height:560})}
+
+installGold50Apps();
+installGold70Enhancements();
+installGold70SupportEnhancements();
+Object.assign(window.Gold50,{setGold50Pref,loadGold50BackgroundFile,settings50Tab:(t)=>openSettings50(t),openSettings50,openThemeStudio50,openAccessibility50,openAppLab50,openPackager50,uploadGold50AppFile,previewLabPackage,submitLabPackage,exportLabPackage,loadLabTemplate,runPackageApp50,runAnyGold50App,exportAnyGold50App,openStore50,browserGo50,browserHome50,terminalRun50,mediaPlay50,saveSnip50,exportSnips50,applyGold50Visuals});
+Object.assign(window.Gold50,{setGold70Pref,applyGold70Visuals,settings60Tab:(t)=>openSettings60(t),openSettings60,openThemeStudio60,openAccessibility60,openSupport60,renderSupport60,applyTicketTemplate60,submitTicket60,openResources60,openStaffCenter60,openStaffResources60,openStaffKnowledge60,searchStaffKB60:(q)=>{},addStaffKB60,openStaffReports60,openStaffBroadcast60,sendStaffBroadcast60,openRemoteDesk60,openBIOSOptions60,tickets,deviceInfo,saveText});
+
+
+/* EmeraldOS Gold 1E rebuilt update-system fallback.
+   Some Gold 1E update helpers are created inside the seeded boot scope.
+   These outer fallbacks prevent boot-time ReferenceError crashes and make
+   updates use the invisible root shell instead of a visible iframe shell. */
+function gold1eRebuiltSnapshot(){
+  return {
+    product:'EmeraldOS Gold',
+    version:BUILD.version,
+    folder:'Gold_1E',
+    user:username(),
+    savedAt:now(),
+    prefs:prefs(),
+    files:files(),
+    tickets:tickets(),
+    mail:mail(),
+    notifications:notifs(),
+    workspace:{openWindows:[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title,left:w.style.left,top:w.style.top,width:w.style.width,height:w.style.height,minimized:w.classList.contains('minimized'),maximized:w.classList.contains('max')}))}
+  };
+}
+function gold1eRebuiltLocalManifest(){
+  return read('emeraldGoldShell_latest',{latestVersion:'1E',build:'1E',folder:'Gold_1E',entry:'OS.html',releaseTitle:'EmeraldOS Gold 1E',summary:'EmeraldOS Gold update-system build.'});
+}
+async function gold1eRebuiltFetchLatest(){
+  try{
+    const fbm = await import('./firebase.js');
+    const snap = await fbm.getDoc(fbm.doc(fbm.db,'system','emeraldGoldLatest'));
+    const latest = snap.exists()?Object.assign(gold1eRebuiltLocalManifest(),snap.data()):gold1eRebuiltLocalManifest();
+    write('emeraldGoldShell_latest',latest);
+    return latest;
+  }catch(e){
+    console.warn('Gold 1E update check Firebase unavailable',e);
+    return gold1eRebuiltLocalManifest();
+  }
+}
+function gold1eRebuiltSaveBeforeUpdate(){
+  try{saveWorkspaceNow(false)}catch(e){console.warn(e)}
+  try{write('emeraldGoldShell_liveState',gold1eRebuiltSnapshot())}catch(e){console.warn(e)}
+}
+async function gold1eRebuiltCheckForUpdates(){
+  const latest = await gold1eRebuiltFetchLatest();
+  const current = BUILD.version;
+  const folder = latest.folder || 'Gold_1E';
+  const version = latest.latestVersion || latest.build || '1B';
+  const message = version===current && folder==='Gold_1E'
+    ? 'This VM is running the latest configured EmeraldOS Gold build.'
+    : `Update target: ${version} from ${folder}.`;
+  notify('System Update',message,'Gold Update Center');
+  try{openGold1AUpdateCenterRebuilt(latest)}catch(e){console.warn(e)}
+}
+function gold1eRebuiltApplyUpdate(){
+  gold1eRebuiltSaveBeforeUpdate();
+  localStorage.setItem('emeraldGoldShell_forceCheck','true');
+  localStorage.setItem('emeraldGoldShell_returnedFromVersion','Gold_1E');
+  location.href='../gold-shell.html?force=1';
+}
+function openGold1AUpdateCenterRebuilt(manifest){
+  const m=manifest||gold1eRebuiltLocalManifest();
+  const version=m.latestVersion||m.build||'1B';
+  const folder=m.folder||'Gold_1E';
+  const entry=m.entry||'OS.html';
+  const currentFolder='Gold_1E';
+  const isDifferent=(version!==BUILD.version)||(folder!==currentFolder);
+  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>System Update</h2><p class="muted">EmeraldOS Gold uses a root updater that checks Firebase, saves the VM, and boots the configured version folder. The updater is not visible after boot.</p></div><button class="btn primary" onclick="Gold50.gold1eCheckForUpdates()">Check now</button></div><div class="grid2"><div class="card"><h3>Current VM</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: ${currentFolder}</p></div><div class="card"><h3>Configured latest</h3><p>${esc(version)}</p><p class="muted">${esc(folder)} / ${esc(entry)}</p></div><div class="card"><h3>Status</h3><p>${isDifferent?'An update or folder change is available.':'No newer folder is currently configured.'}</p></div><div class="card"><h3>VM continuity</h3><p>Before applying an update, Gold saves a workspace snapshot so your files, settings, apps, tickets, and desktop state can continue.</p></div></div><h3>Release note</h3><p>${esc(m.summary||m.releaseTitle||'No release note available.')}</p><div class="toolbar"><button class="btn" onclick="Gold50.gold1eSaveUpdateSnapshot()">Save VM snapshot</button><button class="btn primary" onclick="Gold50.gold1eApplyUpdate()">Restart through System Update</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button></div>`,{width:980,height:680});
+}
+Object.assign(window.Gold50,{
+  openGold1AUpdateCenter:(typeof openGold1AUpdateCenter==='function'?openGold1AUpdateCenter:openGold1AUpdateCenterRebuilt),
+  gold1eAskShellUpdateCheck:(typeof gold1eAskShellUpdateCheck==='function'?gold1eAskShellUpdateCheck:gold1eRebuiltCheckForUpdates),
+  gold1eCheckForUpdates:gold1eRebuiltCheckForUpdates,
+  gold1eApplyUpdate:gold1eRebuiltApplyUpdate,
+  gold1eSaveUpdateSnapshot:()=>{gold1eRebuiltSaveBeforeUpdate();notify('VM snapshot saved','EmeraldOS Gold saved a local update snapshot.','System Update')},
+  gold1ePostState:(typeof gold1ePostState==='function'?gold1ePostState:()=>write('emeraldGoldShell_liveState',gold1eRebuiltSnapshot())),
+  gold1eVMState:(typeof gold1eVMState==='function'?gold1eVMState:gold1eRebuiltSnapshot),
+  openEmergencyCenter70,createEmergencyTicket70,requestEmergencyRemote70,emergencySnapshot70,repairEmeraldOS70,bootSafeMode70,copyDiagnostics70,openQuickAssist70,quickAssistRequest70,openTroubleshooters70,runTroubleshooter70,openReliabilityMonitor70,openRecoveryOptions70,resetDesktop70,openEmeraldWelcome70,applyGold70Visuals,applyGold70SupportVisuals,openGoldSupportHub70
+});
+try{const updateApp=APPS.find(a=>a.id==='updateshell');const updateDef={id:'updateshell',name:'System Update',label:'UP',color:'blue',group:'System',desc:'Check Firebase for the latest EmeraldOS Gold folder and restart through the updater.',open:window.Gold50.openGold1AUpdateCenter};if(updateApp)Object.assign(updateApp,updateDef);else APPS.push(updateDef);}catch(e){console.warn('Gold 1E update app install failed',e)}
+try{enhanceSettings70()}catch(e){console.warn('Gold 1E settings enhancer failed',e)}
+
+
+/* Gold 1E boot fix: final exposure is installed inside seedGold50 so boot never references scoped handlers too early. */
+function gold1eInstallLiveHandlers(){return true;}
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{if(window.Gold50?.openCloudSyncCenter80){document.body.classList.add('gold1e','gold1e-shell');}}catch(e){console.warn(e)}},120));
+
+
+/* EmeraldOS Gold 1E first-run Firestore rules installer.
+   Browser code cannot safely deploy Firestore Security Rules by itself because
+   that requires admin credentials. This installer runs automatically on first
+   boot, stages the rules in Firestore, and can call an optional secure deployer
+   endpoint if you configure one. */
+function gold1eRulesText(){return `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function sameUser(username) { return signedIn() && request.auth.token.email != null && request.auth.token.email.matches(username + '(@.*)?'); }
+    function isStaff() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.staff == true ||
+        request.auth.token.role in ['admin','administrator','moderator','mod','operator','staff','executive','owner','network administrator']
+      );
+    }
+
+    match /system/emeraldGoldLatest { allow read: if true; allow write: if isStaff(); }
+    match /system/{docId} { allow read: if true; allow write: if isStaff(); }
+
+    match /users/{username} {
+      allow read: if signedIn();
+      allow create: if true;
+      allow update, delete: if isStaff() || sameUser(username);
+    }
+
+    match /EmeraldMail/{email} {
+      allow create: if true;
+      allow read, update, delete: if isStaff() || (signedIn() && request.auth.token.email == email);
+    }
+
+    match /emeraldOSUsers/{username}/{document=**} {
+      allow read, write: if isStaff() || sameUser(username) || (signedIn() && request.auth.token.email == username);
+    }
+
+    match /emeraldGoldSupport/{document=**} {
+      allow read, write: if signedIn() || true;
+    }
+
+    match /emeraldGoldStore/{document=**} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isStaff();
+    }
+
+    match /emeraldGoldStaff/{document=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /emeraldGoldRulesInstallRequests/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+  }
+}
+`;}
+function gold1eRulesStatus(){return read(PREFIX+'rules_status',{ran:false,status:'not_run',message:'Rules installer has not run yet.'});}
+function gold1eWriteRulesStatus(status){write(PREFIX+'rules_status',status);return status;}
+async function gold1eStageFirestoreRules(){
+  const status={ran:true,status:'staging',version:'1E',time:now(),message:'Preparing EmeraldOS Gold 1E rules.'};
+  gold1eWriteRulesStatus(status);
+  let fbm=null;
+  try{fbm=await import('./firebase.js');}catch(e){status.status='local_only';status.message='Firebase module unavailable. Rules saved locally only.';status.error=e.message;gold1eWriteRulesStatus(status);return status;}
+  const payload={product:'EmeraldOS Gold',version:'1E',rulesVersion:'gold10-default',rules:gold1eRulesText(),createdBy:username(),createdAt:now(),status:'pending_deployment',note:'Generated automatically by EmeraldOS Gold 1E first boot. Deploy from Firebase Console/CLI or a secured deployer endpoint.'};
+  try{
+    await fbm.setDoc(fbm.doc(fbm.db,'system','emeraldGoldRulesVersion'),payload);
+    await fbm.addDoc(fbm.collection(fbm.db,'emeraldGoldRulesInstallRequests'),payload);
+    status.status='staged';status.message='Rules were staged in Firestore for staff review/deployment.';
+  }catch(e){status.status='staging_failed';status.message='Could not stage rules in Firestore.';status.error=e.message;}
+  gold1eWriteRulesStatus(status);
+  return status;
+}
+async function gold1eTrySecureRulesDeploy(){
+  const url=localStorage.getItem('emeraldGoldRulesDeployerUrl')||'';
+  const key=localStorage.getItem('emeraldGoldRulesDeployerKey')||'';
+  if(!url) return {deployed:false,skipped:true,message:'No secure rules deployer URL configured.'};
+  const body={product:'EmeraldOS Gold',version:'1E',rules:gold1eRulesText(),requestedBy:username(),time:now()};
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':key?`Bearer ${key}`:''},body:JSON.stringify(body)});
+  if(!res.ok) throw new Error(`Rules deployer returned ${res.status}`);
+  return await res.json().catch(()=>({ok:true,deployed:true}));
+}
+async function gold1eAutoRulesInstall(silent=false){
+  if(localStorage.getItem(PREFIX+'rules_install_ran')==='true') return gold1eRulesStatus();
+  localStorage.setItem(PREFIX+'rules_install_ran','true');
+  const staged=await gold1eStageFirestoreRules();
+  try{
+    const deployed=await gold1eTrySecureRulesDeploy();
+    if(deployed && (deployed.ok||deployed.deployed)){
+      staged.status='deployed';staged.message='Rules were deployed through the configured secure deployer.';staged.deployerResult=deployed;gold1eWriteRulesStatus(staged);
+    }
+  }catch(e){staged.deployerError=e.message;gold1eWriteRulesStatus(staged);}
+  if(!silent){notify('Rules installer finished',gold1eRulesStatus().message,'Security Rules');}
+  return gold1eRulesStatus();
+}
+function openGoldRulesInstaller100(){
+  const s=gold1eRulesStatus();
+  openWindow('rulesinstaller','Security Rules Installer',`<div class="goldshell-header"><div><h2>Security Rules Installer</h2><p class="muted">Gold 1E prepares the recommended Firestore rules on first boot. Direct deployment requires Firebase Console/CLI or a secure deployer endpoint.</p></div><button class="btn primary" onclick="Gold50.gold1eAutoRulesInstall(false)">Run installer</button></div><div class="grid2"><div class="card"><h3>Status</h3><p>${esc(s.status)}</p><p class="muted">${esc(s.message||'')}</p></div><div class="card"><h3>Secure deployer</h3><p>Optional. Set <code>emeraldGoldRulesDeployerUrl</code> and <code>emeraldGoldRulesDeployerKey</code> in localStorage for automatic deployment through your own backend.</p></div></div><h3>Rules</h3><textarea class="field mono" rows="18">${esc(gold1eRulesText())}</textarea><div class="toolbar"><button class="btn" onclick="navigator.clipboard?.writeText(Gold50.gold1eRulesText())">Copy rules</button><button class="btn" onclick="location.href='rules-installer.html'">Open full rules page</button></div>`,{width:1080,height:760});
+}
+function installGold100RulesInstaller(){
+  try{
+    const old=APPS.find(a=>a.id==='rulesinstaller');
+    const app={id:'rulesinstaller',name:'Security Rules Installer',label:'RI',color:'red',group:'System',desc:'Stages Gold 1E Firestore rules and deploys through an optional secure backend.',staffOnly:true,open:openGoldRulesInstaller100};
+    if(old)Object.assign(old,app);else APPS.push(app);
+    const p=prefs();
+    if(isStaff() && p.desktopApps && !p.desktopApps.includes('rulesinstaller')){p.desktopApps.push('rulesinstaller');write(PREFIX+'prefs',p);}
+  }catch(e){console.warn('Gold 1E rules app install failed',e)}
+  /* Rules installer is manual in redesigned Gold 1E. */
+}
+installGold100RulesInstaller();
+Object.assign(window.Gold50,{openGoldRulesInstaller100,gold1eAutoRulesInstall,gold1eRulesText,gold1eRulesStatus,gold1eStageFirestoreRules,gold1eTrySecureRulesDeploy});
+
+
+
+/* EmeraldOS Gold 1E redesigned manual update architecture.
+   The root shell checks Firebase, but each user chooses when to move their VM to a newer folder.
+   Gold_1E can publish its own latest pointer when manually booted once by staff. */
+const GOLD1A_LATEST_MANIFEST = {
+  product: "EmeraldOS Gold",
+  latestVersion: "1B",
+  build: "1B",
+  folder: "Gold_1E",
+  entry: "OS.html",
+  channel: "stable",
+  status: "stable",
+  required: false,
+  enabled: true,
+  setupMode: "continue",
+  releaseTitle: "EmeraldOS Gold 1E",
+  summary: "Manual user-controlled update architecture. The shell checks Firebase for the newest build, but users update their own VM only when they accept the update prompt.",
+  migrationFrom: ["10.0", "9.0", "8.0", "8.0.1"],
+  migrationId: "gold10-to-gold11-os-folder",
+  minShellVersion: "1.0",
+  rollbackFolder: "Gold_10.0",
+  rollbackVersion: "10.0",
+  releasedAt: "2026-07-12T00:00:00.000Z"
+};
+function gold1eCurrentManifest(){ return {...GOLD1A_LATEST_MANIFEST}; }
+function gold1eLatestCache(){ return read('emeraldGoldShell_latest', GOLD1A_LATEST_MANIFEST); }
+function gold1eIsNewerManifest(latest){
+  if(!latest) return false;
+  const latestVersion = String(latest.latestVersion || latest.build || '');
+  const latestFolder = String(latest.folder || '');
+  return latestVersion !== BUILD.version || latestFolder !== 'Gold_1E';
+}
+async function gold1eFetchLatestManifest(){
+  try{
+    const fbm = await import('./firebase.js');
+    const snap = await fbm.getDoc(fbm.doc(fbm.db, 'system', 'emeraldGoldLatest'));
+    const latest = snap.exists() ? {...GOLD1A_LATEST_MANIFEST, ...snap.data()} : {...GOLD1A_LATEST_MANIFEST};
+    write('emeraldGoldShell_latest', latest);
+    return latest;
+  }catch(error){
+    console.warn('Gold 1E could not read update manifest', error);
+    return gold1eLatestCache();
+  }
+}
+function gold1eUpdateSnapshot(){
+  const data = {
+    product:'EmeraldOS Gold',
+    version:BUILD.version,
+    folder:'Gold_1E',
+    user:username(),
+    time:now(),
+    reason:'manual-update-snapshot',
+    prefs:prefs(),
+    files:files(),
+    tickets:tickets(),
+    mail:mail(),
+    notes:notes(),
+    tasks:tasks(),
+    contacts:contacts(),
+    apps:read(PREFIX+'user_apps',[]),
+    workspace:read(PREFIX+'workspace',{})
+  };
+  write('emeraldGoldShell_lastSnapshot', data);
+  return data;
+}
+async function gold1eCloudWrite(path, value){
+  try{ const fbm = await import('./firebase.js'); await fbm.setDoc(fbm.doc(fbm.db, ...path), value, {merge:true}); return true; }
+  catch(error){ console.warn('Gold 1E cloud write failed', path, error); return false; }
+}
+async function gold1eSaveManualUpdateSnapshot(){
+  const snap = gold1eUpdateSnapshot();
+  const user = username();
+  await gold1eCloudWrite(['emeraldOSUsers', user, 'goldVM', 'current'], {
+    activeVersion: BUILD.version,
+    activeFolder: 'Gold_1E',
+    entry: 'OS.html',
+    lastSave: now(),
+    cloudSync: true
+  });
+  await gold1eCloudWrite(['emeraldOSUsers', user, 'goldVMSnapshots', `manual_update_${Date.now()}`], snap);
+  notify('VM snapshot saved','Your EmeraldOS Gold VM state was saved before update.','System Update');
+  return snap;
+}
+async function gold1eApplyManualUpdate(){
+  const latest = await gold1eFetchLatestManifest();
+  if(!latest || !latest.folder){ alert('No update target is configured.'); return; }
+  await gold1eSaveManualUpdateSnapshot();
+  localStorage.setItem('emeraldGoldShell_applyUpdate','true');
+  localStorage.setItem('emeraldGoldShell_pendingVersion', latest.latestVersion || latest.build || '');
+  localStorage.setItem('emeraldGoldShell_pendingFolder', latest.folder || '');
+  location.href = '../gold-shell.html?applyUpdate=1';
+}
+function gold1eSkipUpdate(version){
+  localStorage.setItem('emeraldGold_update_skip_version', String(version||''));
+  notify('Update skipped','EmeraldOS Gold will not prompt again for this version unless you check manually.','System Update');
+  closeWin('win_updateprompt');
+}
+function gold1eRemindLater(version){
+  localStorage.setItem('emeraldGold_update_remind_later_version', String(version||''));
+  localStorage.setItem('emeraldGold_update_remind_later_until', String(Date.now()+1000*60*60*12));
+  notify('Reminder saved','EmeraldOS Gold will remind you about this update later.','System Update');
+  closeWin('win_updateprompt');
+}
+function gold1eUpdatePromptHTML(latest){
+  const version = esc(latest.latestVersion || latest.build || 'Unknown');
+  const folder = esc(latest.folder || '');
+  return `<div class="update-prompt"><h2>EmeraldOS Gold update available</h2><p>A newer EmeraldOS Gold version is available for your cloud VM.</p><div class="grid2"><div class="card"><h3>Current</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: Gold_1E</p></div><div class="card"><h3>Available</h3><p>EmeraldOS Gold ${version}</p><p class="muted">Folder: ${folder}</p></div></div><h3>Release note</h3><p>${esc(latest.summary || latest.releaseTitle || 'No release note was provided.')}</p><div class="toolbar"><button class="btn primary" onclick="Gold50.gold1eApplyManualUpdate()">Update this VM now</button><button class="btn" onclick="Gold50.gold1eRemindLater('${version}')">Remind me later</button><button class="btn" onclick="Gold50.gold1eSkipUpdate('${version}')">Skip this version</button><button class="btn" onclick="Gold50.openGold1AUpdateCenter()">Open System Update</button></div><p class="muted">Updates are manual per user. Your VM keeps running this version until you choose to update.</p></div>`;
+}
+function gold1eOpenUpdatePrompt(latest){
+  openWindow('updateprompt','EmeraldOS Gold Update Available',gold1eUpdatePromptHTML(latest),{width:860,height:590});
+}
+async function gold1eCheckLoginUpdateNotice(){
+  const latest = await gold1eFetchLatestManifest();
+  const latestVersion = String(latest.latestVersion || latest.build || '');
+  const laterUntil = Number(localStorage.getItem('emeraldGold_update_remind_later_until') || 0);
+  const laterVersion = localStorage.getItem('emeraldGold_update_remind_later_version') || '';
+  const skipped = localStorage.getItem('emeraldGold_update_skip_version') || '';
+  const newer = gold1eIsNewerManifest(latest);
+  write('emeraldGold_updateAvailable', {available:newer, latest, active:gold1eCurrentManifest(), checkedAt:now()});
+  if(newer && skipped !== latestVersion && !(laterVersion === latestVersion && Date.now() < laterUntil)){
+    notify('EmeraldOS Gold update available',`Version ${latestVersion} is ready. You can update now or stay on Gold 1E.`, 'System Update');
+    setTimeout(()=>gold1eOpenUpdatePrompt(latest), 700);
+  }
+}
+function openGold1AUpdateCenter(latestManifest){
+  const latest = latestManifest || gold1eLatestCache();
+  const newer = gold1eIsNewerManifest(latest);
+  const version = latest.latestVersion || latest.build || 'Unknown';
+  const folder = latest.folder || '';
+  const active = read('emeraldGoldShell_activeManifest', gold1eCurrentManifest());
+  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>System Update</h2><p class="muted">EmeraldOS Gold checks Firebase for the newest approved version. Updates are manual for each user, so your VM only changes when you choose Update.</p></div><button class="btn primary" onclick="Gold50.gold1eCheckForUpdatesManual()">Check now</button></div><div class="grid2"><div class="card"><h3>This VM is running</h3><p>${esc(BUILD.name)}</p><p class="muted">Folder: Gold_1E</p></div><div class="card"><h3>Latest configured build</h3><p>EmeraldOS Gold ${esc(version)}</p><p class="muted">${esc(folder)} / ${esc(latest.entry || 'OS.html')}</p></div><div class="card"><h3>User update mode</h3><p>${newer?'A newer version is available.':'This VM is on the latest configured version.'}</p><p class="muted">The shell will not move you to a new folder until you accept the update.</p></div><div class="card"><h3>Release publisher</h3><p>When a new version folder is uploaded, boot that version manually once to publish its Firebase pointer.</p><button class="btn" onclick="Gold50.gold1ePublishLatestManifest(true)">Publish Gold 1E as latest</button></div></div><h3>Release note</h3><p>${esc(latest.summary || latest.releaseTitle || 'No release note available.')}</p><div class="toolbar"><button class="btn" onclick="Gold50.gold1eSaveManualUpdateSnapshot()">Save VM snapshot</button><button class="btn primary" ${newer?'':'disabled'} onclick="Gold50.gold1eApplyManualUpdate()">Update this VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="Gold50.gold1eResetUpdateChoice()">Reset update choice</button></div>`,{width:1020,height:720});
+}
+async function gold1eCheckForUpdatesManual(){
+  const latest = await gold1eFetchLatestManifest();
+  openGold1AUpdateCenter(latest);
+  if(gold1eIsNewerManifest(latest)) gold1eOpenUpdatePrompt(latest);
+  else notify('System Update','This VM is running the latest configured EmeraldOS Gold version.','System Update');
+}
+function gold1eResetUpdateChoice(){
+  localStorage.removeItem('emeraldGold_update_skip_version');
+  localStorage.removeItem('emeraldGold_update_remind_later_version');
+  localStorage.removeItem('emeraldGold_update_remind_later_until');
+  notify('Update choice reset','EmeraldOS Gold can show update prompts again.','System Update');
+}
+async function gold1ePublishLatestManifest(showResult=false){
+  const manualBoot = !new URLSearchParams(location.search).has('goldShell') || new URLSearchParams(location.search).has('publishLatest');
+  const already = localStorage.getItem(PREFIX+'latest_manifest_published') === 'true';
+  if(!manualBoot && !showResult) return null;
+  if(already && !showResult && !new URLSearchParams(location.search).has('publishLatest')) return null;
+  try{
+    const fbm = await import('./firebase.js');
+    await fbm.setDoc(fbm.doc(fbm.db, 'system', 'emeraldGoldLatest'), GOLD1A_LATEST_MANIFEST, {merge:true});
+    localStorage.setItem(PREFIX+'latest_manifest_published','true');
+    write('emeraldGoldShell_latest', GOLD1A_LATEST_MANIFEST);
+    if(showResult || manualBoot) notify('Release pointer published','system/emeraldGoldLatest now points to Gold_1E.','System Update');
+    return {ok:true};
+  }catch(error){
+    console.warn('Could not publish Gold 1E latest pointer', error);
+    write(PREFIX+'latest_manifest_publish_error', {time:now(), error:error.message, manifest:GOLD1A_LATEST_MANIFEST});
+    if(showResult || manualBoot) notify('Release pointer not published', 'Firebase rules may require staff write access. Use Gold_1E/OS.html?publishLatest=1 or staff credentials.', 'System Update');
+    return {ok:false, error:error.message};
+  }
+}
+function gold1eInstallManualUpdateSystem(){
+  try{
+    const old=APPS.find(a=>a.id==='updateshell') || APPS.find(a=>a.id==='update');
+    const app={id:'updateshell',name:'System Update',label:'UP',color:'blue',group:'System',desc:'Check for newer EmeraldOS Gold folders and manually update this VM.',open:()=>openGold1AUpdateCenter()};
+    if(old) Object.assign(old, app); else APPS.push(app);
+  }catch(error){ console.warn('Gold 1E manual update app install failed', error); }
+}
+gold1eInstallManualUpdateSystem();
+Object.assign(window.Gold50, {
+  openGold1AUpdateCenter,
+  gold1eCheckForUpdatesManual,
+  gold1eApplyManualUpdate,
+  gold1eSaveManualUpdateSnapshot,
+  gold1eResetUpdateChoice,
+  gold1eSkipUpdate,
+  gold1eRemindLater,
+  gold1ePublishLatestManifest,
+  gold1eFetchLatestManifest,
+  gold1eCurrentManifest
+});
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>gold1ePublishLatestManifest(false), 1800);
+  setTimeout(()=>gold1eCheckLoginUpdateNotice(), 2600);
+});
+
+window.Gold70=window.Gold50;
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{applyGold70Visuals();applyGold70SupportVisuals()},50));
+window.addEventListener('DOMContentLoaded',seedGold50);
+
+window.addEventListener('DOMContentLoaded',init);
+
+
+/* EmeraldOS Gold 1E OS-folder-only update helpers */
+function gold1eLatestManifest(){
+  return {
+    product:'EmeraldOS Gold', latestVersion:'1E', build:'1E', folder:'Gold_1E', entry:'OS.html',
+    channel:'stable', status:'stable', required:false, enabled:true, setupMode:'continue',
+    releaseTitle:'EmeraldOS Gold 1E',
+    summary:'OS-folder-only Gold update build. The shell is separate; this folder can publish itself as the newest available build when manually booted once.',
+    migrationFrom:['10.0','9.0','8.0','8.0.1'], migrationId:'gold10-to-gold11-os-folder',
+    minShellVersion:'1.0', rollbackFolder:'Gold_10.0', rollbackVersion:'10.0', releasedAt:new Date().toISOString()
+  };
+}
+async function gold1ePublishLatest(showResult=true){
+  try{
+    const api=fb||await initFirebase();
+    if(!api) throw new Error('Firebase module did not load.');
+    const {doc,setDoc}=api;
+    const manifest=gold1eLatestManifest();
+    await setDoc(doc(api.db,'system','emeraldGoldLatest'), manifest, {merge:true});
+    localStorage.setItem('gold1e_published_latest','true');
+    if(showResult) notify('System Update','Gold 1E was published as the latest available build.','System Update');
+    return true;
+  }catch(e){
+    console.warn('Gold 1E publish latest failed', e);
+    if(showResult) notify('System Update','Could not publish latest build. Check Firebase rules/access.','System Update');
+    return false;
+  }
+}
+function openGold1AUpdateCenter(){
+  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>System Update</h2><p class="muted">Gold 1E is an OS folder only. The shell stays outside this folder and only routes updates when users choose to update.</p></div><button class="btn primary" onclick="Gold50.gold1eCheckForUpdatesManual?.()||Gold50.gold1eCheckForUpdates?.()">Check Firebase</button></div><div class="grid2"><div class="card"><h3>This folder</h3><p>EmeraldOS Gold 1E</p><p class="muted">Gold_1E / OS.html</p></div><div class="card"><h3>Publish flow</h3><p>Boot Gold_1E manually once with <code>?publishLatest=1</code>, or press publish here, to set <code>system/emeraldGoldLatest</code>.</p></div><div class="card"><h3>User updates</h3><p>Each user updates manually. The shell notifies them on login and only changes their active folder after they accept.</p></div><div class="card"><h3>Continuity</h3><p>VM data remains stored under <code>goldVM/current</code>, independent of the version folder.</p></div></div><div class="toolbar"><button class="btn primary" onclick="Gold50.gold1ePublishLatest(true)">Publish Gold 1E as latest</button><button class="btn" onclick="Gold50.saveWorkspaceNow(true)">Save VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="location.href='../gold-shell.html?applyUpdate=1'">Restart through shell</button></div>`,{width:1040,height:700});
+}
+function gold1eInstallUpdateApp(){
+  try{
+    const app={id:'updateshell',name:'System Update',label:'UP',color:'blue',group:'System',desc:'Check updates, publish this build, and restart through the external EmeraldOS Gold shell.',open:openGold1AUpdateCenter};
+    const existing=APPS.find(a=>a.id==='updateshell');
+    if(existing) Object.assign(existing,app); else APPS.push(app);
+  }catch(e){console.warn('Gold 1E update app install failed',e)}
+}
+gold1eInstallUpdateApp();
+Object.assign(window.Gold50||{}, {gold1eLatestManifest,gold1ePublishLatest,openGold1AUpdateCenter});
+window.Gold1A=window.Gold50; window.Gold1E=window.Gold50;
+if(new URLSearchParams(location.search).has('publishLatest')) setTimeout(()=>gold1ePublishLatest(true), 1200);
+
+
+/* =========================================================
+   EMERALDOS GOLD 1E - E.L.S.U.S. COMPATIBILITY + UX PATCH
+   OS folder only. Compatible with EmeraldOS Live Service Update System.
+   Adds a curated unique app catalog and safe customization CSS bindings.
+========================================================= */
+const GOLD1A_RELEASE_MANIFEST={
+  product:'EmeraldOS Gold', latestVersion:'1E', build:'1E', folder:'Gold_1E', entry:'OS.html',
+  channel:'stable', status:'stable', required:false, enabled:true, setupMode:'continue',
+  releaseTitle:'EmeraldOS Gold 1E',
+  summary:'Gold 1E is an OS-folder-only E.L.S.U.S.-compatible release built from Gold 11.0. It improves the EmeraldOS Gold desktop experience, adds a curated non-duplicate app catalog, improves customization safety, and keeps VM data version-independent.',
+  migrationFrom:['11.0','10.0','9.0','8.0','8.0.1'], migrationId:'gold11-to-gold1e-elsus',
+  minShellVersion:'1.0', rollbackFolder:'Gold_11.0', rollbackVersion:'11.0', releasedAt:new Date().toISOString()
+};
+function gold1eClamp(n,min,max,fall){n=Number(n);if(!Number.isFinite(n))n=fall;return Math.max(min,Math.min(max,n));}
+function gold1eCSSColor(v,fall){v=String(v||'').trim();return /^#[0-9a-f]{3,8}$/i.test(v)?v:fall;}
+function gold1eCurrentManifest(){return {...GOLD1A_RELEASE_MANIFEST};}
+async function gold1ePublishLatest(showResult=true){
+  try{
+    const api=fb||await initFirebase();
+    if(!api) throw new Error('Firebase module did not load.');
+    await api.setDoc(api.doc(api.db,'system','emeraldGoldLatest'), GOLD1A_RELEASE_MANIFEST, {merge:true});
+    localStorage.setItem(PREFIX+'latest_manifest_published','true');
+    write('emeraldGoldShell_latest', GOLD1A_RELEASE_MANIFEST);
+    if(showResult) notify('E.L.S.U.S. updated','system/emeraldGoldLatest now points to Gold_1E.','System Update');
+    return true;
+  }catch(e){
+    console.warn('Gold 1E latest publish failed', e);
+    write(PREFIX+'latest_manifest_publish_error',{time:now(),error:e.message,manifest:GOLD1A_RELEASE_MANIFEST});
+    if(showResult) notify('E.L.S.U.S. publisher blocked','Firebase rules may require staff write access. Boot Gold_1E/OS.html?publishLatest=1 with an authorized account.','System Update');
+    return false;
+  }
+}
+function openGold1AUpdateCenter(){
+  const latest=read('emeraldGoldShell_latest',GOLD1A_RELEASE_MANIFEST);
+  openWindow('updateshell','System Update',`<div class="goldshell-header"><div><h2>E.L.S.U.S. System Update</h2><p class="muted">EmeraldOS Live Service Update System keeps the updater shell separate from this OS folder. Users update manually when prompted by the shell.</p></div><button class="btn primary" onclick="Gold50.gold1ePublishLatest(true)">Publish Gold 1E</button></div><div class="grid2"><div class="card"><h3>This OS folder</h3><p>EmeraldOS Gold 1E</p><p class="muted">Gold_1E / OS.html</p></div><div class="card"><h3>Latest configured folder</h3><p>${esc(latest.latestVersion||'Unknown')}</p><p class="muted">${esc(latest.folder||'No folder')} / ${esc(latest.entry||'OS.html')}</p></div><div class="card"><h3>User update behavior</h3><p>Each user keeps their current folder until they accept the update prompt.</p><p class="muted">VM data stays in <code>goldVM/current</code>.</p></div><div class="card"><h3>Setup behavior</h3><p>Full setup only runs for first-time users. Updated users see their restored VM and can rerun setup from Settings.</p></div></div><h3>Actions</h3><div class="toolbar"><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="location.href='../gold-shell.html?manualCheck=1'">Restart through E.L.S.U.S.</button><button class="btn" onclick="Gold50.openApp('vmcenter')">Open VM Center</button></div>`,{width:1060,height:720});
+}
+function gold1eAddOrUpdateApp(def){
+  if(!def||!def.id) return;
+  const old=APPS.find(a=>a.id===def.id);
+  if(old) Object.assign(old,def); else APPS.push(def);
+}
+function gold1eRemoveApp(id){
+  for(let i=APPS.length-1;i>=0;i--) if(APPS[i].id===id) APPS.splice(i,1);
+}
+function gold1eInstallCuratedApps(){
+  // Remove duplicate-purpose legacy shortcuts. Their features remain available through the unique apps below.
+  ['creator','update','personalization'].forEach(gold1eRemoveApp);
+  const unique=[
+    {id:'updateshell',name:'E.L.S.U.S. System Update',label:'UP',color:'blue',group:'System',purpose:'Update routing',desc:'Check update status, publish this folder, save VM state, and restart through E.L.S.U.S.',open:openGold1AUpdateCenter},
+    {id:'cloudsync',name:'Cloud Sync Center',label:'CS',color:'teal',group:'System',purpose:'Cloud continuity',desc:'Save and restore VM data, files, settings, tickets, mail, apps, and workspace state.',open:()=>openCloudSyncCenter80()},
+    {id:'vmcenter',name:'Gold VM Center',label:'VM',color:'gold',group:'System',purpose:'VM snapshots',desc:'Create snapshots, restore backups, export the VM, and review cloud continuity.',open:()=>openVMCenter()},
+    {id:'themestudio',name:'Theme Studio',label:'TS',color:'purple',group:'Customization',purpose:'Visual design',desc:'Customize background color, wallpaper, accent, taskbar, panels, blur, rounding, and desktop spacing.',open:()=>openThemeStudio60()},
+    {id:'accessibility',name:'Accessibility Center',label:'AC',color:'blue',group:'Customization',purpose:'Accessibility',desc:'Readable font, high contrast, large text, focus rings, reduced motion, and control visibility.',open:()=>openAccessibility60()},
+    {id:'applab',name:'Gold App Lab',label:'AL',color:'purple',group:'Development',purpose:'App coding',desc:'Build and preview user apps with JavaScript or packaged HTML/CSS/JS.',open:()=>openAppLab50()},
+    {id:'packager',name:'App Packager',label:'PK',color:'orange',group:'Development',purpose:'App packaging',desc:'Import, export, and package apps for the User Appstore.',open:()=>openPackager50()},
+    {id:'browser',name:'Gold Browser',label:'BR',color:'blue',group:'Utilities',purpose:'Web view',desc:'Open safe embedded links and local web panels inside the VM.',open:()=>openBrowser50()},
+    {id:'terminal',name:'Gold Terminal',label:'GT',color:'dark',group:'Utilities',purpose:'Command tools',desc:'Run Gold utility commands for apps, support, VM snapshots, and diagnostics.',open:()=>openTerminal50()},
+    {id:'media',name:'Media Player',label:'MP',color:'pink',group:'Media',purpose:'Media playback',desc:'Play audio or video URLs and manage a local media queue.',open:()=>openMedia50()},
+    {id:'snip',name:'Snip Board',label:'SB',color:'orange',group:'Creative',purpose:'Clippings',desc:'Save copied text snippets, quick captures, and exported notes.',open:()=>openSnip50()},
+    {id:'systeminfo',name:'System Information',label:'SI',color:'gray',group:'System',purpose:'System facts',desc:'View build, browser, VM, support, storage, and device information.',open:()=>openSystemInfo50()},
+    {id:'resources',name:'Resources',label:'RE',color:'teal',group:'Support',purpose:'Help resources',desc:'Guides, troubleshooting steps, support links, keyboard shortcuts, and staff handoff tips.',open:()=>openResources60()},
+    {id:'widgets',name:'Widgets',label:'WG',color:'green',group:'Utilities',purpose:'Glance dashboard',desc:'A quick view of time, tasks, support state, weather placeholder, and VM health.',open:()=>openWidgets()}
+  ];
+  unique.forEach(gold1eAddOrUpdateApp);
+  // De-duplicate by id and purpose so the app list stays clear.
+  const seenId=new Set(), seenPurpose=new Set();
+  for(let i=APPS.length-1;i>=0;i--){
+    const a=APPS[i];
+    const p=(a.purpose||a.desc||a.name||a.id).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    if(seenId.has(a.id) || (a.purpose && seenPurpose.has(p))){ APPS.splice(i,1); continue; }
+    seenId.add(a.id); if(a.purpose) seenPurpose.add(p);
+  }
+  const pref=prefs();
+  const defaults=['explorer','office','mail','support','settings','updateshell'];
+  pref.desktopApps=[...new Set([...(pref.desktopApps||[]),...defaults])].filter(id=>APPS.some(a=>a.id===id));
+  ['creator','update','personalization'].forEach(id=>{pref.desktopApps=pref.desktopApps.filter(x=>x!==id)});
+  pref.accent=pref.accent||'#0078d4'; pref.secondaryAccent=pref.secondaryAccent||'#0f7b4d';
+  pref.backgroundColor=pref.backgroundColor||'#eaf3ff'; pref.panelOpacity=gold1eClamp(pref.panelOpacity,70,100,94); pref.taskbarOpacity=gold1eClamp(pref.taskbarOpacity,60,100,92);
+  pref.startWidth=gold1eClamp(pref.startWidth,560,1100,880); pref.micaBlur=gold1eClamp(pref.micaBlur,0,30,18);
+  write(PREFIX+'prefs',pref);
+}
+function gold1eApplyCustomizationSafeCss(){
+  const p=prefs(); const root=document.documentElement;
+  document.body.classList.add('gold1e','gold1e-elsus');
+  document.body.classList.toggle('gold1e-solid-bg',!!p.useBackgroundColor && !p.customBackground);
+  document.body.classList.toggle('gold1e-taskbar-top',p.taskbarPosition==='top');
+  root.style.setProperty('--gold1eBgColor',gold1eCSSColor(p.backgroundColor,'#eaf3ff'));
+  root.style.setProperty('--gold1eAccent',gold1eCSSColor(p.accent,'#0078d4'));
+  root.style.setProperty('--gold1eAccent2',gold1eCSSColor(p.secondaryAccent,'#0f7b4d'));
+  root.style.setProperty('--accent',gold1eCSSColor(p.accent,'#0078d4'));
+  root.style.setProperty('--accent2',gold1eCSSColor(p.secondaryAccent,'#0f7b4d'));
+  root.style.setProperty('--gold1ePanelOpacity',String(gold1eClamp(p.panelOpacity,70,100,94)/100));
+  root.style.setProperty('--gold1eTaskOpacity',String(gold1eClamp(p.taskbarOpacity,60,100,92)/100));
+  root.style.setProperty('--gold1eMica',gold1eClamp(p.micaBlur,0,30,18)+'px');
+  root.style.setProperty('--gold1eStartWidth',gold1eClamp(p.startWidth,560,1100,880)+'px');
+  root.style.setProperty('--gold1eIconScale',p.iconSize==='xl'?'1.28':p.iconSize==='large'?'1.14':p.iconSize==='small'?'.88':'1');
+  root.style.setProperty('--gold1eDesktopGap',p.density==='compact'?'9px':p.density==='spacious'?'24px':'16px');
+  root.style.setProperty('--winRadius',p.rounding==='none'?'0':p.rounding==='large'?'14px':p.rounding==='pill'?'18px':'8px');
+}
+function gold1eWireCustomizationSafety(){
+  const oldSetGold70=window.Gold50?.setGold70Pref;
+  if(oldSetGold70&&!oldSetGold70.gold1eWrapped){
+    const wrapped=function(k,v){oldSetGold70(k,v);gold1eApplyCustomizationSafeCss();try{renderDesktop()}catch{}};wrapped.gold1eWrapped=true;window.Gold50.setGold70Pref=wrapped;
+  }
+  const oldSetPrefs=window.Gold50?.setPrefs;
+  if(oldSetPrefs&&!oldSetPrefs.gold1eWrapped){
+    const wrapped=function(p){oldSetPrefs(p);gold1eApplyCustomizationSafeCss();try{renderDesktop()}catch{}};wrapped.gold1eWrapped=true;window.Gold50.setPrefs=wrapped;
+  }
+}
+function openGold1AWelcome(){
+  openWindow('emeraldbrand','EmeraldOS Gold 1E',`<div class="welcome70"><div class="gold1e-hero"><div class="gold-logo-xl">G</div><div><h1>EmeraldOS Gold 1E</h1><p>OS-folder-only E.L.S.U.S. release with a cleaner EmeraldOS Gold desktop, curated app catalog, safer customization, and cloud VM continuity.</p></div></div><div class="grid3"><div class="card"><h3>Customize everything</h3><p>Theme Studio controls background color, wallpaper, accents, taskbar, panels, blur, rounding, desktop spacing, and accessibility.</p><button class="btn primary" onclick="Gold50.openApp('themestudio')">Open Theme Studio</button></div><div class="card"><h3>Cloud VM</h3><p>Your files, settings, apps, tickets, mail, notes, tasks, and workspace stay separate from the version folder.</p><button class="btn" onclick="Gold50.openApp('cloudsync')">Open Cloud Sync</button></div><div class="card"><h3>E.L.S.U.S.</h3><p>The updater shell prompts users and only changes their active version when they choose to update.</p><button class="btn" onclick="Gold50.openApp('updateshell')">System Update</button></div></div></div>`,{width:940,height:620});
+}
+function gold1eInstallBootPolish(){
+  gold1eInstallCuratedApps();
+  gold1eApplyCustomizationSafeCss();
+  gold1eWireCustomizationSafety();
+  gold1eAddOrUpdateApp({id:'emeraldbrand',name:'EmeraldOS Gold Welcome',label:'EG',color:'gold',group:'Core',purpose:'Welcome',desc:'Overview of Gold 1E, E.L.S.U.S., customization, and cloud VM continuity.',open:openGold1AWelcome});
+  try{renderDesktop()}catch{}
+}
+Object.assign(window.Gold50||{}, {
+  gold1eCurrentManifest,
+  gold1ePublishLatest,
+  openGold1AUpdateCenter,
+  gold1eApplyCustomizationSafeCss,
+  gold1eInstallCuratedApps,
+  openGold1AWelcome
+});
+window.Gold1A=window.Gold50; window.Gold1E=window.Gold50;
+window.addEventListener('DOMContentLoaded',()=>setTimeout(gold1eInstallBootPolish,120));
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{ if(new URLSearchParams(location.search).has('publishLatest')) gold1ePublishLatest(true); },1500));
+
+
+/* =========================================================
+   EMERALDOS GOLD 1E UPDATE SETUP + CLASSIC RIGHT-CLICK MENU
+========================================================= */
+const GOLD1E_ESSENTIAL_DESKTOP=['explorer','office','mail','support','settings','updateshell'];
+function gold1eDesktopPins(){return read(PREFIX+'desktopFilePins',[])}
+function gold1eSaveDesktopPins(arr){write(PREFIX+'desktopFilePins',[...new Set(arr)].filter(Boolean));saveWorkspaceDebounced();try{renderDesktop()}catch{}}
+function gold1eStartPins(){return read(PREFIX+'startPins',['explorer','office','support','settings','updateshell'])}
+function gold1eTaskbarPins(){return read(PREFIX+'taskbarPins',['explorer','office','support'])}
+function gold1eSetStartPins(arr){write(PREFIX+'startPins',[...new Set(arr)].filter(Boolean));try{renderStartMenu()}catch{};saveWorkspaceDebounced()}
+function gold1eSetTaskbarPins(arr){write(PREFIX+'taskbarPins',[...new Set(arr)].filter(Boolean));try{renderTaskApps()}catch{};saveWorkspaceDebounced()}
+function gold1ePin(arr,id){return [...new Set([...(arr||[]),id])].filter(Boolean)}
+function gold1eUnpin(arr,id){return (arr||[]).filter(x=>x!==id)}
+function gold1eApplyEssentialDesktop(){const p=prefs();p.desktopApps=[...GOLD1E_ESSENTIAL_DESKTOP];write(PREFIX+'prefs',p);applyPrefs();renderDesktop();renderStartMenu();notify('Desktop cleaned','Only essential apps are pinned to the desktop. All apps are still in Start and Search.','Setup')}
+function gold1ePinAppToDesktop(id){const p=prefs();p.desktopApps=gold1ePin(p.desktopApps||[],id);write(PREFIX+'prefs',p);applyPrefs();renderDesktop();notify('Pinned to desktop',appById(id)?.name||id,'Desktop')}
+function gold1eRemoveAppFromDesktop(id){const p=prefs();p.desktopApps=gold1eUnpin(p.desktopApps||[],id);write(PREFIX+'prefs',p);applyPrefs();renderDesktop();notify('Removed from desktop',appById(id)?.name||id,'Desktop')}
+function gold1ePinAppToStart(id){gold1eSetStartPins(gold1ePin(gold1eStartPins(),id));notify('Pinned to Start',appById(id)?.name||id,'Start')}
+function gold1eUnpinAppFromStart(id){gold1eSetStartPins(gold1eUnpin(gold1eStartPins(),id));notify('Unpinned from Start',appById(id)?.name||id,'Start')}
+function gold1ePinAppToTaskbar(id){gold1eSetTaskbarPins(gold1ePin(gold1eTaskbarPins(),id));notify('Pinned to taskbar',appById(id)?.name||id,'Taskbar')}
+function gold1eUnpinAppFromTaskbar(id){gold1eSetTaskbarPins(gold1eUnpin(gold1eTaskbarPins(),id));notify('Unpinned from taskbar',appById(id)?.name||id,'Taskbar')}
+function gold1ePinFileToDesktop(fid){if(!files().some(f=>f.id===fid)){notify('File not found','That file could not be pinned.','Desktop');return}gold1eSaveDesktopPins(gold1ePin(gold1eDesktopPins(),fid));notify('Pinned file to desktop',files().find(f=>f.id===fid)?.name||fid,'Gold Explorer')}
+function gold1eUnpinFileFromDesktop(fid){gold1eSaveDesktopPins(gold1eUnpin(gold1eDesktopPins(),fid));notify('Unpinned file from desktop',files().find(f=>f.id===fid)?.name||fid,'Desktop')}
+function gold1eFileDesktopIcon(f){return `<button class="desktop-icon desktop-file ${prefs().showLabels?'':'no-label'}" data-fileid="${esc(f.id)}" ondblclick="Gold50.openFile('${esc(f.id)}')" title="${esc(f.name)}"><div class="file-desktop-icon">${esc(fileIcon(f.type))}</div><span>${esc(f.name)}</span></button>`}
+try{
+  const gold1eOriginalRenderDesktop=renderDesktop;
+  renderDesktop=function(){
+    const d=$('desktop'); if(!d) return;
+    const p=prefs();
+    const size=p.iconSize==='small'?'76px':p.iconSize==='large'?'108px':p.iconSize==='xl'?'122px':'92px';
+    d.style.gap=p.density==='compact'?'8px':p.density==='spacious'?'22px':'16px';
+    const appHTML=(p.desktopApps||[]).map(id=>appById(id)).filter(Boolean).filter(a=>!a.staffOnly||isStaff()).map(a=>`<button class="desktop-icon ${p.showLabels?'':'no-label'}" data-appid="${esc(a.id)}" style="width:${size}" ondblclick="Gold50.openApp('${esc(a.id)}')" title="${esc(a.desc)}">${appIcon(a)}<span>${esc(a.name)}</span></button>`).join('');
+    const pinIds=gold1eDesktopPins();
+    const fileHTML=pinIds.map(fid=>files().find(f=>f.id===fid&&!f.trash)).filter(Boolean).map(gold1eFileDesktopIcon).join('');
+    d.innerHTML=appHTML+fileHTML;
+  };
+}catch(e){console.warn('Gold 1E desktop override skipped',e)}
+try{
+  const gold1eOriginalRenderTaskApps=renderTaskApps;
+  renderTaskApps=function(){
+    const bar=$('taskApps'); if(!bar) return;
+    const pinHTML=gold1eTaskbarPins().map(id=>appById(id)).filter(Boolean).filter(a=>!a.staffOnly||isStaff()).map(a=>`<button class="taskbar-app pinned" data-appid="${esc(a.id)}" title="Pinned: ${esc(a.name)}" onclick="Gold50.openApp('${esc(a.id)}')">${appIcon(a,true)}<span>${esc(a.name)}</span></button>`).join('');
+    const winHTML=[...document.querySelectorAll('.window')].map(w=>`<button class="taskbar-app ${w===activeWin&&!w.classList.contains('minimized')?'active':''}" onclick="Gold50.focusWindow('${w.id}')">${appIcon(appById((w.id||'').replace('win_','').replace(/_.*/,'')),true)}<span>${esc(w.dataset.title||'Window')}</span></button>`).join('');
+    bar.innerHTML=pinHTML+winHTML;
+  };
+}catch(e){console.warn('Gold 1E taskbar override skipped',e)}
+try{
+  renderStartMenu=function(){
+    const sm=$('startMenu'); if(!sm) return;
+    const apps=visibleApps(); const groups=[...new Set(apps.map(a=>a.group))];
+    const pins=gold1eStartPins().map(id=>appById(id)).filter(Boolean).filter(a=>!a.staffOnly||isStaff());
+    sm.innerHTML=`<div class="start-rail"><button class="task-btn" onclick="Gold50.openApp('settings')">⚙</button><button class="task-btn" onclick="Gold50.openApp('support')">?</button><button class="task-btn" onclick="Gold50.openApp('desktopcustomizer')">▦</button><button class="task-btn" onclick="Gold50.exportWorkspace()">⇩</button><button class="task-btn" title="Log out" onclick="Gold50.logoutGold()">⏻</button></div><div class="start-list"><input class="field" placeholder="Search apps" oninput="Gold50.filterStart(this.value)"><div id="startAppList">${startListHTML('')}</div></div><div class="start-tiles"><h3>Pinned</h3><div class="tile-grid">${pins.map(a=>`<div class="tile" data-appid="${esc(a.id)}" onclick="Gold50.openApp('${esc(a.id)}')"><b>${esc(a.name)}</b><small>${esc(a.group)}</small></div>`).join('')||'<div class="card muted">No pinned apps yet.</div>'}</div><h3>App groups</h3>${groups.map(g=>`<div class="card"><b>${esc(g)}</b><p class="muted">${apps.filter(a=>a.group===g).length} apps</p></div>`).join('')}</div>`;
+  };
+}catch(e){console.warn('Gold 1E Start override skipped',e)}
+function gold1eContextMenu(items,x,y){
+  document.querySelectorAll('.gold-context-menu').forEach(m=>m.remove());
+  const m=document.createElement('div');m.className='gold-context-menu';
+  m.innerHTML=items.map(it=>it==='sep'?'<hr>':`<button ${it.disabled?'disabled':''} data-action="${esc(it.id||'')}"><span>${esc(it.label)}</span>${it.hint?`<small>${esc(it.hint)}</small>`:''}</button>`).join('');
+  document.body.appendChild(m);
+  const left=Math.min(x,innerWidth-m.offsetWidth-8),top=Math.min(y,innerHeight-m.offsetHeight-8);
+  m.style.left=Math.max(6,left)+'px';m.style.top=Math.max(6,top)+'px';
+  items.forEach(it=>{if(it&&it.id&&it.action){const b=m.querySelector(`[data-action="${CSS.escape(it.id)}"]`);if(b)b.onclick=()=>{m.remove();it.action();};}});
+  setTimeout(()=>document.addEventListener('click',function once(){m.remove();document.removeEventListener('click',once)}, {once:true}),0);
+  return false;
+}
+function gold1eDesktopContext(e){
+  const appEl=e.target.closest('[data-appid]');
+  const fileEl=e.target.closest('[data-fileid]');
+  const desktop=e.target.closest('#desktop');
+  if(!desktop && !appEl && !fileEl) return;
+  e.preventDefault();
+  if(fileEl){
+    const fid=fileEl.dataset.fileid; const f=files().find(x=>x.id===fid);
+    return gold1eContextMenu([
+      {id:'open',label:'Open',action:()=>openFile(fid)},
+      {id:'unpin',label:'Unpin file from desktop',action:()=>gold1eUnpinFileFromDesktop(fid)},
+      {id:'rename',label:'Rename file',action:()=>renameFile(fid)},
+      {id:'star',label:f?.star?'Remove star':'Star file',action:()=>starFile(fid)},
+      'sep',
+      {id:'explorer',label:'Open in Gold Explorer',action:()=>openExplorer()}
+    ],e.clientX,e.clientY);
+  }
+  if(appEl){
+    const id=appEl.dataset.appid; const a=appById(id); const p=prefs();
+    return gold1eContextMenu([
+      {id:'open',label:'Open '+(a?.name||id),action:()=>openApp(id)},
+      {id:'start',label:gold1eStartPins().includes(id)?'Unpin from Start':'Pin to Start',action:()=>gold1eStartPins().includes(id)?gold1eUnpinAppFromStart(id):gold1ePinAppToStart(id)},
+      {id:'taskbar',label:gold1eTaskbarPins().includes(id)?'Unpin from taskbar':'Pin to taskbar',action:()=>gold1eTaskbarPins().includes(id)?gold1eUnpinAppFromTaskbar(id):gold1ePinAppToTaskbar(id)},
+      {id:'desktop',label:(p.desktopApps||[]).includes(id)?'Remove from desktop':'Pin to desktop',action:()=>((prefs().desktopApps||[]).includes(id)?gold1eRemoveAppFromDesktop(id):gold1ePinAppToDesktop(id))},
+      'sep',
+      {id:'customize',label:'Open Desktop Customizer',action:()=>openDesktopCustomizer1B()}
+    ],e.clientX,e.clientY);
+  }
+  return gold1eContextMenu([
+    {id:'refresh',label:'Refresh desktop',hint:'Classic',action:()=>{renderDesktop();notify('Desktop refreshed','The desktop was redrawn.','Desktop')}},
+    {id:'newfolder',label:'New folder',action:()=>newFolder()},
+    {id:'customize',label:'Personalize desktop',action:()=>openDesktopCustomizer1B()},
+    {id:'theme',label:'Open Theme Studio',action:()=>openApp('themestudio')},
+    {id:'apps',label:'Pin apps and files',action:()=>openDesktopCustomizer1B()},
+    'sep',
+    {id:'clean',label:'Use essential desktop layout',action:()=>gold1eApplyEssentialDesktop()},
+    {id:'settings',label:'Settings',action:()=>openSettings()}
+  ],e.clientX,e.clientY);
+}
+function openDesktopCustomizer1B(){
+  const p=prefs(); const pinnedFiles=gold1eDesktopPins(); const sPins=gold1eStartPins(); const tPins=gold1eTaskbarPins();
+  openWindow('desktopcustomizer','Desktop Customizer',`<div class="goldshell-header"><div><h2>Desktop Customizer</h2><p class="muted">Classic EmeraldOS right-click tools for desktop apps, Start pins, taskbar pins, and pinned files.</p></div><button class="btn primary" onclick="Gold50.gold1eApplyEssentialDesktop()">Essential desktop</button></div><div class="grid2"><div class="card"><h3>Apps</h3><div class="purpose-map compact">${visibleApps().map(a=>`<div class="card mini"><h4>${appIcon(a,true)} ${esc(a.name)}</h4><div class="toolbar"><button class="btn small" onclick="Gold50.${(p.desktopApps||[]).includes(a.id)?'gold1eRemoveAppFromDesktop':'gold1ePinAppToDesktop'}('${esc(a.id)}')">${(p.desktopApps||[]).includes(a.id)?'Remove desktop':'Desktop'}</button><button class="btn small" onclick="Gold50.${sPins.includes(a.id)?'gold1eUnpinAppFromStart':'gold1ePinAppToStart'}('${esc(a.id)}')">${sPins.includes(a.id)?'Unpin Start':'Start'}</button><button class="btn small" onclick="Gold50.${tPins.includes(a.id)?'gold1eUnpinAppFromTaskbar':'gold1ePinAppToTaskbar'}('${esc(a.id)}')">${tPins.includes(a.id)?'Unpin taskbar':'Taskbar'}</button></div></div>`).join('')}</div></div><div class="card"><h3>Files pinned to desktop</h3><p class="muted">Pin important files from your Gold VM to the desktop without moving them.</p>${files().filter(f=>!f.trash).slice(0,80).map(f=>`<div class="settings-row"><div><b>${esc(f.name)}</b><p class="muted">${esc(f.folder)} · ${esc(f.type)}</p></div><button class="btn small" onclick="Gold50.${pinnedFiles.includes(f.id)?'gold1eUnpinFileFromDesktop':'gold1ePinFileToDesktop'}('${esc(f.id)}')">${pinnedFiles.includes(f.id)?'Unpin':'Pin file'}</button></div>`).join('')||'<p class="muted">No files yet.</p>'}</div></div>`,{width:1100,height:720})
+}
+function openUpdateSetup1B(){
+  const box=$('setupWizard'); if(!box) return;
+  let step=0;
+  const steps=[
+    ()=>`<div class="setup-hero"><div class="setup-brand"><div class="setup-logo">G</div><div><h2>EmeraldOS Gold 1E Update Setup</h2><p class="muted">Your VM was updated through E.L.S.U.S. This short setup keeps your files and settings, then helps you choose the new desktop layout.</p></div></div><div class="setup-checklist"><span>VM preserved</span><span>Desktop controls added</span><span>Classic right-click returned</span></div></div>`,
+    ()=>`<h2>Choose your updated desktop</h2><p class="muted">Gold 1E keeps only essential apps on the desktop by default. Everything else stays available in Start and Search.</p><div class="grid3"><button class="tile-button" onclick="Gold50.gold1eApplyEssentialDesktop()">Use essential desktop</button><button class="tile-button" onclick="Gold50.openDesktopCustomizer1B()">Customize pins</button><button class="tile-button" onclick="Gold50.openApp('themestudio')">Customize style</button></div><h3>Essential desktop apps</h3><div class="grid3">${GOLD1E_ESSENTIAL_DESKTOP.map(id=>appById(id)).filter(Boolean).map(a=>`<div class="card">${appIcon(a,true)} <b>${esc(a.name)}</b><p class="muted">${esc(a.desc)}</p></div>`).join('')}</div>`,
+    ()=>`<h2>Classic right-click menu</h2><p class="muted">Right-click the desktop or an app icon to refresh, personalize, pin apps to Start/taskbar/desktop, and pin files to the desktop.</p><div class="grid3"><div class="card"><h3>Apps</h3><p>Right-click app icons for Start, taskbar, and desktop pinning.</p></div><div class="card"><h3>Files</h3><p>Use Desktop Customizer to pin files without moving them.</p></div><div class="card"><h3>Desktop</h3><p>Right-click empty desktop space for refresh, new folder, settings, and personalization.</p></div></div>`,
+    ()=>`<h2>You're ready</h2><p class="muted">Gold 1E is ready. Your VM data is still managed by E.L.S.U.S. and your existing data has been kept.</p><div class="grid3"><button class="tile-button" onclick="Gold50.openApp('updateshell')">System Update</button><button class="tile-button" onclick="Gold50.openApp('desktopcustomizer')">Desktop Customizer</button><button class="tile-button" onclick="Gold50.openApp('support')">Support Center</button></div>`
+  ];
+  function render(){box.classList.remove('hidden');box.innerHTML=`<div class="setup-card setup-card-rebuilt update-setup"><div class="setup-titlebar"><b>Gold 1E Update Setup</b><button class="btn small" onclick="Gold50.finishUpdateSetup1B()">Skip</button></div><div class="setup-steps">${steps.map((_,i)=>`<div class="setup-dot ${i<=step?'active':''}"></div>`).join('')}</div><div class="setup-body">${steps[step]()}</div><div class="toolbar setup-actions"><button class="btn" ${step===0?'disabled':''} onclick="Gold50.updateSetupStep1B(-1)">Back</button><span class="muted">Step ${step+1} of ${steps.length}</span><button class="btn primary" onclick="Gold50.updateSetupStep1B(1)">${step===steps.length-1?'Finish':'Next'}</button></div></div>`}
+  window.Gold50.updateSetupStep1B=(d)=>{if(step===steps.length-1&&d>0)return finishUpdateSetup1B();step=Math.max(0,Math.min(steps.length-1,step+d));render()};
+  render();
+}
+function finishUpdateSetup1B(){localStorage.setItem(PREFIX+'update_setup_done','true');$('setupWizard')?.classList.add('hidden');notify('Update setup complete','EmeraldOS Gold 1E is ready.','Setup')}
+function gold1eInstallUpdateSetup(){
+  const migrated=localStorage.getItem('gold1e_migrated_from_gold1a')==='true'||localStorage.getItem('gold1a_setup_done')==='true';
+  const firstDone=localStorage.getItem(PREFIX+'setup_done')==='true';
+  if(migrated && firstDone && localStorage.getItem(PREFIX+'update_setup_done')!=='true') setTimeout(openUpdateSetup1B,900);
+}
+function gold1eInstallContextMenus(){document.addEventListener('contextmenu',gold1eDesktopContext);document.addEventListener('keydown',e=>{if(e.shiftKey&&e.key==='F10'){e.preventDefault();const d=$('desktop');const r=d?.getBoundingClientRect();gold1eContextMenu([{id:'customize',label:'Open Desktop Customizer',action:()=>openDesktopCustomizer1B()},{id:'refresh',label:'Refresh desktop',action:()=>renderDesktop()}],(r?.left||20)+80,(r?.top||20)+80)}})}
+gold1eAddOrUpdateApp({id:'desktopcustomizer',name:'Desktop Customizer',label:'DC',color:'blue',group:'Customization',purpose:'Desktop pin management',desc:'Classic desktop right-click tools for app pins, taskbar pins, Start pins, and pinned files.',open:openDesktopCustomizer1B});
+Object.assign(window.Gold50||{}, {gold1eApplyEssentialDesktop,gold1ePinAppToDesktop,gold1eRemoveAppFromDesktop,gold1ePinAppToStart,gold1eUnpinAppFromStart,gold1ePinAppToTaskbar,gold1eUnpinAppFromTaskbar,gold1ePinFileToDesktop,gold1eUnpinFileFromDesktop,openDesktopCustomizer1B,openUpdateSetup1B,finishUpdateSetup1B});
+window.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{try{gold1eInstallContextMenus();renderDesktop();renderStartMenu();renderTaskApps();gold1eInstallUpdateSetup();}catch(e){console.warn('Gold 1E polish failed',e)}},650)});
+
+
+/* =========================================================
+   EMERALDOS GOLD 1E - ADVANCED DESKTOP, ROLLBACK, CRASH UX,
+   AND STAFF-ONLY E.L.S.U.S. PUBLISHER MANAGER
+========================================================= */
+const GOLD1E_PUBLISHER_PIN = "093013";
+const GOLD1E_ROLLBACK_TARGETS = [
+  {version:"1B", folder:"Gold_1B", entry:"OS.html", title:"EmeraldOS Gold 1B"},
+  {version:"1A", folder:"Gold_1A", entry:"OS.html", title:"EmeraldOS Gold 1A"},
+  {version:"11.0", folder:"Gold_11.0", entry:"OS.html", title:"EmeraldOS Gold 11.0"},
+  {version:"10.0", folder:"Gold_10.0", entry:"OS.html", title:"EmeraldOS Gold 10.0"}
+];
+
+function gold1eValidColor(value, fallback){
+  value=String(value||"").trim();
+  return /^#[0-9a-f]{3,8}$/i.test(value)?value:fallback;
+}
+function gold1eNumber(value,min,max,fallback){
+  value=Number(value);
+  if(!Number.isFinite(value)) value=fallback;
+  return Math.max(min,Math.min(max,value));
+}
+
+try{
+  const gold1eBaseDefaultPrefs = defaultPrefs;
+  defaultPrefs = function(){
+    const base = gold1eBaseDefaultPrefs();
+    return {
+      ...base,
+      taskbarColor: base.taskbarColor || "#f6f9fd",
+      taskbarTextColor: base.taskbarTextColor || "#111827",
+      startMenuColor: base.startMenuColor || "#ffffff",
+      desktopObjectMode: base.desktopObjectMode || "free",
+      desktopSnapToGrid: base.desktopSnapToGrid !== false,
+      desktopGridSize: base.desktopGridSize || 92,
+      trashOnDesktop: base.trashOnDesktop !== false,
+      centerFailurePopups: base.centerFailurePopups !== false,
+      bsodOnCriticalErrors: base.bsodOnCriticalErrors !== false,
+      fileLoadRecoveryHints: base.fileLoadRecoveryHints !== false
+    };
+  };
+}catch(e){console.warn("Gold 1E default preference extension skipped",e)}
+
+try{
+  const gold1eBaseApplyPrefs = applyPrefs;
+  applyPrefs = function(){
+    gold1eBaseApplyPrefs();
+    const p=prefs();
+    const root=document.documentElement;
+    root.style.setProperty("--gold1eTaskbarColor", gold1eValidColor(p.taskbarColor,"#f6f9fd"));
+    root.style.setProperty("--gold1eTaskbarText", gold1eValidColor(p.taskbarTextColor,"#111827"));
+    root.style.setProperty("--gold1eStartColor", gold1eValidColor(p.startMenuColor,"#ffffff"));
+    root.style.setProperty("--gold1eGridSize", gold1eNumber(p.desktopGridSize,64,150,92)+"px");
+    document.body.classList.toggle("gold1e-free-desktop", p.desktopObjectMode!=="grid");
+    document.body.classList.toggle("gold1e-grid-desktop", p.desktopObjectMode==="grid");
+    document.body.classList.toggle("gold1e-trash-hidden", p.trashOnDesktop===false);
+  };
+}catch(e){console.warn("Gold 1E visual preference extension skipped",e)}
+
+function gold1eDesktopPositions(){return read(PREFIX+"desktopPositions",{})}
+function gold1eSaveDesktopPositions(map){write(PREFIX+"desktopPositions",map||{});saveWorkspaceDebounced()}
+function gold1eDesktopItemKey(type,id){return type+":"+id}
+function gold1eDefaultPosition(i){
+  const p=prefs(), grid=gold1eNumber(p.desktopGridSize,64,150,92);
+  const cols=Math.max(1,Math.floor((window.innerWidth-40)/grid));
+  return {x:18+(i%cols)*grid, y:18+Math.floor(i/cols)*(grid+18)};
+}
+function gold1ePositionStyle(key,index){
+  const pos=gold1eDesktopPositions()[key] || gold1eDefaultPosition(index);
+  const x=gold1eNumber(pos.x,0,Math.max(0,innerWidth-92),18);
+  const y=gold1eNumber(pos.y,0,Math.max(0,innerHeight-120),18);
+  return `left:${x}px;top:${y}px;`;
+}
+function gold1eSnap(v){
+  const p=prefs();
+  if(!p.desktopSnapToGrid) return v;
+  const grid=gold1eNumber(p.desktopGridSize,64,150,92);
+  return Math.round(v/grid)*grid+18;
+}
+function gold1eTrashIconHTML(index){
+  const key=gold1eDesktopItemKey('system','trash');
+  return `<button class="desktop-icon desktop-trash ${prefs().showLabels?'':'no-label'}" data-deskitem="${esc(key)}" data-trash="true" style="${gold1ePositionStyle(key,index)}" ondblclick="Gold50.openTrashCan1E()" title="Trash"><div class="trash-can-icon">♻</div><span>Trash</span></button>`;
+}
+function openTrashCan1E(){
+  try{ openExplorer(); setTimeout(()=>Gold50.explorerView('trash'),80); }
+  catch(e){ gold1eFileOrAppFailure('Trash','Trash failed to load.',e,'trash'); }
+}
+
+try{
+  renderDesktop=function(){
+    const d=$('desktop'); if(!d) return;
+    const p=prefs();
+    d.classList.add('gold1e-movable-desktop');
+    d.style.gap=p.density==='compact'?'8px':p.density==='spacious'?'22px':'16px';
+    const width=p.iconSize==='small'?'76px':p.iconSize==='large'?'108px':p.iconSize==='xl'?'122px':'92px';
+    let i=0;
+    const appHTML=(p.desktopApps||[]).map(id=>appById(id)).filter(Boolean).filter(a=>!a.staffOnly||isStaff()).map(a=>{
+      const key=gold1eDesktopItemKey('app',a.id);
+      const html=`<button class="desktop-icon ${p.showLabels?'':'no-label'}" data-deskitem="${esc(key)}" data-appid="${esc(a.id)}" style="width:${width};${gold1ePositionStyle(key,i++)}" ondblclick="Gold50.openApp('${esc(a.id)}')" title="${esc(a.desc)}">${appIcon(a)}<span>${esc(a.name)}</span></button>`;
+      return html;
+    }).join('');
+    const fileHTML=gold1eDesktopPins().map(fid=>files().find(f=>f.id===fid&&!f.trash)).filter(Boolean).map(f=>{
+      const key=gold1eDesktopItemKey('file',f.id);
+      return `<button class="desktop-icon desktop-file ${p.showLabels?'':'no-label'}" data-deskitem="${esc(key)}" data-fileid="${esc(f.id)}" style="width:${width};${gold1ePositionStyle(key,i++)}" ondblclick="Gold50.openFile('${esc(f.id)}')" title="${esc(f.name)}"><div class="file-desktop-icon">${esc(fileIcon(f.type))}</div><span>${esc(f.name)}</span></button>`;
+    }).join('');
+    const trashHTML=p.trashOnDesktop===false?'':gold1eTrashIconHTML(i++);
+    d.innerHTML=appHTML+fileHTML+trashHTML;
+  };
+}catch(e){console.warn('Gold 1E desktop renderer failed to install',e)}
+
+function gold1eInstallDesktopDrag(){
+  let state=null;
+  document.addEventListener('pointerdown',e=>{
+    const icon=e.target.closest('.desktop-icon[data-deskitem]');
+    if(!icon || e.button!==0) return;
+    if(e.detail>=2) return;
+    const r=icon.getBoundingClientRect();
+    state={icon,key:icon.dataset.deskitem,startX:e.clientX,startY:e.clientY,dx:e.clientX-r.left,dy:e.clientY-r.top,moved:false};
+    icon.setPointerCapture?.(e.pointerId);
+    icon.classList.add('dragging');
+  });
+  document.addEventListener('pointermove',e=>{
+    if(!state) return;
+    const d=$('desktop'); if(!d) return;
+    state.moved=true;
+    const dr=d.getBoundingClientRect();
+    let x=e.clientX-dr.left-state.dx;
+    let y=e.clientY-dr.top-state.dy;
+    x=Math.max(4,Math.min(x,dr.width-state.icon.offsetWidth-4));
+    y=Math.max(4,Math.min(y,dr.height-state.icon.offsetHeight-4));
+    state.icon.style.left=x+'px'; state.icon.style.top=y+'px';
+  });
+  document.addEventListener('pointerup',e=>{
+    if(!state) return;
+    const d=$('desktop'), dr=d?.getBoundingClientRect();
+    let x=parseFloat(state.icon.style.left)||0, y=parseFloat(state.icon.style.top)||0;
+    x=gold1eSnap(x); y=gold1eSnap(y);
+    if(dr){x=Math.max(4,Math.min(x,dr.width-state.icon.offsetWidth-4));y=Math.max(4,Math.min(y,dr.height-state.icon.offsetHeight-4));}
+    state.icon.style.left=x+'px'; state.icon.style.top=y+'px';
+    const map=gold1eDesktopPositions(); map[state.key]={x,y,updatedAt:now()}; gold1eSaveDesktopPositions(map);
+    state.icon.classList.remove('dragging');
+    if(state.moved){ e.preventDefault(); e.stopPropagation(); }
+    state=null;
+  },true);
+}
+
+function gold1eCenterPopup(title,message,level='warning',actions=[]){
+  if(prefs().centerFailurePopups===false) return notify(title,message,'EmeraldOS Gold');
+  document.querySelectorAll('.gold1e-center-popup').forEach(x=>x.remove());
+  const d=document.createElement('div');
+  d.className='gold1e-center-popup '+level;
+  d.innerHTML=`<div class="center-popup-card"><div class="center-popup-icon">${level==='danger'?'!':level==='success'?'✓':'i'}</div><h2>${esc(title)}</h2><p>${esc(message)}</p><div class="toolbar">${actions.map((a,i)=>`<button class="btn ${a.primary?'primary':''} ${a.danger?'danger':''}" data-i="${i}">${esc(a.label)}</button>`).join('')}<button class="btn" data-close="1">Close</button></div></div>`;
+  document.body.appendChild(d);
+  d.querySelector('[data-close]')?.addEventListener('click',()=>d.remove());
+  actions.forEach((a,i)=>d.querySelector(`[data-i="${i}"]`)?.addEventListener('click',()=>{try{a.action?.()}finally{d.remove()}}));
+  return d;
+}
+function gold1eFileOrAppFailure(name,message,error,kind='app'){
+  console.warn('Gold 1E load failure',name,error);
+  notify('Load problem',`${name} refused to load.`,'EmeraldOS Gold');
+  gold1eCenterPopup(`${kind==='file'?'File':'Application'} refused to load`,`${message} ${error?.message||''}`.trim(),'warning',[
+    {label:'Open Support',primary:true,action:()=>Gold50.openApp('support')},
+    {label:'Open Diagnostics',action:()=>Gold50.openApp('diagnostics')},
+    {label:'Restart App',action:()=>kind==='file'?Gold50.openFile(name):Gold50.openApp(name)}
+  ]);
+}
+
+function gold1eBSOD(reason='EmeraldOS Gold stopped responding.',code='GOLD_RUNTIME_FAULT'){
+  if(document.querySelector('.gold1e-bsod')) return;
+  const d=document.createElement('div');
+  d.className='gold1e-bsod';
+  d.innerHTML=`<div><h1>:(</h1><h2>EmeraldOS Gold ran into a problem.</h2><p>${esc(reason)}</p><p class="bsod-code">Stop code: ${esc(code)}</p><div class="bsod-progress"><span></span></div><div class="toolbar"><button onclick="location.reload()">Restart EmeraldOS Gold</button><button onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Restart in Safe Mode</button><button onclick="this.closest('.gold1e-bsod').remove();Gold50.openApp('support')">Open Support</button></div></div>`;
+  document.body.appendChild(d);
+}
+
+try{
+  const gold1eOriginalOpenApp = window.Gold50?.openApp || openApp;
+  function gold1eSafeOpenApp(id){
+    try{
+      const app=appById(id);
+      if(!app) throw new Error('The app is not installed or is hidden.');
+      return gold1eOriginalOpenApp(id);
+    }catch(e){gold1eFileOrAppFailure(id,'EmeraldOS Gold could not start this app.',e,'app');return false;}
+  }
+  window.Gold50.openApp=gold1eSafeOpenApp;
+  openApp=gold1eSafeOpenApp;
+}catch(e){console.warn('Gold 1E app failure wrapper skipped',e)}
+try{
+  const gold1eOriginalOpenFile = window.Gold50?.openFile || openFile;
+  function gold1eSafeOpenFile(fid){
+    try{
+      const f=files().find(x=>x.id===fid);
+      if(!f) throw new Error('The file no longer exists in this VM.');
+      if(f.trash) throw new Error('The file is in Trash. Restore it before opening.');
+      return gold1eOriginalOpenFile(fid);
+    }catch(e){gold1eFileOrAppFailure(fid,'EmeraldOS Gold could not open this file.',e,'file');return false;}
+  }
+  window.Gold50.openFile=gold1eSafeOpenFile;
+  openFile=gold1eSafeOpenFile;
+}catch(e){console.warn('Gold 1E file failure wrapper skipped',e)}
+
+function gold1eReleaseManifest(){
+  return {
+    product:'EmeraldOS Gold', latestVersion:'1E', build:'1E', folder:'Gold_1E', entry:'OS.html',
+    channel:'stable', status:'stable', required:false, enabled:true, setupMode:'migrationIntro',
+    releaseTitle:'EmeraldOS Gold 1E',
+    summary:'Gold 1E adds deeper customization, movable desktop objects, Trash, rollback tools, centered load-failure popups, crash recovery screens, and staff/PIN-gated E.L.S.U.S. publishing.',
+    migrationFrom:['1B','1A','11.0'], migrationId:'gold1b-to-gold1e-desktop-rollback',
+    minShellVersion:'1.0', rollbackFolder:'Gold_1B', rollbackVersion:'1B', releasedAt:new Date().toISOString()
+  };
+}
+function gold1ePublisherUnlocked(){return localStorage.getItem(PREFIX+'publisher_pin_unlocked')==='true'}
+async function gold1eRequirePublisherAccess(show=true){
+  if(!isStaff()){
+    if(show) gold1eCenterPopup('Staff verification required','Update publishing is only available after signing in through Gold Staff Edition.','danger',[{label:'Open Staff Edition',primary:true,action:()=>location.href='staff.html'}]);
+    return false;
+  }
+  if(gold1ePublisherUnlocked()) return true;
+  const pin=prompt('Update Publisher Manager PIN');
+  if(pin!==GOLD1E_PUBLISHER_PIN){
+    if(show) gold1eCenterPopup('Publisher PIN rejected','The Update Publisher Manager PIN was incorrect.','danger');
+    try{write(PREFIX+'publisher_denied',{time:now(),user:username()})}catch{}
+    return false;
+  }
+  localStorage.setItem(PREFIX+'publisher_pin_unlocked','true');
+  notify('Publisher unlocked','Update Publisher Manager is unlocked for this staff session.','E.L.S.U.S.');
+  return true;
+}
+async function gold1ePublishLatest(showResult=true){
+  if(!(await gold1eRequirePublisherAccess(showResult))) return false;
+  try{
+    const api=fb||await initFirebase();
+    if(!api) throw new Error('Firebase module did not load.');
+    const manifest=gold1eReleaseManifest();
+    await api.setDoc(api.doc(api.db,'system','emeraldGoldLatest'),manifest,{merge:true});
+    write('emeraldGoldShell_latest',manifest);
+    write(PREFIX+'publish_history',[{time:now(),user:username(),manifest},...read(PREFIX+'publish_history',[])].slice(0,50));
+    if(showResult) gold1eCenterPopup('E.L.S.U.S. published','system/emeraldGoldLatest now points to Gold_1E. Users will still update manually when prompted.','success');
+    return true;
+  }catch(e){
+    console.warn('Gold 1E publish failed',e);
+    if(showResult) gold1eCenterPopup('Publish failed','Firebase rejected the publish request. Check Firestore rules and staff write permissions.','danger',[{label:'Open Diagnostics',action:()=>Gold50.openApp('diagnostics')}]);
+    return false;
+  }
+}
+
+function openELSUSUpdateCenter1E(){
+  const latest=read('emeraldGoldShell_latest',gold1eReleaseManifest());
+  const update=read('emeraldGold_updateAvailable',{});
+  openWindow('updateshell','E.L.S.U.S. System Update',`<div class="goldshell-header"><div><h2>E.L.S.U.S. System Update</h2><p class="muted">The update shell stays separate. This app shows update status and lets users restart through E.L.S.U.S. Publishing is staff-only.</p></div><button class="btn primary" onclick="location.href='../gold-shell.html?manualCheck=1'">Check through shell</button></div><div class="grid2"><div class="card"><h3>This VM folder</h3><p>EmeraldOS Gold 1E</p><p class="muted">Gold_1E / OS.html</p></div><div class="card"><h3>Latest known folder</h3><p>${esc(latest.latestVersion||'Unknown')}</p><p class="muted">${esc(latest.folder||'No folder')} / ${esc(latest.entry||'OS.html')}</p></div><div class="card"><h3>User-controlled updates</h3><p>Each user updates manually. Their active folder changes only after accepting the update prompt.</p></div><div class="card"><h3>Rollback</h3><p>Rollback can help recover from a bad update, but may cause app or file instability.</p><button class="btn" onclick="Gold50.openApp('rollback')">Open Rollback</button></div></div><h3>Actions</h3><div class="toolbar"><button class="btn primary" onclick="Gold50.saveWorkspaceNow(true)">Save VM now</button><button class="btn" onclick="Gold50.exportWorkspace()">Export backup</button><button class="btn" onclick="location.href='../gold-shell.html?manualCheck=1'">Restart through E.L.S.U.S.</button>${isStaff()?'<button class="btn danger" onclick="Gold50.openUpdatePublisherManager1E()">Update Publisher Manager</button>':''}</div><p class="muted">Last shell check: ${esc(update.checkedAt||'Not checked in this browser')}</p>`,{width:1080,height:740});
+}
+function openUpdatePublisherManager1E(){
+  if(!isStaff()){location.href='staff.html';return}
+  gold1eRequirePublisherAccess(true).then(ok=>{
+    if(!ok)return;
+    const hist=read(PREFIX+'publish_history',[]);
+    openWindow('updatepublisher','Update Publisher Manager',`<div class="goldshell-header"><div><h2>Update Publisher Manager</h2><p class="muted">Staff-only E.L.S.U.S. publishing. A publisher PIN is required every session.</p></div><button class="btn danger" onclick="localStorage.removeItem('${PREFIX}publisher_pin_unlocked');Gold50.notify('Publisher locked','PIN access was cleared.','E.L.S.U.S.')">Lock publisher</button></div><div class="grid2"><div class="card"><h3>Publish Gold 1E</h3><p>Writes <code>system/emeraldGoldLatest</code> to point users to <code>Gold_1E/OS.html</code>. Users must still accept the update manually.</p><button class="btn primary" onclick="Gold50.gold1ePublishLatest(true)">Publish Gold 1E as latest</button></div><div class="card"><h3>Rollback target</h3><p>Default rollback: Gold 1B. Changing the public latest version should only be done if the current latest build breaks boot.</p><button class="btn" onclick="Gold50.gold1ePublishRollbackLatest('Gold_1B','1B')">Publish Gold 1B as emergency latest</button></div><div class="card"><h3>PIN status</h3><p>${gold1ePublisherUnlocked()?'Unlocked':'Locked'}</p></div><div class="card"><h3>Staff session</h3><p>${esc(username())}</p><p class="muted">Role: ${esc(currentStaff()?.role||localStorage.getItem('role')||'staff')}</p></div></div><h3>Recent publishing</h3>${hist.map(h=>`<div class="card"><b>${esc(h.manifest?.releaseTitle||'Publish')}</b><p class="muted">${esc(h.time)} · ${esc(h.user)}</p></div>`).join('')||'<p class="muted">No publish history on this device.</p>'}`,{width:1080,height:760});
+  });
+}
+async function gold1ePublishRollbackLatest(folder='Gold_1B',version='1B'){
+  if(!(await gold1eRequirePublisherAccess(true)))return false;
+  if(!confirm('Publish an older folder as the latest public update? This can help recover from a broken build but may cause app and file instability.'))return false;
+  try{
+    const api=fb||await initFirebase(); if(!api) throw new Error('Firebase module did not load.');
+    const manifest={...gold1eReleaseManifest(), latestVersion:version, build:version, folder, releaseTitle:`EmeraldOS Gold ${version} Emergency Rollback`, summary:'Emergency rollback published by staff through Gold 1E Update Publisher Manager.', rollbackFolder:'Gold_1E', rollbackVersion:'1E', releasedAt:new Date().toISOString()};
+    await api.setDoc(api.doc(api.db,'system','emeraldGoldLatest'),manifest,{merge:true});
+    gold1eCenterPopup('Emergency rollback published',`E.L.S.U.S. now points to ${folder}.`,'success');
+    return true;
+  }catch(e){gold1eCenterPopup('Rollback publish failed',e.message||'Firebase rejected the rollback publish.','danger');return false;}
+}
+
+function openRollbackCenter1E(){
+  openWindow('rollback','Version Rollback',`<div class="goldshell-header"><div><h2>Version Rollback</h2><p class="muted">Rollback changes only this user's selected E.L.S.U.S. folder unless staff publishes an emergency rollback.</p></div><button class="btn primary" onclick="Gold50.saveVMSnapshot()">Create snapshot</button></div><div class="danger-card"><h3>Rollback warning</h3><p>Rolling back can cause instability with newer applications, files, settings, or VM data. Create a snapshot first and only rollback if a new version is not working.</p></div><div class="grid2">${GOLD1E_ROLLBACK_TARGETS.map(t=>`<div class="card"><h3>${esc(t.title)}</h3><p class="muted">${esc(t.folder)} / ${esc(t.entry)}</p><button class="btn" onclick="Gold50.gold1eUserRollback('${esc(t.folder)}','${esc(t.version)}')">Rollback my VM to ${esc(t.version)}</button></div>`).join('')}</div>`,{width:1000,height:720});
+}
+function gold1eUserRollback(folder,version){
+  if(!confirm('Rollback this VM to '+folder+'? This can cause application or file instability. Create a snapshot first if you have not already.'))return;
+  try{saveVMSnapshot()}catch{}
+  const manifest={product:'EmeraldOS Gold',latestVersion:version,build:version,folder,entry:'OS.html',channel:'stable',status:'rollback',required:false,enabled:true,setupMode:'continue',releaseTitle:'EmeraldOS Gold '+version,summary:'User selected rollback through Gold 1E.',rollbackFrom:'Gold_1E',rolledBackAt:now()};
+  write('emeraldGoldShell_activeManifest',manifest);
+  localStorage.setItem('emeraldGoldShell_activeFolder',folder);
+  localStorage.setItem('emeraldGoldShell_activeVersion',version);
+  localStorage.setItem('emeraldGoldShell_activeEntry','OS.html');
+  write(PREFIX+'rollback_history',[{time:now(),user:username(),to:version,folder,warning:'Rollback may cause app/file instability.'},...read(PREFIX+'rollback_history',[])].slice(0,50));
+  gold1eCenterPopup('Rollback selected','E.L.S.U.S. will restart into '+folder+'.','warning',[{label:'Restart now',primary:true,action:()=>location.href='../gold-shell.html?rollback=1'}]);
+}
+
+function openThemeStudio1E(){
+  const p=prefs();
+  openWindow('themestudio','Theme Studio',`<h2>Theme Studio</h2><p class="muted">Gold 1E adds safer deep customization with protected CSS variables.</p><div class="grid2"><div class="card"><h3>Colors</h3><label>Accent<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setPrefs({accent:this.value})"></label><label>Secondary accent<input type="color" class="field" value="${esc(p.secondaryAccent||'#0f7b4d')}" oninput="Gold50.setPrefs({secondaryAccent:this.value})"></label><label>Taskbar color<input type="color" class="field" value="${esc(p.taskbarColor||'#f6f9fd')}" oninput="Gold50.gold1eSetPref('taskbarColor',this.value)"></label><label>Taskbar text<input type="color" class="field" value="${esc(p.taskbarTextColor||'#111827')}" oninput="Gold50.gold1eSetPref('taskbarTextColor',this.value)"></label><label>Start menu color<input type="color" class="field" value="${esc(p.startMenuColor||'#ffffff')}" oninput="Gold50.gold1eSetPref('startMenuColor',this.value)"></label></div><div class="card"><h3>Desktop objects</h3><label>Desktop mode<select class="field" onchange="Gold50.gold1eSetPref('desktopObjectMode',this.value)"><option value="free" ${p.desktopObjectMode!=='grid'?'selected':''}>Free move</option><option value="grid" ${p.desktopObjectMode==='grid'?'selected':''}>Grid layout</option></select></label><label><input type="checkbox" ${p.desktopSnapToGrid!==false?'checked':''} onchange="Gold50.gold1eSetPref('desktopSnapToGrid',this.checked)"> Snap objects to grid</label><label>Grid size<input type="range" min="64" max="150" value="${esc(p.desktopGridSize||92)}" oninput="Gold50.gold1eSetPref('desktopGridSize',this.value)"></label><label><input type="checkbox" ${p.trashOnDesktop!==false?'checked':''} onchange="Gold50.gold1eSetPref('trashOnDesktop',this.checked)"> Show Trash on desktop</label><button class="btn" onclick="Gold50.gold1eResetDesktopPositions()">Reset icon positions</button></div><div class="card"><h3>Background</h3><label>Background color<input type="color" class="field" value="${esc(p.backgroundColor||'#eaf3ff')}" oninput="Gold50.setGold70Pref?.('backgroundColor',this.value);Gold50.setGold70Pref?.('useBackgroundColor',true);Gold50.gold1eSetPref('backgroundColor',this.value)"></label><label>Background URL<input class="field" value="${esc(p.customBackground||'')}" onchange="Gold50.setPrefs({customBackground:this.value})"></label><input type="file" class="field" accept="image/*" onchange="Gold50.loadBackgroundFile(this)"></div><div class="card"><h3>Reliability</h3><label><input type="checkbox" ${p.centerFailurePopups!==false?'checked':''} onchange="Gold50.gold1eSetPref('centerFailurePopups',this.checked)"> Center failure popups</label><label><input type="checkbox" ${p.bsodOnCriticalErrors!==false?'checked':''} onchange="Gold50.gold1eSetPref('bsodOnCriticalErrors',this.checked)"> Crash screen for critical errors</label><button class="btn danger" onclick="Gold50.gold1eBSOD('Manual crash screen test.','MANUAL_TEST')">Test crash screen</button></div></div>`,{width:1080,height:760});
+}
+function gold1eSetPref(key,value){const p={};p[key]=value;setPrefs(p)}
+function gold1eResetDesktopPositions(){localStorage.removeItem(PREFIX+'desktopPositions');renderDesktop();notify('Desktop reset','Desktop object positions were reset.','Desktop')}
+
+function gold1eInstallTrashContext(){
+  document.addEventListener('contextmenu',e=>{
+    const trash=e.target.closest('[data-trash]'); if(!trash)return;
+    e.preventDefault(); e.stopPropagation();
+    gold1eContextMenu([
+      {id:'open',label:'Open Trash',action:()=>openTrashCan1E()},
+      {id:'empty',label:'Empty Trash',action:()=>{if(confirm('Delete all trashed files forever?')){saveFiles(files().filter(f=>!f.trash));renderDesktop();notify('Trash emptied','Deleted all trashed files.','Trash')}}},
+      {id:'hide',label:'Hide Trash icon',action:()=>gold1eSetPref('trashOnDesktop',false)}
+    ],e.clientX,e.clientY);
+  },true);
+}
+
+window.addEventListener('error',e=>{
+  try{
+    const msg=e.message||'Unknown runtime error';
+    if(msg.includes('ResizeObserver'))return;
+    gold1eCenterPopup('EmeraldOS Gold warning',msg,'warning',[{label:'Open Diagnostics',action:()=>Gold50.openApp('diagnostics')}]);
+    if(prefs().bsodOnCriticalErrors && /ReferenceError|SyntaxError|not defined|Cannot read|Cannot set/.test(msg)) setTimeout(()=>gold1eBSOD(msg,'GOLD_UNHANDLED_ERROR'),250);
+  }catch{}
+});
+window.addEventListener('unhandledrejection',e=>{
+  try{
+    const msg=String(e.reason?.message||e.reason||'Unhandled promise rejection');
+    gold1eCenterPopup('EmeraldOS Gold warning',msg,'warning',[{label:'Open Diagnostics',action:()=>Gold50.openApp('diagnostics')}]);
+  }catch{}
+});
+
+function gold1eInstallApps(){
+  gold1eAddOrUpdateApp({id:'updateshell',name:'E.L.S.U.S. System Update',label:'UP',color:'blue',group:'System',purpose:'User update status',desc:'Check update status, save the VM, restart through E.L.S.U.S., and open rollback tools.',open:openELSUSUpdateCenter1E});
+  gold1eAddOrUpdateApp({id:'updatepublisher',name:'Update Publisher Manager',label:'PM',color:'red',group:'Staff',purpose:'Staff update publishing',desc:'Staff-only and PIN-gated E.L.S.U.S. publishing controls.',staffOnly:true,open:openUpdatePublisherManager1E});
+  gold1eAddOrUpdateApp({id:'rollback',name:'Version Rollback',label:'RB',color:'orange',group:'System',purpose:'Rollback',desc:'Rollback this VM to a previous EmeraldOS Gold folder with instability warnings.',open:openRollbackCenter1E});
+  gold1eAddOrUpdateApp({id:'crashrecovery',name:'Crash Recovery',label:'CR',color:'blue',group:'Support',purpose:'Reliability',desc:'Test and recover from EmeraldOS Gold crash screens and load failures.',open:()=>openWindow('crashrecovery','Crash Recovery',`<h2>Crash Recovery</h2><p class="muted">Use these tools if an app or file refuses to load.</p><div class="grid3"><button class="tile-button" onclick="Gold50.gold1eBSOD('Manual crash screen test.','MANUAL_TEST')">Test crash screen</button><button class="tile-button" onclick="Gold50.openApp('diagnostics')">Diagnostics</button><button class="tile-button" onclick="localStorage.setItem('${PREFIX}safemode','true');location.reload()">Restart in Safe Mode</button></div>`,{width:780,height:520})});
+  try{const theme=APPS.find(a=>a.id==='themestudio'); if(theme) theme.open=openThemeStudio1E;}catch{}
+}
+
+Object.assign(window.Gold50||{}, {
+  openTrashCan1E,gold1eCenterPopup,gold1eBSOD,gold1ePublishLatest,gold1eRequirePublisherAccess,
+  openELSUSUpdateCenter1E,openUpdatePublisherManager1E,gold1ePublishRollbackLatest,openRollbackCenter1E,gold1eUserRollback,
+  openThemeStudio1E,gold1eSetPref,gold1eResetDesktopPositions
+});
+window.Gold1E=window.Gold50;
+if(new URLSearchParams(location.search).has('publishLatest')) setTimeout(()=>gold1ePublishLatest(true), 1600);
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{gold1eInstallApps();gold1eInstallDesktopDrag();gold1eInstallTrashContext();applyPrefs();renderDesktop();renderStartMenu();renderTaskApps();}catch(e){console.warn('Gold 1E feature install failed',e)}},900));
+
+
+/* =========================================================
+   EMERALDOS GOLD 1E FINAL UX, LANGUAGE, ACCESSIBILITY,
+   STAFF DIRECT CONTROL, AND SAFE CUSTOMIZATION LAYER
+========================================================= */
+const gold1eBaseDefaultPrefs = defaultPrefs;
+defaultPrefs = function(){
+  return {
+    ...gold1eBaseDefaultPrefs(),
+    language:"en",
+    taskbarColor:"#f6f9fd",
+    taskbarTextColor:"#111827",
+    startMenuColor:"#ffffff",
+    backgroundColor:"#eaf3ff",
+    desktopIconTransparency:"transparent",
+    panelOpacity:0.96,
+    menuOpacity:0.96,
+    highContrastBorders:false,
+    readableFont:false,
+    largerHitTargets:false,
+    underlineControls:false,
+    colorFilter:"none"
+  };
+};
+const gold1eBaseApplyPrefs = applyPrefs;
+applyPrefs = function(){
+  gold1eBaseApplyPrefs();
+  const p=prefs();
+  const root=document.documentElement;
+  root.style.setProperty('--gold1eTaskbarColor',p.taskbarColor||'#f6f9fd');
+  root.style.setProperty('--gold1eTaskbarText',p.taskbarTextColor||'#111827');
+  root.style.setProperty('--gold1eStartColor',p.startMenuColor||'#ffffff');
+  root.style.setProperty('--gold1eBackgroundColor',p.backgroundColor||'#eaf3ff');
+  root.style.setProperty('--gold1ePanelOpacity',String(Math.max(.55,Math.min(1,Number(p.panelOpacity||.96)))));
+  root.style.setProperty('--gold1eMenuOpacity',String(Math.max(.55,Math.min(1,Number(p.menuOpacity||.96)))));
+  document.documentElement.lang=p.language==='es'?'es':'en';
+  document.body.dataset.language=p.language==='es'?'es':'en';
+  document.body.classList.toggle('gold1e-readable',!!p.readableFont);
+  document.body.classList.toggle('gold1e-hit-large',!!p.largerHitTargets);
+  document.body.classList.toggle('gold1e-underline-controls',!!p.underlineControls);
+  document.body.classList.toggle('gold1e-extra-contrast',!!p.highContrastBorders);
+  document.body.classList.remove('gold1e-filter-warm','gold1e-filter-cool','gold1e-filter-gray');
+  if(p.colorFilter&&p.colorFilter!=='none') document.body.classList.add('gold1e-filter-'+p.colorFilter);
+  const search=$('searchBtn'); if(search) search.textContent=p.language==='es'?'Buscar en EmeraldOS Gold':'Search EmeraldOS Gold';
+  const staff=$('staffBtn'); if(staff) staff.textContent=p.language==='es'?'Personal':'Staff';
+  const logout=$('logoutBtn'); if(logout) logout.textContent=p.language==='es'?'Cerrar sesión':'Log out';
+};
+const GOLD1E_LANG={
+  en:{language:'Language & Region',support:'Support Center',settings:'Settings',office:'Gold Office',explorer:'Gold Explorer',update:'E.L.S.U.S. System Update',desktopReady:'Desktop is ready.',remote:'Remote Control',access:'Accessibility'},
+  es:{language:'Idioma y región',support:'Centro de soporte',settings:'Configuración',office:'Gold Office',explorer:'Explorador Gold',update:'Actualización E.L.S.U.S.',desktopReady:'El escritorio está listo.',remote:'Control remoto',access:'Accesibilidad'}
+};
+function gold1eT(k){const p=prefs();return (GOLD1E_LANG[p.language==='es'?'es':'en']||GOLD1E_LANG.en)[k]||k;}
+function openLanguageRegion1E(){
+  const p=prefs();
+  openWindow('language','Language & Region',`<h2>${gold1eT('language')}</h2><p class="muted">English is the default. Spanish support localizes the core shell labels, setup guidance, support language, and system notifications where available.</p><div class="grid2"><div class="card"><h3>Display language</h3><select class="field" onchange="Gold50.setPrefs({language:this.value})"><option value="en" ${p.language!=='es'?'selected':''}>English</option><option value="es" ${p.language==='es'?'selected':''}>Español</option></select><button class="btn primary" onclick="Gold50.openApp('language')">Apply / Aplicar</button></div><div class="card"><h3>Examples / Ejemplos</h3><p><b>Support:</b> ${gold1eT('support')}</p><p><b>Settings:</b> ${gold1eT('settings')}</p><p><b>Update:</b> ${gold1eT('update')}</p></div></div>`,{width:740,height:480});
+}
+function openAccessibility1E(){
+  const p=prefs();
+  openWindow('accessibility','Accessibility Center',`<h2>Accessibility Center</h2><p class="muted">Gold 1E accessibility options are separated from Theme Studio so each app has a clear purpose.</p><div class="grid2"><div class="card"><h3>Reading</h3><label class="setting-line"><span>Larger text</span><input type="checkbox" ${p.bigText?'checked':''} onchange="Gold50.setPrefs({bigText:this.checked})"></label><label class="setting-line"><span>Readable font</span><input type="checkbox" ${p.readableFont?'checked':''} onchange="Gold50.setPrefs({readableFont:this.checked})"></label><label class="setting-line"><span>Underline controls</span><input type="checkbox" ${p.underlineControls?'checked':''} onchange="Gold50.setPrefs({underlineControls:this.checked})"></label></div><div class="card"><h3>Visual comfort</h3><label class="setting-line"><span>Reduced motion</span><input type="checkbox" ${p.reducedMotion?'checked':''} onchange="Gold50.setPrefs({reducedMotion:this.checked})"></label><label class="setting-line"><span>Extra contrast borders</span><input type="checkbox" ${p.highContrastBorders?'checked':''} onchange="Gold50.setPrefs({highContrastBorders:this.checked})"></label><label>Color filter<select class="field" onchange="Gold50.setPrefs({colorFilter:this.value})"><option value="none" ${p.colorFilter==='none'?'selected':''}>None</option><option value="warm" ${p.colorFilter==='warm'?'selected':''}>Warm</option><option value="cool" ${p.colorFilter==='cool'?'selected':''}>Cool</option><option value="gray" ${p.colorFilter==='gray'?'selected':''}>Grayscale</option></select></label></div><div class="card"><h3>Controls</h3><label class="setting-line"><span>Larger clickable areas</span><input type="checkbox" ${p.largerHitTargets?'checked':''} onchange="Gold50.setPrefs({largerHitTargets:this.checked})"></label><label class="setting-line"><span>Focus rings</span><input type="checkbox" ${p.focusRings?'checked':''} onchange="Gold50.setPrefs({focusRings:this.checked})"></label></div><div class="card"><h3>Language</h3><button class="btn primary" onclick="Gold50.openApp('language')">Open Language & Region</button></div></div>`,{width:880,height:620});
+}
+function openThemeStudio1EPlus(){
+  const p=prefs();
+  openWindow('themestudio','Theme Studio',`<h2>Theme Studio</h2><p class="muted">Personalize EmeraldOS Gold 1E without breaking the layout. Desktop object backgrounds remain transparent by default.</p><div class="grid2"><div class="card"><h3>Shell colors</h3><label>Accent color<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setPrefs({accent:this.value})"></label><label>Taskbar color<input type="color" class="field" value="${esc(p.taskbarColor||'#f6f9fd')}" oninput="Gold50.setPrefs({taskbarColor:this.value})"></label><label>Taskbar text color<input type="color" class="field" value="${esc(p.taskbarTextColor||'#111827')}" oninput="Gold50.setPrefs({taskbarTextColor:this.value})"></label><label>Start menu color<input type="color" class="field" value="${esc(p.startMenuColor||'#ffffff')}" oninput="Gold50.setPrefs({startMenuColor:this.value})"></label></div><div class="card"><h3>Background</h3><label>Background color<input type="color" class="field" value="${esc(p.backgroundColor||'#eaf3ff')}" oninput="Gold50.setPrefs({backgroundColor:this.value});document.body.style.backgroundColor=this.value"></label><label>Background URL<input class="field" value="${esc(p.customBackground||'')}" onchange="Gold50.setPrefs({customBackground:this.value})"></label><input type="file" class="field" accept="image/*" onchange="Gold50.loadBackgroundFile(this)"><label>Background mode<select class="field" onchange="Gold50.setPrefs({bgMode:this.value})"><option value="cover" ${p.bgMode!=='contain'?'selected':''}>Cover</option><option value="contain" ${p.bgMode==='contain'?'selected':''}>Contain</option></select></label></div><div class="card"><h3>Desktop objects</h3><label>Icon size<select class="field" onchange="Gold50.setPrefs({iconSize:this.value})"><option value="small" ${p.iconSize==='small'?'selected':''}>Small</option><option value="normal" ${p.iconSize==='normal'?'selected':''}>Normal</option><option value="large" ${p.iconSize==='large'?'selected':''}>Large</option></select></label><label><input type="checkbox" ${p.showLabels!==false?'checked':''} onchange="Gold50.setPrefs({showLabels:this.checked})"> Show desktop labels</label><label><input type="checkbox" ${p.trashOnDesktop!==false?'checked':''} onchange="Gold50.setPrefs({trashOnDesktop:this.checked})"> Show Trash on desktop</label><button class="btn" onclick="Gold50.gold1eResetDesktopPositions()">Reset object positions</button></div><div class="card"><h3>Window feel</h3><label>Panel opacity<input type="range" min="55" max="100" value="${Math.round((p.panelOpacity||.96)*100)}" oninput="Gold50.setPrefs({panelOpacity:this.value/100})"></label><label>Start menu opacity<input type="range" min="55" max="100" value="${Math.round((p.menuOpacity||.96)*100)}" oninput="Gold50.setPrefs({menuOpacity:this.value/100})"></label><label>Rounding<select class="field" onchange="Gold50.setPrefs({rounding:this.value})"><option value="none" ${p.rounding==='none'?'selected':''}>None</option><option value="small" ${p.rounding!=='large'&&p.rounding!=='none'?'selected':''}>Small</option><option value="large" ${p.rounding==='large'?'selected':''}>Large</option></select></label></div></div>`,{width:1080,height:760});
+}
+function openStaffResources1E(){
+  if(!isStaff()){location.href='staff.html';return;}
+  openWindow('staffresources','Staff Resources',`<h2>Staff Resources</h2><p class="muted">Staff-only resources are available only after Staff Edition login.</p><div class="grid3"><div class="card"><h3>Remote desktop policy</h3><p>Remote control requires the user to request help and the red banner must stay visible.</p></div><div class="card"><h3>Support workflow</h3><p>Review ticket, request diagnostics, open live desktop, assist, then close the session.</p></div><div class="card"><h3>E.L.S.U.S.</h3><p>Publishing requires Staff Edition and the Update Publisher Manager PIN.</p></div></div>`,{width:860,height:560});
+}
+function gold1eMarkProcessed(cmd,session){
+  const arr=remoteSessions();const s=arr.find(x=>x.id===(session?.id||session?.ticketId||activeRemoteSession()?.id));
+  if(!s||s.status!=="active"||!s.controlGranted||!cmd?.id)return false;
+  s.processed=s.processed||[]; if(s.processed.includes(cmd.id))return false;
+  s.processed.push(cmd.id);s.updatedAt=now();saveRemoteSessions(arr);return true;
+}
+const gold1eBaseProcessRemoteCommand = processRemoteCommand;
+processRemoteCommand = function(cmd,session){
+  const t=cmd?.type; const a=cmd?.args||{};
+  const directTypes=['clickDesktopApp','launchApp','focusWindow','closeWindow','minimizeWindow','maximizeWindow','setPref','setLanguage','typeText','hotkey','moveWindow'];
+  if(!directTypes.includes(t)) return gold1eBaseProcessRemoteCommand(cmd,session);
+  if(!gold1eMarkProcessed(cmd,session)) return;
+  try{
+    notify('Staff direct control',`${t} from ${cmd.from||'Staff'}`,'Remote Control');
+    if(t==='clickDesktopApp'||t==='launchApp') openApp(a.app||'support');
+    else if(t==='focusWindow') focusWindow(a.windowId);
+    else if(t==='closeWindow') closeWin(a.windowId);
+    else if(t==='minimizeWindow') minimizeWin(a.windowId);
+    else if(t==='maximizeWindow') maximizeWin(a.windowId);
+    else if(t==='setPref') setPrefs(a.pref||{});
+    else if(t==='setLanguage') setPrefs({language:a.language==='es'?'es':'en'});
+    else if(t==='moveWindow'){const w=document.getElementById(a.windowId);if(w){w.style.left=(Number(a.left)||80)+'px';w.style.top=(Number(a.top)||80)+'px';keepWindowOnScreen(w)}}
+    else if(t==='typeText'){
+      const el=document.activeElement;
+      if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){const start=el.selectionStart||0;const end=el.selectionEnd||0;const v=el.value||'';el.value=v.slice(0,start)+String(a.text||'')+v.slice(end);el.dispatchEvent(new Event('input',{bubbles:true}));}
+      else if(el&&el.isContentEditable){document.execCommand('insertText',false,String(a.text||''));}
+      else notify('Direct text not inserted','Click into a text field first.','Remote Control');
+    }
+    else if(t==='hotkey'){
+      if(a.key==='Escape') document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
+      if(a.key==='F1') openSupport();
+      if(a.key==='F12') openApp('bios');
+    }
+  }catch(e){notify('Direct remote action failed',e.message,'Remote Control')}
+};
+const gold1eBaseSnapshot = remoteDesktopSnapshot;
+remoteDesktopSnapshot = function(){
+  const snap=gold1eBaseSnapshot();
+  snap.directControl=true;
+  snap.activeElement=(document.activeElement&&['INPUT','TEXTAREA'].includes(document.activeElement.tagName))?{tag:document.activeElement.tagName,placeholder:document.activeElement.placeholder||'',valueLength:String(document.activeElement.value||'').length}:null;
+  snap.windows=[...document.querySelectorAll('.window')].map(w=>({id:w.id,title:w.dataset.title||'Window',left:w.style.left,top:w.style.top,width:w.style.width,height:w.style.height,minimized:w.classList.contains('minimized'),maximized:w.classList.contains('max'),active:w===activeWin}));
+  return snap;
+};
+function gold1eInstallFinalApps(){
+  gold1eAddOrUpdateApp({id:'language',name:'Language & Region',label:'LR',color:'teal',group:'Settings',purpose:'Language',desc:'Switch EmeraldOS Gold between English and Spanish core shell language.',open:openLanguageRegion1E});
+  gold1eAddOrUpdateApp({id:'accessibility',name:'Accessibility Center',label:'AC',color:'blue',group:'Settings',purpose:'Accessibility',desc:'Readable text, contrast, reduced motion, focus rings, and language access.',open:openAccessibility1E});
+  gold1eAddOrUpdateApp({id:'staffresources',name:'Staff Resources',label:'SR',color:'purple',group:'Staff',purpose:'Staff resources',desc:'Staff-only support procedures, E.L.S.U.S. notes, and remote support policy.',staffOnly:true,open:openStaffResources1E});
+  try{const t=APPS.find(a=>a.id==='themestudio'); if(t)t.open=openThemeStudio1EPlus;}catch{}
+  try{const s=APPS.find(a=>a.id==='staff'); if(s)s.staffOnly=true;}catch{}
+}
+Object.assign(window.Gold50||{}, {openLanguageRegion1E,openAccessibility1E,openThemeStudio1EPlus,openStaffResources1E,gold1eT});
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{gold1eInstallFinalApps();applyPrefs();renderDesktop();renderStartMenu();renderTaskApps();}catch(e){console.warn('Gold 1E final layer failed',e)}},1050));
+
+
+
+
+/* =========================================================
+   EMERALDOS GOLD 1E - LICENSED SETUP, TASK MANAGER,
+   STAFF MAIL PORTAL, GAMES, APP-SPECIFIC LOGOS, SAFE UI
+========================================================= */
+(function gold1eMigrateFrom1D(){
+  try{
+    if(localStorage.getItem('gold1e_migrated_from_gold1d')==='true') return;
+    const oldPrefix='gold1d_', newPrefix='gold1e_';
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith(oldPrefix)){
+        const nk=newPrefix+k.slice(oldPrefix.length);
+        if(localStorage.getItem(nk)===null) localStorage.setItem(nk, localStorage.getItem(k));
+      }
+    });
+    localStorage.setItem('gold1e_migrated_from_gold1d','true');
+    if(localStorage.getItem(newPrefix+'setup_done')==='true') localStorage.setItem(newPrefix+'updated_from','1D');
+  }catch(e){console.warn('Gold 1E migration from 1D skipped',e)}
+})();
+const GOLD1E_TOS_URL='https://securly-plans.github.io/TOS.html';
+const GOLD1E_PUBLISHER_PIN_FINAL='093013';
+const GOLD1E_MANIFEST={product:'EmeraldOS Gold',latestVersion:'1E',build:'1E',folder:'Gold_1E',entry:'OS.html',channel:'stable',status:'stable',required:false,enabled:true,setupMode:'migrationIntro',releaseTitle:'EmeraldOS Gold 1E',summary:'Gold 1E adds licensed first-boot/update setup, Task Manager, Staff Mail Portal, built-in games, app-specific logos, and stronger login/staff gates.',migrationFrom:['1D','1C','1B','1A'],migrationId:'gold1d-to-gold1e-license-setup',minShellVersion:'1.0',rollbackFolder:'Gold_1D',rollbackVersion:'1D',releasedAt:new Date().toISOString()};
+function gold1eUpsertApp(def){try{const i=APPS.findIndex(a=>a.id===def.id); if(i>=0) Object.assign(APPS[i],def); else APPS.push(def);}catch(e){console.warn('Gold 1E app install failed',def?.id,e)}}
+function gold1eLicenseText(){return `EmeraldOS Gold 1E Virtual License\n\nProduct: EmeraldOS Gold 1E\nEdition folder: Gold_1E\nUpdate service: EmeraldOS Live Service Update System (E.L.S.U.S.)\nLicense type: virtual machine-style browser workspace license\n\nThis license allows the signed-in EmeraldOS user to access one cloud-restored EmeraldOS Gold virtual workspace through the EmeraldOS shell or this OS folder. EmeraldOS Gold stores preferences, desktop layout, app data, files, support tickets, update selections, and VM snapshots in local browser storage and, where configured, Firebase cloud storage.\n\nBy continuing, you agree that EmeraldOS Gold can save and restore your VM state, run first-boot setup, run update setup after E.L.S.U.S. updates, show support and safety notices, and create recovery snapshots before updates or rollback.\n\nStaff remote support requires user consent, keeps a visible remote-control banner, and can be ended by the user at any time. Staff-only applications and resources require Staff Edition verification.\n\nUser-installed apps and Appstore uploads can affect your VM data. Only install apps you trust. Rollback to previous versions can cause instability with applications, files, settings, and unsupported app data.\n\nYou must read and agree to the Emerald Systems Terms of Service before using EmeraldOS Gold 1E. TOS location: ${GOLD1E_TOS_URL}\n\nThis virtual license is not a guarantee of permanent availability, uninterrupted service, or compatibility with every browser/device. EmeraldOS Gold is provided as a web-based virtual desktop experience for the signed-in account.\n\nAgreement record: EmeraldOS Gold 1E / Gold_1E / ${now()}`}
+function gold1eLicenseHTML(kind){return `<div class="license-pane"><h2>${kind==='update'?'EmeraldOS Gold 1E Update Setup':'EmeraldOS Gold 1E First-Boot Setup'}</h2><p class="muted">Before continuing, read the Emerald Systems Terms of Service and accept the EmeraldOS Gold virtual license.</p><div class="license-box"><pre>${esc(gold1eLicenseText())}</pre></div><div class="tos-frame"><div class="toolbar"><a class="btn" target="_blank" href="${GOLD1E_TOS_URL}">Open Emerald Systems TOS</a><button class="btn" onclick="Gold50.gold1eCopyLicense()">Copy virtual license</button></div><iframe title="Emerald Systems TOS" src="${GOLD1E_TOS_URL}"></iframe></div><label class="license-agree"><input id="gold1e_license_${kind}" type="checkbox" onchange="Gold50.gold1eSetLicenseAgreement('${kind}',this.checked)"> I have had a chance to read the Emerald Systems TOS and I agree to the EmeraldOS Gold 1E Virtual License.</label></div>`}
+function gold1eCopyLicense(){navigator.clipboard?.writeText(gold1eLicenseText()).then(()=>notify('License copied','The EmeraldOS Gold virtual license was copied.','Setup')).catch(()=>saveText('EmeraldOS-Gold-1E-Virtual-License.txt',gold1eLicenseText()))}
+function gold1eSetLicenseAgreement(kind,checked){localStorage.setItem(PREFIX+'license_agreed_'+kind,checked?'true':'false'); const b=document.querySelector('.setup-actions .primary'); if(b)b.disabled=!gold1eCanAdvanceSetup(kind)}
+function gold1eCanAdvanceSetup(kind){return localStorage.getItem(PREFIX+'license_agreed_'+kind)==='true'}
+function openSetup(){
+  const box=$('setupWizard'); if(!box) return;
+  let step=0; const selected=new Set((prefs().desktopApps||[]).length?prefs().desktopApps:['explorer','office','mail','support','settings','updateshell']);
+  const steps=[
+    ()=>`<div class="setup-hero"><div class="setup-brand"><div class="setup-logo">G</div><div><h2>Welcome to EmeraldOS Gold 1E</h2><p class="muted">Set up your EmeraldOS Gold virtual desktop once. Your setup, apps, files, preferences, support history, and VM state can be restored when you return.</p></div></div><div class="setup-checklist"><span>Cloud VM ready</span><span>Login protected</span><span>E.L.S.U.S. compatible</span></div></div>`,
+    ()=>gold1eLicenseHTML('first'),
+    ()=>{const p=prefs();return `<h2>Personalize your desktop</h2><p class="muted">Choose a safe starting style. You can change everything later in Theme Studio.</p><div class="grid2"><div class="card"><h3>Colors</h3><label>Accent<input type="color" class="field" value="${esc(p.accent||'#0078d4')}" oninput="Gold50.setPrefs({accent:this.value})"></label><label>Taskbar color<input type="color" class="field" value="${esc(p.taskbarColor||'#f6f9fd')}" oninput="Gold50.setPrefs({taskbarColor:this.value})"></label></div><div class="card"><h3>Desktop</h3><label>Background color<input type="color" class="field" value="${esc(p.backgroundColor||'#eaf3ff')}" oninput="Gold50.setPrefs({backgroundColor:this.value})"></label><label>Icon size<select class="field" onchange="Gold50.setPrefs({iconSize:this.value})"><option value="small">Small</option><option value="normal" selected>Normal</option><option value="large">Large</option></select></label></div></div>`},
+    ()=>`<h2>Choose essential desktop apps</h2><p class="muted">Only essential apps are placed on the desktop by default. Everything else stays available in Start/Search.</p><div class="setup-app-grid">${['explorer','office','mail','support','settings','updateshell','taskmanager','games'].map(id=>{const a=APPS.find(x=>x.id===id)||{id,name:id,label:id.slice(0,2)};return `<label class="setup-app-choice"><input type="checkbox" ${selected.has(id)?'checked':''} onchange="Gold50.gold1eToggleSetupApp('${id}',this.checked)">${appIcon(a,true)}<span>${esc(a.name)}</span></label>`}).join('')}</div>`,
+    ()=>`<h2>Accessibility and language</h2><p class="muted">English is the default. Spanish support remains available in Language & Region after setup.</p><div class="grid2"><div class="card"><h3>Reading comfort</h3><label><input type="checkbox" onchange="Gold50.setPrefs({bigText:this.checked})"> Larger text</label><label><input type="checkbox" onchange="Gold50.setPrefs({readableFont:this.checked})"> Readable font</label><label><input type="checkbox" onchange="Gold50.setPrefs({reducedMotion:this.checked})"> Reduced motion</label></div><div class="card"><h3>Language</h3><select class="field" onchange="Gold50.setPrefs({language:this.value})"><option value="en">English</option><option value="es">Español</option></select></div></div>`,
+    ()=>`<h2>Ready to start</h2><p>EmeraldOS Gold 1E will save this setup to your VM profile.</p><div class="card"><h3>Virtual license</h3><p class="muted">Agreement will be recorded for this VM account and version.</p></div>`
+  ];
+  function render(){box.classList.remove('hidden'); const kind='first'; box.innerHTML=`<div class="setup-card setup-card-rebuilt gold1e-setup"><div class="setup-titlebar"><b>EmeraldOS Gold 1E First-Boot Setup</b></div><div class="setup-steps">${steps.map((_,i)=>`<div class="setup-dot ${i<=step?'active':''}"></div>`).join('')}</div><div class="setup-body">${steps[step]()}</div><div class="toolbar setup-actions"><button class="btn" ${step===0?'disabled':''} onclick="Gold50.gold1eSetupStep(-1)">Back</button><span class="muted">Step ${step+1} of ${steps.length}</span><button class="btn primary" ${step===1&&!gold1eCanAdvanceSetup(kind)?'disabled':''} onclick="Gold50.gold1eSetupStep(1)">${step===steps.length-1?'Accept and finish':'Next'}</button></div></div>`}
+  window.Gold50.gold1eSetupStep=(d)=>{ if(step===1 && d>0 && !gold1eCanAdvanceSetup('first')){notify('Agreement required','You must agree to the Emerald Systems TOS and virtual license to continue.','Setup');return;} if(step+d>=steps.length){finishSetup();return;} step=Math.max(0,Math.min(steps.length-1,step+d));render(); };
+  window.Gold50.gold1eToggleSetupApp=(id,on)=>{on?selected.add(id):selected.delete(id);setPrefs({desktopApps:[...selected]})};
+  render();
+}
+const gold1eBaseFinishSetup = typeof finishSetup==='function'?finishSetup:null;
+finishSetup=function(){
+  if(localStorage.getItem(PREFIX+'license_agreed_first')!=='true' && localStorage.getItem(PREFIX+'license_agreed_update')!=='true'){
+    notify('Agreement required','You must agree to the Emerald Systems TOS and virtual license before using EmeraldOS Gold.','Setup'); return;
+  }
+  localStorage.setItem(PREFIX+'setup_done','true');
+  localStorage.setItem(PREFIX+'license_version','Gold_1E');
+  localStorage.setItem(PREFIX+'license_time',now());
+  $('setupWizard')?.classList.add('hidden');
+  notify('Setup complete','EmeraldOS Gold 1E is ready.','Setup');
+  saveWorkspaceNow?.(true);
+};
+function openUpdateSetup1E(){
+  const box=$('setupWizard'); if(!box) return; let step=0;
+  const steps=[
+    ()=>`<div class="setup-hero"><div class="setup-brand"><div class="setup-logo">G</div><div><h2>EmeraldOS Gold 1E Update Setup</h2><p class="muted">Your VM updated through E.L.S.U.S. This short setup preserves your files and preferences while reviewing new terms and features.</p></div></div><div class="setup-checklist"><span>VM preserved</span><span>New app logos</span><span>Task Manager added</span></div></div>`,
+    ()=>gold1eLicenseHTML('update'),
+    ()=>`<h2>What changed in Gold 1E?</h2><div class="grid2"><div class="card"><h3>Setup and license</h3><p>First-Boot Setup and Update Setup now include the EmeraldOS Gold virtual license and TOS agreement.</p></div><div class="card"><h3>Apps</h3><p>Task Manager, Staff Mail Portal, and Gold Games were added without duplicating existing app purposes.</p></div><div class="card"><h3>Login and staff access</h3><p>Gold still requires normal login. Staff resources and apps require Staff Edition verification.</p></div><div class="card"><h3>Design</h3><p>App logos and shell surfaces were refreshed for a cleaner modern EmeraldOS Gold desktop.</p></div></div>`,
+    ()=>`<h2>Ready</h2><p>Your existing VM data will stay in place. You can change desktop apps, colors, accessibility, and layout from Settings or Theme Studio.</p><div class="toolbar"><button class="btn" onclick="Gold50.openApp('taskmanager')">Preview Task Manager</button><button class="btn" onclick="Gold50.openApp('games')">Preview Games</button></div>`
+  ];
+  function render(){box.classList.remove('hidden');box.innerHTML=`<div class="setup-card setup-card-rebuilt update-setup gold1e-setup"><div class="setup-titlebar"><b>Gold 1E Update Setup</b><button class="btn small" onclick="Gold50.finishUpdateSetup1E()">Skip after agreement</button></div><div class="setup-steps">${steps.map((_,i)=>`<div class="setup-dot ${i<=step?'active':''}"></div>`).join('')}</div><div class="setup-body">${steps[step]()}</div><div class="toolbar setup-actions"><button class="btn" ${step===0?'disabled':''} onclick="Gold50.updateSetupStep1E(-1)">Back</button><span class="muted">Step ${step+1} of ${steps.length}</span><button class="btn primary" ${step===1&&!gold1eCanAdvanceSetup('update')?'disabled':''} onclick="Gold50.updateSetupStep1E(1)">${step===steps.length-1?'Finish update setup':'Next'}</button></div></div>`}
+  window.Gold50.updateSetupStep1E=(d)=>{ if(step===1 && d>0 && !gold1eCanAdvanceSetup('update')){notify('Agreement required','You must agree to the TOS and virtual license to continue.','Update Setup');return;} if(step+d>=steps.length){finishUpdateSetup1E();return;} step=Math.max(0,Math.min(steps.length-1,step+d));render(); };
+  render();
+}
+function finishUpdateSetup1E(){
+  if(localStorage.getItem(PREFIX+'license_agreed_update')!=='true'){
+    notify('Agreement required','You must agree to the Emerald Systems TOS and virtual license before completing Update Setup.','Update Setup'); return;
+  }
+  localStorage.setItem(PREFIX+'update_setup_done','true');
+  localStorage.setItem(PREFIX+'license_version','Gold_1E');
+  localStorage.setItem(PREFIX+'license_time',now());
+  $('setupWizard')?.classList.add('hidden');
+  notify('Update setup complete','EmeraldOS Gold 1E is ready.','Update Setup');
+  saveWorkspaceNow?.(true);
+}
+function gold1eInstallUpdateSetup(){
+  const migrated=localStorage.getItem(PREFIX+'updated_from')||localStorage.getItem('gold1e_migrated_from_gold1d')==='true';
+  const firstDone=localStorage.getItem(PREFIX+'setup_done')==='true';
+  if(migrated && firstDone && localStorage.getItem(PREFIX+'update_setup_done')!=='true') setTimeout(openUpdateSetup1E,1100);
+}
+function openTaskManager1E(){
+  const wins=[...document.querySelectorAll('.window')];
+  const storage=fmtBytes(bytes(localStorage));
+  const rows=wins.map(w=>`<tr><td>${esc(w.dataset.title||w.id)}</td><td>${w.classList.contains('minimized')?'Suspended':'Running'}</td><td>${w.classList.contains('max')?'Maximized':'Windowed'}</td><td><button class="btn small" onclick="Gold50.focusWindow('${w.id}')">Switch</button><button class="btn small" onclick="Gold50.minimizeWin('${w.id}')">Minimize</button><button class="btn small danger" onclick="Gold50.closeWin('${w.id}');Gold50.openApp('taskmanager')">End task</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">No running app windows.</td></tr>';
+  openWindow('taskmanager','Task Manager',`<div class="taskmgr"><h2>Task Manager</h2><div class="taskmgr-stats"><div><b>${wins.length}</b><span>Open windows</span></div><div><b>${visibleApps().length}</b><span>Available apps</span></div><div><b>${storage}</b><span>Local VM storage</span></div><div><b>${document.visibilityState}</b><span>Session state</span></div></div><div class="toolbar"><button class="btn" onclick="Gold50.tileEmeraldOS()">Tile windows</button><button class="btn" onclick="Gold50.cascadeEmeraldOS()">Cascade</button><button class="btn danger" onclick="Gold50.closeAllEmeraldOS();Gold50.openApp('taskmanager')">End all windows</button><button class="btn" onclick="Gold50.saveWorkspaceNow(true)">Save VM state</button></div><h3>Processes</h3><table class="gold-table"><thead><tr><th>App</th><th>Status</th><th>View</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`,{width:960,height:680});
+}
+function openStaffMailPortal1E(){
+  if(!isStaff()){notify('Staff login required','Open Staff Edition and verify your staff account to access Staff Mail Portal.','Staff'); location.href='staff.html'; return;}
+  openWindow('staffmail','Staff Mail Portal',`<div class="iframe-app"><div class="toolbar"><b>Emerald Mail Staff Portal</b><span class="muted">mail.monroecorp.org</span><button class="btn" onclick="window.open('https://mail.monroecorp.org','_blank')">Open new tab</button></div><iframe src="https://mail.monroecorp.org" title="Emerald Mail"></iframe><p class="muted">If the site blocks iframe loading, use Open new tab.</p></div>`,{width:1180,height:760});
+}
+function openGoldGames1E(){
+  openWindow('games','Gold Games',`<h2>Gold Games</h2><p class="muted">Built-in offline games for EmeraldOS Gold. Scores stay inside your VM profile.</p><div class="games-grid"><div class="game-card"><h3>Gold Clicker</h3><p>Simple score challenge.</p><button class="btn primary" onclick="Gold50.openGameClicker1E()">Play</button></div><div class="game-card"><h3>Memory Match</h3><p>Match Emerald cards.</p><button class="btn primary" onclick="Gold50.openGameMemory1E()">Play</button></div><div class="game-card"><h3>Gold Blocks</h3><p>Mini block counter puzzle.</p><button class="btn primary" onclick="Gold50.openGameBlocks1E()">Play</button></div></div>`,{width:820,height:560});
+}
+function openGameClicker1E(){let score=Number(localStorage.getItem(PREFIX+'clicker_score')||0);openWindow('game_clicker','Gold Clicker',`<h2>Gold Clicker</h2><div class="clicker-score" id="clicker_score">${score}</div><button class="btn primary big-game-btn" onclick="Gold50.gameClick1E()">Collect Gold</button><button class="btn" onclick="localStorage.setItem('${PREFIX}clicker_score','0');Gold50.openGameClicker1E()">Reset</button>`,{width:520,height:420})}
+function gameClick1E(){let s=Number(localStorage.getItem(PREFIX+'clicker_score')||0)+1;localStorage.setItem(PREFIX+'clicker_score',String(s));const el=$('clicker_score');if(el)el.textContent=s;}
+function openGameMemory1E(){const symbols=['G','E','★','◆','G','E','★','◆'].sort(()=>Math.random()-.5);write(PREFIX+'memory_board',symbols.map((s,i)=>({i,s,open:false,done:false})));write(PREFIX+'memory_pick',[]);renderMemory1E()}
+function renderMemory1E(){const b=read(PREFIX+'memory_board',[]);openWindow('game_memory','Memory Match',`<h2>Memory Match</h2><div class="memory-board">${b.map(c=>`<button class="memory-card ${c.open||c.done?'open':''}" onclick="Gold50.memoryPick1E(${c.i})">${c.open||c.done?esc(c.s):'?'}</button>`).join('')}</div><button class="btn" onclick="Gold50.openGameMemory1E()">New game</button>`,{width:560,height:520})}
+function memoryPick1E(i){let b=read(PREFIX+'memory_board',[]),p=read(PREFIX+'memory_pick',[]);const c=b.find(x=>x.i===i);if(!c||c.done||c.open)return;c.open=true;p.push(i);if(p.length===2){const [a,bid]=p.map(id=>b.find(x=>x.i===id));if(a&&bid&&a.s===bid.s){a.done=bid.done=true}else setTimeout(()=>{let nb=read(PREFIX+'memory_board',[]);nb.forEach(x=>{if(!x.done)x.open=false});write(PREFIX+'memory_board',nb);renderMemory1E()},700);p=[]}write(PREFIX+'memory_board',b);write(PREFIX+'memory_pick',p);renderMemory1E()}
+function openGameBlocks1E(){const state=read(PREFIX+'blocks_state',{turns:12,score:0});openWindow('game_blocks','Gold Blocks',`<h2>Gold Blocks</h2><p class="muted">Pick blocks. Gold gives points, gray costs a turn.</p><div class="taskmgr-stats"><div><b>${state.score}</b><span>Score</span></div><div><b>${state.turns}</b><span>Turns</span></div></div><div class="blocks-board">${Array.from({length:12},(_,i)=>`<button class="block" onclick="Gold50.blocksPick1E(${i})">■</button>`).join('')}</div><button class="btn" onclick="localStorage.removeItem('${PREFIX}blocks_state');Gold50.openGameBlocks1E()">Reset</button>`,{width:560,height:520})}
+function blocksPick1E(i){let s=read(PREFIX+'blocks_state',{turns:12,score:0});if(s.turns<=0)return; s.turns--; s.score+=Math.random()>.35?10:-3; write(PREFIX+'blocks_state',s); if(s.turns<=0)notify('Gold Blocks finished','Final score: '+s.score,'Gold Games'); openGameBlocks1E()}
+function openUpdatePublisherManager1E(){
+  if(!isStaff()){notify('Staff login required','You must be logged into Staff Edition to access Update Publisher Manager.','System Update');location.href='staff.html';return;}
+  const unlocked=localStorage.getItem(PREFIX+'publisher_unlocked')==='true';
+  openWindow('updatepublisher','Update Publisher Manager',`<h2>Update Publisher Manager</h2><p class="muted">Staff-only E.L.S.U.S. release publishing. Requires Staff Edition and the publisher PIN.</p>${!unlocked?`<div class="card"><h3>PIN required</h3><input class="field" id="publisher_pin" type="password" placeholder="Publisher PIN"><button class="btn primary" onclick="Gold50.unlockPublisher1E(document.getElementById('publisher_pin').value)">Unlock</button></div>`:`<div class="card success-card"><h3>Publisher unlocked</h3><p>Gold 1E can now publish its Firebase latest pointer for this staff session.</p></div><div class="toolbar"><button class="btn primary" onclick="Gold50.gold1ePublishLatest(true)">Publish Gold 1E as latest</button><button class="btn" onclick="Gold50.gold1ePublishRollback1D()">Emergency rollback to Gold 1D</button></div>`}<div class="card"><h3>Current manifest</h3><pre>${esc(JSON.stringify(GOLD1E_MANIFEST,null,2))}</pre></div>`,{width:940,height:720});
+}
+function unlockPublisher1E(pin){if(String(pin||'')===GOLD1E_PUBLISHER_PIN_FINAL){localStorage.setItem(PREFIX+'publisher_unlocked','true');notify('Publisher unlocked','Update Publisher Manager is available for this staff session.','System Update');openUpdatePublisherManager1E()}else notify('Incorrect PIN','The Update Publisher Manager PIN was not accepted.','System Update')}
+async function gold1ePublishLatest(showResult=true){
+  if(!isStaff()||localStorage.getItem(PREFIX+'publisher_unlocked')!=='true') {openUpdatePublisherManager1E();return false;}
+  try{const api=fb||await initFirebase(); if(!api) throw new Error('Firebase module did not load.'); await api.setDoc(api.doc(api.db,'system','emeraldGoldLatest'), GOLD1E_MANIFEST,{merge:true}); localStorage.setItem(PREFIX+'latest_manifest_published','true'); write('emeraldGoldShell_latest',GOLD1E_MANIFEST); if(showResult)notify('E.L.S.U.S. updated','system/emeraldGoldLatest now points to Gold_1E.','System Update'); return true;}catch(e){console.warn('Gold 1E publish failed',e); if(showResult)notify('Publish failed',e.message,'System Update'); return false;}
+}
+async function gold1ePublishRollback1D(){
+  if(!isStaff()||localStorage.getItem(PREFIX+'publisher_unlocked')!=='true') return openUpdatePublisherManager1E();
+  const rollback={...GOLD1E_MANIFEST,latestVersion:'1D',build:'1D',folder:'Gold_1D',status:'rollback',releaseTitle:'Emergency rollback to EmeraldOS Gold 1D',summary:'Staff emergency rollback from Gold 1E.',rollbackFrom:'Gold_1E',rolledBackAt:now()};
+  try{const api=fb||await initFirebase(); await api.setDoc(api.doc(api.db,'system','emeraldGoldLatest'), rollback,{merge:true}); notify('Rollback published','E.L.S.U.S. now points to Gold_1D.','System Update')}catch(e){notify('Rollback failed',e.message,'System Update')}
+}
+function gold1eInstallApps(){
+  gold1eUpsertApp({id:'taskmanager',name:'Task Manager',label:'TM',color:'blue',group:'System',purpose:'Process management',desc:'View open windows, local VM storage, session state, and end tasks.',open:openTaskManager1E});
+  gold1eUpsertApp({id:'staffmail',name:'Staff Mail Portal',label:'SM',color:'teal',group:'Staff',purpose:'Staff webmail portal',desc:'Staff-only Emerald Mail portal through mail.monroecorp.org.',staffOnly:true,open:openStaffMailPortal1E});
+  gold1eUpsertApp({id:'games',name:'Gold Games',label:'GG',color:'gold',group:'Games',purpose:'Built-in games',desc:'Offline EmeraldOS Gold games hub.',open:openGoldGames1E});
+  gold1eUpsertApp({id:'updatepublisher',name:'Update Publisher Manager',label:'UP',color:'red',group:'Staff',purpose:'Staff E.L.S.U.S. publishing',desc:'Staff-only update publishing with publisher PIN.',staffOnly:true,open:openUpdatePublisherManager1E});
+  const upd=APPS.find(a=>a.id==='updateshell'); if(upd){upd.name='E.L.S.U.S. System Update'; upd.desc='Check and manually apply E.L.S.U.S. updates.';}
+  const staff=APPS.find(a=>a.id==='staff'); if(staff)staff.staffOnly=true;
+  const sr=APPS.find(a=>a.id==='staffresources'); if(sr)sr.staffOnly=true;
+}
+// Tighten publish functions from earlier layers so publishing is staff + PIN only in Gold 1E.
+gold1ePublishLatestManifest = gold1ePublishLatest;
+gold1ePublishLatest = gold1ePublishLatest;
+function gold1eSafeRenderAll(){try{applyPrefs();renderDesktop();renderStartMenu();renderTaskApps();}catch(e){console.warn('Gold 1E render refresh failed',e)}}
+Object.assign(window.Gold50||{}, {gold1eLicenseText,gold1eLicenseHTML,gold1eCopyLicense,gold1eSetLicenseAgreement,gold1eSetupStep:null,openUpdateSetup1E,finishUpdateSetup1E,updateSetupStep1E:null,openTaskManager1E,openStaffMailPortal1E,openGoldGames1E,openGameClicker1E,gameClick1E,openGameMemory1E,memoryPick1E,openGameBlocks1E,blocksPick1E,openUpdatePublisherManager1E,unlockPublisher1E,gold1ePublishLatest,gold1ePublishRollback1D});
+window.Gold1E=window.Gold50;
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{gold1eInstallApps();gold1eInstallUpdateSetup();gold1eSafeRenderAll();}catch(e){console.warn('Gold 1E layer failed',e)}},1300));
+if(new URLSearchParams(location.search).has('publishLatest')) setTimeout(()=>openUpdatePublisherManager1E(),1700);
+
+})();

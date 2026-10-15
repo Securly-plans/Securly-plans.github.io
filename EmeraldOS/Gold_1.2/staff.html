@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Staff Edition</title>
+<link rel="icon" type="image/svg+xml" href="emerald-gold-logo.svg">
+<link rel="stylesheet" href="gold12.css">
+<style>body{display:grid;place-items:center}.staff-login{width:min(920px,94vw);background:var(--panel-solid);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:320px 1fr}.brand{background:linear-gradient(160deg,#0078d4,#c58a00);color:white;padding:30px}.form{padding:30px}.staff-tools{display:none}.ok .login-only{display:none}.ok .staff-tools{display:block}@media(max-width:760px){.staff-login{grid-template-columns:1fr}.brand{display:none}}</style>
+<script type="module">
+let fb=null, db=null;const PREFIX='gold12_';
+const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[m]));
+async function hash(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function loadFirebase(){try{fb=await import('./firebase.js');db=fb.db}catch(e){console.warn('Firebase unavailable',e)}}
+function saveSession(s){localStorage.setItem(PREFIX+'staffSession',JSON.stringify(s));document.body.classList.add('ok');renderTools(s)}
+function preview(){saveSession({username:'StaffPreview',mail:'preview@gold.mail',role:'preview',loginAt:new Date().toISOString(),expiresAt:Date.now()+1000*60*60*8})}
+async function login(){const user=$('user').value.trim(),pass=$('pass').value,mail=$('mail').value.trim(),mailpass=$('mailpass').value;if(!user||!pass||!mail||!mailpass){$('status').textContent='Enter all credentials.';return}let verified=false,role='staff';try{await loadFirebase();if(fb&&db&&fb.collection&&fb.getDocs){const ph=await hash(pass),mh=await hash(mailpass);const users=await fb.getDocs(fb.collection(db,'users'));users.forEach(doc=>{const d=doc.data();if(String(d.username||doc.id).toLowerCase()===user.toLowerCase()&&(!d.passwordHash||d.passwordHash===ph)&&['admin','moderator','mod','operator','staff','executive','owner','vip'].includes(String(d.role||'').toLowerCase())){verified=true;role=d.role||'staff'}});let mailOK=false;const mails=await fb.getDocs(fb.collection(db,'EmeraldMail'));mails.forEach(doc=>{const d=doc.data();if(String(d.email||doc.id).toLowerCase()===mail.toLowerCase()&&(!d.passwordHash||d.passwordHash===mh))mailOK=true});verified=verified&&mailOK}}catch(e){console.warn(e);$('status').textContent='Firebase verification unavailable. You may use preview mode for testing.'}if(verified)saveSession({username:user,mail,role,loginAt:new Date().toISOString(),expiresAt:Date.now()+1000*60*60*8});else $('status').textContent='Staff verification failed. Use preview only for local testing.'}
+function renderTools(s){$('tools').innerHTML=`<h2>Staff Edition Active</h2><p>${esc(s.username)} · ${esc(s.mail)} · ${esc(s.role)}</p><div class="grid3"><div class="card"><h3>Open Gold</h3><button class="btn primary" onclick="location.href='OS.html'">Open EmeraldOS Gold</button></div><div class="card"><h3>BIOS / DOS</h3><button class="btn" onclick="location.href='bios.html'">Open BIOS</button></div><div class="card"><h3>Workspace</h3><button class="btn" onclick="downloadBackup()">Export Local Workspace</button></div><div class="card"><h3>Local users</h3><p>${localStorage.getItem('username')||'No local user key'}</p></div><div class="card"><h3>Safety</h3><button class="btn danger" onclick="logout()">Staff Logout</button></div></div>`}
+function downloadBackup(){const data={when:new Date().toISOString(),keys:Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith(PREFIX)).map(k=>[k,localStorage.getItem(k)]))};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='gold12-staff-backup.json';a.click()}
+function logout(){localStorage.removeItem(PREFIX+'staffSession');location.reload()}
+window.staffLogin=login;window.staffPreview=preview;window.logout=logout;window.downloadBackup=downloadBackup;
+window.addEventListener('DOMContentLoaded',()=>{try{const s=JSON.parse(localStorage.getItem(PREFIX+'staffSession')||'null');if(s&&s.expiresAt>Date.now())saveSession(s)}catch{}});
+</script>
+</head>
+<body class="gold12">
+<div class="staff-login">
+  <aside class="brand"><div class="gold-logo-xl">G</div><h1>EmeraldOS Gold Staff Edition</h1><p>Login with an EmeraldOS account and Emerald Mail account for staff controls.</p><p>BIOS command: <b>STAFF</b></p></aside>
+  <main class="form">
+    <section class="login-only">
+      <h2>Staff Edition Login</h2>
+      <div class="grid2"><input id="user" class="field" placeholder="EmeraldOS username"><input id="pass" type="password" class="field" placeholder="EmeraldOS password"><input id="mail" type="email" class="field" placeholder="Emerald Mail account"><input id="mailpass" type="password" class="field" placeholder="Emerald Mail password"></div>
+      <div class="toolbar"><button class="btn primary" onclick="staffLogin()">Login</button><button class="btn" onclick="staffPreview()">Preview Mode</button><button class="btn" onclick="location.href='OS.html'">Back to Gold</button></div>
+      <p id="status" class="muted"></p>
+    </section>
+    <section id="tools" class="staff-tools"></section>
+  </main>
+</div>
+</body>
+</html>

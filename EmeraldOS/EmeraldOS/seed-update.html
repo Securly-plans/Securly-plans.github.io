@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold Update Seeder</title>
+<link rel="stylesheet" href="gold-shell.css">
+<style>
+body{padding:24px;display:block;height:auto;min-height:100%}.seed-wrap{max-width:980px;margin:auto}.codebox{white-space:pre-wrap;background:#0f172a;color:#dbeafe;border-radius:12px;padding:14px;font-family:Consolas,monospace;font-size:12px;overflow:auto}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="seed-wrap">
+  <section class="shell-card" style="width:100%">
+    <h1>EmeraldOS Gold Shell Update Seeder</h1>
+    <p>This page writes the latest version pointer to Firebase. Use it to test routing from <b>Gold_T.U.1</b> to <b>Gold_T.U.2</b> while keeping the same cloud VM data.</p>
+    <div class="button-row">
+      <button id="seedTu1" class="primary">Set latest to T.U.1</button>
+      <button id="seedTu2" class="primary">Set latest to T.U.2</button>
+      <button id="copyTu2">Copy T.U.2 JSON</button>
+      <button onclick="location.href='gold-shell.html'">Open shell</button>
+    </div>
+    <div id="seedStatus" class="message">Loading Firebase...</div>
+  </section>
+  <div class="grid2" style="margin-top:16px">
+    <section class="shell-card" style="width:100%">
+      <h2>T.U.1 manifest</h2>
+      <div id="tu1Json" class="codebox"></div>
+    </section>
+    <section class="shell-card" style="width:100%">
+      <h2>T.U.2 manifest</h2>
+      <div id="tu2Json" class="codebox"></div>
+    </section>
+  </div>
+</div>
+<script type="module">
+const statusEl = document.getElementById('seedStatus');
+const TU1 = {
+  product: 'EmeraldOS Gold',
+  latestVersion: 'T.U.1',
+  folder: 'Gold_T.U.1',
+  entry: 'OS.html',
+  channel: 'stable',
+  status: 'test',
+  releaseTitle: 'EmeraldOS Gold T.U.1 Shell Test',
+  summary: 'Initial shell-routed test build.',
+  setupMode: 'full',
+  required: false,
+  updatedAt: new Date().toISOString()
+};
+const TU2 = {
+  product: 'EmeraldOS Gold',
+  latestVersion: 'T.U.2',
+  folder: 'Gold_T.U.2',
+  entry: 'OS.html',
+  channel: 'stable',
+  status: 'test',
+  releaseTitle: 'EmeraldOS Gold T.U.2 Shell Update Test',
+  summary: 'Updated folder loaded by shell, keeping cloud VM data and setup state.',
+  setupMode: 'continue',
+  required: false,
+  migrationFrom: ['T.U.1'],
+  updatedAt: new Date().toISOString()
+};
+document.getElementById('tu1Json').textContent = JSON.stringify(TU1, null, 2);
+document.getElementById('tu2Json').textContent = JSON.stringify(TU2, null, 2);
+let fb = null;
+try{
+  fb = await import('./firebase.js');
+  statusEl.textContent = 'Firebase loaded. Choose which update pointer to publish.';
+}catch(err){
+  statusEl.textContent = 'Firebase module did not load: ' + err.message;
+}
+async function seed(data){
+  if(!fb){ statusEl.textContent = 'Firebase is unavailable.'; return; }
+  const payload = {...data, updatedAt: new Date().toISOString(), updatedBy:'EmeraldOS Gold Update Seeder'};
+  try{
+    await fb.setDoc(fb.doc(fb.db,'system','emeraldGoldLatest'), payload, {merge:true});
+    await fb.setDoc(fb.doc(fb.db,'system','emeraldGoldChannels_stable'), payload, {merge:true});
+    statusEl.textContent = `Latest pointer set to ${payload.latestVersion} (${payload.folder}).`;
+  }catch(err){
+    statusEl.textContent = 'Firebase write failed. Check Firestore rules: ' + err.message;
+  }
+}
+document.getElementById('seedTu1').onclick = () => seed(TU1);
+document.getElementById('seedTu2').onclick = () => seed(TU2);
+document.getElementById('copyTu2').onclick = async () => {
+  await navigator.clipboard.writeText(JSON.stringify(TU2, null, 2));
+  statusEl.textContent = 'Copied T.U.2 JSON.';
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BuildNow.GG</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    body {
+        font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Arial,
+            sans-serif;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background:
+            radial-gradient(
+                circle at top,
+                #243b55 0%,
+                #141e30 45%,
+                #090d14 100%
+            );
+
+        color: white;
+    }
+
+    .container {
+        width: min(650px, 90%);
+        padding: 50px 40px;
+
+        text-align: center;
+
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+
+        border-radius: 20px;
+
+        box-shadow:
+            0 25px 70px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+    }
+
+    .logo {
+        width: 90px;
+        height: 90px;
+
+        margin: 0 auto 25px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 22px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #4facfe,
+                #00f2fe
+            );
+
+        box-shadow:
+            0 12px 35px rgba(0, 180, 255, 0.35);
+
+        font-size: 42px;
+        font-weight: 800;
+
+        color: white;
+    }
+
+    h1 {
+        margin: 0;
+
+        font-size: 42px;
+        font-weight: 750;
+
+        letter-spacing: -1px;
+    }
+
+    .subtitle {
+        margin: 15px 0 35px;
+
+        color: rgba(255, 255, 255, 0.72);
+
+        font-size: 17px;
+        line-height: 1.6;
+    }
+
+    .launch-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        min-width: 270px;
+
+        padding: 16px 28px;
+
+        border: 0;
+        border-radius: 12px;
+
+        background:
+            linear-gradient(
+                135deg,
+                #2196f3,
+                #00bcd4
+            );
+
+        color: white;
+
+        font-size: 17px;
+        font-weight: 700;
+
+        text-decoration: none;
+
+        cursor: pointer;
+
+        box-shadow:
+            0 10px 30px rgba(0, 188, 212, 0.3);
+
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            filter 0.2s ease;
+    }
+
+    .launch-button:hover {
+        transform: translateY(-3px);
+
+        box-shadow:
+            0 15px 38px rgba(0, 188, 212, 0.45);
+
+        filter: brightness(1.08);
+    }
+
+    .launch-button:active {
+        transform: translateY(0);
+
+        box-shadow:
+            0 7px 20px rgba(0, 188, 212, 0.3);
+    }
+
+    .arrow {
+        margin-left: 10px;
+
+        font-size: 21px;
+
+        transition:
+            transform 0.2s ease;
+    }
+
+    .launch-button:hover .arrow {
+        transform: translateX(5px);
+    }
+
+    .footer {
+        margin-top: 30px;
+
+        color: rgba(255, 255, 255, 0.4);
+
+        font-size: 12px;
+    }
+
+    @media (max-width: 500px) {
+
+        .container {
+            padding: 40px 25px;
+        }
+
+        h1 {
+            font-size: 34px;
+        }
+
+        .launch-button {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+</style>
+
+</head>
+
+<body>
+
+<main class="container">
+
+    <div class="logo">
+        B
+    </div>
+
+    <h1>BuildNow.GG</h1>
+
+    <p class="subtitle">
+        Ready to play? Launch BuildNow.GG and start building.
+    </p>
+
+    <a
+        class="launch-button"
+        href="https://securly-plans.github.io/games/Buildnow.GG/"
+    >
+        Redirect to Buildnow.GG
+        <span class="arrow">→</span>
+    </a>
+
+    <div class="footer">
+        BuildNow.GG
+    </div>
+
+</main>
+
+</body>
+</html>

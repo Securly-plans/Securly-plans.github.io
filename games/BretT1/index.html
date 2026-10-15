@@ -1,0 +1,67 @@
+<html data-theme="dark">
+  <head>
+    <title>BuildNow GG</title>
+    <link rel="stylesheet" href="game-loader/gameloader2020.css" />
+    <script src="game-loader/gameloader2020.js"></script>
+    <script src="game-loader/gameloader-helper.js"></script>
+    <link href="style/daisyui.min.css" rel="stylesheet" type="text/css" />
+    <link href="style/fontawesome.min.css" rel="stylesheet" type="text/css" />
+    <script src="scripts/tailwindcss.js"></script>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  </head>
+  <body>
+    <div class="game">
+      <div id="game-container">
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <div id="loadingBlock" class="">
+        <!-- Loading screen area (fuzzy start) -->
+        <div class="jss1 flex items-center justify-center bg-base-100 text-base-content">
+          <div class="items-center justify-center gap-10 bg-base-200 p-5 rounded-xl shadow-md">
+            <!-- Loader Logo -->
+            <div class="flex btn btn-ghost text-3xl bg-base-100">
+              <span class="text-success">BUILD</span>
+              <span class="text-info">NOW</span>
+              <span class="text-primary">GG</span>
+            </div>
+
+            <!-- Loading Status -->
+            <div class="flex flex-col items-center justify-center mt-6">
+              <div class="gameloader-progressbar invisible">
+                <div class="gameloader-progressbar-progress" style="width: 100%"></div>
+              </div>
+              <progress id="loadingBar" class="progress w-56" value="100" max="100"></progress>
+              <div id="loadingText" class="gameloader-progress-info neutral-content mt-4">Game Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hidden Jaz -->
+      <div id="game-footer-logo-url" class="invisible"></div>
+      <div id="game-footer-more-url" class="invisible"></div>
+      <div class="gameloader-game-name invisible"></div>
+    </div>
+
+    <script src="scripts/index.js"></script>
+    <script type="text/javascript">
+      var options = {
+        author: "Vseigru, cloudirector",
+        gameName: "BuildNow GG",
+        locale: "en_US",
+        allowFullscreen: true,
+        loaderOptions: {
+          unityLoaderUrl: "Build/BuildNow.loader.js",
+          unityConfigOptions: {
+            dataUrl: "Build/BuildNow.data",
+            frameworkUrl: "Build/BuildNow.framework.js",
+            codeUrl: "Build/BuildNow.wasm",
+          },
+        },
+      };
+      GameInit.load(options);
+    </script>
+  </body>
+</html>

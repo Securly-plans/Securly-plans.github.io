@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Silver Advanced</title>
+<link rel="icon" href="https://securly-plans.github.io/EmeraldOS/assets/EmeraldOS.png">
+<link rel="stylesheet" href="os.css">
+<link rel="stylesheet" href="silver-advanced.css">
+<script type="module" src="os.js"></script>
+<script type="module" src="emerald57.js"></script>
+<script src="silver-advanced.js"></script>
+</head>
+<body data-theme="silver-advanced" data-silver-product="EmeraldOS Silver Advanced">
+    <div id="desktop"></div>
+    <div id="context-menu"></div>
+    <div id="start-menu">
+        <div class="start-side">Advanced</div>
+        <div class="start-main">
+            <input id="start-search" placeholder="Search Silver Advanced apps, files, settings, and tools">
+            <div id="start-results"></div>
+            <hr>
+            <div class="start-item" onclick="openSilverAdvancedHome()">Silver Advanced Home</div>
+            <div class="start-item" onclick="openSilverAdvancedExplorer()">Silver Explorer</div>
+            <div class="start-item" onclick="openSilverAdvancedOffice()">Silver Office</div>
+            <div class="start-item" onclick="openSilverAdvancedCommunications()">Communications</div>
+            <div class="start-item" onclick="openSilverAdvancedStore()">Store & Creator</div>
+            <div class="start-item" onclick="openSilverAdvancedSettings()">Settings</div>
+            <div class="start-item" onclick="openSilverAdvancedActionCenter()">Action Center</div>
+            <div class="start-item" onclick="openSilverAdvancedTaskView()">Task View</div>
+            <div class="start-item" onclick="restartOS()">Restart Silver Advanced</div>
+            <div class="start-item" onclick="logoutUser()">Logout</div>
+        </div>
+    </div>
+    <div id="taskbar">
+        <button id="start-btn" title="EmeraldOS Silver Advanced">Advanced</button>
+        <button id="silver-advanced-search" title="Search" onclick="openSilverAdvancedSearch()">Search</button>
+        <button id="silver-advanced-taskview" title="Task View" onclick="openSilverAdvancedTaskView()">Task View</button>
+        <div id="taskbar-apps"></div>
+        <button id="silver-advanced-bell" title="Action Center" onclick="openSilverAdvancedActionCenter()">0</button>
+        <button id="silver-advanced-sync" title="Sync" onclick="openSilverAdvancedRestoreCenter()">Sync</button>
+        <div id="emerald40-edition-badge"></div>
+        <div id="emerald40-build-badge">Silver Advanced</div>
+        <div id="clock"></div>
+    </div>
+    <div id="windows-container"></div>
+</body>
+</html>

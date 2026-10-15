@@ -1,0 +1,22 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1B",
+  "build": "1B",
+  "folder": "Gold_1B",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "updateSetup",
+  "releaseTitle": "EmeraldOS Gold 1B",
+  "summary": "Built off Gold 1A with Update Setup for migrated users, First-Boot Setup for new users, essential desktop defaults, and Classic right-click pinning for apps and files.",
+  "migrationFrom": [
+    "1A"
+  ],
+  "migrationId": "gold1a-to-gold1b",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1A",
+  "rollbackVersion": "1A",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}

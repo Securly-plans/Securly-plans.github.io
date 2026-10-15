@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Register — EmeraldOS Gold 1V</title>
+  <link rel="icon" href="emerald-gold-1v-logo.svg">
+  <link rel="stylesheet" href="auth.css">
+  <script src="gold1v-user-isolation.js"></script>
+  <script defer src="auth-common.js"></script>
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="brand">
+      <img src="emerald-gold-1v-logo.svg" alt="EmeraldOS Gold 1V">
+      <h1>Create your Gold VM</h1>
+      <p>Registration creates an EmeraldOS account and a version-independent E.L.S.U.S. workspace.</p>
+    </section>
+
+    <main class="auth-card">
+      <h2>Create account</h2>
+      <p class="muted">First-Boot Setup runs once across compatible Gold versions.</p>
+
+      <form id="registerForm" novalidate>
+        <label for="displayName">Display name</label>
+        <input id="displayName" name="displayName" autocomplete="name">
+
+        <label for="email">Email address <span class="optional">(optional)</span></label>
+        <input id="email" name="email" type="email" autocomplete="email">
+
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required>
+
+        <label for="confirmPassword">Confirm password</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+
+        <div class="actions">
+          <button id="registerButton" class="primary" type="submit">Create account</button>
+          <button id="backButton" type="button">Back to sign in</button>
+        </div>
+      </form>
+
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("registerForm");
+      const displayNameInput = document.getElementById("displayName");
+      const emailInput = document.getElementById("email");
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const confirmInput = document.getElementById("confirmPassword");
+      const registerButton = document.getElementById("registerButton");
+      const backButton = document.getElementById("backButton");
+      const messageBox = document.getElementById("message");
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        messageBox.className = "message";
+        messageBox.textContent = "Creating account…";
+        registerButton.disabled = true;
+
+        try {
+          if (passwordInput.value !== confirmInput.value) {
+            throw new Error("Passwords do not match.");
+          }
+          const user = await GoldAuth.register(
+            usernameInput.value,
+            passwordInput.value,
+            displayNameInput.value,
+            emailInput.value
+          );
+          await GoldAuth.beginSession(user);
+          messageBox.className = "message success";
+          messageBox.textContent = user.cloud
+            ? "Cloud account created. Starting First-Boot Setup…"
+            : "Local recovery account created. Cloud registration may require updated Firestore rules.";
+          setTimeout(() => location.href = "loading.html", 450);
+        } catch (error) {
+          messageBox.className = "message";
+          messageBox.textContent = error?.message || "Account creation failed.";
+          registerButton.disabled = false;
+        }
+      });
+
+      backButton.addEventListener("click", () => location.href = "index.html");
+    });
+  </script>
+</body>
+</html>

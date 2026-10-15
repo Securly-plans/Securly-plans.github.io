@@ -1,0 +1,13 @@
+{
+  "name": "ubg235",
+  "description": "ubg235",
+  "short_name": "ubg235",
+  "icons": [    
+    {
+      "src": "https://cdn.jsdelivr.net/gh/genizy/gh/patch/images/null.png",
+      "sizes": "512x512",
+      "purpose": "maskable",
+      "type": "image/png"
+    }
+  ]
+}

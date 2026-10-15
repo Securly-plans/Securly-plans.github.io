@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Playing Game - Emerald</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+
+:root{
+    --win-bg:#008080;
+    --win-gray:#c0c0c0;
+    --win-dark:#808080;
+    --win-light:#ffffff;
+    --win-text:#000;
+}
+
+*{
+    box-sizing:border-box;
+    font-family:"Tahoma","MS Sans Serif",Arial;
+}
+
+body{
+    margin:0;
+    background:var(--win-bg);
+    color:var(--win-text);
+}
+
+/* ================= MAIN WINDOW ================= */
+
+.play-container{
+    max-width:900px;
+    margin:40px auto;
+    padding:10px;
+    background:var(--win-gray);
+    border:2px solid var(--win-dark);
+    border-top:2px solid var(--win-light);
+    border-left:2px solid var(--win-light);
+}
+
+/* ================= BACK BUTTON ================= */
+
+.back-btn{
+    display:inline-block;
+    margin-bottom:10px;
+    padding:4px 10px;
+    background:var(--win-gray);
+    border:2px outset var(--win-light);
+    color:#000;
+    text-decoration:none;
+    font-size:12px;
+}
+
+.back-btn:active{
+    border:2px inset var(--win-dark);
+}
+
+/* ================= VIDEO WINDOW ================= */
+
+.video-wrapper{
+    position:relative;
+    padding-bottom:56.25%;
+    height:0;
+
+    background:#000;
+
+    border:2px inset var(--win-dark);
+}
+
+/* iframe fill */
+.video-wrapper iframe{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+/* ================= INFO PANEL ================= */
+
+.game-info{
+    margin-top:10px;
+    padding:10px;
+
+    background:var(--win-gray);
+
+    border:2px inset var(--win-dark);
+}
+
+.game-info h1{
+    font-size:18px;
+    margin:0 0 6px;
+}
+
+.game-info p{
+    font-size:12px;
+    margin:0;
+}
+
+/* ================= BUTTON ================= */
+
+.fullscreen-btn{
+    margin-top:10px;
+    padding:6px 12px;
+
+    background:var(--win-gray);
+    border:2px outset var(--win-light);
+
+    color:#000;
+    font-weight:bold;
+    font-size:12px;
+
+    cursor:pointer;
+}
+
+.fullscreen-btn:active{
+    border:2px inset var(--win-dark);
+}
+
+/* ================= OPTIONAL WINDOW EFFECT ================= */
+
+.play-container{
+    box-shadow:2px 2px 0 #000;
+}
+
+</style>
+    <!-- LOGIN CHECK -->
+
+    <script>
+
+        (function(){
+
+            const isLoggedIn =
+                localStorage.getItem(
+                    "loggedIn"
+                ) === "true";
+
+            if(!isLoggedIn){
+
+                window.location.replace(
+                    "index.html"
+                );
+
+            }
+
+        })();
+
+    </script>
+
+    <!-- SESSION HANDLER -->
+
+    <script
+        type="module"
+        src="js/session.js"
+    ></script>
+
+    <script type="module" src="js/playtime.js"></script>
+
+</head>
+
+<body>
+
+    <div class="play-container">
+
+        <a
+            href="home.html"
+            class="back-btn"
+        >
+            ← Back to Games
+        </a>
+
+        <div class="video-wrapper">
+
+            <iframe
+                id="gameFrame"
+                src=""
+                allowfullscreen
+            ></iframe>
+
+        </div>
+
+        <button
+            id="fullscreenBtn"
+            class="fullscreen-btn"
+        >
+            Full Screen
+        </button>
+
+        <div class="game-info">
+
+            <h1 id="gameTitle">
+                Loading...
+            </h1>
+
+            <p id="gameDescription">
+                Select a game to start playing.
+            </p>
+
+        </div>
+
+    </div>
+
+    <script src="play-logic.js"></script>
+
+    <script>
+
+        document
+            .getElementById(
+                "fullscreenBtn"
+            )
+            .addEventListener(
+                "click",
+                async () => {
+
+                    const iframe =
+                        document.getElementById(
+                            "gameFrame"
+                        );
+
+                    try {
+
+                        if(
+                            iframe.requestFullscreen
+                        ){
+
+                            await iframe.requestFullscreen();
+
+                        }
+                        else if(
+                            iframe.webkitRequestFullscreen
+                        ){
+
+                            await iframe.webkitRequestFullscreen();
+
+                        }
+                        else if(
+                            iframe.msRequestFullscreen
+                        ){
+
+                            await iframe.msRequestFullscreen();
+
+                        }
+
+                    } catch(err){
+
+                        console.error(
+                            "Fullscreen failed:",
+                            err
+                        );
+
+                    }
+
+                }
+            );
+
+    </script>
+
+</body>
+</html>

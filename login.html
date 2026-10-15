@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Emerald Login</title>
+
+<style>
+:root{
+    --primary:#c40000;
+    --primary-hover:#a30000;
+    --bg:#f4f4f4;
+    --card:#ffffff;
+    --text:#222;
+    --muted:#666;
+}
+
+/* PAGE CENTER */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* LOGIN CARD (ADMIN STYLE) */
+.box {
+  width: 340px;
+  background: var(--card);
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+  border-top: 5px solid var(--primary);
+  text-align: center;
+}
+
+.box h2 {
+  margin: 0 0 15px 0;
+  color: var(--primary);
+}
+
+/* INPUTS */
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus{
+  border-color: var(--primary);
+}
+
+/* BUTTONS */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  border: none;
+  transition: .2s;
+}
+
+.login {
+  background: var(--primary);
+  color: white;
+}
+
+.login:hover {
+  background: var(--primary-hover);
+}
+
+.signup {
+  background: #eee;
+  color: #444;
+  cursor: not-allowed;
+}
+
+/* TOAST SYSTEM */
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  min-width: 200px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+}
+
+.toast.success { background: #2e7d32; }
+.toast.error { background: #c62828; }
+.toast.info { background: var(--primary); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* SMALL FOOTNOTE */
+.note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+<div class="box">
+
+  <h2>Emerald</h2>
+
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+
+  <button class="login" id="loginBtn">Login</button>
+
+  <button class="signup" id="signupBtn" disabled>
+    Invite only system
+  </button>
+
+  <div class="note">
+    Need access? Contact an admin.
+  </div>
+
+</div>
+
+<!-- AUTH -->
+<script type="module" src="js/auth.js"></script>
+
+<!-- FIREBASE AUTO REDIRECT -->
+<script type="module">
+
+import { db } from "./js/firebase.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const HOME_PAGE = "home.html";
+const settingsRef = doc(db, "settings", "appConfig");
+
+let redirected = false;
+
+/* TOAST */
+function showToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 3500);
+}
+
+/* REDIRECT */
+function redirectHome() {
+  if (!redirected) {
+    redirected = true;
+    showToast("Redirecting...", "info");
+    window.location.href = HOME_PAGE;
+  }
+}
+
+function isLoggedIn() {
+  return localStorage.getItem("loggedIn") === "true";
+}
+
+try {
+
+  onSnapshot(settingsRef, (snap) => {
+
+    const autoRedirect = snap.exists()
+      ? snap.data().autoRedirect
+      : false;
+
+    if (redirected) return;
+
+    if (autoRedirect) {
+      showToast("Admin redirect enabled", "info");
+      redirectHome();
+      return;
+    }
+
+    if (isLoggedIn()) {
+      showToast("Welcome back!", "success");
+      redirectHome();
+    }
+
+  }, (error) => {
+
+    console.error(error);
+    showToast("Connection issue (offline mode)", "error");
+
+    if (isLoggedIn()) redirectHome();
+
+  });
+
+} catch (e) {
+
+  console.error(e);
+  showToast("Fatal error loading app", "error");
+
+  if (isLoggedIn()) redirectHome();
+}
+
+</script>
+
+</body>
+</html>

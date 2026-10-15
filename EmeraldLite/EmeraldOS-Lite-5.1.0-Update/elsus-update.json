@@ -1,0 +1,25 @@
+{
+  "format": "E.L.S.U.S. Lite Update Package",
+  "product": "EmeraldOS Lite",
+  "latestVersion": "5.1.0",
+  "folder": "EmeraldOS-Lite-5.1.0",
+  "entry": "index.html",
+  "releaseTitle": "EmeraldOS Lite 5.1.0 \u2014 Productivity Update",
+  "summary": "Adds Markdown Studio with live preview and My Files export, System Information with safe diagnostics export, and improves E.L.S.U.S. version tracking.",
+  "notes": [
+    "Added Markdown Studio with live preview, Markdown download, and save-to-My-Files support.",
+    "Added System Information with local environment and workspace diagnostics export.",
+    "Added launchers for the new apps to the desktop and Start menu.",
+    "Updated Lite release/version metadata to 5.1.0.",
+    "Preserves the existing encrypted workspace schema and existing apps."
+  ],
+  "migrationFrom": [
+    "5.0",
+    "5.0.0"
+  ],
+  "migrationId": "lite-5.1.0",
+  "releasedAt": "2026-10-10T15:20:00.000Z",
+  "enabled": true,
+  "status": "stable",
+  "channel": "stable"
+}

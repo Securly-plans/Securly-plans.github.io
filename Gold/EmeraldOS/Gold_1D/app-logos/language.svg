@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#22d3ee"/><stop offset="1" stop-color="#0f7b4d"/></linearGradient></defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <circle cx="22" cy="25" r="11" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="3"/>
+  <path d="M11 25h22M22 14c4 5 4 17 0 22M22 14c-4 5-4 17 0 22" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="39" y="29" font-family="Segoe UI,Arial" font-size="16" font-weight="800" fill="#fff">A</text>
+  <text x="36" y="45" font-family="Segoe UI,Arial" font-size="15" font-weight="800" fill="#fff">ñ</text>
+</svg>

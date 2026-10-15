@@ -1,0 +1,42 @@
+EmeraldOS Silver Product Line
+============================
+
+Product: EmeraldOS Silver
+Release: Alpha Version 3
+Codename: Silverglass Experience
+
+Purpose
+-------
+EmeraldOS Silver is a separate EmeraldOS product line focused on a polished silver/glass desktop experience, distinct Silver-branded applications, sidebar gadgets, a cleaner control center, and a more consumer-friendly desktop shell.
+
+What makes Silver different
+---------------------------
+- Silver Center replaces the normal product hub.
+- Silver Apps groups apps using Silver-specific names and workflows.
+- Silver Desk provides a separate dashboard experience.
+- Silver Notes, Silver Tasks, and Silver Journal store data under Silver-specific localStorage keys.
+- Silver Mail, Silver Files, Silver Office, Silver Creator Studio, and Silver Security are Silver front ends over EmeraldOS platform services.
+- Silver uses its own theme key: 40_theme = silver3.
+- Silver uses its own product key: silver_product_line = EmeraldOS Silver Alpha Version 3.
+
+Design policy
+-------------
+EmeraldOS Silver is an original EmeraldOS design. It may be inspired by glass-era desktop UI concepts, but it does not include Microsoft assets, logos, icons, wallpapers, sounds, or copied Windows materials.
+
+Roadmap
+-------
+Alpha Version 3:
+- Independent Silver shell
+- Silver-branded app suite
+- Silver Desk dashboard
+- Sidebar gadgets
+- Silver Notifications
+- Built-in Silver Notes, Tasks, and Journal
+
+Future Alpha 4 ideas:
+- Dedicated Silver file manager
+- Dedicated Silver mail client UI
+- Dedicated Silver setup wizard
+- More sidebar gadgets
+- Silver app screenshots and app previews
+- More personalization and accessibility controls

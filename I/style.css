@@ -1,0 +1,194 @@
+:root {
+    --bg: #0a0f1c;
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel2: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+
+    --text: #e8eefc;
+    --muted: #9aa4b2;
+
+    --accent: #6ea8fe;
+    --accent2: #7cdbaf;
+
+    --danger: #ff6b6b;
+}
+
+/* -----------------------
+   Base Layout
+------------------------*/
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: radial-gradient(circle at top, #111a2e, var(--bg));
+    color: var(--text);
+}
+
+h1, h2, h3 {
+    margin: 0 0 10px 0;
+}
+
+small {
+    color: var(--muted);
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* -----------------------
+   Cards (Glass UI)
+------------------------*/
+
+.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    backdrop-filter: blur(10px);
+}
+
+/* -----------------------
+   Buttons
+------------------------*/
+
+button {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #06101f;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+button.secondary {
+    background: var(--panel2);
+    color: var(--text);
+}
+
+/* -----------------------
+   Inputs (GLOBAL FIX)
+------------------------*/
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    outline: none;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+/* Fix textarea sizing */
+textarea {
+    min-height: 240px;
+    resize: vertical;
+}
+
+/* -----------------------
+   SIDEBAR FIX (IMPORTANT)
+   fixes oversized search bar issue
+------------------------*/
+
+.sidebar input {
+    width: calc(100% - 20px);
+    margin: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+/* -----------------------
+   Layout System
+------------------------*/
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 24px;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* -----------------------
+   Sidebar
+------------------------*/
+
+.sidebar {
+    width: 320px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow: hidden;
+}
+
+/* Document list items */
+.doc {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.doc:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* -----------------------
+   Main Viewer
+------------------------*/
+
+.main {
+    flex: 1;
+    padding: 24px;
+    overflow: auto;
+}
+
+/* -----------------------
+   Replies Section
+------------------------*/
+
+.replyBox {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+/* -----------------------
+   Meta / Labels
+------------------------*/
+
+.meta {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* -----------------------
+   Status Text
+------------------------*/
+
+.status {
+    margin-top: 10px;
+    color: var(--accent2);
+}

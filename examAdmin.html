@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluation Admin Panel</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f7fafc; color: #2d3748; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    h1 { color: #1a365d; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }
+    .hidden { display: none !important; }
+    .auth-section { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 0; }
+    .btn { background-color: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background-color: #2b6cb0; }
+    .btn-danger { background-color: #e53e3e; }
+    .btn-danger:hover { background-color: #c53030; }
+    .submission-item { padding: 15px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px; cursor: pointer; background: #fff; transition: transform 0.2s; }
+    .submission-item:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .grading-box { border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-top: 25px; background: #fdfdfd; }
+    .q-review { border-bottom: 1px solid #edf2f7; padding: 15px 0; }
+    .q-review img { max-width: 300px; border: 1px solid #cbd5e0; border-radius: 4px; display: block; margin-top: 10px; }
+    .grade-input { display: flex; gap: 15px; align-items: center; margin-top: 10px; }
+    .grade-input input { width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; }
+    .grade-input textarea { flex-grow: 1; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; height: 40px; resize: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Auth Section -->
+  <div id="authSection" class="auth-section">
+    <h2>Monroe Corp Admin Portal</h2>
+    <p>Sign in using your designated administrator Google Account.</p>
+    <button id="btnLogin" class="btn">Sign In with Google</button>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" class="hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1 id="welcomeTitle">Admin Panel</h1>
+      <button id="btnLogout" class="btn btn-danger">Log Out</button>
+    </div>
+
+    <!-- Active Review Queue -->
+    <div id="queueView">
+      <h2>Pending Submissions</h2>
+      <div id="submissionsList">Loading submissions...</div>
+    </div>
+
+    <!-- Individual Grading View -->
+    <div id="gradingView" class="hidden">
+      <button id="btnBack" class="btn" style="background-color: #718096;">&larr; Back to Queue</button>
+      <div class="grading-box">
+        <h2 id="candidateName">Grading Candidate</h2>
+        <form id="gradingForm">
+          
+          <div class="q-review">
+            <strong>Q1: What is the sum of the following equation? “2+((3+4)^2)” (Max 8 pts)</strong>
+            <p id="student_q1" style="background: #f7fafc; padding: 10px; border-radius: 4px;"></p>
+            <div class="grade-input">
+              <input type="number" id="score_q1" min="0" max="8" required placeholder="Score">
+              <textarea id="feedback_q1" placeholder="Feedback (Optional)"></textarea>
+            </div>
+          </div>
+
+          <div class="q-review">
+            <strong>Q27: Draw a house (Max 2 pts)</strong>
+            <img id="student_q27" src="" alt="Student drawing Q27">
+            <div class="grade-input">
+              <input type="number" id="score_q27" min="0" max="2" required placeholder="Score">
+              <textarea id="feedback_q27" placeholder="Feedback (Optional)"></textarea>
+            </div>
+          </div>
+
+          <div class="q-review">
+            <strong>Q30: Draw a male human aged 40 (Max 2 pts)</strong>
+            <img id="student_q30" src="" alt="Student drawing Q30">
+            <div class="grade-input">
+              <input type="number" id="score_q30" min="0" max="2" required placeholder="Score">
+              <textarea id="feedback_q30" placeholder="Feedback (Optional)"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn" style="margin-top: 20px; width: 100%;">Submit Scores & Mark Graded</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db, doc, getDoc, collection, getDocs } from "./js/firebase.js";
+  import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { gradeSubmission } from "./js/examManager.js";
+
+  // --- REPLACE THIS WITH YOUR OWN GOOGLE EMAIL ACCOUNT ---
+  const ADMIN_EMAIL = "your-email@example.com"; 
+
+  const provider = new GoogleAuthProvider();
+  let currentActiveSubmission = null;
+
+  const authSection = document.getElementById("authSection");
+  const adminDashboard = document.getElementById("adminDashboard");
+  const submissionsList = document.getElementById("submissionsList");
+  const gradingView = document.getElementById("gradingView");
+  const queueView = document.getElementById("queueView");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const isDbAdmin = userDoc.exists() && userDoc.data().role === "admin";
+
+      if (user.email === ADMIN_EMAIL || isDbAdmin) {
+        authSection.classList.add("hidden");
+        adminDashboard.classList.remove("hidden");
+        document.getElementById("welcomeTitle").innerText = `Welcome Admin, ${user.displayName}`;
+        loadPendingSubmissions();
+      } else {
+        alert("Access Denied: This account is not an authorized Admin.");
+        await signOut(auth);
+      }
+    } else {
+      authSection.classList.remove("hidden");
+      adminDashboard.classList.add("hidden");
+    }
+  });
+
+  document.getElementById("btnLogin").addEventListener("click", () => signInWithPopup(auth, provider).catch(console.error));
+  document.getElementById("btnLogout").addEventListener("click", () => signOut(auth));
+  document.getElementById("btnBack").addEventListener("click", () => {
+    gradingView.classList.add("hidden");
+    queueView.classList.remove("hidden");
+    loadPendingSubmissions();
+  });
+
+  async function loadPendingSubmissions() {
+    submissionsList.innerHTML = "Fetching submissions...";
+    try {
+      const q = query(
+        collection(db, "exam", "monroe_intelligence_eval", "submissions"), 
+        where("status", "==", "pending_review")
+      );
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        submissionsList.innerHTML = "No pending submissions to grade!";
+        return;
+      }
+
+      submissionsList.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const sub = docSnap.data();
+        const item = document.createElement("div");
+        item.className = "submission-item";
+        item.innerHTML = `
+          <strong>Candidate: ${sub.studentName}</strong><br>
+          <small>Submitted: ${new Date(sub.submittedAt.seconds * 1000).toLocaleString()}</small>
+        `;
+        item.addEventListener("click", () => openGradingView(docSnap.id, sub));
+        submissionsList.appendChild(item);
+      });
+    } catch (err) {
+      submissionsList.innerHTML = "Error loading queue: " + err.message;
+    }
+  }
+
+  function openGradingView(submissionId, submission) {
+    currentActiveSubmission = submissionId;
+    queueView.classList.add("hidden");
+    gradingView.classList.remove("hidden");
+
+    document.getElementById("candidateName").innerText = `Grading: ${submission.studentName}`;
+    document.getElementById("student_q1").innerText = submission.answers.q1 || "No answer submitted.";
+    document.getElementById("student_q27").src = submission.answers.q27 || "";
+    document.getElementById("student_q30").src = submission.answers.q30 || "";
+  }
+
+  document.getElementById("gradingForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentActiveSubmission) return;
+
+    const manualScores = {
+      q1: { score: Number(document.getElementById("score_q1").value), feedback: document.getElementById("feedback_q1").value },
+      q27: { score: Number(document.getElementById("score_q27").value), feedback: document.getElementById("feedback_q27").value },
+      q30: { score: Number(document.getElementById("score_q30").value), feedback: document.getElementById("feedback_q30").value }
+    };
+
+    try {
+      await gradeSubmission(currentActiveSubmission, auth.currentUser.uid, manualScores);
+      alert("Submission graded and saved!");
+      gradingView.classList.add("hidden");
+      queueView.classList.remove("hidden");
+      loadPendingSubmissions();
+    } catch (err) {
+      alert("Error saving grades: " + err.message);
+    }
+  });
+</script>
+</body>
+</html>

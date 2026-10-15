@@ -1,0 +1,40 @@
+/* EmeraldOS Gold 1P user-experience and application collision fixes */
+body.gold1p{--gold1p-safe-gap:12px}
+body.gold1p .window .win-content{container-type:inline-size}
+body.gold1p .app-body{overflow:auto;overflow-wrap:anywhere;scrollbar-gutter:stable}
+body.gold1p .app-body>h1:first-child{margin-top:0;font-weight:300}
+body.gold1p .card{min-width:0;max-width:100%;overflow-wrap:anywhere}
+body.gold1p .card img,body.gold1p .card video,body.gold1p .card canvas{max-width:100%;height:auto}
+body.gold1p .actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:100%}
+body.gold1p .actions>*{max-width:100%}
+body.gold1p .grid2,body.gold1p .grid3{align-items:stretch}
+body.gold1p table{max-width:100%}
+body.gold1p td,body.gold1p th{overflow-wrap:anywhere;vertical-align:top}
+body.gold1p .app-toolbar{flex-wrap:nowrap;min-height:44px;overflow-x:auto;overflow-y:hidden;scrollbar-gutter:stable}
+body.gold1p .app-toolbar>*{flex:0 0 auto;white-space:nowrap}
+body.gold1p .field,body.gold1p select,body.gold1p textarea{max-width:100%;min-width:0}
+body.gold1p .settings-layout{grid-template-columns:clamp(210px,24vw,280px) minmax(0,1fr)!important;overflow:hidden}
+body.gold1p .settings-nav{min-width:0!important;overflow:auto!important;scrollbar-gutter:stable}
+body.gold1p .settings-content{min-width:0!important;overflow:auto!important;scrollbar-gutter:stable;padding:clamp(14px,2.3vw,28px)!important}
+body.gold1p .settings-content>*{max-width:100%}
+body.gold1p .settings-content .setting-row{display:grid!important;grid-template-columns:minmax(220px,1fr) minmax(180px,320px);align-items:center!important;gap:12px 24px!important}
+body.gold1p .settings-content .setting-row>span{min-width:0!important;overflow-wrap:anywhere}
+body.gold1p .settings-content .setting-row>input:not([type=checkbox]):not([type=color]),body.gold1p .settings-content .setting-row>select,body.gold1p .settings-content .setting-row>button{width:100%!important;max-width:320px!important;justify-self:end}
+body.gold1p .settings-content .setting-row>input[type=checkbox],body.gold1p .settings-content .setting-row>input[type=color]{justify-self:end}
+body.gold1p .gold1p-table-wrap{width:100%;overflow:auto;border:1px solid var(--border);margin:16px 0}
+body.gold1p .gold1p-table-wrap table{min-width:720px;margin:0}
+.gold1p-page-heading,.gold1p-section-title{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.gold1p-page-heading h1,.gold1p-section-title h2{margin-top:0}
+.gold1p-status-pill{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;background:#e5e5e5;color:#111;font-weight:600;white-space:nowrap}
+.gold1p-status-pill.good{background:#dff6dd;color:#0b5a0b}.gold1p-status-pill.review{background:#fff4ce;color:#6b4d00}
+.gold1p-test-dot{display:inline-block;width:9px;height:9px;margin-right:8px;border-radius:50%;background:#8a8886}.gold1p-test-dot.pass{background:#107c10}.gold1p-test-dot.warn{background:#ffb900}
+.gold1p-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;padding:28px;margin:-16px -16px 18px;background:linear-gradient(125deg,var(--accent,#0078d7),#005a9e);color:#fff}
+.gold1p-hero h1{font-size:clamp(28px,5vw,50px);font-weight:300;margin:4px 0 8px}.gold1p-hero p{max-width:720px}.gold1p-hero .eyebrow{text-transform:uppercase;letter-spacing:.11em;font-size:12px}.gold1p-hero-mark{display:grid;place-items:center;width:98px;height:98px;border:2px solid rgba(255,255,255,.7);border-radius:18px;font-size:58px;font-weight:700;background:rgba(255,255,255,.12)}
+.gold1p-recent-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:8px}.gold1p-recent-list button{border:1px solid var(--border);background:var(--panel);color:var(--text);text-align:left;padding:12px;cursor:pointer;min-width:0}.gold1p-recent-list button:hover{border-color:var(--accent)}.gold1p-recent-list b,.gold1p-recent-list small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gold1p-recent-list small{color:var(--muted);margin-top:5px}
+.gold1p-feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gold1p-feature-grid>div{padding:12px;border-left:3px solid var(--accent);background:var(--panel-alt)}.gold1p-feature-grid p{margin-bottom:0}
+.gold1p-checkbox{display:flex;align-items:center;gap:8px;margin:16px 0}
+.gold1p-feedback-form{display:grid;gap:12px;max-width:760px}.gold1p-feedback-form label{display:grid;gap:5px}.gold1p-feedback-list{display:grid;gap:10px}.gold1p-feedback-list .card{margin:0}.gold1p-feedback-list .card>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.gold1p-feedback-list span{font-size:12px;padding:3px 7px;background:rgba(0,120,215,.12);color:var(--accent)}
+body.gold1p-compact-shell #taskbar .task-btn{min-width:38px;padding-inline:8px}body.gold1p-compact-shell #shellStatusBtn,body.gold1p-compact-shell #staffBtn,body.gold1p-compact-shell #logoutBtn{font-size:0}body.gold1p-compact-shell #shellStatusBtn:after{content:"E";font-size:12px}body.gold1p-compact-shell #staffBtn:after{content:"S";font-size:12px}body.gold1p-compact-shell #logoutBtn:after{content:"⇥";font-size:18px}
+@container (max-width:700px){.gold1p-feature-grid{grid-template-columns:1fr}.gold1p-hero{grid-template-columns:1fr}.gold1p-hero-mark{display:none}}
+@media(max-width:760px){body.gold1p .settings-layout{grid-template-columns:1fr!important;grid-template-rows:minmax(150px,230px) minmax(0,1fr)}body.gold1p .settings-nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;border-right:0!important;border-bottom:1px solid var(--border);max-height:230px;padding:10px!important}body.gold1p .settings-nav h2,body.gold1p .settings-nav input{grid-column:1/-1}body.gold1p .settings-nav input{width:100%!important;margin:0 0 8px!important}body.gold1p .settings-content .setting-row{grid-template-columns:1fr!important;align-items:start!important}body.gold1p .settings-content .setting-row>*{justify-self:stretch!important;max-width:100%!important}.gold1p-hero{margin:-16px -16px 16px}.gold1p-feature-grid{grid-template-columns:1fr}}
+@media(max-width:480px){body.gold1p .settings-nav{grid-template-columns:1fr;max-height:205px}body.gold1p .settings-nav h2,body.gold1p .settings-nav input{grid-column:1}.gold1p-hero{padding:20px}.gold1p-page-heading{display:block}.gold1p-status-pill{margin-bottom:10px}}

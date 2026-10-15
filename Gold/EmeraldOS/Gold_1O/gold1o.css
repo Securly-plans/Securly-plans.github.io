@@ -1,0 +1,723 @@
+/* =========================================================
+   EmeraldOS Gold 1O
+   Windows 10-inspired shell and system-tool styling
+========================================================= */
+:root{
+  --g1h-blue:#0078d7;
+  --g1h-blue-dark:#005a9e;
+  --g1h-task:rgba(20,20,20,.94);
+  --g1h-task-text:#fff;
+  --g1h-menu:rgba(28,28,28,.97);
+  --g1h-menu-text:#fff;
+  --g1h-window:#fff;
+  --g1h-window-text:#111;
+  --g1h-line:#d5d5d5;
+  --g1h-hover:rgba(255,255,255,.11);
+  --g1h-selection:#cce8ff;
+  --g1h-danger:#c42b1c;
+}
+body.gold1o{
+  --winRadius:0px;
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  background-color:#0d6e9f;
+  background-image:
+    linear-gradient(120deg,rgba(255,255,255,.13),transparent 42%),
+    linear-gradient(150deg,#0d6e9f 0%,#0b88b9 43%,#0a4f83 100%);
+}
+body.gold1o.dark{
+  --g1h-window:#202020;
+  --g1h-window-text:#f5f5f5;
+  --g1h-line:#474747;
+  --g1h-selection:#094771;
+}
+body.gold1o #desktop{inset:0 0 40px 0;padding:14px 12px;gap:7px 11px}
+body.gold1o .desktop-icon{border-radius:0;color:#fff;text-shadow:0 1px 2px #000;width:82px;min-height:78px;padding:5px}
+body.gold1o .desktop-icon:hover{background:rgba(45,124,185,.42);border-color:rgba(185,223,255,.68)}
+body.gold1o .desktop-icon.selected{background:rgba(27,100,160,.56);border-color:#9bd4ff}
+body.gold1o .desktop-icon .app-icon{border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+
+/* Taskbar */
+body.gold1o #taskbar{
+  height:40px;padding:0;background:var(--g1h-task);color:var(--g1h-task-text);
+  gap:0;box-shadow:none;border-top:1px solid rgba(255,255,255,.08);
+}
+body.gold1o #taskbar button,body.gold1o #taskbar .clock{
+  border-radius:0;height:39px;color:inherit;border:0;background:transparent;
+}
+body.gold1o #taskbar button:hover,body.gold1o #taskbar .clock:hover{background:rgba(255,255,255,.12)}
+body.gold1o .start-btn{width:48px;background:transparent!important;color:white;font-size:0;position:relative}
+body.gold1o .start-btn:before{
+  content:"";width:17px;height:17px;display:block;margin:auto;
+  background:
+    linear-gradient(90deg,transparent 46%,currentColor 47% 53%,transparent 54%),
+    linear-gradient(0deg,transparent 46%,currentColor 47% 53%,transparent 54%);
+  border:1px solid currentColor;transform:perspective(35px) rotateY(-8deg);color:#fff;
+}
+body.gold1o .start-btn:hover:before{color:#4cc2ff}
+body.gold1o .task-btn{padding:0 12px;min-width:42px}
+body.gold1o .task-btn.search-wide{
+  width:245px;max-width:28vw;color:#222;background:#f2f2f2;border:0;text-align:left;padding-left:39px;position:relative;
+}
+body.gold1o .task-btn.search-wide:before{content:"⌕";position:absolute;left:13px;font-size:21px;top:7px;color:#333}
+body.gold1o .task-btn.search-wide:hover{background:#fff}
+body.gold1o .task-apps{height:40px;gap:0}
+body.gold1o .taskbar-app,body.gold1o .gold1o-task-button{height:40px;border-radius:0;position:relative;border-bottom:2px solid transparent}
+body.gold1o .taskbar-app.active,body.gold1o .gold1o-task-button.active{background:rgba(255,255,255,.14);border-bottom-color:#76b9ed}
+body.gold1o .staff-shortcut,body.gold1o .logout-shortcut{font-size:11px;padding:0 9px}
+body.gold1o #actionBtn{font-size:12px}
+body.gold1o .clock{min-width:80px;padding:3px 8px!important;text-align:center;font-size:11px;line-height:15px;cursor:default}
+body.gold1o .show-desktop-btn{width:6px!important;min-width:6px!important;border-left:1px solid rgba(255,255,255,.4)!important;padding:0!important}
+
+/* Start and flyouts */
+body.gold1o .start-menu{
+  left:0!important;bottom:40px!important;width:min(650px,94vw)!important;height:min(640px,78vh)!important;
+  border-radius:0!important;background:var(--g1h-menu)!important;color:var(--g1h-menu-text)!important;
+  border:0!important;box-shadow:5px -5px 24px rgba(0,0,0,.42)!important;padding:0!important;
+}
+body.gold1o .start-menu button{border-radius:0}
+.gold1o-start-shell{height:100%;display:grid;grid-template-columns:48px minmax(250px,1fr) minmax(220px,.8fr)}
+.gold1o-start-rail{background:rgba(0,0,0,.23);display:flex;flex-direction:column;padding:5px 0}
+.gold1o-start-rail button{height:45px;width:48px;border:0;background:transparent;color:#fff;font-size:18px}
+.gold1o-start-rail button:hover{background:rgba(255,255,255,.14)}
+.gold1o-start-rail .rail-spacer{flex:1}
+.gold1o-start-apps{overflow:auto;padding:10px 8px 16px}
+.gold1o-start-apps h3,.gold1o-start-tools h3{font-size:12px;font-weight:400;margin:8px;color:#ddd}
+.gold1o-start-tools{overflow:auto;padding:10px 10px;background:rgba(255,255,255,.035)}
+.gold1o-start-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(90px,1fr));gap:4px}
+.gold1o-start-tile{min-height:82px;border:0;background:#1d70a2;color:#fff;text-align:left;padding:10px;display:flex;flex-direction:column;justify-content:space-between}
+.gold1o-start-tile:hover{outline:2px solid rgba(255,255,255,.55);outline-offset:-2px;filter:brightness(1.12)}
+.gold1o-start-tile b{font-size:13px}.gold1o-start-tile span{font-size:22px}
+.gold1o-start-original{height:100%;overflow:auto}
+.gold1o-start-original .start-grid,.gold1o-start-original .start-apps{padding:0!important}
+
+body.gold1o .side-panel,body.gold1o .action-center{
+  border-radius:0;background:rgba(32,32,32,.98);color:#fff;border:0;box-shadow:0 0 25px rgba(0,0,0,.38);
+}
+body.gold1o .side-panel{left:0!important;bottom:40px!important;top:auto!important;width:min(660px,96vw)!important;height:min(620px,78vh)!important}
+body.gold1o .action-center{right:0!important;bottom:40px!important;top:auto!important;width:min(390px,96vw)!important;height:min(680px,84vh)!important}
+.gold1o-quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:10px 0}
+.gold1o-quick-action{min-height:62px;border:0;background:#3c3c3c;color:#fff;padding:7px;font-size:11px;text-align:left}
+.gold1o-quick-action:hover{background:#515151}.gold1o-quick-action.active{background:var(--g1h-blue)}
+.gold1o-quick-action span{display:block;font-size:20px;margin-bottom:5px}
+
+/* Windows */
+body.gold1o .window{
+  border-radius:0!important;border:1px solid #777!important;background:var(--g1h-window)!important;
+  color:var(--g1h-window-text)!important;box-shadow:0 8px 26px rgba(0,0,0,.34)!important;
+}
+body.gold1o .window.active-window{border-color:#444!important;box-shadow:0 10px 32px rgba(0,0,0,.46)!important}
+body.gold1o .win-title{height:32px!important;min-height:32px!important;border-radius:0!important;background:#fff!important;color:#111!important;padding:0 0 0 8px!important}
+body.gold1o.dark .win-title{background:#202020!important;color:#fff!important}
+body.gold1o .win-title .title{font-size:12px;font-weight:400}
+body.gold1o .win-actions{height:32px;margin-left:auto}
+body.gold1o .win-actions button{width:46px;height:32px;border-radius:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:13px}
+body.gold1o .win-actions button:hover{background:#e5e5e5!important}
+body.gold1o.dark .win-actions button:hover{background:#3b3b3b!important}
+body.gold1o .win-actions .close:hover{background:#e81123!important;color:#fff!important}
+body.gold1o .win-content{background:var(--g1h-window)!important;color:var(--g1h-window-text)!important}
+body.gold1o .window.max,body.gold1o .window.gold1o-maximized{left:0!important;top:0!important;width:100vw!important;height:calc(100vh - 40px)!important;border:0!important}
+body.gold1o .window.gold1o-snapped{transition:width .12s,height .12s,left .12s,top .12s}
+.gold1o-snap-preview{position:fixed;z-index:8990;background:rgba(0,120,215,.28);border:2px solid rgba(141,211,255,.8);pointer-events:none}
+.gold1o-alt-tab{position:fixed;inset:0;z-index:13000;background:rgba(0,0,0,.3);display:grid;place-items:center}
+.gold1o-alt-tab-inner{display:flex;gap:10px;max-width:88vw;padding:14px;background:rgba(25,25,25,.94);color:#fff}
+.gold1o-alt-tab-item{width:165px;height:105px;border:2px solid transparent;background:#333;padding:8px;overflow:hidden}
+.gold1o-alt-tab-item.active{border-color:#67b7ef;background:#164f73}
+.gold1o-alt-tab-item b{display:block;margin-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Common 1I application chrome */
+.gold1o-app{height:100%;display:flex;flex-direction:column;background:var(--g1h-window);color:var(--g1h-window-text)}
+.gold1o-commandbar{min-height:42px;display:flex;align-items:center;gap:5px;padding:5px 7px;border-bottom:1px solid var(--g1h-line);background:#f6f6f6}
+body.dark .gold1o-commandbar{background:#292929}
+.gold1o-commandbar button,.gold1o-button{min-height:30px;border:1px solid #aaa;background:#f8f8f8;color:#111;padding:5px 12px;border-radius:0}
+body.dark .gold1o-commandbar button,body.dark .gold1o-button{background:#353535;color:#fff;border-color:#666}
+.gold1o-commandbar button:hover,.gold1o-button:hover{border-color:#0078d7;background:#e5f3fb}
+body.dark .gold1o-commandbar button:hover,body.dark .gold1o-button:hover{background:#164f73}
+.gold1o-button.primary{background:var(--g1h-blue);color:#fff;border-color:var(--g1h-blue)}
+.gold1o-button.danger{background:var(--g1h-danger);color:#fff;border-color:var(--g1h-danger)}
+.gold1o-field{min-height:30px;border:1px solid #999;background:#fff;color:#111;padding:5px 8px;border-radius:0}
+body.dark .gold1o-field{background:#111;color:#fff;border-color:#666}
+.gold1o-statusbar{min-height:24px;border-top:1px solid var(--g1h-line);padding:3px 8px;font-size:11px;display:flex;gap:18px;align-items:center;background:#f5f5f5}
+body.dark .gold1o-statusbar{background:#262626}
+.gold1o-muted{color:#666}body.dark .gold1o-muted{color:#bbb}
+.gold1o-empty{padding:30px;text-align:center;color:#666}
+
+/* Registry Editor */
+.gold1o-registry{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+.gold1o-reg-body{display:grid;grid-template-columns:minmax(240px,32%) 1fr;min-height:0}
+.gold1o-reg-tree{border-right:1px solid var(--g1h-line);overflow:auto;padding:5px;background:#fff}
+body.dark .gold1o-reg-tree{background:#1d1d1d}
+.gold1o-reg-values{overflow:auto;background:#fff}body.dark .gold1o-reg-values{background:#202020}
+.gold1o-tree-row{height:25px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding-right:6px;border:1px solid transparent;cursor:default}
+.gold1o-tree-row:hover{background:#e5f3fb}body.dark .gold1o-tree-row:hover{background:#333}
+.gold1o-tree-row.selected{background:var(--g1h-selection);border-color:#99c8ed}
+.gold1o-tree-caret{width:15px;text-align:center;color:#555}.gold1o-tree-folder{color:#d7a900}
+.gold1o-reg-table{width:100%;border-collapse:collapse;font-size:12px}
+.gold1o-reg-table th{position:sticky;top:0;background:#f4f4f4;text-align:left;font-weight:400;border-right:1px solid #ccc;border-bottom:1px solid #aaa;padding:5px 7px;z-index:2}
+body.dark .gold1o-reg-table th{background:#292929;border-color:#555}
+.gold1o-reg-table td{padding:5px 7px;border-bottom:1px solid #eee;vertical-align:top;word-break:break-word}
+body.dark .gold1o-reg-table td{border-color:#383838}
+.gold1o-reg-table tr:hover td{background:#eaf4fb}body.dark .gold1o-reg-table tr:hover td{background:#303030}
+.gold1o-reg-table tr.selected td{background:var(--g1h-selection)}
+.gold1o-reg-path{flex:1}
+.gold1o-reg-lock{font-size:11px;padding:4px 7px;background:#fff4ce;color:#5c4b00;border:1px solid #e5c365}
+.gold1o-reg-dialog-grid{display:grid;grid-template-columns:110px 1fr;gap:9px;align-items:center;padding:14px}
+.gold1o-code{font-family:Consolas,"Courier New",monospace}
+
+/* Task Manager */
+.gold1o-taskmgr{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+.gold1o-tabs{display:flex;border-bottom:1px solid var(--g1h-line);background:#f3f3f3}
+body.dark .gold1o-tabs{background:#292929}
+.gold1o-tabs button{height:34px;border:0;border-right:1px solid var(--g1h-line);background:transparent;padding:0 15px;color:inherit}
+.gold1o-tabs button.active{background:var(--g1h-window);border-top:2px solid var(--g1h-blue)}
+.gold1o-taskmgr-content{overflow:auto}
+.gold1o-process-table{width:100%;border-collapse:collapse;font-size:12px}
+.gold1o-process-table th,.gold1o-process-table td{padding:7px;border-bottom:1px solid var(--g1h-line);text-align:left}
+.gold1o-process-table th{position:sticky;top:0;background:#f2f2f2;font-weight:400}body.dark .gold1o-process-table th{background:#292929}
+.gold1o-process-table tr:hover td{background:#e5f3fb}body.dark .gold1o-process-table tr:hover td{background:#303030}
+.gold1o-performance-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:15px}
+.gold1o-performance-card{border:1px solid var(--g1h-line);padding:14px;min-height:130px}
+.gold1o-meter{height:8px;background:#ddd;margin-top:12px}.gold1o-meter span{display:block;height:100%;background:var(--g1h-blue)}
+
+/* Control Panel and settings tiles */
+.gold1o-control-shell{height:100%;display:grid;grid-template-rows:auto 1fr}
+.gold1o-control-header{padding:14px 18px;border-bottom:1px solid var(--g1h-line)}
+.gold1o-control-grid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));align-content:start;gap:10px;padding:16px}
+.gold1o-control-item{display:grid;grid-template-columns:44px 1fr;gap:10px;text-align:left;border:1px solid transparent;background:transparent;color:inherit;padding:12px}
+.gold1o-control-item:hover{background:#e5f3fb;border-color:#9ec9e6}body.dark .gold1o-control-item:hover{background:#303030;border-color:#497799}
+.gold1o-control-item .icon{font-size:30px}.gold1o-control-item b{display:block;color:#0067b8;margin-bottom:4px}body.dark .gold1o-control-item b{color:#72b9eb}
+
+/* Run dialog */
+.gold1o-run{padding:20px;display:grid;grid-template-columns:42px 1fr;gap:14px;align-items:start}
+.gold1o-run-icon{font-size:32px}.gold1o-run-row{display:flex;gap:7px;margin-top:12px}.gold1o-run-row input{flex:1}
+.gold1o-run-buttons{display:flex;justify-content:flex-end;gap:7px;padding:0 20px 16px}
+
+/* Clipboard */
+.gold1o-clipboard-list{overflow:auto;padding:10px;display:grid;gap:8px;align-content:start;height:100%}
+.gold1o-clipboard-item{border:1px solid var(--g1h-line);padding:10px;background:var(--g1h-window);cursor:default;white-space:pre-wrap;max-height:150px;overflow:auto}
+.gold1o-clipboard-item:hover{border-color:var(--g1h-blue)}
+
+/* Clock flyout */
+.gold1o-clock-flyout{position:fixed;right:0;bottom:40px;width:360px;max-width:96vw;background:#202020;color:#fff;z-index:9000;box-shadow:0 0 25px rgba(0,0,0,.5);padding:18px}
+.gold1o-clock-time{font-size:42px;font-weight:300}.gold1o-clock-date{font-size:16px;color:#73bce8;margin-bottom:20px}
+.gold1o-calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.gold1o-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px}
+.gold1o-calendar-grid span{height:34px;display:grid;place-items:center}.gold1o-calendar-grid .muted{color:#777}.gold1o-calendar-grid .today{background:var(--g1h-blue);outline:1px solid #fff}
+
+/* Update setup */
+.gold1o-update-setup{position:fixed;inset:0;z-index:14000;background:linear-gradient(135deg,#0067b8,#003b67);display:grid;place-items:center;color:#fff}
+.gold1o-update-card{width:min(760px,92vw);background:#fff;color:#111;padding:34px;box-shadow:0 20px 70px rgba(0,0,0,.4)}
+.gold1o-update-card h1{font-size:30px;font-weight:300;margin-top:0}.gold1o-update-card ul{line-height:1.7}.gold1o-update-card .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:25px}
+
+/* Notifications */
+body.gold1o .toast-area{right:10px;bottom:50px}
+body.gold1o .toast{border-radius:0;background:#262626;color:#fff;border-left:4px solid var(--g1h-blue);box-shadow:0 8px 25px rgba(0,0,0,.38)}
+
+@media(max-width:760px){
+  body.gold1o .task-btn.search-wide{width:48px;font-size:0;padding:0}
+  .gold1o-start-shell{grid-template-columns:44px 1fr}.gold1o-start-tools{display:none}
+  .gold1o-reg-body{grid-template-columns:42% 58%}
+  .gold1o-quick-actions{grid-template-columns:repeat(2,1fr)}
+  body.gold1o .staff-shortcut,body.gold1o .logout-shortcut{display:none}
+}
+
+/* =========================================================
+   Gold 1O UI collision and responsive-shell corrections
+========================================================= */
+body.gold1o #windowLayer{
+  position:absolute;
+  inset:0 0 40px 0;
+  overflow:hidden;
+  pointer-events:none;
+}
+body.gold1o #windowLayer>.window{pointer-events:auto}
+
+body.gold1o #taskbar{
+  z-index:13000;
+  min-width:0;
+  overflow:hidden;
+}
+body.gold1o #taskbar>*{flex-shrink:0}
+body.gold1o #taskbar .task-apps{
+  flex:1 1 auto;
+  min-width:44px;
+  overflow:hidden;
+}
+body.gold1o #taskbar .taskbar-app,
+body.gold1o #taskbar .gold1o-task-button{
+  min-width:42px;
+  max-width:180px;
+  overflow:hidden;
+  flex:0 1 180px;
+  padding:0 9px;
+  white-space:nowrap;
+}
+body.gold1o #taskbar .taskbar-app span:last-child,
+body.gold1o #taskbar .gold1o-task-button .task-label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body.gold1o .task-btn.search-wide{
+  flex:0 1 245px;
+  min-width:48px;
+}
+
+body.gold1o .start-menu,
+body.gold1o .side-panel,
+body.gold1o .action-center,
+body.gold1o .task-view{
+  z-index:12000;
+  max-height:calc(100vh - 40px)!important;
+  overscroll-behavior:contain;
+}
+body.gold1o .task-view{z-index:11500}
+body.gold1o .gold1o-clock-flyout{z-index:12500}
+
+/* The original Start layout is embedded inside the new 1I Start shell.
+   Flatten it so the two layouts do not render on top of each other. */
+.gold1o-start-original>.start-base{
+  display:block!important;
+  height:auto!important;
+  min-width:0!important;
+}
+.gold1o-start-original .start-list{overflow:visible!important}
+.gold1o-start-original .start-tiles{display:none!important}
+.gold1o-start-original .start-user{margin:0 0 8px!important}
+.gold1o-start-original .start-app{
+  min-width:0;
+  overflow:hidden;
+}
+.gold1o-start-original .start-app>span:last-child{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.gold1o-start-shell,
+.gold1o-start-apps,
+.gold1o-start-tools{min-width:0}
+.gold1o-start-tool-grid{min-width:0}
+.gold1o-start-tile{min-width:0;overflow:hidden}
+.gold1o-start-tile b{overflow-wrap:anywhere}
+
+body.gold1o .side-panel,
+body.gold1o .action-center{
+  overflow:auto;
+}
+.gold1o-search-tools{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.16);
+}
+.gold1o-search-tools .gold1o-start-tile{min-height:68px}
+
+body.gold1o .window{
+  max-width:100vw;
+  max-height:calc(100vh - 40px);
+}
+body.gold1o .win-title{min-width:0}
+body.gold1o .win-title .title{min-width:0}
+body.gold1o .win-content{min-width:0;min-height:0}
+body.gold1o .app-toolbar,
+body.gold1o .gold1o-commandbar{max-width:100%;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap}
+body.gold1o .app-body{min-width:0}
+
+/* Prevent desktop shortcuts from crowding into each other at larger text/icon scales. */
+body.gold1o #desktop{
+  grid-template-rows:repeat(auto-fill,minmax(96px,auto));
+  grid-auto-columns:90px;
+}
+body.gold1o .desktop-icon{
+  width:88px;
+  height:94px;
+  min-height:94px;
+  overflow:hidden;
+}
+body.gold1o .desktop-icon>span:last-child{
+  width:100%;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  white-space:normal;
+}
+
+@media(max-width:1180px){
+  body.gold1o .task-btn.search-wide{width:190px;max-width:20vw}
+  body.gold1o #actionBtn{font-size:0;width:46px;padding:0;position:relative}
+  body.gold1o #actionBtn:before{content:"▤";font-size:17px;position:absolute;inset:0;display:grid;place-items:center}
+  body.gold1o .staff-shortcut,
+  body.gold1o .logout-shortcut{max-width:62px;overflow:hidden;text-overflow:ellipsis}
+}
+
+@media(max-width:980px){
+  body.gold1o .task-btn.search-wide{width:48px;max-width:48px;font-size:0;padding:0}
+  body.gold1o .task-btn.search-wide:before{left:14px}
+  body.gold1o .staff-shortcut,
+  body.gold1o .logout-shortcut{display:none!important}
+  body.gold1o #widgetsBtn{width:44px;padding:0}
+  body.gold1o .gold1o-start-shell{grid-template-columns:48px minmax(0,1fr) minmax(190px,.72fr)}
+}
+
+@media(max-width:700px){
+  body.gold1o .gold1o-start-shell{grid-template-columns:44px minmax(0,1fr)}
+  body.gold1o .gold1o-start-tools{display:none}
+  body.gold1o .start-menu,
+  body.gold1o .side-panel,
+  body.gold1o .action-center{
+    left:0!important;
+    right:0!important;
+    width:100vw!important;
+    height:calc(100vh - 40px)!important;
+    max-height:calc(100vh - 40px)!important;
+  }
+  body.gold1o .clock{min-width:68px;padding-left:4px!important;padding-right:4px!important}
+  body.gold1o #taskViewBtn{display:none}
+  body.gold1o #desktop{grid-auto-columns:82px;padding-left:5px;padding-right:5px}
+  body.gold1o .desktop-icon{width:80px}
+}
+
+@media(max-width:480px){
+  body.gold1o #widgetsBtn{display:none}
+  body.gold1o .clock{min-width:64px;font-size:10px}
+  body.gold1o #taskbar .taskbar-app,
+  body.gold1o #taskbar .gold1o-task-button{max-width:48px;padding:0 10px}
+  body.gold1o #taskbar .taskbar-app span:last-child,
+  body.gold1o #taskbar .gold1o-task-button .task-label{display:none}
+  .gold1o-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Gold 1O collision-free Start and shell layout */
+.gold1o-start-tools-inline{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18)}
+.gold1o-start-tools-inline h3{margin:0 0 9px;font-size:13px;font-weight:500}
+body.gold1o .start-menu{overflow:hidden}
+body.gold1o .start-base{grid-template-columns:minmax(210px,260px) minmax(280px,1fr);min-width:0}
+body.gold1o .start-list,body.gold1o .start-tiles{min-width:0;overflow:auto;padding-right:4px}
+body.gold1o .start-tile-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+body.gold1o .side-panel{overflow:auto;overscroll-behavior:contain}
+body.gold1o .action-center{overflow:auto;overscroll-behavior:contain}
+body.gold1o .window{max-width:100vw;max-height:calc(100vh - 40px)}
+body.gold1o .win-content input,body.gold1o .win-content textarea,body.gold1o .win-content select{max-width:100%}
+body.gold1o .gold1o-start-tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.gold1o .gold1o-start-tile{min-width:0}
+@media(max-width:760px){body.gold1o .start-menu{width:100vw;max-width:100vw}body.gold1o .start-base{grid-template-columns:1fr}.start-tiles{display:none}body.gold1o .side-panel{left:0;width:100vw;max-width:100vw}}
+
+/* =========================================================
+   EMERALDOS GOLD 1O FEATURE PACK
+   Shell integration, Staff Center, verified apps, custom
+   logos, expanded Settings, and Windows 10 features.
+========================================================= */
+
+.live-control-banner{
+  position:fixed;
+  z-index:13000;
+  top:0;
+  left:0;
+  right:0;
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 14px;
+  color:#fff;
+  background:#005a9e;
+  box-shadow:0 2px 10px rgba(0,0,0,.28);
+  font-size:13px;
+}
+.live-control-banner.emergency{background:#b40000}
+.live-control-banner span{flex:1}
+.live-control-banner button{border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer}
+.live-control-banner.hidden{display:none}
+body:not(.taskbar-top) .live-control-banner:not(.hidden)~#desktop,
+body:not(.taskbar-top) .live-control-banner:not(.hidden)~#windowLayer{padding-top:38px}
+
+.shell-status-btn.connected{box-shadow:inset 0 -3px #52b043;background:rgba(16,124,16,.28)}
+.shell-status-btn.waiting{box-shadow:inset 0 -3px #f4c000}
+
+.gold1o-info-banner,.gold1o-warning{
+  border-left:4px solid var(--accent,#0078d7);
+  background:color-mix(in srgb,var(--accent,#0078d7) 10%,var(--panel,#fff));
+  padding:12px 14px;
+  margin:0 0 16px;
+  line-height:1.45;
+}
+.gold1o-warning{border-left-color:#c50f1f;background:rgba(197,15,31,.1)}
+.gold1o-loading{padding:40px;text-align:center;color:var(--muted,#666)}
+.gold1o-page-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.gold1o-page-title h1{margin-top:0}
+.gold1o-settings-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:14px 0 20px}
+.gold1o-settings-cards .card{min-height:120px}
+.gold1o-settings-cards button.card{font:inherit;color:inherit;text-align:left;cursor:pointer}
+.gold1o-settings-cards strong{font-size:20px;font-weight:500}
+
+.gold1o-app-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:12px 0 24px}
+.gold1o-app-card{border:1px solid var(--border,#d2d2d2);background:var(--panel,#fff);padding:15px;min-width:0;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.gold1o-app-card h3{margin:0 0 3px;font-size:17px}
+.gold1o-app-card p{line-height:1.42}
+.gold1o-app-card small{display:block;color:var(--muted,#666);overflow-wrap:anywhere}
+.gold1o-app-card .actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:7px}
+.gold1o-app-card-head{display:flex;align-items:center;gap:11px}
+.gold1o-custom-logo{object-fit:contain;border-radius:5px;flex:0 0 auto}
+.verification-badge{display:inline-flex;padding:3px 7px;border-radius:2px;font-size:11px;font-weight:600;background:#e5e5e5;color:#333}
+.verification-badge.approved{background:#dff3df;color:#0b5f0b}
+.verification-badge.pending{background:#fff1c2;color:#6b5200}
+.verification-badge.rejected{background:#f7d9dc;color:#8b0d18}
+.verification-badge.draft{background:#e4e9f2;color:#3a4659}
+
+.gold1o-editor-meta{display:flex;gap:18px;align-items:flex-start;margin-bottom:16px}
+.gold1o-logo-editor{width:150px;display:grid;gap:8px;justify-items:center}
+.gold1o-logo-editor img{width:86px;height:86px;object-fit:contain;border:1px solid var(--border,#ccc);background:#fff;padding:6px}
+.code-editor{display:block;width:100%;height:330px;resize:vertical;font:13px/1.45 Consolas,"Courier New",monospace;tab-size:2}
+.gold1o-code-analysis{margin:10px 0;padding:10px 12px;background:rgba(0,0,0,.045);border:1px solid var(--border,#ddd)}
+.gold1o-code-analysis ul{margin:6px 0 0;padding-left:22px}
+.gold1o-source-view{white-space:pre-wrap;overflow:auto;max-height:430px;padding:14px;background:#111;color:#e7e7e7;border-radius:2px;font:12px/1.45 Consolas,monospace}
+.check-row{display:inline-flex;align-items:center;gap:5px;margin:4px 14px 4px 0}
+
+.gold1o-user-app-host{height:100%;display:grid;grid-template-rows:1fr auto;background:#fff}
+.gold1o-user-app-host iframe{width:100%;height:100%;border:0;background:#fff}
+.gold1o-sandbox-note{padding:5px 9px;background:#f3f3f3;border-top:1px solid #d5d5d5;color:#555;font-size:11px}
+
+.staff-center-shell{height:100%;display:grid;grid-template-columns:220px 1fr;min-height:0;background:var(--panel,#fff)}
+.staff-center-nav{background:#202020;color:#fff;padding:18px 0;overflow:auto}
+.staff-center-nav h2{font-weight:300;padding:0 18px;margin:0 0 18px}
+.staff-center-nav button{display:block;width:100%;border:0;background:transparent;color:#ddd;text-align:left;padding:11px 18px;font:inherit;cursor:pointer}
+.staff-center-nav button:hover{background:#333;color:#fff}
+.staff-center-nav button.active{background:var(--accent,#0078d7);color:#fff}
+.staff-center-content{padding:22px;overflow:auto;min-width:0}
+.staff-center-content>h1{margin-top:0;font-weight:300}
+.staff-card{transition:transform .12s ease,box-shadow .12s ease}
+.staff-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+
+.gold1o-settings .settings-nav{width:260px;min-width:260px}
+.gold1o-settings .settings-nav input{margin:0 12px 12px;width:calc(100% - 24px)}
+.gold1o-settings .settings-nav button{height:auto;padding:9px 14px;display:block}
+.gold1o-settings .settings-nav button b,.gold1o-settings .settings-nav button small{display:block}
+.gold1o-settings .settings-nav button small{font-size:11px;opacity:.75;margin-top:2px;white-space:normal}
+.gold1o-settings .settings-content{padding:24px;overflow:auto}
+.gold1o-settings .settings-content>h1{font-weight:300;margin-top:0}
+
+.gold1o-desktop-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:-8px -8px 16px;background:rgba(0,0,0,.28);overflow-x:auto}
+.gold1o-desktop-bar button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);color:#fff;padding:8px 12px;white-space:nowrap;cursor:pointer}
+.gold1o-desktop-bar button.active{background:var(--accent,#0078d7);border-color:#fff}
+.window.virtual-hidden{display:none!important}
+
+.gold1o-sticky-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.gold1o-sticky{background:var(--note-color,#fff2ab);min-height:210px;padding:8px;box-shadow:0 3px 12px rgba(0,0,0,.2);display:grid;grid-template-rows:1fr auto}
+.gold1o-sticky textarea{width:100%;height:100%;min-height:170px;border:0;outline:0;resize:none;background:transparent;color:#222;font:16px/1.4 "Segoe UI",sans-serif}
+.gold1o-sticky>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gold1o-sticky button{border:0;background:rgba(0,0,0,.12);padding:5px 9px;cursor:pointer}
+
+.gold1o-snip-body{display:grid;grid-template-rows:auto 1fr;min-height:0;text-align:center}
+.gold1o-snip-body canvas{max-width:100%;max-height:100%;margin:auto;border:1px solid var(--border,#ccc);background:#eee;object-fit:contain}
+.gold1o-recorder{height:100%;display:grid;place-content:center;justify-items:center;gap:14px}
+.gold1o-recorder #recordTime{font-size:58px;font-weight:200;font-variant-numeric:tabular-nums}
+.gold1o-recorder audio{width:min(440px,80vw)}
+
+body.gold1o-night-light #desktop,body.gold1o-night-light #windowLayer{filter:sepia(.17) saturate(.9)}
+body.gold1o-no-transparency .start-menu,body.gold1o-no-transparency .side-panel,body.gold1o-no-transparency .action-center{backdrop-filter:none!important;background:#202020!important}
+body.gold1o-touch button,body.gold1o-touch input,body.gold1o-touch select{min-height:38px}
+body.gold1o-touch .win-actions button{width:48px}
+body.gold1o-large-targets .resize-handle{width:18px;height:18px}
+body.gold1o-game-mode .toast-area{display:none}
+
+#taskbar.small-buttons{height:32px}
+#taskbar.small-buttons .task-btn,#taskbar.small-buttons .start-btn,#taskbar.small-buttons .taskbar-app,#taskbar.small-buttons .gold1o-task-button{height:30px;min-height:30px}
+#taskbar.hide-labels .taskbar-app>span:last-child,#taskbar.hide-labels .gold1o-task-button .task-label{display:none}
+body.taskbar-top #taskbar{top:0;bottom:auto}
+body.taskbar-top #desktop{top:40px;bottom:0}
+body.taskbar-top #windowLayer{top:40px;bottom:0}
+body.taskbar-top .start-menu,body.taskbar-top .side-panel,body.taskbar-top .action-center{top:40px;bottom:auto}
+body.taskbar-top .live-control-banner{top:40px}
+
+body.gold1o-maintenance:not(.staff-session)::after{
+  content:"Maintenance mode";
+  position:fixed;
+  right:16px;
+  bottom:52px;
+  z-index:12500;
+  padding:7px 11px;
+  color:#fff;
+  background:#a4262c;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  pointer-events:none;
+}
+
+@media(max-width:760px){
+  .staff-center-shell{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .staff-center-nav{display:flex;overflow-x:auto;padding:8px}
+  .staff-center-nav h2{display:none}
+  .staff-center-nav button{width:auto;white-space:nowrap;padding:9px 12px}
+  .staff-center-content{padding:14px}
+  .gold1o-settings .settings-nav{width:190px;min-width:190px}
+  .gold1o-editor-meta{display:grid}
+  .gold1o-logo-editor{width:auto;grid-template-columns:auto 1fr 1fr;justify-items:stretch;align-items:center}
+  .gold1o-logo-editor img{grid-row:1/3}
+  .live-control-banner{font-size:12px}
+}
+@media(max-width:560px){
+  .gold1o-settings{grid-template-columns:1fr!important}
+  .gold1o-settings .settings-nav{width:100%;min-width:0;max-height:210px}
+  .gold1o-page-title{display:block}
+  .gold1o-app-grid,.gold1o-sticky-grid{grid-template-columns:1fr}
+  .shell-status-btn{display:none}
+}
+
+/* Gold 1O verified/custom logo wrapper */
+.gold1o-logo-wrap{display:inline-grid;place-items:center;position:relative;flex:0 0 auto;overflow:hidden;border-radius:6px}
+.gold1o-logo-wrap>.gold1o-custom-logo,.gold1o-logo-wrap>.fallback-icon{width:100%;height:100%}
+.gold1o-logo-wrap>.fallback-icon{place-items:center;background:var(--accent,#0078d7);color:#fff;font-weight:600;border-radius:6px}
+
+/* =========================================================
+   Gold 1O layout collision fixes
+========================================================= */
+.window .win-content,
+.app-shell,
+.app-body,
+.settings-layout,
+.settings-content{
+  min-width:0;
+  min-height:0;
+}
+
+.window .win-content{
+  overflow:hidden;
+}
+
+.gold1o-settings{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  grid-template-columns:clamp(220px,25vw,270px) minmax(0,1fr)!important;
+}
+
+.gold1o-settings .settings-nav{
+  width:auto!important;
+  min-width:0!important;
+  height:100%;
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+
+.gold1o-settings .settings-content{
+  min-width:0;
+  width:100%;
+  height:100%;
+  padding:clamp(16px,2.4vw,28px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+
+.gold1o-settings .settings-content > *{
+  max-width:100%;
+}
+
+.gold1o-settings .setting-row{
+  align-items:flex-start;
+  flex-wrap:wrap;
+  column-gap:24px;
+  row-gap:10px;
+}
+
+.gold1o-settings .setting-row > span{
+  flex:1 1 280px;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.gold1o-settings .setting-row > input:not([type="checkbox"]):not([type="color"]),
+.gold1o-settings .setting-row > select,
+.gold1o-settings .setting-row > button{
+  flex:0 1 310px;
+  width:min(310px,100%);
+  max-width:100%;
+}
+
+.gold1o-settings input[type="range"]{
+  min-width:180px;
+}
+
+.gold1o-settings-cards{
+  grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));
+}
+
+.gold1o-settings-cards .card,
+.migration-center .card{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.migration-center{
+  height:100%;
+}
+
+.migration-table{
+  width:100%;
+  margin-top:18px;
+  overflow:auto;
+  border:1px solid var(--border);
+}
+
+.migration-table table{
+  min-width:560px;
+  margin:0;
+}
+
+.app-toolbar{
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+}
+
+.app-toolbar > *{
+  flex:0 0 auto;
+}
+
+@media(max-width:760px){
+  .gold1o-settings{
+    grid-template-columns:1fr!important;
+    grid-template-rows:minmax(150px,auto) minmax(0,1fr);
+  }
+  .gold1o-settings .settings-nav{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-content:start;
+    max-height:240px;
+    border-right:0;
+    border-bottom:1px solid var(--border);
+    padding:10px;
+  }
+  .gold1o-settings .settings-nav h2,
+  .gold1o-settings .settings-nav input{
+    grid-column:1/-1;
+  }
+  .gold1o-settings .settings-nav input{
+    width:100%!important;
+    margin:0 0 8px!important;
+  }
+  .gold1o-settings .settings-nav button{
+    min-width:0;
+  }
+  .gold1o-settings .settings-content{
+    padding:16px;
+  }
+}
+
+@media(max-width:480px){
+  .gold1o-settings .settings-nav{
+    grid-template-columns:1fr;
+    max-height:210px;
+  }
+  .gold1o-settings .settings-nav h2,
+  .gold1o-settings .settings-nav input{
+    grid-column:1;
+  }
+  .gold1o-settings .setting-row > input:not([type="checkbox"]):not([type="color"]),
+  .gold1o-settings .setting-row > select,
+  .gold1o-settings .setting-row > button{
+    width:100%;
+    flex-basis:100%;
+  }
+}

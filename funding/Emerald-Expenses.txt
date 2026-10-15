@@ -1,0 +1,27 @@
+The following details operating costs and expenses of Emerald Systems in manors not related to revenue dividends to employees and affiliates, for proposed changes, email me and put proposed changes in the bottom like the following
+example with your name, what it is, expense, what it does and why we need it.: Ex: [Firebase Unlimited 20 USD a Month, Advanced Firebase Features - Wyatt Monroe] and I will remove it/implement based off needs.
+1. Cloudflare Server costs (Currently)
+  a. monroecorp.org (Moderate)
+  -Used for subdomain hosting, main domain hosting, Emerald Mail service, etc.
+    Original cost: 8 USD
+    Annual renewing costs (By July 3rd Annually): 11.20 USD/yr
+2. Firebase and Google Services (Currently)
+  a. Firebase (Minimal)
+    Pay as you go (Firebase Blaze Plan):
+      Firebase Storage
+      -Image and large file storage
+      Firestore Advanced
+      -Unlimited firestore usage
+      Other Firebase Blaze Services
+      -Advanced authentication, app and backend services
+3. Future/Planned
+  a. Emerald Mail (Moderate)
+    Resend Basic Paid
+    -Allows higher emerald mail send rates
+  b. Cloudflare Worker Paid (Moderate)
+    -Allows higher and more generally advanced emerald mail features, recieve and send rates
+
+Emerald Systems Internal Memo - For Staff Use Only - DO NOT SHARE
+©Copyright 2026 Emerald Systems, Monroe Corporation and affiliates, unlawful and unautherized use and sharing will be prosecuted to the fullest extent of the law.
+For questions, contact Emerald Systems Administrative Office at admin@mail.monroecorp.org or Wyatt Monroe at wmonroe01@mail.monroecorp.org or Wyatt.Monroe.2013@gmail.com - Wyatt Monroe
+Changes to this document require approval from Wyatt Monroe, please list changes in the correct format below:

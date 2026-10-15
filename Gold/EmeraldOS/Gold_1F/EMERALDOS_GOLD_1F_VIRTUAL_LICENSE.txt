@@ -1,0 +1,13 @@
+EmeraldOS Gold 1F Virtual License
+
+Product: EmeraldOS Gold 1F
+Folder: Gold_1F
+Update Service: EmeraldOS Live Service Update System (E.L.S.U.S.)
+Terms of Service: https://securly-plans.github.io/TOS.html
+
+This virtual license is presented during First-Boot Setup and Update Setup. The user must agree before completing setup.
+
+It covers VM-style cloud state, setup/update setup, app data, files, preferences, support tickets, remote assistance consent, Staff Edition restrictions, user app risk, rollback instability, and recovery snapshots.
+
+
+Gold 1F notice: First-Boot Setup applies once to the signed-in user's E.L.S.U.S. compatible EmeraldOS Gold VM. Update Setup appears after a manual E.L.S.U.S. update and preserves existing VM data.

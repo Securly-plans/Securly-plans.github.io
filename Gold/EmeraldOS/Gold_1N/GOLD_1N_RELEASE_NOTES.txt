@@ -1,0 +1,32 @@
+EMERALDOS GOLD 1N
+
+USER EXPERIENCE
+- Adds Welcome Center with recent files, common actions, migration state, and cloud-save status.
+- Adds Feedback Hub with local VM storage and JSON export.
+- Adds E.L.S.U.S. Shell V2 Compatibility testing.
+- Adds Shell V2 controls to Windows 10-style Settings.
+- Improves medium-width taskbar behavior and keyboard focus visibility.
+
+UI FIXES
+- Prevents Settings navigation, cards, controls, and content from overlapping.
+- Uses independent Settings navigation and content scrolling.
+- Prevents application toolbars from pushing outside the window.
+- Improves wide tables, long text, media, actions, and responsive application layouts.
+- Improves narrow-window and tablet-style behavior without changing the Gold appearance.
+
+SHELL V2 TESTING
+- Preserves Shell V2 routing parameters through index.html, loading.html, and OS.html.
+- Verifies shell user, selected version, selected folder, Gold login, migration gate, and route metadata.
+- Keeps the version's own login page mandatory.
+- Includes an optional Shell V2 test build defaulting unrouted users to Gold 1N.
+- Remains compatible with the original E.L.S.U.S. shell.
+
+DATA AND FILE COMPATIBILITY
+- Adds Gold 1M local storage namespaces and gold1m-split-v1/v2 schemas to all migration scans.
+- Blocks cloud autosave until full migration validation completes.
+- Preserves conflicting files instead of overwriting them.
+- Keeps files and file formats created by previous EmeraldOS Gold releases usable.
+
+PUBLISHING
+- Does not auto-publish or auto-set system/emeraldGoldLatest.
+- Publishing still requires Staff Edition, Emerald Mail verification, publisher PIN, and clicking Publish this Version.

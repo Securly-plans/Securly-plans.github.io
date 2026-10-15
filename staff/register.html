@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Staff Register</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f1115;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 380px;
+      background: #1a1d24;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h2 {
+      margin-top: 0;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+      color: #b5b5b5;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #2a2f3a;
+      background: #0f1115;
+      color: white;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .title-bar {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>Create Staff Account</h2>
+    <div class="title-bar">
+      Staff ID System: Sequential (001 → 002 → 003)
+    </div>
+
+    <div class="input-group">
+      <label>Last Name</label>
+      <input id="lastName" type="text" placeholder="e.g. Monroe">
+    </div>
+
+    <div class="input-group">
+      <label>First Name</label>
+      <input id="firstName" type="text" placeholder="e.g. Wyatt">
+    </div>
+
+    <div class="input-group">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Create password">
+    </div>
+
+    <button onclick="create()">Create Staff Account</button>
+
+    <div class="note">
+      Only U-role accounts with permission can create staff accounts
+    </div>
+  </div>
+
+  <script type="module">
+    import { createStaffAccount } from "./register.js";
+
+    // Hook into your JS file
+    window.create = createStaffAccount;
+  </script>
+
+</body>
+</html>

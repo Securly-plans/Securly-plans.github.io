@@ -1,0 +1,10 @@
+EmeraldOS Gold 1K
+
+- Restores active update notifications that ask the user before changing versions.
+- Adds update snoozing, history, preferences, and a taskbar update status indicator.
+- Adds Focus Sessions and a Windows 10-style Quick Settings flyout.
+- Includes minor Start, taskbar, window, panel, accessibility, and responsive UI refinements.
+- Retains the 1J shell, live Staff Center, app verification, and custom-logo improvements under the official name E.L.S.U.S. Service Pack One.
+- Preserves the version-independent cloud VM and merge-based file migration.
+- Never auto-applies an update and never auto-writes system/emeraldGoldLatest.
+- Publishing still requires Staff Edition, Emerald Mail verification, the publisher PIN, and a direct click on Publish this Version.
