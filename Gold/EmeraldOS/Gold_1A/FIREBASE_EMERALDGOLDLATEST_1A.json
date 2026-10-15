@@ -1,0 +1,26 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1A",
+  "build": "1A",
+  "folder": "Gold_1A",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "continue",
+  "releaseTitle": "EmeraldOS Gold 1A",
+  "summary": "OS-folder-only E.L.S.U.S.-compatible release built from Gold 11.0 with a curated app catalog, stronger customization stability, and VM continuity.",
+  "migrationFrom": [
+    "11.0",
+    "10.0",
+    "9.0",
+    "8.0",
+    "8.0.1"
+  ],
+  "migrationId": "gold11-to-gold1a-elsus",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_11.0",
+  "rollbackVersion": "11.0",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}

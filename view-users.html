@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>View Users</title>
+
+<style>
+:root{
+    --bg:#0f1115;
+    --panel:#1a1d24;
+    --panel2:#222630;
+    --border:#2e3440;
+    --text:#f3f4f6;
+    --muted:#9ca3af;
+    --primary:#4ade80;
+    --danger:#ef4444;
+    --warning:#f59e0b;
+    --info:#3b82f6;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+}
+
+/* HEADER */
+
+.header{
+    background:#111827;
+    padding:20px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    margin-bottom:20px;
+}
+
+.header h1{
+    margin:0 0 15px;
+    color:var(--info);
+    font-size:32px;
+}
+
+.search{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:#111827;
+    color:var(--text);
+    outline:none;
+    font-size:15px;
+}
+
+.search:focus{
+    border-color:var(--info);
+}
+
+/* GRID */
+
+.users-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+}
+
+/* CARD */
+
+.user-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    transition:.2s;
+}
+
+.user-card:hover{
+    border-color:var(--info);
+    transform:translateY(-2px);
+}
+
+.avatar{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    display:block;
+    margin:auto;
+    border:3px solid var(--border);
+    background:#111827;
+}
+
+.username{
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+    margin-top:14px;
+    color:var(--text);
+}
+
+/* STATUS */
+
+.status{
+    text-align:center;
+    margin-top:6px;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.online{
+    color:var(--primary);
+}
+
+.offline{
+    color:var(--muted);
+}
+
+/* BIO */
+
+.bio{
+    margin-top:14px;
+    font-size:14px;
+    color:var(--muted);
+    text-align:center;
+    min-height:42px;
+    line-height:1.5;
+}
+
+/* INFO */
+
+.info{
+    margin-top:14px;
+    font-size:13px;
+    color:var(--muted);
+    text-align:center;
+}
+
+/* BADGES */
+
+.badges{
+    margin-top:15px;
+    text-align:center;
+}
+
+.badge{
+    display:inline-block;
+    background:rgba(74,222,128,0.15);
+    color:var(--primary);
+    border:1px solid rgba(74,222,128,0.3);
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:11px;
+    margin:3px;
+    font-weight:bold;
+}
+
+/* BUTTON */
+
+.profile-btn{
+    margin-top:16px;
+    width:100%;
+    padding:11px;
+    border:none;
+    background:var(--info);
+    color:white;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.2s;
+}
+
+.profile-btn:hover{
+    opacity:0.9;
+}
+
+/* EMPTY */
+
+.empty{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:40px;
+    text-align:center;
+    color:var(--muted);
+    grid-column:1/-1;
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+    .users-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>User Directory</h1>
+
+        <input
+            type="text"
+            id="search"
+            class="search"
+            placeholder="Search username..."
+        >
+
+    </div>
+
+    <div id="users" class="users-grid"></div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./js/firebase.js";
+
+import {
+    collection,
+    onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const usersContainer =
+    document.getElementById("users");
+
+const searchInput =
+    document.getElementById("search");
+
+let allUsers = [];
+
+/* ================= FORMAT DATE ================= */
+
+function formatDate(created){
+
+    if(!created){
+        return "Unknown";
+    }
+
+    const ms = Number(created);
+
+    if(isNaN(ms)){
+        return "Unknown";
+    }
+
+    return new Date(ms)
+        .toLocaleDateString();
+
+}
+
+/* ================= ESCAPE HTML ================= */
+
+function escapeHtml(str){
+
+    return String(str || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+/* ================= RENDER USERS ================= */
+
+function renderUsers(){
+
+    const search =
+        searchInput.value
+        .trim()
+        .toLowerCase();
+
+    usersContainer.innerHTML = "";
+
+    const filtered =
+        allUsers.filter(user =>
+            (user.username || "")
+            .toLowerCase()
+            .includes(search)
+        );
+
+    if(filtered.length === 0){
+
+        usersContainer.innerHTML = `
+            <div class="empty">
+                No users found.
+            </div>
+        `;
+
+        return;
+    }
+
+    filtered.forEach(user => {
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "user-card";
+
+        const badges =
+            Array.isArray(user.badges)
+            ? user.badges
+            : [];
+
+        card.innerHTML = `
+
+            <img
+                class="avatar"
+                src="${
+                    escapeHtml(
+                        user.photoURL ||
+                        "https://via.placeholder.com/90"
+                    )
+                }"
+            >
+
+            <div class="username">
+                ${
+                    escapeHtml(
+                        user.username ||
+                        "Unknown User"
+                    )
+                }
+            </div>
+
+            <div class="
+                status
+                ${
+                    user.status === "Online"
+                    ? "online"
+                    : "offline"
+                }
+            ">
+                ${
+                    escapeHtml(
+                        user.status ||
+                        "Offline"
+                    )
+                }
+            </div>
+
+            <div class="bio">
+                ${
+                    escapeHtml(
+                        user.bio ||
+                        "No bio provided."
+                    )
+                }
+            </div>
+
+            <div class="info">
+                Joined:
+                ${
+                    formatDate(
+                        user.created
+                    )
+                }
+            </div>
+
+            <div class="badges">
+                ${
+                    badges.map(b => `
+                        <span class="badge">
+                            ${escapeHtml(b)}
+                        </span>
+                    `).join("")
+                }
+            </div>
+
+            <button
+                class="profile-btn"
+                data-uid="${user.uid}"
+            >
+                View Profile
+            </button>
+
+        `;
+
+        card
+        .querySelector(".profile-btn")
+        .addEventListener("click", () => {
+
+            location.href =
+                `view-profile.html?uid=${user.uid}`;
+
+        });
+
+        usersContainer.appendChild(card);
+
+    });
+
+}
+
+/* ================= REALTIME USERS ================= */
+
+onSnapshot(
+    collection(db,"users"),
+    snapshot => {
+
+        allUsers = [];
+
+        snapshot.forEach(doc => {
+
+            allUsers.push({
+                uid:doc.id,
+                ...doc.data()
+            });
+
+        });
+
+        renderUsers();
+
+    }
+);
+
+/* ================= SEARCH ================= */
+
+searchInput.addEventListener(
+    "input",
+    renderUsers
+);
+
+</script>
+
+</body>
+</html>

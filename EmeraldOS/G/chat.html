@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Iridium Chat</title>
+
+<style>
+
+:root{
+  --win-bg:#008080;
+  --win-gray:#c0c0c0;
+  --win-dark:#808080;
+  --win-light:#ffffff;
+  --win-shadow:#404040;
+  --text:#000;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:"Tahoma", "MS Sans Serif", Arial;
+}
+
+body{
+  margin:0;
+  background:var(--win-bg);
+  color:var(--text);
+}
+
+/* ================= HEADER ================= */
+
+.header{
+  background:var(--win-gray);
+  border-bottom:2px solid var(--win-dark);
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* Win95 title look */
+.header h1{
+  margin:0;
+  font-size:18px;
+  font-weight:bold;
+}
+
+/* ================= LAYOUT ================= */
+
+.container{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  height:calc(100vh - 52px);
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+  background:var(--win-gray);
+  border-right:2px solid var(--win-dark);
+  padding:10px;
+  overflow-y:auto;
+}
+
+.panel{
+  background:var(--win-gray);
+  border:2px solid var(--win-light);
+  border-right:2px solid var(--win-dark);
+  border-bottom:2px solid var(--win-dark);
+  padding:10px;
+  margin-bottom:10px;
+}
+
+/* ================= INPUT ================= */
+
+input{
+  width:100%;
+  padding:5px;
+  margin-bottom:8px;
+  border:2px inset var(--win-dark);
+  background:white;
+}
+
+/* ================= BUTTONS (WIN95 STYLE) ================= */
+
+button{
+  padding:6px 10px;
+  border:2px outset var(--win-light);
+  background:var(--win-gray);
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:active{
+  border:2px inset var(--win-dark);
+}
+
+/* ================= MAIN CHAT ================= */
+
+.main{
+  display:flex;
+  flex-direction:column;
+  background:var(--win-gray);
+}
+
+/* top bar */
+.chat-header{
+  background:var(--win-gray);
+  border-bottom:2px solid var(--win-dark);
+  padding:8px;
+  display:flex;
+  justify-content:space-between;
+}
+
+/* chat area */
+.messages{
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+  background:white;
+  border:2px inset var(--win-dark);
+  margin:6px;
+}
+
+/* message style */
+.msg{
+  margin-bottom:10px;
+  padding:6px;
+  border:1px solid var(--win-dark);
+  background:#f8f8f8;
+}
+
+.me{
+  background:#dff5df;
+  border:1px solid #2b6b2b;
+}
+
+.other{
+  background:#f0f0f0;
+}
+
+/* message header */
+.msg-top{
+  font-size:12px;
+  border-bottom:1px dotted #666;
+  margin-bottom:4px;
+  padding-bottom:2px;
+}
+
+/* ================= CHAT BOX ================= */
+
+.chat-box{
+  background:var(--win-gray);
+  border-top:2px solid var(--win-dark);
+  padding:8px;
+}
+
+.chat-controls{
+  display:flex;
+  gap:5px;
+}
+
+.chat-controls input{
+  flex:1;
+}
+
+/* ================= PANELS TEXT ================= */
+
+.panel h3{
+  margin:5px 0;
+  font-size:14px;
+}
+
+/* ================= GROUP BUTTON ================= */
+
+.group-btn{
+  width:100%;
+  text-align:left;
+  margin-bottom:5px;
+  border:2px outset var(--win-light);
+  background:var(--win-gray);
+}
+
+/* ================= STATS ================= */
+
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  margin-bottom:10px;
+}
+
+.stat{
+  background:var(--win-gray);
+  border:2px inset var(--win-dark);
+  padding:6px;
+  font-size:12px;
+}
+
+.stat .value{
+  font-size:16px;
+  font-weight:bold;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:900px){
+  .container{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    max-height:250px;
+  }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="header">
+
+  <h1>Iridium Chat</h1>
+
+  <div class="status">
+    Logged in as:
+    <b id="meDisplay"></b>
+  </div>
+
+</div>
+
+<div class="container">
+
+  <div class="sidebar">
+
+    <div class="stats">
+
+      <div class="stat">
+        <div class="label">Current Chat</div>
+        <div class="value" id="chatType">-</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Messages</div>
+        <div class="value" id="msgCount">0</div>
+      </div>
+
+    </div>
+
+    <div class="panel">
+
+      <h3>Private Chat</h3>
+
+      <input
+        id="toUser"
+        placeholder="Username">
+
+      <button
+        class="primary"
+        onclick="openChat()">
+
+        Open Chat
+
+      </button>
+
+      <button
+        class="success"
+        onclick="openGlobalChat()">
+
+        🌍 Global
+
+      </button>
+
+    </div>
+
+    <div class="panel">
+
+      <h3>Create Group</h3>
+
+      <input
+        id="groupName"
+        placeholder="Group name">
+
+      <input
+        id="groupUsers"
+        placeholder="Users (comma separated)">
+
+      <button
+        class="warning"
+        onclick="createGroupChat()">
+
+        Create Group
+
+      </button>
+
+    </div>
+
+    <div class="panel">
+
+      <h3>Group Chats</h3>
+
+      <button
+        class="primary"
+        onclick="openGroupList()">
+
+        Refresh Groups
+
+      </button>
+
+      <div
+        class="group-list"
+        id="groupList">
+
+      </div>
+
+    </div>
+
+    <div class="panel">
+
+      <h3>Other</h3>
+
+      <button
+        class="danger"
+        onclick="window.location.href='video.html'">
+
+        📹 Video Chat
+
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="main">
+
+    <div class="chat-header">
+
+      <div class="chat-title" id="chatTitle">
+        No chat selected
+      </div>
+
+      <div id="typingStatus"></div>
+
+    </div>
+
+    <div class="messages" id="messages">
+
+      <div class="empty">
+        Open or create a chat to begin messaging.
+      </div>
+
+    </div>
+
+    <div class="chat-box">
+
+      <div class="chat-controls">
+
+        <input
+          type="text"
+          id="msgInput"
+          placeholder="Message...">
+
+        <button
+          class="primary"
+          onclick="sendMsg()">
+
+          Send
+
+        </button>
+
+      </div>
+
+      <div class="file-box">
+
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*,video/*,audio/*,.pdf,.txt,.zip,.doc,.docx">
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module">
+
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  setDoc,
+  updateDoc,
+  arrayUnion
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+import {
+  db,
+  storage
+}
+from "./firebase.js";
+
+/* ================= USER ================= */
+
+const me =
+  localStorage.getItem("username");
+
+if(!me){
+
+  alert("Please log in.");
+
+  location.href = "index.html";
+}
+
+document.getElementById("meDisplay")
+.textContent = me;
+
+/* ================= STATE ================= */
+
+let currentChatId = null;
+
+/* ================= HELPERS ================= */
+
+function escapeHtml(str){
+
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function getChatId(a,b){
+
+  return [a,b]
+    .sort()
+    .join("_");
+}
+
+/* ================= SEEN ================= */
+
+async function markSeen(chatId){
+
+  if(!chatId) return;
+
+  await setDoc(
+    doc(db,"chatSeen",chatId + "_" + me),
+    {
+      chatId,
+      user:me,
+      lastSeen:Date.now()
+    }
+  );
+}
+
+/* ================= OPEN PRIVATE ================= */
+
+window.openChat = async function(){
+
+  const other =
+    document.getElementById("toUser")
+    .value
+    .trim();
+
+  if(!other){
+
+    alert("Enter username.");
+
+    return;
+  }
+
+  currentChatId =
+    getChatId(me,other);
+
+  const ref =
+    doc(db,"chats",currentChatId);
+
+  const snap =
+    await getDoc(ref);
+
+  if(!snap.exists()){
+
+    await setDoc(ref,{
+      type:"private",
+      participants:[me,other],
+      messages:[],
+      created:Date.now()
+    });
+  }
+
+  document.getElementById("chatTitle")
+    .textContent =
+    "Private Chat with " + other;
+
+  document.getElementById("chatType")
+    .textContent =
+    "DM";
+
+  await markSeen(currentChatId);
+
+  loadMessages();
+};
+
+/* ================= GLOBAL ================= */
+
+window.openGlobalChat = async function(){
+
+  currentChatId =
+    "GLOBAL_CHAT";
+
+  const ref =
+    doc(db,"chats",currentChatId);
+
+  const snap =
+    await getDoc(ref);
+
+  if(!snap.exists()){
+
+    await setDoc(ref,{
+      type:"global",
+      participants:["GLOBAL"],
+      messages:[],
+      created:Date.now()
+    });
+  }
+
+  document.getElementById("chatTitle")
+    .textContent =
+    "🌍 Global Chat";
+
+  document.getElementById("chatType")
+    .textContent =
+    "Global";
+
+  await markSeen(currentChatId);
+
+  loadMessages();
+};
+
+/* ================= CREATE GROUP ================= */
+
+window.createGroupChat = async function(){
+
+  const name =
+    document.getElementById("groupName")
+    .value
+    .trim();
+
+  if(!name){
+
+    alert("Enter group name");
+
+    return;
+  }
+
+  let users =
+    document.getElementById("groupUsers")
+    .value
+    .split(",")
+    .map(u=>u.trim())
+    .filter(Boolean);
+
+  if(!users.includes(me)){
+    users.push(me);
+  }
+
+  const groupId =
+    "group_" + Date.now();
+
+  await setDoc(
+    doc(db,"chats",groupId),
+    {
+      type:"group",
+      name,
+      participants:users,
+      messages:[],
+      created:Date.now()
+    }
+  );
+
+  currentChatId = groupId;
+
+  document.getElementById("chatTitle")
+    .textContent =
+    "👥 " + name;
+
+  document.getElementById("chatType")
+    .textContent =
+    "Group";
+
+  await markSeen(groupId);
+
+  loadMessages();
+
+  alert("Group created.");
+};
+
+/* ================= GROUP LIST ================= */
+
+window.openGroupList = async function(){
+
+  const box =
+    document.getElementById("groupList");
+
+  box.innerHTML =
+    "Loading groups...";
+
+  const snap =
+    await getDocs(collection(db,"chats"));
+
+  box.innerHTML = "";
+
+  let found = 0;
+
+  snap.forEach(chat=>{
+
+    const data =
+      chat.data();
+
+    if(data.type !== "group"){
+      return;
+    }
+
+    if(
+      !data.participants ||
+      !data.participants.includes(me)
+    ){
+      return;
+    }
+
+    found++;
+
+    const btn =
+      document.createElement("button");
+
+    btn.className =
+      "group-btn";
+
+    btn.textContent =
+      "👥 " + data.name;
+
+    btn.onclick = async ()=>{
+
+      currentChatId =
+        chat.id;
+
+      document.getElementById("chatTitle")
+        .textContent =
+        "👥 " + data.name;
+
+      document.getElementById("chatType")
+        .textContent =
+        "Group";
+
+      await markSeen(chat.id);
+
+      loadMessages();
+    };
+
+    box.appendChild(btn);
+  });
+
+  if(found === 0){
+
+    box.innerHTML = `
+      <div class="empty">
+        No groups found.
+      </div>
+    `;
+  }
+};
+
+/* ================= SEND ================= */
+
+window.sendMsg = async function(){
+
+  if(!currentChatId){
+
+    alert("Open a chat first.");
+
+    return;
+  }
+
+  const text =
+    document.getElementById("msgInput")
+    .value
+    .trim();
+
+  const file =
+    document.getElementById("fileInput")
+    .files[0];
+
+  let mediaURL = null;
+  let mediaType = null;
+
+  if(file){
+
+    const storageRef =
+      ref(
+        storage,
+        `chatUploads/${currentChatId}/${Date.now()}_${file.name}`
+      );
+
+    await uploadBytes(
+      storageRef,
+      file
+    );
+
+    mediaURL =
+      await getDownloadURL(storageRef);
+
+    mediaType =
+      file.type;
+  }
+
+  if(!text && !mediaURL){
+    return;
+  }
+
+  const chatRef =
+    doc(db,"chats",currentChatId);
+
+  await updateDoc(chatRef,{
+    messages:arrayUnion({
+      from:me,
+      text:text || "",
+      media:mediaURL,
+      mediaType,
+      time:Date.now()
+    }),
+    updated:Date.now()
+  });
+
+  document.getElementById("msgInput")
+    .value = "";
+
+  document.getElementById("fileInput")
+    .value = "";
+
+  loadMessages();
+};
+
+/* ================= LOAD ================= */
+
+async function loadMessages(){
+
+  if(!currentChatId){
+    return;
+  }
+
+  const chatRef =
+    doc(db,"chats",currentChatId);
+
+  const snap =
+    await getDoc(chatRef);
+
+  if(!snap.exists()){
+    return;
+  }
+
+  const box =
+    document.getElementById("messages");
+
+  const wasNearBottom =
+    box.scrollHeight -
+    box.scrollTop -
+    box.clientHeight < 50;
+
+  box.innerHTML = "";
+
+  const data =
+    snap.data();
+
+  const messages =
+    data.messages || [];
+
+  document.getElementById("msgCount")
+    .textContent =
+    messages.length;
+
+  if(messages.length === 0){
+
+    box.innerHTML = `
+      <div class="empty">
+        No messages yet.
+      </div>
+    `;
+
+    return;
+  }
+
+  messages.forEach(m=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "msg " +
+      (m.from === me
+        ? "me"
+        : "other");
+
+    let mediaHTML = "";
+
+    if(m.media){
+
+      if(
+        m.mediaType &&
+        m.mediaType.startsWith("image/")
+      ){
+
+        mediaHTML = `
+          <img src="${m.media}">
+        `;
+
+      }else if(
+        m.mediaType &&
+        m.mediaType.startsWith("video/")
+      ){
+
+        mediaHTML = `
+          <video controls>
+            <source src="${m.media}">
+          </video>
+        `;
+
+      }else if(
+        m.mediaType &&
+        m.mediaType.startsWith("audio/")
+      ){
+
+        mediaHTML = `
+          <audio controls>
+            <source src="${m.media}">
+          </audio>
+        `;
+
+      }else{
+
+        mediaHTML = `
+          <a href="${m.media}" target="_blank">
+            📎 Download File
+          </a>
+        `;
+      }
+    }
+
+    div.innerHTML = `
+
+      <div class="msg-top">
+
+        <b>
+          ${escapeHtml(m.from)}
+        </b>
+
+        •
+
+        ${new Date(m.time).toLocaleString()}
+
+      </div>
+
+      <div>
+        ${escapeHtml(m.text || "")}
+      </div>
+
+      ${mediaHTML}
+    `;
+
+    box.appendChild(div);
+
+  });
+
+  if(wasNearBottom){
+
+    box.scrollTop =
+      box.scrollHeight;
+  }
+}
+
+/* ================= ENTER KEY ================= */
+
+document.getElementById("msgInput")
+.addEventListener("keypress",e=>{
+
+  if(e.key === "Enter"){
+    sendMsg();
+  }
+});
+
+/* ================= AUTO REFRESH ================= */
+
+setInterval(loadMessages,2000);
+
+</script>
+
+</body>
+</html>

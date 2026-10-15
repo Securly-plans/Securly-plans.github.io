@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>EmeraldOS Gold 1R</title>
+<link rel="icon" type="image/svg+xml" href="emerald-gold-1r-logo.svg">
+<link rel="stylesheet" href="gold1r-core.css">
+<link rel="stylesheet" href="gold1r.css">
+<link rel="stylesheet" href="gold1r-extras.css">
+<link rel="stylesheet" href="gold1r-improvements.css">
+<link rel="stylesheet" href="gold1r-flagship.css">
+<link rel="stylesheet" href="gold1r-polish.css">
+<link rel="stylesheet" href="gold1r-experience.css">
+<script>
+(function(){
+  const loggedIn=localStorage.getItem('loggedIn')==='true'||localStorage.getItem('gold1g_loggedIn')==='true';
+  if(!loggedIn){
+    const next='OS.html'+location.search+location.hash;
+    location.replace('index.html?next='+encodeURIComponent(next));
+  }
+})();
+</script>
+<script src="gold1r-preboot.js"></script>
+<script src="gold1r-filesystem.js"></script>
+<script src="gold1r-migration.js"></script>
+<script>
+window.EMERALDOS_GOLD_SHELL_MANAGED=(()=>{const p=new URLSearchParams(location.search);return p.has('goldShell')||p.get('elsusShell')==='2';})();
+window.EMERALDOS_GOLD_VERSION='1R';
+window.EMERALDOS_GOLD_FOLDER='Gold_1R';
+</script>
+<script defer src="gold1r-core.js"></script>
+<script defer src="gold1r.js"></script>
+<script defer src="gold1r-features.js"></script>
+<script defer src="gold1r-extras.js"></script>
+<script defer src="gold1r-continuity.js"></script>
+<script defer src="gold1r-improvements.js"></script>
+<script defer src="gold1r-flagship.js"></script>
+<script defer src="gold1r-polish.js"></script>
+<script defer src="gold1r-experience.js"></script>
+</head>
+<body class="gold1p gold1p-shell" data-build="1R">
+  <div id="boot" class="boot-screen">
+    <img class="boot-logo" src="emerald-gold-1r-logo.svg" alt="EmeraldOS Gold 1R">
+    <h1>EmeraldOS Gold 1R</h1>
+    <p>Starting your E.L.S.U.S. cloud virtual machine.</p>
+    <div class="boot-progress"><span></span></div>
+    <small>F12 BIOS / DOS · F9 Staff Edition · F1 Support</small>
+  </div>
+  <div id="liveControlBanner" class="live-control-banner hidden" role="status"></div>
+  <main id="desktop" aria-label="EmeraldOS Gold desktop"></main>
+  <section id="startMenu" class="start-menu hidden" aria-label="Start menu"></section>
+  <section id="searchPanel" class="side-panel hidden" aria-label="Search"></section>
+  <section id="taskView" class="task-view hidden" aria-label="Task View"></section>
+  <section id="actionCenter" class="action-center hidden" aria-label="Action Center"></section>
+  <section id="setupWizard" class="setup-overlay hidden" aria-label="First-Boot Setup"></section>
+  <div id="windowLayer" aria-label="Application windows"></div>
+  <div id="contextMenu" class="context-menu hidden"></div>
+  <footer id="taskbar" aria-label="Taskbar">
+    <button id="startBtn" class="start-btn" title="Start" aria-label="Start"><span>G</span></button>
+    <button id="searchBtn" class="task-btn search-wide" title="Search">Type here to search</button>
+    <button id="taskViewBtn" class="task-btn" title="Task View">▣</button>
+    <div id="taskApps" class="task-apps"></div>
+    <button id="widgetsBtn" class="task-btn" title="System tools">☰</button>
+    <button id="actionBtn" class="task-btn" title="Action Center">Notifications</button>
+    <button id="quickSettingsBtn" class="task-btn quick-settings-btn" title="Quick Settings" aria-label="Quick Settings">▦</button>
+    <button id="shellStatusBtn" class="task-btn shell-status-btn" title="E.L.S.U.S. System Update">E.L.S.U.S.</button>
+    <button id="staffBtn" class="task-btn staff-shortcut" title="Gold Staff Edition">Staff</button>
+    <button id="logoutBtn" class="task-btn logout-shortcut" title="Sign out">Sign out</button>
+    <div id="clock" class="clock" role="button" tabindex="0" title="Date and time"></div>
+    <button id="showDesktopBtn" class="show-desktop-btn" title="Show desktop" aria-label="Show desktop"></button>
+  </footer>
+</body>
+</html>

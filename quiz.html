@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quiz</title>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.card{max-width:800px;margin:auto;background:white;padding:20px;border-radius:12px}
+.q{margin-bottom:15px;padding:10px;border:1px solid #ddd;border-radius:8px}
+button{width:100%;padding:12px;background:#c40000;color:white;border:none;border-radius:8px}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2 id="title">Loading quiz...</h2>
+<div id="quiz"></div>
+
+<button onclick="submitQuiz()">Submit</button>
+
+<div id="result"></div>
+
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let quizData = [];
+
+async function load() {
+  const snap = await getDocs(collection(db,"quizzes"));
+
+  snap.forEach(doc=>{
+    const data = doc.data();
+    document.getElementById("title").innerText = data.title;
+    quizData = data.questions;
+  });
+
+  render();
+}
+
+function render(){
+  const box = document.getElementById("quiz");
+
+  quizData.forEach((q,i)=>{
+
+    box.innerHTML += `
+      <div class="q">
+        <p>${i+1}. ${q.text}</p>
+
+        ${Object.keys(q.options).map(k=>`
+          <label>
+            <input type="${q.type==="multi"?"checkbox":"radio"}"
+            name="q${i}" value="${k}">
+            ${q.options[k]}
+          </label>
+        `).join("")}
+      </div>
+    `;
+  });
+}
+
+window.submitQuiz = () => {
+
+  let score = 0;
+
+  quizData.forEach((q,i)=>{
+
+    const selected = [...document.querySelectorAll(`input[name="q${i}"]:checked`)]
+      .map(x=>x.value)
+      .sort()
+      .join("");
+
+    const correct = q.correct.sort().join("");
+
+    if(selected === correct) score++;
+  });
+
+  document.getElementById("result").innerText =
+    `Score: ${score}/${quizData.length}`;
+};
+
+load();
+</script>
+
+</body>
+</html>

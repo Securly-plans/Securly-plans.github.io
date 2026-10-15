@@ -1,0 +1,28 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1R",
+  "build": "1R",
+  "folder": "Gold_1R",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "manualUpdateSetup",
+  "releaseTitle": "EmeraldOS Gold 1R",
+  "elsusMode": "original",
+  "shellV2Compatible": true,
+  "summary": "Universal file system and permanent-deletion protection with the Gold 1P UI.",
+  "migrationFrom": [
+    "1Q",
+    "1P",
+    "1O",
+    "1N",
+    "1M",
+    "1L",
+    "1K",
+    "1J",
+    "1I",
+    "1H"
+  ]
+}

@@ -1,0 +1,9 @@
+EMERALDOS GOLD 1L
+
+- Keeps the Gold 1K Windows 10-inspired visual design.
+- Restores the original E.L.S.U.S. implementation used in Gold 1I.
+- Uses the original Gold 1I E.L.S.U.S. routing with no additional shell patch.
+- Retains active update prompts with Update now, View details, and Later.
+- Retains Focus Sessions, Quick Settings, Staff Center, live staff-control, custom app logos, and staff app verification as normal Gold features.
+- Preserves merge-based migration and the version-independent cloud VM.
+- Does not auto-set system/emeraldGoldLatest.

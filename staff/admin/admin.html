@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Staff Administration</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#0f1115;
+    color:white;
+    font-family:Arial;
+}
+
+header{
+    padding:20px;
+    background:#1a1d24;
+    border-bottom:1px solid #2a2f3a;
+}
+
+header h1{
+    margin:0;
+}
+
+#staffInfo{
+    color:#9ca3af;
+}
+
+.container{
+    padding:20px;
+}
+
+.card{
+    background:#1a1d24;
+    border:1px solid #2a2f3a;
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.user,
+.chat,
+.incident{
+    background:#111827;
+    border-radius:8px;
+    padding:10px;
+    margin-top:10px;
+}
+
+button{
+    background:#2563eb;
+    border:none;
+    color:white;
+    padding:10px 14px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>Staff Administration</h1>
+
+<div id="staffInfo"></div>
+
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<button onclick="location.href='../portal.html'">
+Back To Portal
+</button>
+
+</div>
+
+<div class="card">
+<h2>Users</h2>
+<div id="users"></div>
+</div>
+
+<div class="card">
+<h2>Incident Reports</h2>
+<div id="incidents"></div>
+</div>
+
+<div class="card">
+<h2>Chats</h2>
+<div id="chats"></div>
+</div>
+
+</div>
+
+<script type="module">
+
+import {
+  requireAdmin
+} from "./js/auth.js";
+
+import {
+  loadUsers
+} from "./js/users.js";
+
+import {
+  loadIncidents
+} from "./js/incidents.js";
+
+import {
+  loadChats
+} from "./js/chats.js";
+
+const staff = requireAdmin();
+
+document.getElementById("staffInfo")
+.textContent =
+`${staff.name} (${staff.id})`;
+
+loadUsers();
+loadIncidents();
+loadChats();
+
+</script>
+
+</body>
+</html>

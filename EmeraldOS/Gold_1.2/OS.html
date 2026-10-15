@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EmeraldOS Gold 1.2</title>
+<link rel="icon" type="image/svg+xml" href="emerald-gold-logo.svg">
+<link rel="stylesheet" href="gold12.css">
+<script>
+(function(){
+  function openBootMenu(){
+    if(document.getElementById('gold12-boot-menu')) return;
+    const d=document.createElement('div');
+    d.id='gold12-boot-menu';
+    d.innerHTML='<div class="boot-choice"><div class="boot-title">Emerald Systems BIOS A1</div><p>Startup options</p><button onclick="location.href=\'bios.html\'">Open BIOS / Emerald DOS</button><button onclick="location.href=\'staff.html\'">EmeraldOS Gold Staff Edition</button><button onclick="localStorage.removeItem(\'gold12_setup_done\');location.href=\'OS.html\'">Run Setup</button><button onclick="document.getElementById(\'gold12-boot-menu\').remove()">Continue Boot</button></div>';
+    document.body.appendChild(d);
+  }
+  window.addEventListener('keydown',function(e){ if(e.key==='F12'){ e.preventDefault(); if(document.body) openBootMenu(); else window.__gold12_f12=true; }});
+  window.addEventListener('DOMContentLoaded',function(){ if(window.__gold12_f12) openBootMenu(); });
+})();
+</script>
+<script defer src="gold12.js"></script>
+</head>
+<body class="gold12" data-build="1.2">
+  <div id="boot" class="boot-screen">
+    <div class="gold-logo-xl">G</div>
+    <h1>EmeraldOS Gold 1.2</h1>
+    <p>Loading Gold desktop, Office, Staff Edition, settings, and personalization.</p>
+    <div class="boot-hint">Press F12 for Emerald Systems BIOS A1 / Emerald DOS / Staff Edition</div>
+    <div class="boot-progress"><span></span></div>
+  </div>
+
+  <main id="desktop" aria-label="EmeraldOS Gold desktop"></main>
+  <section id="startMenu" class="start-menu hidden" aria-label="Start menu"></section>
+  <section id="searchPanel" class="side-panel hidden"></section>
+  <section id="taskView" class="task-view hidden"></section>
+  <section id="actionCenter" class="action-center hidden"></section>
+  <section id="setupWizard" class="setup-overlay hidden"></section>
+  <div id="windowLayer"></div>
+
+  <footer id="taskbar" aria-label="Taskbar">
+    <button id="startBtn" class="start-btn" title="Start">G</button>
+    <button id="searchBtn" class="task-btn wide" title="Search">Type here to search</button>
+    <button id="taskViewBtn" class="task-btn" title="Task View">▣</button>
+    <div id="taskApps" class="task-apps"></div>
+    <button id="widgetsBtn" class="task-btn" title="Widgets">☰</button>
+    <button id="actionBtn" class="task-btn" title="Action Center">0</button>
+    <button id="staffBtn" class="task-btn staff-shortcut" title="Staff Edition">Staff</button>
+    <div id="clock" class="clock"></div>
+  </footer>
+</body>
+</html>

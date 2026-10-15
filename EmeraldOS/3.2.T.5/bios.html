@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestOS BIOS</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#000;color:#c0c0c0;font-family:"Courier New",monospace;font-size:15px;overflow:hidden}.screen{padding:26px;white-space:pre-line}.white{color:#fff}.green{color:#00ff66}.blue{color:#00aaff}.yellow{color:#ffff66}.red{color:#ff5555}.menu{margin-top:18px;border:1px solid #808080;padding:12px;width:760px;max-width:calc(100vw - 70px)}.menu-title{color:#fff;margin-bottom:10px}.option{padding:5px 8px;cursor:pointer}.option.selected{background:#000080;color:#fff}.footer{position:fixed;left:26px;bottom:20px;color:#808080}.blink{animation:blink 1s steps(2,start) infinite}@keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="screen" id="screen"></div><div class="footer" id="footer"></div>
+<script>
+"use strict";
+const screen=document.getElementById("screen"),footer=document.getElementById("footer");
+const BUILD={id:"testos32t5",name:"TestOS 3.2.T.5",version:"3.2.T.5",channel:"Test",test:true};
+const EDITIONS=[
+{id:"economy",name:"TestOS Economy",description:"Smallest edition with essential desktop tools only."},
+{id:"home",name:"TestOS Home",description:"Personal edition with docs, calendar, and home apps."},
+{id:"business",name:"TestOS Business",description:"Work edition with productivity, planning, and communication apps."},
+{id:"virtue",name:"TestOS Virtue",description:"Power-user edition with creative and customization apps."},
+{id:"developer",name:"TestOS Developer",description:"Developer edition with terminal, registry, code, and network tools."},
+{id:"executive",name:"TestOS Executive",description:"Complete edition with all apps, policy, audit, and deployment tools."}
+];
+let mode="startup",selectedEdition=0,startupIndex=0;
+const startupLines=['<span class="white">TestBIOS Version 3.2.T.5</span>','Copyright 2026 Emerald Systems','','CPU: Emerald Virtual Processor 95 MHz','Memory Test: 640K OK','Extended Memory: 32768K OK','','Detecting IDE drives...','Primary Master: TestOS 3.2.T.5 Virtual Disk','Primary Slave: None','','Initializing keyboard... OK','Initializing display adapter... OK','Checking CMOS settings... OK','','<span class="green">Boot device found: TestOS 3.2.T.5 System Disk</span>','','Loading TestOS Boot Manager...',''];
+function printStartup(){if(startupIndex<startupLines.length){screen.innerHTML+=startupLines[startupIndex]+"\n";startupIndex++;setTimeout(printStartup,95)}else{mode="edition";renderEditionMenu()}}
+function renderEditionMenu(){screen.innerHTML=`\n<span class="white">TestBIOS Edition Selector</span>\n<span class="blue">Build: ${BUILD.name} - Desktop Folders + App Suites</span>\n\n<div class="menu">\n<div class="menu-title">Choose Edition To Boot</div>\n${EDITIONS.map((edition,index)=>`\n<div class="option ${index===selectedEdition?"selected":""}" onclick="chooseEdition(${index})">\n    ${index+1}. ${edition.name}\n       ${edition.description}\n</div>`).join("")}\n</div>\n\n<span class="yellow">Use Up/Down arrows and Enter, or press 1-6.</span>\n<span class="blink">_</span>`;footer.textContent="DEL: BIOS setup"}
+function chooseEdition(index){selectedEdition=index;bootSelected(BUILD,EDITIONS[selectedEdition])}
+function bootSelected(build,edition){mode="booting";localStorage.setItem("testos_build_id",build.id);localStorage.setItem("testos_build_name",build.name);localStorage.setItem("testos_version",build.version);localStorage.setItem("testos_channel",build.channel);localStorage.setItem("testos_test_build",build.test?"true":"false");localStorage.setItem("testos_edition",edition.id);localStorage.setItem("testos_edition_name",edition.name);screen.innerHTML=`\n<span class="white">TestBIOS Boot Manager</span>\n\nSelected build: <span class="green">${build.name}</span>\nSelected edition: <span class="green">${edition.name}</span>\n\nSaving boot configuration... OK\nLoading app-folder edition map... OK\nLoading boot sector... OK\nStarting TestOS loader...\n\n<span class="blink">_</span>`;footer.textContent="Booting selected configuration...";setTimeout(()=>window.location.replace("./loading.html"),1200)}
+function renderSetup(){mode="setup";screen.innerHTML=`\n<span class="white">TestBIOS Setup Utility</span>\n\nMain        Advanced        Boot        Security        Exit\n\nSystem Disk:        TestOS Virtual Disk\nBuild:              TestOS 3.2.T.5\nEdition Selector:   Enabled\nEconomy Edition:    Enabled\nDesktop Folder Mode: Enabled\nDesktop Sync:       Firebase + Local Cache\nRegistry:           HKEY compatible\nMemory:             32768K\nVideo Adapter:      Emerald VGA Compatible\n\nThis setup screen is decorative for now.\n\n<span class="yellow">Press ESC to return to edition selector.</span>`;footer.textContent="ESC: return"}
+document.addEventListener("keydown",e=>{if(mode==="startup"||mode==="booting")return;if(e.key==="Delete"){renderSetup();return}if(mode==="setup"){if(e.key==="Escape"){mode="edition";renderEditionMenu()}return}if(mode==="edition"){if(e.key==="ArrowDown"){selectedEdition=(selectedEdition+1)%EDITIONS.length;renderEditionMenu()}if(e.key==="ArrowUp"){selectedEdition=(selectedEdition-1+EDITIONS.length)%EDITIONS.length;renderEditionMenu()}if(e.key==="Enter")chooseEdition(selectedEdition);if(["1","2","3","4","5","6"].includes(e.key))chooseEdition(parseInt(e.key,10)-1)}});
+setTimeout(printStartup,300);
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Starting EmeraldOS Gold 1.4</title>
+<link rel="icon" href="emerald-gold-14-logo.svg" type="image/svg+xml">
+<style>
+body{margin:0;height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#eff6ff,#fef3c7,#dcfce7);font-family:'Segoe UI',Arial,sans-serif;color:#111827}.box{text-align:center;width:min(620px,92vw);background:rgba(255,255,255,.88);border:1px solid #d6e2ee;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.23);padding:34px}.logo{width:92px;height:92px;margin:auto;border-radius:22px;background:linear-gradient(135deg,#fff6cd,#d69e1d,#0f7b4d);display:grid;place-items:center;font-size:54px;font-weight:900;color:white;box-shadow:0 16px 34px rgba(0,0,0,.25)}.bar{height:7px;background:#dbe6f2;border-radius:20px;overflow:hidden;margin:24px 0}.bar span{display:block;height:100%;width:40%;background:#0078d4;animation:run 1.25s infinite}@keyframes run{from{transform:translateX(-120%)}to{transform:translateX(260%)}}.hint{color:#607086}.btn{padding:10px 14px;border:1px solid #b7c8db;background:white;color:#111827;border-radius:6px;margin:4px}.primary{background:#0078d4;border-color:#0078d4;color:white}.kbd{font-family:Consolas,monospace;background:#eef3f8;border:1px solid #d6e2ee;border-radius:5px;padding:2px 6px}</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">G</div>
+  <h1>EmeraldOS Gold 1.4</h1>
+  <p id="msg">Starting desktop services...</p>
+  <div class="bar"><span></span></div>
+  <p class="hint"><span class="kbd">F12</span> Emerald Systems BIOS A1 / Emerald DOS · <span class="kbd">F9</span> Staff Edition</p>
+  <button class="btn" onclick="openBIOS()">BIOS / DOS</button>
+  <button class="btn" onclick="openStaff()">Staff Edition</button>
+  <button class="btn primary" onclick="continueBoot()">Continue</button>
+</div>
+<script>
+function isLoggedIn(){return localStorage.getItem('loggedIn')==='true'||localStorage.getItem('gold14_loggedIn')==='true'}
+function continueBoot(){location.href=isLoggedIn()?'OS.html':'index.html'}
+function openBIOS(){clearTimeout(bootTimer);location.href='bios.html'}
+function openStaff(){clearTimeout(bootTimer);location.href='staff.html'}
+const bootTimer=setTimeout(()=>{document.getElementById('msg').textContent=isLoggedIn()?'Opening Gold desktop...':'Opening normal EmeraldOS Gold login...';setTimeout(continueBoot,350)},1600);
+window.addEventListener('keydown',e=>{if(e.key==='F12'){e.preventDefault();openBIOS()}if(e.key==='F9'){e.preventDefault();openStaff()}if(e.key==='Enter'){e.preventDefault();continueBoot()}});
+</script>
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Discover EmeraldOS Gold, its cloud-based virtual machine experience, E.L.S.U.S. update system, customization, applications, and support features.">
+  <meta name="theme-color" content="#151a22">
+  <title>EmeraldOS Gold | Emerald Systems</title>
+  <style>
+    :root {
+      --bg: #090c12;
+      --bg-soft: #101621;
+      --panel: rgba(20, 27, 39, 0.82);
+      --panel-strong: #171e2a;
+      --text: #f5f7fb;
+      --muted: #aeb7c6;
+      --gold: #f2c14e;
+      --gold-light: #ffe29a;
+      --gold-dark: #aa7617;
+      --emerald: #19b86b;
+      --border: rgba(255, 255, 255, 0.11);
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --max-width: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 80% 0%, rgba(242, 193, 78, 0.16), transparent 31rem),
+        radial-gradient(circle at 12% 24%, rgba(25, 184, 107, 0.12), transparent 28rem),
+        linear-gradient(180deg, #0d1119 0%, var(--bg) 54%, #07090d 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .page-shell {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .page-shell::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      opacity: 0.24;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+
+    .container {
+      width: min(calc(100% - 40px), var(--max-width));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(9, 12, 18, 0.78);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 226, 154, 0.44);
+      border-radius: 11px;
+      background: linear-gradient(145deg, #3a2b0b, #171e2a 64%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 10px 26px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-mark svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .brand-subtitle {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-links a {
+      padding: 10px 13px;
+      border-radius: 10px;
+      color: #dce2eb;
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 650;
+      transition: background 150ms ease, color 150ms ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      outline: none;
+    }
+
+    .hero {
+      padding: 88px 0 76px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.96fr);
+      align-items: center;
+      gap: 64px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 20px;
+      padding: 7px 11px;
+      border: 1px solid rgba(242, 193, 78, 0.3);
+      border-radius: 999px;
+      color: var(--gold-light);
+      background: rgba(242, 193, 78, 0.08);
+      font-size: 0.77rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 14px rgba(25, 184, 107, 0.8);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(3.2rem, 7vw, 6.2rem);
+      line-height: 0.98;
+      letter-spacing: -0.065em;
+    }
+
+    .gold-text {
+      display: block;
+      color: transparent;
+      background: linear-gradient(120deg, #fff1bd 0%, var(--gold) 38%, #c5891e 76%, #fff1bd 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      filter: drop-shadow(0 8px 30px rgba(242, 193, 78, 0.12));
+    }
+
+    .hero-copy {
+      max-width: 700px;
+      margin: 26px 0 0;
+      color: #c8d0dc;
+      font-size: clamp(1rem, 1.6vw, 1.19rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .button {
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 19px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 0.94rem;
+      font-weight: 750;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .button-primary {
+      color: #17140d;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      box-shadow: 0 14px 34px rgba(242, 193, 78, 0.22);
+    }
+
+    .button-primary:hover {
+      box-shadow: 0 18px 44px rgba(242, 193, 78, 0.3);
+    }
+
+    .button-secondary {
+      border-color: var(--border);
+      color: #eef2f8;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .button-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.23);
+      background: rgba(255, 255, 255, 0.085);
+    }
+
+    .system-preview {
+      position: relative;
+      min-height: 440px;
+    }
+
+    .preview-glow {
+      position: absolute;
+      inset: 9% 5% 0;
+      border-radius: 50%;
+      background: rgba(242, 193, 78, 0.18);
+      filter: blur(70px);
+    }
+
+    .desktop-window {
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      background: #0f1520;
+      box-shadow: var(--shadow);
+      transform: perspective(1300px) rotateY(-5deg) rotateX(2deg);
+    }
+
+    .window-titlebar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(180deg, #202938, #161d29);
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.79rem;
+      font-weight: 700;
+    }
+
+    .window-icon {
+      width: 17px;
+      height: 17px;
+      border-radius: 5px;
+      background: linear-gradient(145deg, #ffe29a, #b47a18);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .window-controls span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #536071;
+    }
+
+    .desktop-area {
+      min-height: 346px;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 72% 26%, rgba(242, 193, 78, 0.24), transparent 12rem),
+        linear-gradient(145deg, #0d3a35 0%, #122a2d 38%, #151d28 100%);
+    }
+
+    .desktop-logo {
+      width: 104px;
+      height: 104px;
+      margin: 46px auto 18px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 226, 154, 0.48);
+      border-radius: 28px;
+      background: rgba(7, 11, 17, 0.46);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 22px 48px rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(12px);
+    }
+
+    .desktop-logo svg {
+      width: 58px;
+      height: 58px;
+    }
+
+    .desktop-wordmark {
+      text-align: center;
+      font-size: 1.42rem;
+      font-weight: 780;
+      letter-spacing: -0.03em;
+    }
+
+    .desktop-wordmark small {
+      display: block;
+      margin-top: 4px;
+      color: #c2ccda;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .taskbar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(8, 12, 18, 0.88);
+      backdrop-filter: blur(14px);
+    }
+
+    .start-button,
+    .task-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.075);
+    }
+
+    .start-button {
+      color: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .task-icon::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: #59728f;
+    }
+
+    .task-spacer {
+      flex: 1;
+    }
+
+    .task-clock {
+      color: #d5dbe4;
+      font-size: 0.68rem;
+      line-height: 1.2;
+      text-align: right;
+    }
+
+    .section {
+      padding: 80px 0;
+    }
+
+    .section-header {
+      max-width: 720px;
+      margin-bottom: 34px;
+    }
+
+    .section-kicker {
+      color: var(--gold-light);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 8px 0 12px;
+      font-size: clamp(2rem, 4vw, 3.35rem);
+      line-height: 1.08;
+      letter-spacing: -0.045em;
+    }
+
+    .section-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.04rem;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      min-height: 270px;
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .feature-icon {
+      width: 47px;
+      height: 47px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 22px;
+      border: 1px solid rgba(242, 193, 78, 0.26);
+      border-radius: 14px;
+      color: var(--gold-light);
+      background: rgba(242, 193, 78, 0.09);
+    }
+
+    .feature-icon svg {
+      width: 23px;
+      height: 23px;
+    }
+
+    .feature-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.16rem;
+      letter-spacing: -0.025em;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .elsus-panel {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 26px;
+      padding: 32px;
+      border: 1px solid rgba(242, 193, 78, 0.2);
+      border-radius: var(--radius-lg);
+      background:
+        radial-gradient(circle at 8% 20%, rgba(242, 193, 78, 0.13), transparent 20rem),
+        linear-gradient(145deg, rgba(24, 31, 43, 0.98), rgba(12, 17, 25, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .elsus-copy {
+      padding: 10px 6px;
+    }
+
+    .elsus-copy p {
+      color: #bec7d4;
+    }
+
+    .system-flow {
+      display: grid;
+      gap: 12px;
+      align-content: center;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .flow-number {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: #17140d;
+      background: linear-gradient(145deg, var(--gold-light), var(--gold));
+      font-size: 0.88rem;
+      font-weight: 900;
+    }
+
+    .flow-step strong {
+      display: block;
+      font-size: 0.94rem;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .why-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .why-card {
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+    }
+
+    .why-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.25rem;
+    }
+
+    .why-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .notice {
+      margin-top: 28px;
+      padding: 22px 24px;
+      border-left: 3px solid var(--gold);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: #c7cfda;
+      background: rgba(255, 255, 255, 0.045);
+      font-size: 0.85rem;
+    }
+
+    .site-footer {
+      padding: 34px 0 44px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: #8f99a8;
+      font-size: 0.83rem;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .footer-row strong {
+      color: #d8dee8;
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid,
+      .elsus-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-grid {
+        gap: 48px;
+      }
+
+      .system-preview {
+        width: min(100%, 650px);
+        margin: 0 auto;
+      }
+
+      .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        width: min(calc(100% - 26px), var(--max-width));
+      }
+
+      .site-header {
+        position: static;
+      }
+
+      .nav {
+        min-height: 64px;
+      }
+
+      .nav-links a:not(.nav-primary) {
+        display: none;
+      }
+
+      .hero {
+        padding: 62px 0 52px;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 18vw, 4.6rem);
+      }
+
+      .desktop-window {
+        transform: none;
+      }
+
+      .desktop-area {
+        min-height: 300px;
+      }
+
+      .feature-grid,
+      .why-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding: 60px 0;
+      }
+
+      .elsus-panel {
+        padding: 22px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <div class="container nav">
+        <a class="brand" href="#top" aria-label="EmeraldOS Gold home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.8 20 8l-2.8 9.2L12 21.2 6.8 17.2 4 8l8-5.2Z" stroke="#FFE29A" stroke-width="1.5"/>
+              <path d="m4.5 8 7.5 3.8L19.5 8M12 11.8v9" stroke="#19B86B" stroke-width="1.5"/>
+            </svg>
+          </span>
+          <span>
+            EmeraldOS Gold
+            <span class="brand-subtitle">Emerald Systems</span>
+          </span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a href="#features">Features</a>
+          <a href="#elsus">E.L.S.U.S.</a>
+          <a class="nav-primary" href="gold-shell.html">Open Gold Shell</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-dot"></span> Emerald Systems introduces</div>
+            <h1>EmeraldOS <span class="gold-text">Gold</span></h1>
+            <p class="hero-copy">
+              A cloud-based virtual machine experience designed to combine personalization, useful applications,
+              live update routing, and optional staff-assisted support in one familiar desktop environment.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="gold-shell.html">
+                Enter EmeraldOS Gold
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <a class="button button-secondary" href="#features">Explore the platform</a>
+            </div>
+          </div>
+
+          <div class="system-preview" aria-label="Illustration of the EmeraldOS Gold desktop">
+            <div class="preview-glow"></div>
+            <div class="desktop-window">
+              <div class="window-titlebar">
+                <div class="window-title"><span class="window-icon"></span> EmeraldOS Gold</div>
+                <div class="window-controls" aria-hidden="true"><span></span><span></span><span></span></div>
+              </div>
+              <div class="desktop-area">
+                <div class="desktop-logo" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" fill="none">
+                    <path d="M32 6 54 20l-7.5 25L32 57 17.5 45 10 20 32 6Z" fill="url(#goldFill)" stroke="#FFE29A" stroke-width="2"/>
+                    <path d="m11.5 20 20.5 10L52.5 20M32 30v26" stroke="#0C5038" stroke-width="3"/>
+                    <defs>
+                      <linearGradient id="goldFill" x1="14" y1="10" x2="51" y2="53" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FFF0B8"/>
+                        <stop offset="0.48" stop-color="#F2C14E"/>
+                        <stop offset="1" stop-color="#9F6914"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                <div class="desktop-wordmark">EmeraldOS Gold<small>Cloud VM desktop</small></div>
+              </div>
+              <div class="taskbar" aria-hidden="true">
+                <div class="start-button">E</div>
+                <div class="task-icon"></div>
+                <div class="task-icon"></div>
+                <div class="task-icon"></div>
+                <div class="task-spacer"></div>
+                <div class="task-clock">10:30 AM<br>07/14/2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">What it includes</span>
+            <h2>A desktop built around continuity, control, and useful tools.</h2>
+            <p>
+              EmeraldOS Gold combines an evolving application environment with cloud-based personalization and a
+              dedicated update system that keeps users connected to the correct release.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5h16M6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11A2.5 2.5 0 0 1 6.5 4Z" stroke="currentColor" stroke-width="1.7"/><path d="m8 13 2.3 2.2L16.5 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3>Cloud VM continuity</h3>
+              <p>Your desktop, preferences, files, and supported application data are designed to move with your EmeraldOS account.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4v4.6h4.6M12 8v4l2.7 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3>Dynamic updates</h3>
+              <p>E.L.S.U.S. and the Gold Shell route users to their active version and provide optional update prompts when a newer release is published.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.7"/><path d="m4.7 7.8 7.3 4.1 7.3-4.1M12 12v8.5" stroke="currentColor" stroke-width="1.7"/></svg>
+              </div>
+              <h3>Built-in applications</h3>
+              <p>Productivity, utilities, customization, communication, games, and web tools are presented through a unified desktop experience.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 9 9" stroke="currentColor" stroke-width="1.7"/><path d="M12 3v9h9" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 17.5h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </div>
+              <h3>Personalization</h3>
+              <p>Adjust appearance, desktop behavior, accessibility, startup preferences, and other supported user settings to fit your workflow.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v11H8l-4 3v-14Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 9h8M8 12.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </div>
+              <h3>Communication tools</h3>
+              <p>Current and future releases can include built-in messaging, mail, and live communication features across the Emerald ecosystem.</p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.7"/><path d="M18.5 5.5 20 7l-3.5 3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3>Optional staff support</h3>
+              <p>Supported versions may allow users to request staff assistance, including live desktop viewing or control with the user’s permission.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="elsus">
+        <div class="container elsus-panel">
+          <div class="elsus-copy">
+            <span class="section-kicker">EmeraldOS Live Service Update System</span>
+            <h2>E.L.S.U.S. keeps every user on the right Gold release.</h2>
+            <p>
+              The Gold Shell checks the user’s current version and directs them to that release. When a newer version is
+              available, users may be prompted to update. Updating is optional but recommended, and rollback support may
+              be available in a limited capacity.
+            </p>
+            <a class="button button-secondary" href="gold-shell.html">Open the Gold Shell</a>
+          </div>
+
+          <div class="system-flow" aria-label="E.L.S.U.S. update flow">
+            <div class="flow-step">
+              <span class="flow-number">01</span>
+              <div><strong>Identify the user</strong><span>The shell locates the user’s active Gold version.</span></div>
+            </div>
+            <div class="flow-step">
+              <span class="flow-number">02</span>
+              <div><strong>Open the correct version</strong><span>The user continues through that release’s own login page.</span></div>
+            </div>
+            <div class="flow-step">
+              <span class="flow-number">03</span>
+              <div><strong>Offer available updates</strong><span>New versions can be presented without forcing installation.</span></div>
+            </div>
+            <div class="flow-step">
+              <span class="flow-number">04</span>
+              <div><strong>Continue the cloud VM</strong><span>Compatible versions restore the user’s supported files and preferences.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="why">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">Why use EmeraldOS Gold?</span>
+            <h2>A growing virtual desktop for work, communication, and entertainment.</h2>
+          </div>
+
+          <div class="why-panel">
+            <article class="why-card">
+              <h3>One environment, many tools</h3>
+              <p>
+                EmeraldOS Gold brings proxy browsing, games, productivity applications, communication features, and
+                system utilities into one consistent desktop.
+              </p>
+            </article>
+            <article class="why-card">
+              <h3>Designed to keep improving</h3>
+              <p>
+                The Gold line is built to evolve through new applications, user-experience improvements, compatibility
+                updates, and cloud VM enhancements over time.
+              </p>
+            </article>
+          </div>
+
+          <div class="notice">
+            <strong>Important notice:</strong> EmeraldOS Gold is a virtual machine experience. Safe file, information,
+            and data storage is not guaranteed. Use the service only in appropriate environments and in accordance with
+            the applicable Terms of Service and Virtual Machine License. Emerald Systems, Monroe Corporation, and their
+            affiliates are not responsible for improper use or violations of those terms.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-row">
+        <span><strong>EmeraldOS Gold</strong> by Emerald Systems</span>
+        <span>&copy; 2026 Emerald Systems, Monroe Corporation, and affiliates. All rights reserved.</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

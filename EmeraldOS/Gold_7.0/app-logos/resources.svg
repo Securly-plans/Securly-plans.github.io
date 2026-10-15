@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="EmeraldOS Gold resources app logo">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#334155"/><stop offset="0.56" stop-color="#0078d4"/><stop offset="1" stop-color="#f2c94c"/></linearGradient><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity=".28"/></filter></defs>
+<rect x="12" y="10" width="104" height="108" rx="24" fill="url(#g)" filter="url(#s)"/>
+<path d="M26 31h76v16H26zM26 55h34v34H26zM68 55h34v34H68zM26 96h76v8H26z" fill="rgba(255,255,255,.22)"/>
+<circle cx="92" cy="35" r="8" fill="#fff" opacity=".75"/>
+<text x="64" y="80" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800" fill="#fff">RS</text>
+</svg>

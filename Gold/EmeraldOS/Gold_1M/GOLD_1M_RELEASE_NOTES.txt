@@ -1,0 +1,23 @@
+EMERALDOS GOLD 1M
+
+DATA CONTINUITY
+- Fixes the Gold 1K to Gold 1L split-cloud migration gap.
+- Recognizes Gold 1K and Gold 1L split VM schemas.
+- Blocks cloud autosave until migration has completed and been validated.
+- Merges files, folders, settings, preferences, registry data, application data, custom logos, mail, notes, events, tickets, notifications, and other VM categories.
+- Preserves files when an older release reused the same file ID.
+- Scans legacy drive paths, version-specific cloud backups, and recoverable orphaned chunk documents.
+- Creates version-specific cloud category backups for Gold 1M.
+- Uses the stable account user ID for the primary cloud VM path while also checking older username-based paths.
+- Adds Migration & Continuity to Start and Settings.
+
+USER INTERFACE
+- Keeps the Gold Windows 10-inspired appearance.
+- Fixes Settings navigation and content overlap.
+- Improves Settings scrolling, responsive layouts, control wrapping, cards, tables, and narrow-screen behavior.
+- Prevents application toolbars and wide controls from colliding with window edges.
+
+E.L.S.U.S.
+- Uses the original E.L.S.U.S. routing from Gold 1I.
+- Does not auto-publish or auto-set system/emeraldGoldLatest.
+- Publishing still requires Staff Edition, Emerald Mail verification, the publisher PIN, and clicking Publish this Version.

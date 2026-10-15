@@ -1,0 +1,48 @@
+EmeraldOS Gold 1V Release Notes
+
+BASE
+- Built directly from EmeraldOS Gold 1U.
+- Preserves the established Gold 1U shell, window, Start, taskbar, Settings, and application styling.
+- Retains user isolation, specific-file sharing, Can-Notify permissions, Universal File System, Guide, Games, Radio, Application Editor compatibility, Staff Center, and E.L.S.U.S. support.
+
+PERSONALIZATION STUDIO
+- Wallpaper presets and custom wallpaper URLs.
+- Theme, accent, icon-size, text-scale, transparency, label, Search, and clock controls.
+- Configurable desktop applications.
+- Configurable Start tiles.
+- Up to eight permanent taskbar shortcuts.
+- Reusable customization profiles stored with the private VM.
+
+UTILITY CENTER
+- Configurable secure password generator.
+- UUID generator.
+- JSON formatting, minification, and validation.
+- URL encoding and decoding.
+- Base64 encoding and decoding.
+- Date and time difference calculator.
+- Local utility history with copy and export.
+
+FILE FINDER
+- Searches the active user's private VM.
+- Filters by name, text content, folder, type, and starred status.
+- Opens matching files in their registered Gold application.
+- Can star and unstar results.
+
+MIGRATION AND CONTINUITY
+- Explicitly imports Gold 1U local and split-cloud categories.
+- Replaces the fixed 30-second all-or-nothing cloud scan.
+- Uses per-operation timeouts and exponential-backoff retries.
+- Records visible scan progress.
+- Distinguishes timeout, offline, permission, and other cloud errors.
+- Automatically retries incomplete verification after the desktop loads and when connectivity returns.
+- Keeps cloud autosave blocked until the cloud scan is verified.
+- Expected recoverable waits no longer print a full warning stack.
+
+APPLICATION EDITOR
+- Retains allow-same-origin in user-app iframe wrappers.
+- Retains guarded CacheStorage fallbacks through caches and api.cache.
+
+PUBLISHING
+- system/emeraldGoldLatest has one guarded write path.
+- Publishing requires verified Staff Edition, Emerald Mail verification, the correct publisher PIN, and clicking Publish this Version.
+- Boot, login, migration, update checks, cloud saves, and Shell routing cannot publish Gold 1V.

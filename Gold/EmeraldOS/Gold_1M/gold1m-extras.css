@@ -1,0 +1,79 @@
+/* EmeraldOS Gold 1M — Active update, Focus Sessions, and Quick Settings refinements */
+:root{--gold1m-taskbar-height:42px}
+body.gold1m{--panel-shadow:0 12px 36px rgba(0,0,0,.32)}
+body.gold1m #taskbar{min-height:var(--gold1m-taskbar-height);gap:1px;padding-right:2px}
+body.gold1m .task-apps{min-width:0;overflow:hidden}
+body.gold1m .taskbar-app,.gold1m-task-button{min-width:40px;max-width:190px}
+body.gold1m .taskbar-app>span:last-child,.gold1m-task-button .task-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.gold1m .window{max-width:calc(100vw - 8px);max-height:calc(100vh - var(--gold1m-taskbar-height) - 4px)}
+body.gold1m .win-title{min-height:32px}
+body.gold1m .win-actions button{min-width:42px;min-height:32px}
+body.gold1m button:focus-visible,body.gold1m input:focus-visible,body.gold1m select:focus-visible,body.gold1m textarea:focus-visible{outline:2px solid var(--accent,#0078d7);outline-offset:2px}
+body.gold1m .side-panel,body.gold1m .action-center,body.gold1m .start-menu{bottom:var(--gold1m-taskbar-height);max-height:calc(100vh - var(--gold1m-taskbar-height) - 8px);box-shadow:var(--panel-shadow)}
+body.gold1m .hidden{display:none!important}
+
+.gold1m-update-status{position:relative;min-width:38px!important;padding:0 8px!important}
+.gold1m-update-status .gold1m-update-dot{position:absolute;right:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#ffb900;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+.gold1m-update-status.required .gold1m-update-dot{background:#e81123;animation:gold1m-update-pulse 1.4s infinite}
+@keyframes gold1m-update-pulse{50%{transform:scale(1.45)}}
+
+.gold1m-active-update-prompt{position:fixed;right:14px;bottom:calc(var(--gold1m-taskbar-height) + 14px);z-index:40000;width:min(430px,calc(100vw - 28px));padding:16px;background:rgba(248,248,248,.98);color:#111;border:1px solid rgba(0,0,0,.18);box-shadow:0 18px 48px rgba(0,0,0,.38);backdrop-filter:blur(18px);animation:gold1m-prompt-in .22s ease-out}
+body.dark .gold1m-active-update-prompt{background:rgba(34,34,34,.98);color:#fff;border-color:rgba(255,255,255,.18)}
+.gold1m-active-update-prompt.required{border-top:4px solid #e81123}
+.gold1m-update-prompt-head{display:grid;grid-template-columns:42px 1fr 32px;gap:10px;align-items:center}
+.gold1m-update-prompt-head small{display:block;opacity:.68;margin-top:2px}
+.gold1m-update-prompt-icon{display:grid;place-items:center;width:38px;height:38px;background:var(--accent,#0078d7);color:#fff;font-size:24px}
+.gold1m-update-prompt-head>button{border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer}
+.gold1m-active-update-prompt p{line-height:1.45;margin:14px 0}
+.gold1m-update-prompt-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.gold1m-update-prompt-meta span{padding:4px 7px;background:rgba(0,0,0,.07);font-size:12px}
+body.dark .gold1m-update-prompt-meta span{background:rgba(255,255,255,.1)}
+.gold1m-update-prompt-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+@keyframes gold1m-prompt-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+.gold1m-quick-settings{position:fixed;right:10px;bottom:calc(var(--gold1m-taskbar-height) + 8px);z-index:35000;width:min(390px,calc(100vw - 20px));background:rgba(245,245,245,.98);color:#111;border:1px solid rgba(0,0,0,.18);box-shadow:var(--panel-shadow);backdrop-filter:blur(18px)}
+body.dark .gold1m-quick-settings{background:rgba(34,34,34,.98);color:#fff;border-color:rgba(255,255,255,.18)}
+.gold1m-quick-settings header{padding:15px 16px 10px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.gold1m-quick-settings header small{opacity:.65}
+.gold1m-quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:8px 12px 14px}
+.gold1m-quick-grid button{border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.55);color:inherit;min-height:74px;padding:8px;display:grid;place-items:center;gap:4px;cursor:pointer}
+body.dark .gold1m-quick-grid button{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.17)}
+.gold1m-quick-grid button.active{background:var(--accent,#0078d7);color:#fff;border-color:transparent}
+.gold1m-quick-grid button span{font-size:23px}
+.gold1m-quick-settings footer{border-top:1px solid rgba(0,0,0,.15);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+body.dark .gold1m-quick-settings footer{border-color:rgba(255,255,255,.15)}
+.gold1m-quick-settings footer button{border:0;background:transparent;color:var(--accent,#0078d7);font-weight:600;cursor:pointer}
+
+.gold1m-update-start-badge{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,120,215,.18);border-bottom:1px solid rgba(255,255,255,.12);font-size:12px}
+.gold1m-update-start-badge span{padding:2px 5px;background:var(--accent,#0078d7);color:#fff}
+.gold1m-update-chip{padding:5px 8px;background:var(--accent,#0078d7);color:#fff;font-size:12px;white-space:nowrap}
+.gold1m-service-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.gold1m-service-page .setting-row{min-height:58px}
+.gold1m-history-table{overflow:auto;max-height:270px}
+.gold1m-history-table table{min-width:760px}
+
+.gold1m-focus-app{text-align:center;display:grid;place-content:center;min-height:420px}
+.gold1m-focus-clock{font-size:76px;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.gold1m-focus-controls,.gold1m-focus-presets{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:14px 0}
+.gold1m-focus-presets button{padding:7px 11px;border:1px solid rgba(0,0,0,.18);background:transparent;color:inherit;cursor:pointer}
+body.dark .gold1m-focus-presets button{border-color:rgba(255,255,255,.2)}
+.gold1m-focus-option{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:16px}
+
+body.no-motion .gold1m-active-update-prompt,body.no-motion .gold1m-update-status.required .gold1m-update-dot{animation:none}
+@media(max-width:820px){
+  body.gold1m .search-wide{max-width:130px}
+  body.gold1m .staff-shortcut,body.gold1m .logout-shortcut{font-size:0;min-width:38px}
+  body.gold1m .staff-shortcut:after{content:"S";font-size:12px}
+  body.gold1m .logout-shortcut:after{content:"⇥";font-size:18px}
+  .gold1m-service-heading{display:block}.gold1m-update-chip{display:inline-block;margin-bottom:12px}
+}
+@media(max-width:560px){
+  .gold1m-active-update-prompt{right:6px;bottom:calc(var(--gold1m-taskbar-height) + 6px);width:calc(100vw - 12px)}
+  .gold1m-update-prompt-actions>*{flex:1}
+  .gold1m-quick-grid{grid-template-columns:repeat(2,1fr)}
+  .gold1m-focus-clock{font-size:56px}
+  body.gold1m #shellStatusBtn,body.gold1m #staffBtn,body.gold1m #logoutBtn{display:none!important}
+}
+
+body.gold1m-update-prompt-open .toast-area{bottom:390px}
+@media(max-width:560px){body.gold1m-update-prompt-open .toast-area{display:none}}

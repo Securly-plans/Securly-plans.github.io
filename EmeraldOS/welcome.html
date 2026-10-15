@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Welcome to EmeraldOS!</title>
+
+<style>
+body {
+    margin: 0;
+    background: #008080; /* Win95 teal desktop */
+    font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+}
+
+/* Window frame */
+.window {
+    width: 700px;
+    margin: 60px auto;
+    background: #c0c0c0;
+    border: 2px solid #ffffff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    box-shadow: 2px 2px 0 #000;
+}
+
+/* Title bar */
+.title-bar {
+    background: linear-gradient(90deg, #000080, #0000a8);
+    color: white;
+    padding: 4px 8px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.title-bar .title {
+    letter-spacing: 0.3px;
+}
+
+.title-bar .controls {
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+}
+
+/* Content area */
+.content {
+    padding: 18px;
+    background: #c0c0c0;
+    color: #000;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* 3D inset box */
+.inset {
+    border: 2px solid #808080;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    background: #ffffff;
+    padding: 10px;
+    margin: 14px 0;
+}
+
+/* Header like old system text */
+h1 {
+    font-size: 20px;
+    margin: 0 0 10px 0;
+    color: #000;
+    font-weight: bold;
+}
+
+/* Signature block */
+.signature {
+    margin-top: 18px;
+}
+
+/* Footer */
+.footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: #000;
+    border-top: 1px solid #808080;
+    padding-top: 8px;
+}
+
+/* Button style (optional classic Win95 button look) */
+.button {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-top: 10px;
+    background: #c0c0c0;
+    border: 2px solid #ffffff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    cursor: default;
+    font-size: 12px;
+}
+.button:active {
+    border: 2px solid #808080;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="window">
+
+    <div class="title-bar">
+        <div class="title">Welcome to EmeraldOS!</div>
+        <div class="controls">_ □ ×</div>
+    </div>
+
+    <div class="content">
+
+        <h1>Welcome to EmeraldOS!</h1>
+
+        <p>
+        EmeraldOS is the newest project of Emerald Systems.
+        Included in the current base edition (EmeraldOS 3.0),
+        you can find multiple fun, exciting and useful applications.
+        </p>
+
+        <div class="inset">
+            Please note that this service is bound by the Emerald Systems Terms of Service.
+        </div>
+
+        <p>
+        Enjoy your time using EmeraldOS and have fun!
+        </p>
+
+        <div class="signature">
+            -------------------<br><br>
+
+            <strong>Wyatt Monroe</strong><br>
+            Chair, Monroe Entertainment Board<br>
+            Director of Operations, Emerald Systems
+        </div>
+
+        <div class="footer">
+            Copyright 2026, Emerald Systems, Monroe Entertainment Services, all rights reserved.
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

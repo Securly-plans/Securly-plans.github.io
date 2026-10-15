@@ -1,0 +1,24 @@
+EmeraldOS Gold 1J Release Notes
+July 12th, 2026
+
+Gold 1J keeps the Windows 10-inspired Gold 1H/1I appearance and focuses on
+E.L.S.U.S. integration, staff administration, trusted user applications, custom
+branding, and expanded settings.
+
+Key changes:
+- Added a two-sided E.L.S.U.S. shell handshake and optional root-shell bridge.
+- Added save-before-switch version changes and persistent shell status.
+- Restored the live Staff Center, Live Staff Control, session status, and logs.
+- Restored Staff App Verification with source inspection and review notes.
+- Added SHA-256 verification enforcement at every normal user-app launch.
+- Added live app-review updates and a staff-verified User Appstore catalog.
+- Restored custom logos for built-in and verified user applications.
+- Added Settings controls for custom logos and default applications.
+- Added Sticky Notes, Snipping Tool, and Voice Recorder.
+- Added virtual desktops and expanded Task View controls.
+- Expanded Windows 10-style settings across system, devices, network,
+  personalization, apps, accounts, time, gaming, accessibility, search, privacy,
+  update/security, E.L.S.U.S., and staff administration.
+- Preserved Gold 1I search-focus and complete file-migration fixes.
+- Confirmed that boot, migration, setup, update checks, Staff Center, shell
+  switching, and cloud saves do not publish or set system/emeraldGoldLatest.

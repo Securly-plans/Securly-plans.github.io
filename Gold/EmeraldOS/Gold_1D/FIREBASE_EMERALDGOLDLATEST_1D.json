@@ -1,0 +1,25 @@
+{
+  "product": "EmeraldOS Gold",
+  "latestVersion": "1D",
+  "build": "1D",
+  "folder": "Gold_1D",
+  "entry": "OS.html",
+  "channel": "stable",
+  "status": "stable",
+  "required": false,
+  "enabled": true,
+  "setupMode": "migrationIntro",
+  "releaseTitle": "EmeraldOS Gold 1D",
+  "summary": "Gold 1D adds transparent desktop objects, stronger customization safety, Spanish language support, improved accessibility, staff-only resource gating, and improved user-approved staff direct desktop control.",
+  "migrationFrom": [
+    "1C",
+    "1B",
+    "1A",
+    "11.0"
+  ],
+  "migrationId": "gold1c-to-gold1d-accessibility-language-remote",
+  "minShellVersion": "1.0",
+  "rollbackFolder": "Gold_1C",
+  "rollbackVersion": "1C",
+  "releasedAt": "2026-07-12T00:00:00.000Z"
+}

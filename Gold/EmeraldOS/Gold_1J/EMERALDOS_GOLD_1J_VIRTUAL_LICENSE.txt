@@ -1,0 +1,32 @@
+EmeraldOS Gold 1J Virtual License
+
+Product: EmeraldOS Gold 1J
+Folder: Gold_1J
+Update Service: EmeraldOS Live Service Update System (E.L.S.U.S.)
+Terms of Service: https://securly-plans.github.io/TOS.html
+
+This virtual license is shown during First-Boot Setup. First-Boot Setup is
+completed once per signed-in user across the compatible E.L.S.U.S. Gold version
+line. Existing users receive Gold 1J Update Setup instead, and their
+version-independent cloud VM remains under:
+
+emeraldOSUsers/{username}/goldVM/current
+
+EmeraldOS Gold may store preferences, files, application data, mail, registry
+values, support tickets, update choices, workspace state, custom application
+logos, app-verification state, shell state, and recovery information locally and,
+when Firebase is configured and permitted, in cloud storage.
+
+The Emerald Registry Editor changes only the EmeraldOS virtual registry. It
+cannot access or modify the host computer's Windows Registry.
+
+Staff-only applications require Gold Staff Edition verification and Emerald Mail
+verification. Publishing Gold 1J requires a verified Staff Edition session, the
+Update Publisher Manager, the correct publisher PIN, and clicking Publish this
+Version. Gold 1J does not publish itself during boot, migration, setup, update
+checks, Staff Center use, shell version switching, or through query strings.
+
+User-created applications require Staff Center approval before normal execution.
+Gold 1J verifies the approved SHA-256 source hash at launch and runs user code in
+a sandboxed frame. Developer preview remains available only to the app creator.
+Install or approve only applications you trust.

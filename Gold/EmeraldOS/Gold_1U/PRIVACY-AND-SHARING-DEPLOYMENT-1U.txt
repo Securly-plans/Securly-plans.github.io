@@ -1,0 +1,9 @@
+EmeraldOS Gold 1U privacy deployment
+
+Gold 1U implements client-side account separation, owner metadata checks, explicit file-share grants, and a per-user IndexedDB cache.
+
+IMPORTANT: Browser JavaScript cannot provide server-enforced privacy by itself. Production privacy requires Firebase Authentication so request.auth.uid is a stable account identity, plus Firestore rules equivalent to FIRESTORE-RULES-GOLD-1U.rules. The existing custom username/password records alone do not populate request.auth. Deploy Firebase Auth or a trusted token exchange before enabling the strict rules.
+
+Cloud VM path: emeraldOSUsers/{authenticatedUserId}/goldVM/current
+Share path: emeraldGoldFileShares/{shareId}
+Only selected file snapshots are placed in share documents. The rest of the VM is never copied to the share collection.

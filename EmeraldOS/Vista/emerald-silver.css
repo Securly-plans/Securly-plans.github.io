@@ -1,0 +1,546 @@
+/* =========================================================
+   EMERALDOS SILVER
+   Vista-inspired glass interface layer
+   Original styling only. No Microsoft assets are included.
+========================================================= */
+
+body[data-theme="silver"] {
+    --desktop: #6e879d;
+    --window: rgba(232, 238, 244, 0.82);
+    --windowContent: rgba(255, 255, 255, 0.92);
+    --text: #102033;
+    --taskbar: rgba(14, 36, 61, 0.76);
+    --title: linear-gradient(90deg, rgba(220,235,250,.92), rgba(145,171,197,.88));
+    --silver-accent: #78aee5;
+    --silver-accent-2: #bfd8f2;
+    --silver-dark: #1d344d;
+    --silver-border: rgba(255,255,255,.72);
+    --silver-shadow: rgba(0, 15, 30, .38);
+    --silver-glow: rgba(135, 191, 255, .55);
+    --silver-panel: rgba(235, 242, 249, .78);
+    --silver-panel-solid: #edf3f8;
+    background:
+        radial-gradient(circle at 22% 18%, rgba(255,255,255,.60), transparent 0 12%, transparent 38%),
+        radial-gradient(circle at 80% 5%, rgba(152,201,255,.65), transparent 0 14%, transparent 42%),
+        linear-gradient(135deg, #5d7892 0%, #9fb4c6 42%, #d5dde5 100%);
+    color: var(--text);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+body[data-theme="silver"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(120deg, rgba(255,255,255,.18), transparent 24%, transparent 72%, rgba(255,255,255,.12)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 5px);
+    z-index: 0;
+}
+
+body[data-theme="silver"] #desktop,
+body[data-theme="silver"] #windows-container,
+body[data-theme="silver"] #taskbar,
+body[data-theme="silver"] #start-menu,
+body[data-theme="silver"] #context-menu {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+body[data-theme="silver"] #desktop {
+    padding: 18px;
+    gap: 18px;
+    z-index: 1;
+}
+
+/* Desktop icons */
+body[data-theme="silver"] .icon {
+    width: 82px;
+    min-height: 76px;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.75);
+    border-radius: 10px;
+    padding: 8px 5px;
+    border: 1px solid transparent;
+    outline: none !important;
+    transition: background .16s ease, border .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+body[data-theme="silver"] .icon:hover {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.45);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 18px rgba(103,164,225,.32);
+    transform: translateY(-1px);
+}
+
+body[data-theme="silver"] .icon:focus,
+body[data-theme="silver"] .icon:focus-visible {
+    outline: none !important;
+    box-shadow: none;
+}
+
+body[data-theme="silver"] .icon:active {
+    background: rgba(100, 157, 211, .34);
+    transform: translateY(0);
+}
+
+/* Taskbar */
+body[data-theme="silver"] #taskbar {
+    height: 46px;
+    padding: 5px 8px;
+    border: 0;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.23), rgba(255,255,255,.08) 42%, rgba(0,0,0,.18) 43%, rgba(8,26,43,.84)),
+        rgba(20,44,70,.78);
+    box-shadow:
+        0 -1px 0 rgba(255,255,255,.42),
+        0 -12px 28px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.45);
+    backdrop-filter: blur(18px) saturate(130%);
+    z-index: 50000;
+}
+
+body[data-theme="silver"] #start-btn {
+    width: 92px;
+    height: 36px;
+    padding-left: 34px;
+    color: white;
+    font-weight: 700;
+    letter-spacing: .2px;
+    border: 1px solid rgba(255,255,255,.60);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 22px 17px, #ffffff 0 2px, #8ee08e 3px, #008b45 10px, #006934 17px, transparent 18px),
+        linear-gradient(to bottom, rgba(255,255,255,.38), rgba(255,255,255,.12) 45%, rgba(0,0,0,.20) 46%, rgba(18,61,95,.88));
+    background-size: auto;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.65),
+        0 0 12px rgba(126,200,255,.45),
+        0 2px 5px rgba(0,0,0,.32);
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+}
+
+body[data-theme="silver"] #start-btn:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.82),
+        0 0 22px rgba(142,209,255,.75),
+        0 2px 5px rgba(0,0,0,.36);
+}
+
+body[data-theme="silver"] #start-btn:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.32), 0 0 12px rgba(126,200,255,.35);
+}
+
+body[data-theme="silver"] #taskbar-apps {
+    gap: 6px;
+    margin: 0 12px;
+}
+
+body[data-theme="silver"] .taskbar-item,
+body[data-theme="silver"] .task-btn {
+    min-width: 134px;
+    height: 34px;
+    padding: 6px 12px;
+    color: #ecf7ff;
+    border: 1px solid rgba(255,255,255,.36);
+    border-radius: 8px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.26), rgba(255,255,255,.08) 45%, rgba(0,0,0,.14) 46%, rgba(40,78,113,.52));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 1px 4px rgba(0,0,0,.30);
+    text-shadow: 0 1px 2px rgba(0,0,0,.75);
+}
+
+body[data-theme="silver"] .taskbar-item:hover,
+body[data-theme="silver"] .task-btn:hover {
+    background: linear-gradient(to bottom, rgba(255,255,255,.42), rgba(145,205,255,.20) 45%, rgba(0,0,0,.10) 46%, rgba(62,112,154,.68));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 0 16px rgba(120,190,255,.44);
+}
+
+body[data-theme="silver"] .taskbar-item.active,
+body[data-theme="silver"] .task-btn.active {
+    background: linear-gradient(to bottom, rgba(255,255,255,.54), rgba(157,218,255,.25) 45%, rgba(0,0,0,.12) 46%, rgba(42,92,132,.82));
+}
+
+body[data-theme="silver"] #emerald40-edition-badge,
+body[data-theme="silver"] #emerald40-build-badge,
+body[data-theme="silver"] #clock {
+    color: #f4fbff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.75);
+    border-left: 1px solid rgba(255,255,255,.18);
+    padding: 4px 9px;
+}
+
+/* Start menu */
+body[data-theme="silver"] #start-menu {
+    width: 430px;
+    height: 510px;
+    bottom: 46px;
+    left: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.65);
+    border-radius: 12px 12px 8px 8px;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.56), rgba(238,244,249,.88) 34%, rgba(203,217,231,.88)),
+        rgba(229,238,247,.85);
+    box-shadow: 0 18px 50px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.85);
+    backdrop-filter: blur(22px) saturate(135%);
+}
+
+body[data-theme="silver"] #start-menu.show {
+    display: flex;
+}
+
+body[data-theme="silver"] .start-side {
+    width: 74px;
+    padding: 12px 8px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at center 36px, rgba(255,255,255,.35), transparent 0 30px),
+        linear-gradient(to bottom, #0a5b97, #1f74b4 40%, #214966);
+    text-shadow: 0 1px 3px rgba(0,0,0,.7);
+    letter-spacing: .7px;
+}
+
+body[data-theme="silver"] .start-main {
+    padding: 12px;
+    background: linear-gradient(to right, rgba(255,255,255,.40), rgba(255,255,255,.13));
+}
+
+body[data-theme="silver"] #start-search {
+    margin-bottom: 10px;
+    padding: 9px 12px;
+    border: 1px solid rgba(60,96,122,.48);
+    border-radius: 14px;
+    background: rgba(255,255,255,.92);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.8);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    user-select: text;
+}
+
+body[data-theme="silver"] .start-item {
+    margin: 2px 0;
+    padding: 9px 10px;
+    border-radius: 7px;
+    color: #122c45;
+    border: 1px solid transparent;
+}
+
+body[data-theme="silver"] .start-item:hover {
+    background: linear-gradient(to bottom, #e9f6ff, #a8d5ff);
+    border-color: rgba(63,126,186,.55);
+    color: #08233d;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.86);
+}
+
+/* Windows */
+body[data-theme="silver"] .window {
+    background: rgba(228,238,247,.70);
+    border: 1px solid rgba(255,255,255,.74);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+        0 18px 55px rgba(0,10,25,.42),
+        0 0 0 1px rgba(46,83,116,.22),
+        inset 0 1px 0 rgba(255,255,255,.75);
+    backdrop-filter: blur(20px) saturate(145%);
+}
+
+body[data-theme="silver"] .window.maximized {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+body[data-theme="silver"] .title-bar {
+    height: 34px;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.68), rgba(220,234,246,.62) 48%, rgba(172,196,218,.55) 49%, rgba(132,166,198,.58)),
+        rgba(205,222,238,.72);
+    color: #102a44;
+    padding: 0 8px 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(255,255,255,.8);
+    border-bottom: 1px solid rgba(63,93,122,.30);
+    cursor: grab;
+}
+
+body[data-theme="silver"] .window:focus-within .title-bar,
+body[data-theme="silver"] .window:hover .title-bar {
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.80), rgba(217,236,255,.70) 48%, rgba(141,191,234,.62) 49%, rgba(90,145,198,.66)),
+        rgba(200,227,255,.76);
+}
+
+body[data-theme="silver"] .title-bar span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme="silver"] .title-bar button,
+body[data-theme="silver"] .window-buttons button {
+    min-width: 28px;
+    width: 28px;
+    height: 22px;
+    margin-left: 2px;
+    color: #163047;
+    border: 1px solid rgba(75,96,112,.55);
+    border-radius: 0 0 6px 6px;
+    background: linear-gradient(to bottom, rgba(255,255,255,.76), rgba(208,225,239,.58));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.86);
+    font-weight: 700;
+}
+
+body[data-theme="silver"] .title-bar .close-btn,
+body[data-theme="silver"] .close-btn {
+    color: white;
+    background: linear-gradient(to bottom, #ffb4a9, #d24b38 54%, #8f2118);
+    border-color: rgba(115,20,18,.65);
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+}
+
+body[data-theme="silver"] .title-bar button:hover,
+body[data-theme="silver"] .window-buttons button:hover {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 12px rgba(108,177,242,.45);
+}
+
+body[data-theme="silver"] .title-bar .close-btn:hover,
+body[data-theme="silver"] .close-btn:hover {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 0 14px rgba(255,84,70,.58);
+}
+
+body[data-theme="silver"] .window-content {
+    margin: 0 7px 7px 7px;
+    border: 1px solid rgba(96,116,136,.42);
+    border-radius: 0 0 7px 7px;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.98), rgba(246,250,253,.94)),
+        #fff;
+    box-shadow: inset 0 1px 5px rgba(0,0,0,.08);
+    color: #13273a;
+    padding: 10px;
+}
+
+body[data-theme="silver"] .resize-handle {
+    right: 3px;
+    bottom: 3px;
+    border: 0;
+    background:
+        linear-gradient(135deg, transparent 0 45%, rgba(90,111,130,.45) 46% 52%, transparent 53%),
+        linear-gradient(135deg, transparent 0 62%, rgba(90,111,130,.45) 63% 70%, transparent 71%);
+}
+
+/* Forms */
+body[data-theme="silver"] input,
+body[data-theme="silver"] textarea,
+body[data-theme="silver"] select,
+body[data-theme="silver"] [contenteditable="true"] {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+body[data-theme="silver"] input,
+body[data-theme="silver"] textarea,
+body[data-theme="silver"] select {
+    border: 1px solid rgba(72,101,128,.55);
+    border-radius: 6px;
+    background: linear-gradient(to bottom, #fff, #f3f8fc);
+    color: #102033;
+    padding: 7px 9px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.10);
+    user-select: text;
+}
+
+body[data-theme="silver"] input:focus,
+body[data-theme="silver"] textarea:focus,
+body[data-theme="silver"] select:focus,
+body[data-theme="silver"] [contenteditable="true"]:focus {
+    outline: 2px solid rgba(89,159,225,.35);
+    border-color: #5495d2;
+    box-shadow: 0 0 10px rgba(85,159,232,.25), inset 0 1px 3px rgba(0,0,0,.10);
+}
+
+body[data-theme="silver"] button {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    border-radius: 6px;
+    border: 1px solid rgba(69,91,108,.58);
+    background: linear-gradient(to bottom, #ffffff, #d8e7f3 48%, #c2d8ea 49%, #e5f0f8);
+    color: #142b41;
+    padding: 6px 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(0,0,0,.15);
+}
+
+body[data-theme="silver"] button:hover {
+    border-color: #4a91d0;
+    background: linear-gradient(to bottom, #ffffff, #e3f3ff 48%, #bbdffc 49%, #e7f6ff);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 12px rgba(105,174,238,.28);
+}
+
+body[data-theme="silver"] button:active {
+    background: linear-gradient(to bottom, #c7daea, #ffffff);
+    transform: translateY(1px);
+}
+
+/* Panels used by newer apps */
+body[data-theme="silver"] .app-panel,
+body[data-theme="silver"] .emerald57-panel,
+body[data-theme="silver"] .emerald57-card,
+body[data-theme="silver"] .card,
+body[data-theme="silver"] .panel {
+    background: linear-gradient(to bottom, rgba(255,255,255,.96), rgba(235,244,252,.92));
+    border: 1px solid rgba(104,132,158,.35);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+body[data-theme="silver"] table {
+    border-collapse: collapse;
+    background: #fff;
+}
+
+body[data-theme="silver"] th {
+    background: linear-gradient(to bottom, #f8fbfe, #d6e5f2);
+    color: #132c43;
+}
+
+body[data-theme="silver"] td,
+body[data-theme="silver"] th {
+    border: 1px solid #c7d5e2;
+    padding: 6px;
+}
+
+/* Context menu */
+body[data-theme="silver"] #context-menu {
+    border: 1px solid rgba(89,116,140,.45);
+    border-radius: 8px;
+    background: rgba(252,254,255,.96);
+    box-shadow: 0 10px 32px rgba(0,0,0,.28);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+}
+
+body[data-theme="silver"] #context-menu div,
+body[data-theme="silver"] .context-item {
+    padding: 8px 14px;
+    color: #102033;
+}
+
+body[data-theme="silver"] #context-menu div:hover,
+body[data-theme="silver"] .context-item:hover {
+    background: linear-gradient(to bottom, #e9f6ff, #afd9ff);
+}
+
+/* Toasts / notifications */
+body[data-theme="silver"] #toast-container,
+body[data-theme="silver"] #notification-container {
+    bottom: 58px;
+    right: 18px;
+    left: auto;
+}
+
+body[data-theme="silver"] .toast,
+body[data-theme="silver"] .os-notification {
+    background: rgba(240,247,253,.90);
+    color: #112b44;
+    border: 1px solid rgba(255,255,255,.72);
+    border-radius: 12px;
+    box-shadow: 0 16px 42px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.8);
+    backdrop-filter: blur(16px) saturate(135%);
+}
+
+body[data-theme="silver"] #notification-center {
+    top: 64px;
+    right: 18px;
+    width: 340px;
+    background: rgba(240,247,253,.92);
+    color: #102033;
+    border: 1px solid rgba(255,255,255,.70);
+    border-radius: 12px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.30);
+    backdrop-filter: blur(18px);
+}
+
+body[data-theme="silver"] .notify-entry {
+    background: rgba(255,255,255,.78);
+    color: #102033;
+    border: 1px solid rgba(128,156,184,.25);
+}
+
+/* Silver sidebar gadgets */
+#silver-sidebar {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 210px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.silver-gadget {
+    pointer-events: auto;
+    padding: 12px;
+    border-radius: 14px;
+    color: #eef8ff;
+    background:
+        linear-gradient(to bottom, rgba(255,255,255,.25), rgba(255,255,255,.08)),
+        rgba(9,31,51,.42);
+    border: 1px solid rgba(255,255,255,.36);
+    box-shadow: 0 12px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+    backdrop-filter: blur(18px) saturate(130%);
+    text-shadow: 0 1px 3px rgba(0,0,0,.7);
+}
+
+.silver-gadget h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: #ffffff;
+}
+
+.silver-gadget .big {
+    font-size: 25px;
+    line-height: 1.1;
+    font-weight: 600;
+}
+
+.silver-gadget small {
+    opacity: .9;
+}
+
+.silver-gadget button {
+    margin-top: 8px;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    #silver-sidebar { display: none; }
+}
+
+/* Silver helper utility classes */
+.silver-hero {
+    padding: 18px;
+    border-radius: 12px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(215,235,252,.90)),
+        #f7fbff;
+    border: 1px solid rgba(101,130,156,.32);
+    box-shadow: 0 5px 18px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.silver-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.silver-tile {
+    padding: 12px;
+    border-radius: 10px;
+    background: linear-gradient(to bottom, #ffffff, #edf6ff);
+    border: 1px solid #bfd3e4;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.silver-tile b { display: block; margin-bottom: 4px; color: #0e3a61; }

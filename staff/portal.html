@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff Portal</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f1115;
+  color: white;
+}
+
+.header {
+  background: #1a1d24;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.container {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.card {
+  background: #1a1d24;
+  padding: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.card:hover {
+  background: #252a35;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+  <div>Staff Portal</div>
+  <div id="info"></div>
+</div>
+
+<div class="container">
+  <div class="card" onclick="go('files')">File System</div>
+  <div class="card" onclick="go('users')">User Management</div>
+  <div class="card" onclick="go('chatmod')">Chat Moderation</div>
+</div>
+
+<script>
+if (localStorage.getItem("staffSession") !== "true") {
+  window.location.href = "login.html";
+}
+
+document.getElementById("info").innerText =
+  localStorage.getItem("staffRole") +
+  " | ID: " +
+  localStorage.getItem("staffId");
+
+function go(p) {
+  window.location.href = p + ".html";
+}
+</script>
+
+</body>
+</html>

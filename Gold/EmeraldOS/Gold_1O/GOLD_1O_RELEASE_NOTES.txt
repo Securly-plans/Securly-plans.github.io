@@ -1,0 +1,41 @@
+EMERALDOS GOLD 1O
+
+FLAGSHIP EXPERIENCE
+- Adds Gold Home, a personalized dashboard for files, tasks, system status, updates, and common actions.
+- Adds Command Palette with continuous search focus and Ctrl+Space access.
+- Adds My Workspace for tasks, events, focus tools, and recent work.
+- Adds Clipboard Manager with search, pinning, copying, and safe history cleanup.
+- Adds Routines for safe local sign-in and manual actions.
+
+DATA PROTECTION AND COMPATIBILITY
+- Adds Backup & Sync with restore points, full JSON backups, and merge-based imports.
+- Adds File Compatibility Center for files created by earlier EmeraldOS Gold versions.
+- Preserves unknown metadata and file contents during compatibility repairs.
+- Reads Gold 1N and every earlier known local namespace and split-cloud schema.
+- Blocks cloud autosave until migration is merged and validated.
+- Preserves same-ID and same-name conflicts when their data differs.
+- Saves new Gold 1O accessibility, routines, feedback, clipboard, update, and dashboard preferences with the VM.
+
+SYSTEM AND ACCESSIBILITY
+- Adds System Health with migration, storage, file, session, and compatibility checks.
+- Adds Accessibility Center with high contrast, larger text, reduced motion, strong focus indicators, pointer controls, and compact spacing.
+- Adds safe cache cleanup that does not remove files, workspaces, mail, preferences, Registry data, or snapshots.
+
+UI AND USABILITY
+- Improves Settings navigation, content scrolling, cards, tables, toolbars, and narrow-window layouts.
+- Adds responsive flagship dashboards and consistent status indicators.
+- Improves keyboard focus, taskbar access, application overflow, and compact-screen behavior.
+- Keeps the established Windows 10-inspired Gold appearance.
+
+EXISTING GOLD FEATURES RETAINED
+- Staff Center and live staff control.
+- Emerald Mail staff verification.
+- Staff verification and SHA-256 integrity checks for user applications.
+- Custom application logos.
+- Active update prompts with Update now, View details, and Later.
+- Focus Sessions, Quick Settings, virtual desktops, Registry Editor, Task Manager, Control Panel, Emerald DOS, Office, Mail, media and utility applications.
+- Original E.L.S.U.S. and Shell V2 routing compatibility.
+
+PUBLISHING
+- Gold 1O never auto-publishes or auto-sets system/emeraldGoldLatest.
+- Publishing requires a verified Staff Edition session, Emerald Mail verification, the correct publisher PIN, and a direct click on Publish this Version.

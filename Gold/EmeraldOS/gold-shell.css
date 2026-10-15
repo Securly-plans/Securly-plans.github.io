@@ -1,0 +1,73 @@
+:root{
+  --accent:#0078d4;
+  --accent-dark:#005a9e;
+  --text:#172033;
+  --muted:#5e6b7d;
+  --border:#c8d4e3;
+  --surface:rgba(250,252,255,.94);
+  --surface-solid:#f8fbff;
+  --shadow:0 24px 70px rgba(10,29,55,.28);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:var(--text);background:#0d1a2b}
+body{min-height:100vh;overflow:auto}
+button,input{font:inherit}
+.shell-background{position:fixed;inset:0;background:radial-gradient(circle at 18% 18%,rgba(46,133,198,.72),transparent 31%),radial-gradient(circle at 82% 73%,rgba(15,113,78,.58),transparent 33%),linear-gradient(135deg,#10253f 0%,#16456c 46%,#0f594b 100%)}
+.shell-background::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.08),transparent 35%,rgba(255,255,255,.04));backdrop-filter:blur(2px)}
+.shell-layout{position:relative;z-index:1;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;align-items:center;justify-items:center;padding:22px}
+.shell-header{width:min(960px,100%);display:flex;align-items:center;justify-content:space-between;color:#fff;padding:4px 2px 18px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-logo{width:48px;height:48px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.28))}
+.brand-name{font-size:22px;font-weight:650;letter-spacing:.1px}
+.brand-subtitle{font-size:13px;color:rgba(255,255,255,.78);margin-top:2px}
+.version-badge{border:1px solid rgba(255,255,255,.4);background:rgba(4,20,38,.28);border-radius:999px;padding:7px 12px;font-size:12px;white-space:nowrap;backdrop-filter:blur(14px)}
+.shell-card{width:min(510px,100%);background:var(--surface);border:1px solid rgba(255,255,255,.72);border-radius:10px;box-shadow:var(--shadow);padding:30px;backdrop-filter:blur(22px);align-self:center}
+.card-heading{margin-bottom:20px}
+.eyebrow{margin:0 0 7px;color:var(--accent-dark);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+h1{font-size:28px;line-height:1.16;margin:0 0 10px;font-weight:650}
+p{line-height:1.5;margin:8px 0;color:#3d4b60}
+.notice{display:grid;gap:3px;background:#eaf4ff;border:1px solid #b8d7f3;border-left:4px solid var(--accent);padding:12px 13px;margin:18px 0;border-radius:5px;font-size:13px}
+.notice span{color:#4e5d70}
+.field-grid{display:grid;gap:8px;margin-top:18px}
+.field-label{font-size:13px;font-weight:600;color:#34435a;margin-top:5px}
+.field{width:100%;height:43px;border:1px solid #aebed0;border-radius:4px;background:#fff;color:#111827;padding:0 12px;outline:none;transition:border-color .12s,box-shadow .12s}
+.field:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,120,212,.16)}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#4f5d6f;margin:3px 0 10px;user-select:none}
+.checkbox-row input{accent-color:var(--accent)}
+.button{min-height:39px;border:1px solid #a7b7c9;border-radius:4px;background:linear-gradient(#fff,#edf2f7);color:#172033;padding:8px 15px;cursor:pointer;transition:background .12s,border-color .12s,transform .06s}
+.button:hover{background:#edf6ff;border-color:#7ba8cf}
+.button:active{transform:translateY(1px)}
+.button:focus-visible{outline:3px solid rgba(0,120,212,.28);outline-offset:2px}
+.button.primary{background:var(--accent);border-color:var(--accent-dark);color:#fff}
+.button.primary:hover{background:#006cbe}
+.button:disabled{opacity:.65;cursor:wait}
+.full{width:100%}
+.button-row{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:20px}
+.message{min-height:22px;font-size:13px;margin-top:10px;text-align:center}
+.message.bad{color:#a61b1b}
+.message.good{color:#08783f}
+.privacy-note{border-top:1px solid #d5deea;margin-top:15px;padding-top:14px;color:#647287;font-size:12px;line-height:1.45;text-align:center}
+.route-card{text-align:center}
+.success-mark{width:66px;height:66px;margin:0 auto 16px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#f8cc53,#0b8050);color:#102032;font-size:29px;font-weight:800;box-shadow:0 12px 30px rgba(8,79,57,.25)}
+.route-detail{text-align:left;background:#f1f5f9;border:1px solid #ccd7e4;border-radius:6px;padding:12px 13px;margin:18px 0}
+.route-detail span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6a7789;margin-bottom:5px}
+.route-detail code{display:block;color:#12324c;overflow-wrap:anywhere;font-family:Consolas,"Courier New",monospace}
+.muted{color:var(--muted);font-size:13px}
+.redirect-note{font-size:12px;color:#6b7788;margin-top:16px}
+.hidden{display:none!important}
+footer{width:min(960px,100%);display:flex;align-items:center;justify-content:space-between;gap:20px;color:rgba(255,255,255,.78);font-size:12px;padding-top:18px}
+.shell-status{background:rgba(4,18,34,.34);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 11px;backdrop-filter:blur(10px)}
+.shell-status.good{border-color:rgba(120,255,184,.58);color:#d9ffea}
+.shell-status.bad{border-color:rgba(255,145,145,.7);color:#ffe2e2}
+@media(max-width:650px){
+  .shell-layout{padding:14px;align-items:start}
+  .shell-header{padding-bottom:13px}
+  .brand-logo{width:40px;height:40px}
+  .brand-name{font-size:18px}
+  .brand-subtitle{font-size:11px}
+  .version-badge{padding:6px 9px}
+  .shell-card{padding:22px;border-radius:8px}
+  h1{font-size:24px}
+  footer{flex-direction:column;align-items:flex-start;gap:8px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Sign in — EmeraldOS Gold 1S</title>
+  <link rel="icon" href="emerald-gold-1s-logo.svg">
+  <link rel="stylesheet" href="auth.css">
+  <script defer src="auth-common.js"></script>
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="brand">
+      <img src="emerald-gold-1s-logo.svg" alt="EmeraldOS Gold 1S">
+      <h1>EmeraldOS Gold 1S</h1>
+      <p>A user-friendly Windows 10-inspired EmeraldOS desktop with E.L.S.U.S. cloud VM continuity.</p>
+      <p>Files, applications, settings, registry data, and workspace state follow the signed-in user.</p>
+    </section>
+
+    <main class="auth-card">
+      <h2>Sign in</h2>
+      <p class="muted">Use your existing EmeraldOS username and password.</p>
+
+      <form id="loginForm" novalidate>
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+        <div class="actions">
+          <button id="signIn" class="primary" type="submit">Sign in</button>
+          <button id="createAccount" type="button">Create account</button>
+        </div>
+      </form>
+
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+
+      <div class="links">
+        <a href="loading.html">Startup screen</a>
+        <a href="bios.html">BIOS / DOS</a>
+        <a href="staff.html">Staff Edition</a>
+      </div>
+
+      <div class="status">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">Checking cloud services…</span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("loginForm");
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const submitButton = document.getElementById("signIn");
+      const createAccountButton = document.getElementById("createAccount");
+      const messageBox = document.getElementById("message");
+      const statusDot = document.getElementById("statusDot");
+      const statusText = document.getElementById("statusText");
+      const incoming = new URLSearchParams(location.search);
+      const requestedNext = incoming.get("next");
+      const shellParams = new URLSearchParams();
+      ["elsusShell","elsusUser","elsusVersion","elsusFolder"].forEach(key => {
+        if (incoming.has(key)) shellParams.set(key, incoming.get(key));
+      });
+      const shellQuery = shellParams.toString();
+      const defaultNext = "loading.html" + (shellQuery ? "?" + shellQuery : "");
+      const next = requestedNext && !requestedNext.includes(":") ? requestedNext : defaultNext;
+
+      async function submit(event) {
+        event?.preventDefault();
+        messageBox.className = "message";
+        messageBox.textContent = "Signing in…";
+        submitButton.disabled = true;
+
+        try {
+          const user = await GoldAuth.login(usernameInput.value, passwordInput.value);
+          GoldAuth.beginSession(user);
+          messageBox.className = "message success";
+          messageBox.textContent = user.cloud
+            ? "Signed in. Restoring your E.L.S.U.S. cloud VM…"
+            : "Signed in with the local recovery account. Starting EmeraldOS…";
+          setTimeout(() => location.href = next, 250);
+        } catch (error) {
+          messageBox.className = "message";
+          messageBox.textContent = error?.message || "Sign-in failed.";
+          submitButton.disabled = false;
+          passwordInput.focus();
+          passwordInput.select();
+        }
+      }
+
+      form.addEventListener("submit", submit);
+      createAccountButton.addEventListener("click", () => location.href = "register.html" + (shellQuery ? "?" + shellQuery : ""));
+
+      GoldAuth.serviceStatus()
+        .then(status => {
+          statusDot.classList.toggle("online", status.firebase);
+          statusText.textContent = status.firebase
+            ? "Connected to EmeraldOS cloud services"
+            : "Cloud services unavailable; local recovery accounts remain usable";
+        })
+        .catch(() => {
+          statusText.textContent = "Cloud service status could not be checked";
+        });
+    });
+  </script>
+</body>
+</html>

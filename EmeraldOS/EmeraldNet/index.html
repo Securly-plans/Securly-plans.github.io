@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EmeraldNet - Win95 Mode</title>
+
+<style>
+/* ===== WIN95 BASE ===== */
+body {
+  margin: 0;
+  background: #c0c0c0;
+  font-family: "MS Sans Serif", Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ===== WINDOW FRAME ===== */
+.window {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #ffffff;
+  border-right: 2px solid #404040;
+  border-bottom: 2px solid #404040;
+  box-sizing: border-box;
+}
+
+/* ===== TITLE BAR ===== */
+.titlebar {
+  background: linear-gradient(to right, #000080, #1084d0);
+  color: white;
+  padding: 4px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 26px;
+}
+
+/* ===== BUTTONS ===== */
+.controls {
+  display: flex;
+  gap: 4px;
+}
+
+.btn {
+  width: 18px;
+  height: 18px;
+  background: #c0c0c0;
+  border: 2px solid #ffffff;
+  border-right: 2px solid #404040;
+  border-bottom: 2px solid #404040;
+  text-align: center;
+  font-size: 12px;
+  line-height: 14px;
+  cursor: pointer;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  display: flex;
+  padding: 6px;
+  gap: 6px;
+  background: #c0c0c0;
+  border-bottom: 2px solid #808080;
+}
+
+/* INPUT */
+input {
+  flex: 1;
+  padding: 4px;
+  border: 2px inset #fff;
+  font-family: inherit;
+}
+
+/* BUTTON */
+button {
+  padding: 4px 10px;
+  border: 2px outset #fff;
+  background: #c0c0c0;
+  cursor: pointer;
+}
+
+/* ===== BROWSER VIEW ===== */
+.browser {
+  flex: 1;
+  background: white;
+  border: 2px inset #fff;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="window">
+
+  <!-- TITLE BAR -->
+  <div class="titlebar">
+    <div>🌿 EmeraldNet Browser</div>
+    <div class="controls">
+      <div class="btn">_</div>
+      <div class="btn">□</div>
+      <div class="btn">X</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <input id="url" placeholder="Search or enter URL">
+    <button onclick="go()">Go</button>
+  </div>
+
+  <!-- BROWSER AREA -->
+  <div class="browser">
+    <iframe id="frame"></iframe>
+  </div>
+
+</div>
+
+<script>
+const WORKER = "https://holy-sunset-ac53.wyatt-monroe2013.workers.dev/";
+const TOKEN = "2UlZY5nT5QYYMbf62c8b5e7e713c719a2a8ef1c675846c3d3";
+
+function normalize(input) {
+  if (!input.startsWith("http")) {
+    return "https://www.google.com/search?q=" + encodeURIComponent(input);
+  }
+  return input;
+}
+
+async function go() {
+  let input = document.getElementById("url").value;
+  const url = normalize(input);
+
+  const api = `${WORKER}?token=${TOKEN}&url=${encodeURIComponent(url)}`;
+
+  const frame = document.getElementById("frame");
+
+  frame.srcdoc = `
+    <div style="font-family: MS Sans Serif; padding:10px; background:#c0c0c0;">
+      Loading EmeraldNet...
+    </div>
+  `;
+
+  const res = await fetch(api);
+  const html = await res.text();
+
+  frame.srcdoc = html;
+}
+</script>
+
+</body>
+</html>

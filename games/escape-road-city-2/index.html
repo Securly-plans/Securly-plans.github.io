@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<link rel="stylesheet" href="25030706/theme/game.css">
+	<meta name="robots" content="noindex, nofollow">
+	<title>Escape Road City 2</title>
+	<meta name="description"
+		content="Break out into some awesome driving action with Escape Road 2 and unleash your passion for crazy crashes! Make the virtual city more chaotic than ever!" />
+	<style type="text/css">
+		.jss1:before {
+			top: 0;
+			width: 100%;
+			filter: blur(16px);
+			height: 100%;
+			content: "";
+			display: block;
+			opacity: .5;
+			z-index: 0;
+			position: absolute;
+			background-size: cover;
+			background-image: url("25030706/loading.png")
+		}
+	</style>
+	<script>
+		var buildUrl = "Build";
+		var versionFolder = "25030706/";
+		buildUrl = "" + versionFolder + buildUrl;
+		var loaderUrl = buildUrl + "/escape-road-city-2-v25030706.loader.js";
+		var config = {
+			dataUrl: buildUrl + "/escape-road-city-2-v25030706.data.unityweb",
+			frameworkUrl: buildUrl + "/escape-road-city-2-v25030706.framework.js.unityweb",
+			codeUrl: buildUrl + "/escape-road-city-2-v25030706.wasm.unityweb",
+			streamingAssetsUrl: versionFolder + "StreamingAssets",
+			companyName: "1games.io",
+			productName: "Escape Road City 2",
+			productVersion: "25030706",
+			pubId: ""
+		};
+		config.hostindex = 2;
+		config.gameId = "escape-road";
+		config.eventLog = true;
+		config.buildAPI = "https://event.azgame.io/apiaz/event";
+		let currentDate = new Date();
+		let endLogDate = new Date("2025-02-09T12:49:23.136Z");
+		if (currentDate > endLogDate) {
+			config.eventLog = false;
+		}
+		config.enableMoreGame = "yes";
+		config.enablePromotion = true;
+		config.gdHost = isHostOnGD();
+		if (config.gdHost) {
+			config.enableMoreGame = "no";
+			config.enablePromotion = false;
+			config.eventLog = false;
+			let pathSegments = window.location.pathname.split('/');
+			config.gdGameId = pathSegments[1];
+		}
+		function isHostOnGD() {
+			let domainParts = window.location.hostname.split('.');
+			let mainDomain = domainParts.slice(-2).join('.');
+			return (mainDomain == "gamedistribution.com");
+		}
+	</script>
+	<script id="gmsoft-jssdk" src="lib/gmsoftsdk_v5.js"></script>
+</head>
+
+<body>
+	<div id="unity-container" style="display: none;">
+		<canvas id="unity-canvas"></canvas>
+	</div>
+	<div id="loadingBlock">
+		<div class="jss31 jss34 jss1">
+			
+			<div class="spinner"></div>
+			<div class="jss31 jss34 jss48" style="flex: 1 1 0%;">
+				<div class="jss32">
+					<div class="jss7 jss9 jss20 jss3">
+						<div class="jss125">
+							<div class="jss123">
+								<img src="25030706/logo.png">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--PRODUCT_VERSION:25030706END-->
+			<div class="jss31 jss34" style="flex: 3 1 0%;">
+				<div class="jss32">
+					<div class="jss31 jss34 jss39 jss50 gameloader">
+						<div class="jss32">
+							<div class="gameloader-game-name">Escape Road</div>
+						</div>
+						<div class="jss32">
+							<div class="jss32 gameloader-logo">
+								<img id="game-logo" src="25030706/loading.png">
+							</div>
+						</div>
+						<div class="jss32">
+							<div>
+								<div class="gameloader-progressbar">
+									<div class="gameloader-progressbar-progress" id="progress_fill" style="width: 0%;">
+									</div>
+								</div>
+								<div class="gameloader-progress-info">Game Loading...</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		var progressElement = document.getElementById('progress_fill');
+		var container = document.getElementById("unity-container");
+		var canvas = document.getElementById("unity-canvas");
+		var loadingBar = document.querySelector("#loadingBlock");
+		var progressBarFull = document.querySelector("#progress_fill");
+		var progress_text = document.querySelector(".gameloader-progress-info");
+		let text_percent = "";
+		var script = document.createElement("script");
+		script.src = loaderUrl;
+		script.onload = () => {
+			createUnityInstance(canvas, config, (progress) => {
+				progressElement.style.width = 100 * progress + "%";
+				text_percent = "Downloading file: " + Math.round(progress * 100) + "%";
+				progress_text.innerText = text_percent;
+				if (progress >= 99) {
+					progress_text.innerText = "Game Loading ...";
+				}
+			}).then((unityInstance) => {
+				window.unityInstance = unityInstance;
+				setTimeout(function () {
+					loadingBar.style.display = "none";
+					window.focus();
+				}, 2000);
+				container.style.display = "block";
+			}).catch((message) => {
+				alert(message);
+			});
+		};
+		document.body.appendChild(script);
+	</script>
+	<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics-compat.js"></script>
+	<script type="module">
+		const firebaseConfig = {
+ apiKey: "AIzaSyASPz-JxitqlNTmfknPBTdCXzP1UAmIflU",
+ authDomain: "escape-road-city-2-1games.firebaseapp.com",
+ projectId: "escape-road-city-2-1games",
+ storageBucket: "escape-road-city-2-1games.firebasestorage.app",
+ messagingSenderId: "868829830791",
+ appId: "1:868829830791:web:9f20035dcd816acbfda222",
+ measurementId: "G-MWML2MHBVR"
+};
+		if(firebaseConfig ){
+			window.dataLayer = window.dataLayer || [];
+			window.gtag = function () { window.dataLayer.push(arguments); }
+
+			window.gtag("config", firebaseConfig.measurementId, {
+			  cookie_domain: window.location.hostname,
+			  cookie_flags: "SameSite=None;Secure",
+			});
+			// Initialize Firebase
+			const app = firebase.initializeApp(firebaseConfig);
+			//const auth = getAuth(app);
+		}
+	</script>
+	<script>
+		function firebaseSetUserProperties(props) {
+			firebase.analytics().setUserProperties(props);
+		}
+		function firebaseLogEvent(event_name) {
+			firebase.analytics().logEvent(event_name);
+		}
+		function firebaseLogEventParameter(event_name, event_param) {
+			firebase.analytics().logEvent(event_name, event_param);
+		}
+		let time_counter_gm = 0;
+		function gmRepeatEvery30Seconds() {
+			setInterval(function () {
+				if (config.eventLog) {
+					firebaseLogEvent("time_countergm_" + time_counter_gm++);
+				}
+			}, 30000);
+		}
+		gmRepeatEvery30Seconds();
+	</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"984732fcbd5a443085b5d566e303b742","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+
+</html>
