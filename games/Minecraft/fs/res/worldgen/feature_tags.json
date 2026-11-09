@@ -1,0 +1,1 @@
+{"minecraft:can_spawn_from_bone_meal":"{\n  \"values\": [\n    \"minecraft:flower_default\",\n    \"minecraft:flower_flower_forest\",\n    \"minecraft:flower_swamp\",\n    \"minecraft:flower_plain\",\n    \"minecraft:flower_meadow\",\n    \"minecraft:flower_cherry\",\n    \"minecraft:wildflower\",\n    \"minecraft:flower_pale_garden\"\n  ]\n}"}

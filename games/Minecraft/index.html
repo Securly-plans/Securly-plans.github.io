@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Minecraft</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;height:100dvh;background:#0b0f14;color:#e8eef6;overflow:hidden;position:fixed;inset:0;touch-action:none}
+canvas{display:block!important;position:fixed!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;max-width:none!important;max-height:none!important;object-fit:contain!important;border:0!important;outline:0!important;box-shadow:none!important}
+#status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0f14;color:#e8eef6;font:14px system-ui;z-index:9;white-space:pre-wrap;text-align:center;padding:24px}
+#status[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="status">Loading Horizon…</div>
+<script>
+(function () {
+  const ROOT = "https://raw.githack.com/Camerons-Git7/Minecraft-Rust/main/rust-minecraft/";
+  const DB_NAME = "horizon-asset-cache";
+  const STORE = "files";
+  const DB_VERSION = 1;
+
+  const SILENCE = [
+    /powerPreference option is currently ignored/i,
+    /cdn\.tailwindcss\.com should not be used/i,
+    /Permissions-Policy header: Unrecognized feature/i,
+    /attribution-reporting|private-aggregation|join-ad-interest-group|run-ad-auction|browsing-topics/i,
+    /symphonia_format_ogg/i,
+    /selected vorbis mapper for stream/i,
+    /starting new physical stream/i,
+    /Failed to load resource: net::ERR_BLOCKED_BY_CLIENT/i,
+    /cdn-cgi\/rum/i
+  ];
+
+  function isNoise(args) {
+    const msg = Array.prototype.map.call(args, function (a) {
+      try {
+        if (typeof a === "string") return a;
+        if (a && typeof a.message === "string") return a.message;
+        return String(a);
+      } catch (e) {
+        return "";
+      }
+    }).join(" ");
+    return SILENCE.some(function (re) { return re.test(msg); });
+  }
+
+  ["log", "info", "warn", "debug"].forEach(function (level) {
+    const orig = console[level].bind(console);
+    console[level] = function () {
+      if (isNoise(arguments)) return;
+      return orig.apply(console, arguments);
+    };
+  });
+
+  const statusEl = document.getElementById("status");
+
+  function hideStatusIfEmpty() {
+    if (!statusEl) return;
+    if (!statusEl.textContent.trim()) statusEl.hidden = true;
+    else statusEl.hidden = false;
+  }
+
+  new MutationObserver(hideStatusIfEmpty).observe(statusEl, {
+    childList: true,
+    characterData: true,
+    subtree: true
+  });
+
+  setInterval(hideStatusIfEmpty, 500);
+
+  function fitCanvas() {
+    const viewport = window.visualViewport;
+    const w = viewport ? viewport.width : window.innerWidth;
+    const h = viewport ? viewport.height : window.innerHeight;
+
+    document.documentElement.style.width = w + "px";
+    document.documentElement.style.height = h + "px";
+    document.body.style.width = w + "px";
+    document.body.style.height = h + "px";
+
+    document.querySelectorAll("canvas").forEach(function (c) {
+      const gameWidth = c.width;
+      const gameHeight = c.height;
+
+      if (!gameWidth || !gameHeight || !w || !h) return;
+
+      const scale = Math.min(w / gameWidth, h / gameHeight);
+      const displayWidth = gameWidth * scale;
+      const displayHeight = gameHeight * scale;
+
+      c.style.setProperty("position", "fixed", "important");
+      c.style.setProperty("left", "50%", "important");
+      c.style.setProperty("top", "50%", "important");
+      c.style.setProperty("right", "auto", "important");
+      c.style.setProperty("bottom", "auto", "important");
+      c.style.setProperty("transform", "translate(-50%,-50%)", "important");
+      c.style.setProperty("width", displayWidth + "px", "important");
+      c.style.setProperty("height", displayHeight + "px", "important");
+      c.style.setProperty("max-width", "none", "important");
+      c.style.setProperty("max-height", "none", "important");
+      c.style.setProperty("object-fit", "contain", "important");
+      c.style.setProperty("border", "0", "important");
+      c.style.setProperty("outline", "0", "important");
+      c.style.setProperty("box-shadow", "none", "important");
+    });
+  }
+
+  let fitScheduled = false;
+
+  function scheduleFit() {
+    if (fitScheduled) return;
+    fitScheduled = true;
+    requestAnimationFrame(function () {
+      fitScheduled = false;
+      fitCanvas();
+    });
+  }
+
+  fitCanvas();
+
+  window.addEventListener("resize", scheduleFit);
+  window.addEventListener("orientationchange", scheduleFit);
+  window.addEventListener("fullscreenchange", scheduleFit);
+  document.addEventListener("fullscreenchange", scheduleFit);
+  document.addEventListener("webkitfullscreenchange", scheduleFit);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleFit);
+    window.visualViewport.addEventListener("scroll", scheduleFit);
+  }
+
+  const canvasObserver = new MutationObserver(scheduleFit);
+
+  canvasObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  setInterval(scheduleFit, 500);
+
+  document.addEventListener("click", function once() {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(function () {});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    scheduleFit();
+    document.removeEventListener("click", once);
+  }, { once: true });
+
+  const workerSrc = [
+    "const ROOT = " + JSON.stringify(ROOT) + ";",
+    "function toRaw(url) {",
+    "  if (url == null) return url;",
+    "  url = String(url);",
+    "  if (/^(https?:|data:)/i.test(url)) return url;",
+    "  if (/^blob:/i.test(url)) return url;",
+    "  if (/cdn-cgi|\\.well-known|favicon\\.ico/i.test(url)) return url;",
+    "  let path = url.replace(/^\\.\\//, '').replace(/^\\//, '');",
+    "  path = path.split('?')[0].split('#')[0];",
+    "  if (path.startsWith('rust-minecraft/')) path = path.slice('rust-minecraft/'.length);",
+    "  while (path.startsWith('../')) path = path.slice(3);",
+    "  return ROOT + path;",
+    "}",
+    "const XO = XMLHttpRequest.prototype.open;",
+    "XMLHttpRequest.prototype.open = function (method, url) {",
+    "  return XO.call(this, method, toRaw(url), ...Array.prototype.slice.call(arguments, 2));",
+    "};",
+    "const _fetch = self.fetch.bind(self);",
+    "self.fetch = function (input, init) {",
+    "  if (typeof input === 'string') return _fetch(toRaw(input), init);",
+    "  if (input && input.url) return _fetch(new Request(toRaw(input.url), input), init);",
+    "  return _fetch(input, init);",
+    "};",
+    "import init, { horizon_worker_entry } from " + JSON.stringify(ROOT + "pkg/horizon-client.js") + ";",
+    "self.onmessage = async (event) => {",
+    "  const data = event.data;",
+    "  if (!data || data.module == null) return;",
+    "  try {",
+    "    await init({ module_or_path: data.module, memory: data.memory });",
+    "    horizon_worker_entry(data.ptr);",
+    "  } catch (e) {",
+    "    console.error('Horizon worker failed:', data.name, e);",
+    "  }",
+    "};"
+  ].join("\n");
+
+  const workerBlobUrl = URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" }));
+  const OrigWorker = window.Worker;
+
+  window.Worker = function (scriptURL, options) {
+    let url = scriptURL;
+    try {
+      if (/worker\.js(\?|#|$)/i.test(String(scriptURL))) url = workerBlobUrl;
+    } catch (e) {}
+    return new OrigWorker(url, options);
+  };
+
+  window.Worker.prototype = OrigWorker.prototype;
+
+  function openDB() {
+    return new Promise(function (resolve, reject) {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function () {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  async function idbGet(key) {
+    try {
+      const db = await openDB();
+      return await new Promise(function (resolve, reject) {
+        const tx = db.transaction(STORE, "readonly");
+        const req = tx.objectStore(STORE).get(key);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function idbPut(key, value) {
+    try {
+      const db = await openDB();
+      await new Promise(function (resolve, reject) {
+        const tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).put(value, key);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    } catch (e) {}
+  }
+
+  function toRaw(url) {
+    if (url == null) return url;
+    url = String(url);
+    if (/^(https?:|blob:|data:|chrome-extension:)/i.test(url)) return url;
+    if (/cdn-cgi|\.well-known|favicon\.ico/i.test(url)) return url;
+    let path = url.replace(/^\.\//, "").replace(/^\//, "");
+    path = path.split("?")[0].split("#")[0];
+    if (path.startsWith("rust-minecraft/")) path = path.slice("rust-minecraft/".length);
+    while (path.startsWith("../")) path = path.slice(3);
+    return ROOT + path;
+  }
+
+  function shouldCache(url) {
+    if (!url || typeof url !== "string") return false;
+    if (url.indexOf(ROOT) !== 0) return false;
+    return /\.(wasm|tar\.gz|tgz|gz|bin|pak|pack|dat|obb)(\?|$)/i.test(url) ||
+           /horizon-client_bg\.wasm(\?|$)/i.test(url);
+  }
+
+  const _fetch = window.fetch.bind(window);
+
+  window.fetch = async function (input, init) {
+    let url = typeof input === "string" ? input : (input && input.url) || "";
+    const rewritten = toRaw(url);
+    const finalUrl = rewritten !== url ? rewritten : url;
+
+    if (shouldCache(finalUrl)) {
+      const cached = await idbGet(finalUrl);
+      if (cached && cached.buffer) {
+        return new Response(cached.buffer.slice(0), {
+          status: cached.status || 200,
+          statusText: cached.statusText || "OK",
+          headers: cached.contentType ? { "Content-Type": cached.contentType } : undefined
+        });
+      }
+    }
+
+    const response = rewritten !== url
+      ? (typeof input === "string" ? await _fetch(rewritten, init) : await _fetch(new Request(rewritten, input), init))
+      : await _fetch(input, init);
+
+    if (shouldCache(finalUrl) && response.ok) {
+      try {
+        const clone = response.clone();
+        const buffer = await clone.arrayBuffer();
+        idbPut(finalUrl, {
+          buffer: buffer,
+          status: response.status,
+          statusText: response.statusText,
+          contentType: response.headers.get("Content-Type") || ""
+        });
+      } catch (e) {}
+    }
+
+    return response;
+  };
+
+  const XO = XMLHttpRequest.prototype.open;
+
+  XMLHttpRequest.prototype.open = function (method, url) {
+    return XO.call(this, method, toRaw(url), ...Array.prototype.slice.call(arguments, 2));
+  };
+
+  async function ensureIsolation() {
+    if (window.crossOriginIsolated) return true;
+    if (!("serviceWorker" in navigator)) return false;
+
+    try {
+      const swUrl = new URL("sw.js", location.href).href;
+
+      await navigator.serviceWorker.register(swUrl, {
+        scope: new URL(".", location.href).pathname
+      });
+
+      if (!navigator.serviceWorker.controller) {
+        await Promise.race([
+          new Promise(function (r) {
+            navigator.serviceWorker.addEventListener("controllerchange", r, { once: true });
+          }),
+          new Promise(function (r) { setTimeout(r, 4000); })
+        ]);
+      }
+
+      if (!window.crossOriginIsolated && !sessionStorage.getItem("horizon-isolating")) {
+        sessionStorage.setItem("horizon-isolating", "1");
+        location.reload();
+        return false;
+      }
+
+      sessionStorage.removeItem("horizon-isolating");
+      return window.crossOriginIsolated;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function boot() {
+    await ensureIsolation();
+
+    const script = document.createElement("script");
+    script.type = "module";
+    script.src = ROOT + "main.js";
+
+    script.onerror = function () {
+      if (statusEl) {
+        statusEl.hidden = false;
+        statusEl.textContent = "Failed to load main.js from GitHub.";
+      }
+    };
+
+    document.body.appendChild(script);
+  }
+
+  boot().catch(function (e) {
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.textContent = String(e && e.stack ? e.stack : e);
+    }
+  });
+})();
+</script>
+</body>
+</html>
