@@ -1,0 +1,41 @@
+name: Sync Minecraft Files
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout destination repository
+        uses: actions/checkout@v4
+
+      - name: Checkout Minecraft-Rust repository
+        uses: actions/checkout@v4
+        with:
+          repository: Camerons-Git7/Minecraft-Rust
+          ref: main
+          path: source
+          sparse-checkout: rust-minecraft
+          sparse-checkout-cone-mode: true
+
+      - name: Sync Minecraft files
+        run: |
+          mkdir -p games/Minecraft
+          rsync -a --delete source/rust-minecraft/ games/Minecraft/
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A games/Minecraft
+          if ! git diff --cached --quiet; then
+            git commit -m "Sync Minecraft-Rust files"
+            git push
+          fi
